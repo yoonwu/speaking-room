@@ -346,6 +346,11 @@ input,textarea{font-family:inherit}
   display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
 }
 .coach .play:hover{color:var(--jade-deep)}
+.coach-acts{display:flex; gap:16px; margin:7px 0 0 4px}
+.coach-acts button{font-size:11.5px; font-weight:600; color:var(--muted); display:inline-flex; align-items:center; gap:5px}
+.coach-acts button:hover{color:var(--jade-deep)}
+.ko-trans{display:none; margin:7px 0 0 4px; max-width:100%; font-size:13.5px; line-height:1.55; color:#5b5d8a; background:#f3f6fb; padding:9px 12px; border-radius:11px}
+.ko-trans.show{display:block}
 .typing{display:inline-flex; gap:4px; padding:4px 2px}
 .typing i{width:7px; height:7px; border-radius:50%; background:#b9bdcb; animation:bd 1.3s infinite}
 .typing i:nth-child(2){animation-delay:.18s} .typing i:nth-child(3){animation-delay:.36s}
@@ -636,7 +641,7 @@ input,textarea{font-family:inherit}
 /* ============================================================
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
-const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";// ← Cloudflare Worker 주소 붙여넣기
+const PROXY_URL = "https://xxxx.yourname.workers.dev";   // ← Cloudflare Worker 주소 붙여넣기
 const MODEL = "claude-sonnet-4-6";   // 비용 줄이려면 "claude-haiku-4-5-20251001" 로 바꿔도 됨
 /* ============================================================ */
 
@@ -951,13 +956,29 @@ function turnEl(role){
 function addCoachTurn(text){
   const {wrap,bub}=turnEl("assistant");
   bub.textContent=text;
+  const acts=document.createElement("div"); acts.className="coach-acts";
   const play=document.createElement("button");
-  play.className="play";
   play.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg> 다시 듣기`;
   play.onclick=()=>speak(text);
-  wrap.appendChild(play);
+  const tr=document.createElement("button");
+  tr.innerHTML=`🇰🇷 해석`;
+  const trDiv=document.createElement("div"); trDiv.className="ko-trans";
+  tr.onclick=()=>toggleTrans(text, trDiv);
+  acts.appendChild(play); acts.appendChild(tr);
+  wrap.appendChild(acts); wrap.appendChild(trDiv);
   scrollDown();
   if(state.ttsOn) speak(text);
+}
+let _transBusy=false;
+async function toggleTrans(text, div){
+  if(div.dataset.loaded){ div.classList.toggle("show"); return; }
+  if(_transBusy) return; _transBusy=true;
+  div.classList.add("show"); div.textContent="해석 중…";
+  try{
+    const data=await callClaude("Translate the English to natural Korean. Return ONLY the Korean translation, nothing else — no quotes, no notes.", [{role:"user", content:text}]);
+    div.textContent=extractText(data); div.dataset.loaded="1";
+  }catch(e){ div.textContent="(해석을 불러오지 못했어요)"; }
+  _transBusy=false;
 }
 function addMeTurn(text){
   const {bub}=turnEl("user"); bub.textContent=text; scrollDown();
@@ -995,6 +1016,7 @@ async function sendMessage(){
   const text=msg.value.trim();
   if(!text || state.busy) return;
   msg.value=""; autoSize();
+  if(hasHangul(text)){ addMeTurn(text); return koreanFallback(text); }
   addMeTurn(text);
   state.convo.push({role:"user", text});
   setBusy(true); showTyping();
@@ -1009,6 +1031,38 @@ async function sendMessage(){
     hideTyping(); addCoachTurn("(연결 오류 — 다시 시도해 주세요.)");
   }
   setBusy(false);
+}
+function hasHangul(s){ return /[가-힣]/.test(s); }
+async function koreanFallback(korean){
+  const lastCoach = [...state.convo].reverse().find(t=>t.role==="assistant");
+  setBusy(true); showTyping();
+  const sys=[
+    "The learner is practicing spoken English in this situation: "+scnDesc()+".",
+    lastCoach ? 'The other person just said to them: "'+lastCoach.text+'".' : "",
+    "The learner got stuck and typed in Korean what they want to say. Give the natural English they should say here, fitting this exact situation. Keep it short and natural — what a real person would actually say.",
+    'Return ONLY JSON: {"en":"natural English they should say","note":"짧은 한국어 팁 또는 뉘앙스, 없으면 빈 문자열"}'
+  ].join("\n");
+  try{
+    const data=await callClaude(sys, [{role:"user", content:korean}]);
+    const obj=parseJSON(extractText(data));
+    hideTyping();
+    renderFallbackCard(obj);
+    if(lastCoach) addCoachTurn(lastCoach.text); // 한 단계 뒤로 — 같은 질문 다시
+  }catch(e){ hideTyping(); }
+  setBusy(false);
+}
+function renderFallbackCard(obj){
+  const c=document.createElement("div"); c.className="card help";
+  let html=`<h4>💡 막혔을 땐 이렇게 말해요</h4>`;
+  html+=`<div class="ph"><span>${escapeHtml(obj.en||"")}</span><button data-say="${escapeAttr(obj.en||"")}">이걸로 답하기</button></div>`;
+  if(obj.note) html+=`<div class="note">${escapeHtml(obj.note)}</div>`;
+  html+=`<div class="note" style="margin-top:8px">👇 아래 질문에 이번엔 <b>영어로</b> 다시 답해보세요.</div>`;
+  c.innerHTML=html;
+  threadInner.appendChild(c);
+  c.querySelectorAll("button[data-say]").forEach(b=>{
+    b.onclick=()=>{ msg.value=b.getAttribute("data-say"); autoSize(); msg.focus(); refreshSend(); speak(b.getAttribute("data-say")); };
+  });
+  scrollDown();
 }
 
 /* ============ help (Korean -> English) ============ */
