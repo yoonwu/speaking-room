@@ -83,6 +83,36 @@
 .combo-shake{animation:comboShake .42s ease}
 .combo-pop{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:30;font-size:40px;font-weight:900;color:#ffb454;text-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none;animation:comboPop .8s cubic-bezier(.18,1.5,.4,1) forwards}
 @keyframes comboPop{0%{transform:translate(-50%,10px) scale(.5);opacity:0}40%{transform:translate(-50%,-6px) scale(1.15);opacity:1}100%{transform:translate(-50%,-40px) scale(1);opacity:0}}
+/* 🎁 Treasure chest overlay */
+#chestOverlay{position:fixed;inset:0;z-index:210;display:none;align-items:center;justify-content:center;background:rgba(6,8,7,.86);backdrop-filter:blur(3px)}
+#chestOverlay.show{display:flex;animation:celebFade .3s ease}
+.chest-card{text-align:center;max-width:340px;padding:0 24px}
+.chest-emo{font-size:96px;cursor:pointer;filter:drop-shadow(0 12px 30px rgba(255,180,60,.5));animation:chestWiggle 1s ease-in-out infinite}
+@keyframes chestWiggle{0%,100%{transform:rotate(-5deg) scale(1)}50%{transform:rotate(5deg) scale(1.05)}}
+.chest-emo.opening{animation:chestBurst .5s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes chestBurst{0%{transform:scale(1)}40%{transform:scale(1.3) rotate(4deg)}100%{transform:scale(1.1)}}
+.chest-hint{font-size:14px;color:var(--ink-soft);font-weight:700;margin-top:18px;animation:hintpulse 1.4s ease-in-out infinite}
+@keyframes hintpulse{0%,100%{opacity:.5}50%{opacity:1}}
+.chest-reveal{display:none}
+.chest-reveal.show{display:block;animation:celebPop .6s cubic-bezier(.18,1.5,.4,1)}
+.rarity-tag{display:inline-block;font-size:13px;font-weight:900;letter-spacing:.16em;padding:5px 14px;border-radius:99px;margin-bottom:12px}
+.r-common{background:rgba(150,160,155,.2);color:#b9c2bd;border:1px solid rgba(180,190,185,.3)}
+.r-rare{background:rgba(91,155,245,.2);color:#7bb0ff;border:1px solid rgba(91,155,245,.45);box-shadow:0 0 18px rgba(91,155,245,.35)}
+.r-epic{background:rgba(167,139,250,.22);color:#c0aaff;border:1px solid rgba(167,139,250,.5);box-shadow:0 0 22px rgba(167,139,250,.4)}
+.r-legendary{background:linear-gradient(90deg,rgba(255,180,60,.25),rgba(255,120,60,.25));color:#ffd17a;border:1px solid rgba(255,180,60,.6);box-shadow:0 0 30px rgba(255,180,60,.55);animation:legendGlow 1.2s ease-in-out infinite}
+@keyframes legendGlow{0%,100%{box-shadow:0 0 24px rgba(255,180,60,.45)}50%{box-shadow:0 0 40px rgba(255,180,60,.75)}}
+.chest-prize-emo{font-size:64px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.4))}
+.chest-prize-tx{font-size:22px;font-weight:900;color:#fff;margin-top:6px;line-height:1.2}
+.chest-prize-sub{font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:8px}
+.chest-ok{margin-top:22px;width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06120e;font-weight:900;font-size:15px;border:none;box-shadow:0 10px 24px -10px rgba(31,211,160,.7)}
+/* 🏅 badges */
+.badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.badge{aspect-ratio:1;border-radius:14px;background:var(--card2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px;text-align:center}
+.badge.locked{opacity:.32;filter:grayscale(.7)}
+.badge.got{border-color:rgba(31,211,160,.45);box-shadow:0 0 14px -4px rgba(31,211,160,.5)}
+.badge .be{font-size:24px}
+.badge .bt{font-size:8.5px;font-weight:800;color:var(--muted);line-height:1.15}
+.badge.got .bt{color:var(--ink-soft)}
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
 body{
@@ -821,12 +851,51 @@ body{background:var(--paper); color:var(--text)}
 .eng-tx b{display:block;font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.25)}
 .eng-tx i{font-size:12.5px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600;margin-top:3px;display:block}
 .eng-ar{position:relative;z-index:1;font-size:20px;color:#fff;font-weight:900;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-.eng-out{background:linear-gradient(135deg,#13e6a3,#059669);box-shadow:0 14px 32px -14px rgba(16,185,129,.75),inset 0 1px 0 rgba(255,255,255,.25)}
-.eng-in{background:linear-gradient(135deg,#4f9bff,#2563eb);box-shadow:0 14px 32px -14px rgba(59,130,246,.75),inset 0 1px 0 rgba(255,255,255,.25)}
-.eng-real{background:linear-gradient(135deg,#ffb454,#ea580c);box-shadow:0 14px 32px -14px rgba(245,158,11,.75),inset 0 1px 0 rgba(255,255,255,.25)}
-#engSprint{background:linear-gradient(135deg,#ffd34d,#ff7a45 60%,#9b5cff);box-shadow:0 16px 36px -14px rgba(255,140,60,.8),inset 0 1px 0 rgba(255,255,255,.3)}
+/* ===== 🗺️ 월드: 각 카드 = 하나의 세계 속 장소(다크 네온) ===== */
+.eng{min-height:88px}
+.worldlabel{font-size:12.5px;font-weight:800;color:var(--ink-soft);letter-spacing:.01em;margin:2px 2px 11px;opacity:.92}
+.eng-emo{font-size:30px;background:rgba(0,0,0,.28)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 16px -2px var(--glow,rgba(255,255,255,.4))}
+/* 🎧 에코 동굴 — 깊고 푸른 동굴 */
+.eng-in{--glow:rgba(91,180,255,.55);background:
+  radial-gradient(80% 120% at 12% 0%,rgba(99,200,255,.42),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(40,80,180,.55),transparent 60%),
+  linear-gradient(160deg,#143a5e,#0c1830 78%);
+  box-shadow:0 16px 36px -16px rgba(60,140,255,.65),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -30px 40px -20px rgba(0,0,0,.6)}
+/* ⚔️ 스피킹 훈련장 — 비취빛 도장 */
+.eng-out{--glow:rgba(31,230,170,.55);background:
+  radial-gradient(80% 120% at 14% 0%,rgba(60,240,190,.40),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(8,110,84,.55),transparent 60%),
+  linear-gradient(160deg,#10493a,#0a1f1a 78%);
+  box-shadow:0 16px 36px -16px rgba(20,200,150,.6),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -30px 40px -20px rgba(0,0,0,.55)}
+/* 🌎 모험 월드맵 — 황혼의 대륙 */
+.eng-real{--glow:rgba(255,180,90,.55);background:
+  radial-gradient(80% 120% at 14% 0%,rgba(255,200,110,.40),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(190,70,30,.55),transparent 60%),
+  linear-gradient(160deg,#5e3318,#1f1410 80%);
+  box-shadow:0 16px 36px -16px rgba(245,150,60,.6),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -30px 40px -20px rgba(0,0,0,.55)}
+/* ⚡ 라이트닝 아레나 — 번개 투기장 */
+#engSprint{--glow:rgba(255,200,80,.6);background:
+  radial-gradient(70% 120% at 8% 0%,rgba(255,210,90,.42),transparent 52%),
+  radial-gradient(80% 130% at 100% 120%,rgba(150,80,255,.5),transparent 58%),
+  linear-gradient(160deg,#3a2a10,#1a1226 82%);
+  box-shadow:0 18px 40px -16px rgba(255,150,60,.7),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -30px 44px -20px rgba(0,0,0,.55)}
 #engSprint .eng-emo{animation:boltpulse 1.8s ease-in-out infinite}
 @keyframes boltpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12) rotate(-4deg)}}
+/* 🏰 사운드 아카데미 (kidCard) — 따뜻한 성 */
+#kidCard{--glow:rgba(255,200,100,.55);background:
+  radial-gradient(80% 120% at 14% 0%,rgba(255,215,130,.40),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(150,100,40,.5),transparent 60%),
+  linear-gradient(160deg,#4a3a1a,#1c1610 80%)!important;
+  border:1px solid rgba(255,200,110,.4)!important;box-shadow:0 14px 32px -16px rgba(255,180,80,.6),inset 0 1px 0 rgba(255,255,255,.14)!important}
+#kidCard .ke{background:rgba(0,0,0,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 16px -2px rgba(255,200,100,.5)}
+/* ✨ 아이 모드: 더 밝고 통통한 월드 */
+.kidworld .eng-in{background:radial-gradient(80% 120% at 14% 0%,rgba(140,225,255,.7),transparent 58%),linear-gradient(160deg,#2f8fd6,#1f5fae 82%)}
+.kidworld .eng-out{background:radial-gradient(80% 120% at 14% 0%,rgba(120,255,210,.7),transparent 58%),linear-gradient(160deg,#1fc98e,#10936a 82%)}
+.kidworld .eng-real{background:radial-gradient(80% 120% at 14% 0%,rgba(255,220,140,.75),transparent 58%),linear-gradient(160deg,#ff9e4d,#ef6d2a 82%)}
+.kidworld #engSprint{background:radial-gradient(70% 120% at 10% 0%,rgba(255,225,120,.8),transparent 55%),linear-gradient(160deg,#ffb454,#ff7a45 60%,#b06cff 100%)}
+.kidworld #kidCard{background:radial-gradient(80% 120% at 14% 0%,rgba(255,225,150,.8),transparent 58%),linear-gradient(160deg,#ffc24d,#f0982e 82%)!important}
+.kidworld .eng-tx i,.kidworld #kidCard .kt i{color:rgba(255,255,255,.96)}
+.kidworld .worldlabel{color:#ffd98a}
 /* progress bar shimmer */
 .rwbar i,.rwbar2 i{position:relative;overflow:hidden}
 .rwbar i::after,.hero-reward .rwbar i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-100%);animation:barsweep 2.6s ease-in-out infinite}
@@ -871,25 +940,26 @@ body{background:var(--paper); color:var(--text)}
           <button data-age="adult" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:800;cursor:pointer">🧑 어른</button>
           <button data-age="kid" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:800;cursor:pointer">🧒 아이</button>
         </div>
-        <!-- 3 엔진 -->
+        <!-- 🗺️ 모험 지도 -->
+        <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
         <button class="eng eng-in" id="engIn">
           <span class="eng-emo">🎧</span>
-          <span class="eng-tx"><b>귀뚫기</b><i>원어민 소리를 들리게</i></span>
+          <span class="eng-tx"><b>에코 동굴</b><i>귀뚫기 · 원어민 소리를 듣고 따라 말하기</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-out" id="engOut">
-          <span class="eng-emo">🗣️</span>
-          <span class="eng-tx"><b>꺼내기</b><i>아는 영어를 입 밖으로</i></span>
+          <span class="eng-emo">⚔️</span>
+          <span class="eng-tx"><b>스피킹 훈련장</b><i>꺼내기 · 아는 영어를 입 밖으로</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-real" id="engReal">
           <span class="eng-emo">🌎</span>
-          <span class="eng-tx"><b>실전상황</b><i>전화·병원·학교·고객센터 버티기</i></span>
+          <span class="eng-tx"><b>모험 월드맵</b><i>실전상황 · 전화·병원·학교 영어로 버티기</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <button class="eng" id="engSprint" style="background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(31,211,160,.12));border-color:rgba(245,158,11,.5)">
+        <button class="eng" id="engSprint">
           <span class="eng-emo">⚡</span>
-          <span class="eng-tx"><b>아웃풋 스프린트</b><i>2~5분 스피킹 짐 · 많이 말하기 트레이닝</i></span>
+          <span class="eng-tx"><b>라이트닝 아레나</b><i>아웃풋 스프린트 · 빠르게 많이 말하기</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="continue" id="continueCard" style="display:none">
@@ -923,7 +993,7 @@ body{background:var(--paper); color:var(--text)}
       </div>
 
       <!-- 아이 파닉스 (초등 저학년) -->
-      <button id="kidCard"><span class="ke">👦</span><span class="kt"><b>아이 파닉스 · 소리 학교</b><i>글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
+      <button id="kidCard"><span class="ke">🏰</span><span class="kt"><b>사운드 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
 
       <!-- 다시 만날 표현 (STEP 8 · 미래 인출) -->
       <div class="rvbanner" id="rvBanner" style="display:none">
@@ -1114,6 +1184,7 @@ body{background:var(--paper); color:var(--text)}
   <!-- XP TOAST -->
   <div class="xptoast" id="xpToast"></div>
   <div id="lvlCelebrate"></div>
+  <div id="chestOverlay"></div>
 
 </div>
 
@@ -1124,7 +1195,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.19.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.21.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3856,6 +3927,7 @@ function spPassItem(it, heard){
 }
 function spDone(){
   TTS&&TTS.cancel();
+  try{ const p=getProf(); p.sprintDone=(p.sprintDone||0)+1; hSet("speakingroom:prof",p); checkBadges(); }catch(e){}
   const said=spTimes.length;
   const avg = said? (spTimes.reduce((s,x)=>s+x,0)/said).toFixed(1) : "—";
   $("#sprintScroll").innerHTML=`
@@ -4109,7 +4181,7 @@ function openSurvival(){
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
   sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line);max-height:80vh;overflow:auto">
     <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
-    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">${kid?"🧸 어린이 일상 고르기":"🌎 실전상황 고르기"}</div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">${kid?"🏘️ 어린이 마을":"🌎 모험 월드맵"}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:16px">${kid?"친구·선생님과 영어로 재미있게 이야기해요 😊":"상대가 영어로 말 걸어와요. 버티면서 영어로 대응해보세요."}</div>
     <div style="display:flex;flex-direction:column;gap:9px">
       ${LIST.map(s=>`<button data-id="${s.id}" class="svItem" style="display:flex;align-items:center;gap:12px;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:14px;cursor:pointer">
@@ -4212,14 +4284,18 @@ function applyAgeUI(){
   else { if(kc&&si&&rv && kc.parentNode!==si) si.insertBefore(kc, rv); }
   const setSub=(id,sub)=>{ const el=$(id); if(el){ const i=el.querySelector(".eng-tx i"); if(i) i.textContent=sub; } };
   const setTit=(id,t)=>{ const el=$(id); if(el){ const b=el.querySelector(".eng-tx b"); if(b) b.textContent=t; } };
+  // 아이 모드: 더 밝고 통통한 월드 (학습 설명은 유지)
+  const setupEl=$("#setup"); if(setupEl){ setupEl.classList.toggle("kidworld", kid); }
   if(kid){
-    setTit("#engReal","어린이 일상"); setSub("#engReal","교실·놀이터·점심·친구");
-    setSub("#engOut","친구·선생님께 영어로 말하기"); setSub("#engIn","쉬운 영어 소리 듣기");
-    if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="파닉스 · 소리 학교 (여기부터!)"; }
+    setTit("#engIn","에코 동굴");   setSub("#engIn","귀뚫기 · 쉬운 영어 소리 듣고 따라하기");
+    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","꺼내기 · 친구·선생님께 영어로 말하기");
+    setTit("#engReal","어린이 마을"); setSub("#engReal","어린이 일상 · 교실·놀이터·점심·친구");
+    if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="사운드 아카데미 (여기부터!)"; }
   } else {
-    setTit("#engReal","실전상황"); setSub("#engReal","전화·병원·학교·고객센터 버티기");
-    setSub("#engOut","아는 영어를 입 밖으로"); setSub("#engIn","원어민 소리를 들리게");
-    if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="아이 파닉스 · 소리 학교"; }
+    setTit("#engIn","에코 동굴");   setSub("#engIn","귀뚫기 · 원어민 소리를 듣고 따라 말하기");
+    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","꺼내기 · 아는 영어를 입 밖으로");
+    setTit("#engReal","모험 월드맵"); setSub("#engReal","실전상황 · 전화·병원·학교 영어로 버티기");
+    if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="사운드 아카데미"; }
   }
   const dc=$("#dailyCard"); if(dc) dc.style.display=kid?"none":"";
 }
@@ -4302,7 +4378,18 @@ function renderHome(){
   if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
     st.n = (st.last===yd)?(st.n||0)+1:1; st.last=today; hSet("speakingroom:streak",st); }
   renderHero();
-  // 오늘의 생존 표현 + 퀘스트 + 습득 지표
+  // 🎁 열지 않은 보물상자 배너
+  let chestBanner=$("#chestBanner");
+  if(!chestBanner){ chestBanner=document.createElement("div"); chestBanner.id="chestBanner";
+    const hz=$("#heroZone"); if(hz&&hz.parentNode) hz.parentNode.insertBefore(chestBanner, hz.nextSibling); }
+  const pend=(chestQueueGet().pending||0);
+  if(chestBanner){ if(pend>0){ chestBanner.style.display="block"; chestBanner.style.cssText="display:block;margin:0 0 14px;cursor:pointer";
+      chestBanner.innerHTML=`<div style="display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:16px;background:linear-gradient(135deg,rgba(255,180,60,.2),rgba(255,120,60,.16));border:1px solid rgba(255,180,60,.5);box-shadow:0 0 20px -6px rgba(255,180,60,.5)">
+        <span style="font-size:30px;animation:chestWiggle 1s ease-in-out infinite;display:inline-block">🎁</span>
+        <span style="flex:1"><b style="display:block;font-size:15px;color:#fff;font-weight:900">보물상자 ${pend}개!</b><i style="font-size:12px;color:var(--ink-soft);font-style:normal">탭해서 열어보세요 ✨</i></span>
+        <span style="font-size:20px;color:#ffd17a;font-weight:900">›</span></div>`;
+      chestBanner.onclick=openChestFlow;
+    } else { chestBanner.style.display="none"; } }
   renderDailyCard();
   renderQuestBox();
   renderAcqStats();
@@ -4397,38 +4484,126 @@ function resumeLast(last){
 }
 
 /* ============ XP / level / rewards / profile ============ */
+// ===== 실보상(부모) 사다리 — 5레벨마다 보장. 예측 가능한 장기 동기 =====
 const REWARDS=[
-  {lv:3,  emo:"⭐", t:"작은 칭찬 보상"},
-  {lv:5,  emo:"🎮", t:"게임 시간 +15분"},
-  {lv:8,  emo:"🍦", t:"간식 보상"},
-  {lv:10, emo:"🕹️", t:"게임 시간 +30분"},
-  {lv:15, emo:"🧸", t:"로블록스 2,000원"},
-  {lv:20, emo:"🎬", t:"외식 / 영화"},
-  {lv:30, emo:"🎯", t:"로블록스 3,000원"},
-  {lv:40, emo:"🏅", t:"큰 보상"},
-  {lv:50, emo:"🏆", t:"로블록스 5,000원"},
+  {lv:5,  emo:"💰", t:"용돈 500원", money:true},
+  {lv:10, emo:"💰", t:"용돈 500원", money:true},
+  {lv:15, emo:"💵", t:"용돈 1,000원", money:true},
+  {lv:20, emo:"💵", t:"용돈 1,000원", money:true},
+  {lv:25, emo:"🍿", t:"간식 + 용돈 1,500원", money:true},
+  {lv:30, emo:"🎮", t:"로블록스 1,500원", money:true},
+  {lv:35, emo:"🎁", t:"용돈 2,000원", money:true},
+  {lv:40, emo:"🎬", t:"외식 / 영화", money:false},
+  {lv:45, emo:"🧸", t:"갖고 싶던 것 2,500원", money:true},
+  {lv:50, emo:"🏆", t:"로블록스 5,000원", money:true},
+  {lv:60, emo:"⭐", t:"특별 가족 보상", money:false},
+  {lv:70, emo:"🎉", t:"주말 특별 보너스", money:false},
+  {lv:80, emo:"👑", t:"로블록스 7,000원", money:true},
+  {lv:100,emo:"💎", t:"마스터 보상 10,000원", money:true},
 ];
-// 레벨 커브: 1-10=50, 11-20=80, 21-40=120, 41+=180
-function lvlNeed(L){ if(L<=10) return 50; if(L<=20) return 80; if(L<=40) return 120; return 180; }
+// 레벨 커브: 1-5=100, 6-10=150, 11-20=200, 21-40=250, 41+=300 (≈하루 1레벨)
+function lvlNeed(L){ if(L<=5) return 100; if(L<=10) return 150; if(L<=20) return 200; if(L<=40) return 250; return 300; }
 function levelInfo(xp){ let L=1, rem=xp||0; while(rem>=lvlNeed(L) && L<999){ rem-=lvlNeed(L); L++; } return {level:L, inLevel:rem, need:lvlNeed(L)}; }
 function getProf(){ return hGet("speakingroom:prof",{xp:0,vocab:0,block:0,talk:0,listen:0}); }
 function bumpCount(type){ const p=getProf(); if(p[type]!=null){ p[type]+=1; hSet("speakingroom:prof",p); } }
 function nextReward(level){ return REWARDS.find(r=>r.lv>level) || null; }
 
-// ===== 안티어뷰즈: 활동별 일일 XP 상한 + 동일 항목 반복 감쇠 =====
-const XP_CAP={phonics:150,vocab:150,listen:120,output:180,survival:120};
-function xpDayGet(){ let d=hGet("speakingroom:xpday",null); const today=DAYN(); if(!d||d.date!==today){ d={date:today,cat:{},item:{}}; hSet("speakingroom:xpday",d); } if(!d.cat)d.cat={}; if(!d.item)d.item={}; return d; }
+// ===== 🎁 흥분 레이어: 랜덤 보물상자 (20레벨마다) =====
+// 등급: Common 50 / Rare 30 / Epic 15 / Legendary 5. 로블록스는 Legendary에만(희소).
+const CHEST_TABLE=[
+  {r:"common",  w:50, tag:"COMMON",    cls:"r-common",    emo:"🎁", prizes:[
+    {emo:"✨",t:"+20 XP",xp:20},{emo:"✨",t:"+30 XP",xp:30},{emo:"🌟",t:"+50 XP",xp:50}]},
+  {r:"rare",    w:30, tag:"RARE",      cls:"r-rare",      emo:"🎁", prizes:[
+    {emo:"🎮",t:"게임 시간 +10분"},{emo:"🎮",t:"게임 시간 +20분"}]},
+  {r:"epic",    w:15, tag:"EPIC",      cls:"r-epic",      emo:"🧰", prizes:[
+    {emo:"🍪",t:"간식 쿠폰"},{emo:"🕹️",t:"게임 시간 +30분"}]},
+  {r:"legendary",w:5, tag:"LEGENDARY", cls:"r-legendary", emo:"💎", prizes:[
+    {emo:"🎮",t:"로블록스 3,000원"},{emo:"⭐",t:"특별 가족 보상"},{emo:"🎉",t:"주말 특별 보너스"}]},
+];
+function chestRoll(){ const tot=CHEST_TABLE.reduce((s,c)=>s+c.w,0); let x=Math.random()*tot;
+  for(const c of CHEST_TABLE){ if(x<c.w) return c; x-=c.w; } return CHEST_TABLE[0]; }
+function chestQueueGet(){ return hGet("speakingroom:chests",{pending:0,opened:[]}); }
+function grantChest(){ const q=chestQueueGet(); q.pending=(q.pending||0)+1; hSet("speakingroom:chests",q); }
+function openChestFlow(){
+  const q=chestQueueGet(); if(!q.pending||q.pending<1){ return; }
+  const ov=$("#chestOverlay"); if(!ov) return;
+  const tier=chestRoll(); const prize=tier.prizes[(Math.random()*tier.prizes.length)|0];
+  ov.innerHTML=`<div class="chest-card">
+    <div id="chestBox" class="chest-emo">${tier.emo}</div>
+    <div class="chest-hint" id="chestHint">탭해서 상자 열기! 🎉</div>
+    <div class="chest-reveal" id="chestReveal">
+      <div class="rarity-tag ${tier.cls}">${tier.tag}</div>
+      <div class="chest-prize-emo">${prize.emo}</div>
+      <div class="chest-prize-tx">${escapeHtml(prize.t)}</div>
+      <div class="chest-prize-sub">${prize.xp?"보너스 XP를 받았어요!":"부모님께 보여주고 보상을 받으세요 🎁"}</div>
+      <button class="chest-ok" id="chestOk">좋아!</button>
+    </div>
+  </div>`;
+  ov.classList.add("show");
+  const box=$("#chestBox"), hint=$("#chestHint"), reveal=$("#chestReveal");
+  let opened=false;
+  const doOpen=()=>{ if(opened) return; opened=true;
+    box.classList.add("opening");
+    try{ if(navigator.vibrate) navigator.vibrate([0,30,40,60]); }catch(e){}
+    if(tier.r==="legendary"||tier.r==="epic"){ chestConfetti(tier.r); }
+    setTimeout(()=>{ hint.style.display="none"; reveal.classList.add("show");
+      // 기록 + XP 지급(상자 XP는 캡 무관 — 희소 보상)
+      const q2=chestQueueGet(); q2.pending=Math.max(0,(q2.pending||1)-1);
+      q2.opened=(q2.opened||[]); q2.opened.push({r:tier.r,t:prize.t,d:DAYN()}); q2.opened=q2.opened.slice(-30);
+      hSet("speakingroom:chests",q2);
+      if(prize.xp){ addXP(prize.xp,"보물상자 "+tier.tag); }
+    }, 480);
+  };
+  box.onclick=doOpen;
+  $("#chestOverlay").onclick=(e)=>{ if(e.target===ov && opened){ ov.classList.remove("show"); } };
+  // delegate ok button after reveal
+  ov.addEventListener("click",(e)=>{ if(e.target&&e.target.id==="chestOk"){ ov.classList.remove("show");
+    const q3=chestQueueGet(); if(q3.pending>0) setTimeout(openChestFlow,300); else renderHome(); } });
+}
+function chestConfetti(rarity){
+  const colors = rarity==="legendary"? ["#ffd17a","#ffb454","#ff8a3d","#fff"] : ["#c0aaff","#9b98ec","#7bb0ff","#fff"];
+  for(let i=0;i<70;i++){ const c=document.createElement("div"); c.className="confetti";
+    c.style.left=(Math.random()*100)+"vw"; c.style.background=colors[(Math.random()*colors.length)|0];
+    c.style.animationDuration=(1.5+Math.random()*1.5)+"s"; c.style.zIndex="220";
+    document.body.appendChild(c); setTimeout(()=>c.remove(),3200); }
+}
+
+// ===== 🏅 상태(돈 안 드는) 배지 =====
+const BADGES=[
+  {id:"listen_master", emo:"🎧", t:"리스닝 마스터", chk:p=>(p.listen||0)>=100},
+  {id:"speak_master",  emo:"🗣️", t:"스피킹 마스터", chk:p=>(p.talk||0)>=100},
+  {id:"sprint_champ",  emo:"⚡", t:"스프린트 챔피언", chk:p=>(p.sprintDone||0)>=50},
+  {id:"chunks_100",    emo:"💎", t:"능동 청크 100", chk:p=>avActiveCount()>=100},
+  {id:"streak_7",      emo:"🔥", t:"7일 연속", chk:p=>(hGet("speakingroom:streak",{n:0}).n||0)>=7},
+  {id:"streak_30",     emo:"🏆", t:"30일 연속", chk:p=>(hGet("speakingroom:streak",{n:0}).n||0)>=30},
+  {id:"lv_20",         emo:"🌟", t:"레벨 20", chk:p=>levelInfo(p.xp).level>=20},
+  {id:"lv_50",         emo:"👑", t:"레벨 50", chk:p=>levelInfo(p.xp).level>=50},
+];
+function badgesGot(){ return hGet("speakingroom:badges",{}); }
+function checkBadges(){ const p=getProf(); const got=badgesGot(); let news=[];
+  BADGES.forEach(b=>{ if(!got[b.id]){ try{ if(b.chk(p)){ got[b.id]=DAYN(); news.push(b); } }catch(e){} } });
+  if(news.length){ hSet("speakingroom:badges",got);
+    news.forEach((b,i)=>setTimeout(()=>xpToast(0,"🏅 배지 획득: "+b.t),300+i*900)); }
+  return news;
+}
+
+// ===== 안티파밍: 일일 소프트 캡 250 XP(초과분 50% 감소) + 동일 항목 반복 감쇠 =====
+const SOFT_CAP=250;
+function xpDayGet(){ let d=hGet("speakingroom:xpday",null); const today=DAYN(); if(!d||d.date!==today){ d={date:today,cat:{},item:{},total:0}; hSet("speakingroom:xpday",d); } if(!d.cat)d.cat={}; if(!d.item)d.item={}; if(d.total==null)d.total=0; return d; }
 function awardXP(cat, base, label, itemKey){
   base=Math.round(base||0); if(base<=0) return 0;
   const d=xpDayGet();
+  // 동일 항목 반복 감쇠
   if(itemKey){ const n=(d.item[itemKey]||0)+1; d.item[itemKey]=n; if(n>=7) base=Math.round(base*0.2); else if(n>=4) base=Math.round(base*0.5); }
-  const cap=XP_CAP[cat];
-  if(cap!=null){ const used=d.cat[cat]||0; if(used>=cap) base=0; else if(used+base>cap) base=cap-used; d.cat[cat]=(d.cat[cat]||0)+Math.max(0,base); }
+  // 일일 소프트 캡: 250 넘으면 이후 획득 50%
+  if((d.total||0)>=SOFT_CAP) base=Math.round(base*0.5);
+  if(base<1) base=1;
+  d.total=(d.total||0)+base; d.cat[cat]=(d.cat[cat]||0)+base;
   hSet("speakingroom:xpday",d);
-  if(base>0) addXP(base,label);
+  addXP(base,label);
   return base;
 }
-function todayXP(){ try{ return Object.values(xpDayGet().cat).reduce((s,x)=>s+x,0); }catch(e){ return 0; } }
+function todayXP(){ try{ return xpDayGet().total||0; }catch(e){ return 0; } }
 // 오늘 최고 발음 점수
 function bestPronToday(score){ let d=hGet("speakingroom:bestpron",{date:0,score:0}); const today=DAYN(); if(d.date!==today) d={date:today,score:0}; if(score!=null && score>d.score){ d.score=score; hSet("speakingroom:bestpron",d); } return d.score; }
 function firstHighPronToday(){ let d=hGet("speakingroom:hipron",{date:0,done:false}); const today=DAYN(); if(d.date!==today) d={date:today,done:false}; if(!d.done){ d.done=true; hSet("speakingroom:hipron",d); return true; } return false; }
@@ -4439,7 +4614,13 @@ function addXP(amount,label){
   p.xp=(p.xp||0)+amount; hSet("speakingroom:prof",p);
   const after=levelInfo(p.xp).level;
   xpToast(amount,label, after>before?after:0);
-  if(after>before){ try{ levelUpCelebrate(after); }catch(e){} }
+  if(after>before){
+    try{ levelUpCelebrate(after); }catch(e){}
+    // 🎁 20레벨마다 보물상자
+    let chests=0; for(let L=before+1; L<=after; L++){ if(L%20===0) chests++; }
+    if(chests>0){ for(let i=0;i<chests;i++) grantChest(); setTimeout(()=>{ try{ openChestFlow(); }catch(e){} }, 2700); }
+  }
+  try{ checkBadges(); }catch(e){}
   renderHome();
 }
 function xpToast(amount,label,lvUp){
@@ -4481,6 +4662,8 @@ function renderProfile(){
       <div style="font-size:13px;color:var(--text);font-weight:700;letter-spacing:.02em">${qLine}</div>
     </div>
     <div class="stat-grid">${stats.map(s=>`<div class="stat"><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}</div></div></div>`).join("")}</div>
+    <div class="prof-h">🏅 배지</div>
+    <div class="badge-grid">${BADGES.map(b=>{ const got=badgesGot()[b.id]; return `<div class="badge ${got?'got':'locked'}"><div class="be">${b.emo}</div><div class="bt">${escapeHtml(b.t)}</div></div>`; }).join("")}</div>
     <div class="prof-h">🎁 보상 사다리 — 부모님이 정해주세요</div>
     ${rwHtml}
     <p style="font-size:11.5px;color:var(--muted);text-align:center;margin-top:13px;line-height:1.7">레벨이 오르면 보상이 열려요. 매일 조금씩, 습관이 목표예요 😊</p>`;
