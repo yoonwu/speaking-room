@@ -550,13 +550,28 @@ body{background:var(--paper); color:var(--text)}
 .startbtn{border-radius:18px; background:linear-gradient(135deg,#1fd3a0,#13b488); color:#06231b; box-shadow:0 10px 26px -10px rgba(31,211,160,.5)}
 
 /* mode switch — icon forward */
-.modesw{background:var(--mist); border-radius:18px; padding:6px; gap:5px}
-.modesw button{flex-direction:column; align-items:center; gap:6px; border-radius:14px; padding:11px 3px; color:var(--muted); transition:background .15s}
-.modesw button .ti{width:36px; height:36px; display:grid; place-items:center; border-radius:12px; background:rgba(255,255,255,.05); font-size:20px; transition:.15s}
-.modesw button .tl{font-size:12px; font-weight:700; color:var(--muted)}
-.modesw button[aria-pressed="true"]{background:var(--card2); box-shadow:0 4px 14px -6px rgba(0,0,0,.6)}
-.modesw button[aria-pressed="true"] .ti{background:rgba(31,211,160,.22); transform:translateY(-1px)}
-.modesw button[aria-pressed="true"] .tl{color:var(--jade)}
+.modesw{background:transparent; border-radius:0; padding:0; gap:9px; margin-bottom:18px}
+.modesw button{flex-direction:column; align-items:center; gap:8px; border-radius:18px; padding:15px 4px 13px; color:var(--muted); transition:.18s; background:var(--card2); border:1.5px solid var(--line)}
+.modesw button .ti{width:46px; height:46px; display:grid; place-items:center; border-radius:15px; font-size:25px; transition:.18s}
+.modesw button .tl{font-size:13px; font-weight:800; color:var(--muted); transition:.18s}
+/* 모드별 색 */
+.modesw button[data-mode="vocab"]  .ti{background:rgba(31,211,160,.14); color:#1fd3a0}
+.modesw button[data-mode="block"]  .ti{background:rgba(240,136,62,.14); color:#f0883e}
+.modesw button[data-mode="talk"]   .ti{background:rgba(167,139,250,.16); color:#a78bfa}
+.modesw button[data-mode="listen"] .ti{background:rgba(91,155,245,.14); color:#5b9bf5}
+.modesw button[aria-pressed="true"]{transform:translateY(-2px)}
+.modesw button[data-mode="vocab"][aria-pressed="true"]{border-color:#1fd3a0; box-shadow:0 8px 22px -10px rgba(31,211,160,.7)}
+.modesw button[data-mode="block"][aria-pressed="true"]{border-color:#f0883e; box-shadow:0 8px 22px -10px rgba(240,136,62,.7)}
+.modesw button[data-mode="talk"][aria-pressed="true"]{border-color:#a78bfa; box-shadow:0 8px 22px -10px rgba(167,139,250,.7)}
+.modesw button[data-mode="listen"][aria-pressed="true"]{border-color:#5b9bf5; box-shadow:0 8px 22px -10px rgba(91,155,245,.7)}
+.modesw button[data-mode="vocab"][aria-pressed="true"]  .ti{background:#1fd3a0; color:#06231b}
+.modesw button[data-mode="block"][aria-pressed="true"]  .ti{background:#f0883e; color:#2a1505}
+.modesw button[data-mode="talk"][aria-pressed="true"]   .ti{background:#a78bfa; color:#1a0e33}
+.modesw button[data-mode="listen"][aria-pressed="true"] .ti{background:#5b9bf5; color:#04162e}
+.modesw button[data-mode="vocab"][aria-pressed="true"]  .tl{color:#1fd3a0}
+.modesw button[data-mode="block"][aria-pressed="true"]  .tl{color:#f0883e}
+.modesw button[data-mode="talk"][aria-pressed="true"]   .tl{color:#a78bfa}
+.modesw button[data-mode="listen"][aria-pressed="true"] .tl{color:#5b9bf5}
 
 /* chat bubbles */
 .coach .bubble{background:var(--card2); color:var(--text); border:none; box-shadow:var(--soft); border-radius:22px; border-bottom-left-radius:7px}
@@ -767,6 +782,14 @@ body{background:var(--paper); color:var(--text)}
         <button data-mode="listen" aria-pressed="false"><span class="ti">🎧</span><span class="tl">듣기</span></button>
       </div>
 
+      <div id="modeHero" style="display:flex;align-items:center;gap:14px;border-radius:20px;padding:18px 18px;margin-bottom:12px;border:1.5px solid var(--line);background:var(--card2)">
+        <div id="mhIcon" style="width:58px;height:58px;flex:none;border-radius:18px;display:grid;place-items:center;font-size:30px;background:rgba(31,211,160,.14)">📖</div>
+        <div style="flex:1;min-width:0">
+          <div id="mhTitle" style="font-size:19px;font-weight:800;color:var(--text);line-height:1.2">단어 학습</div>
+          <div id="mhDesc" style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px">여러 다른 문장으로 단어를 익혀요</div>
+        </div>
+      </div>
+
       <div id="modeProgress" style="display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin-bottom:20px">
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
@@ -949,7 +972,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.0.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.0.3";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2720,6 +2743,7 @@ async function toggleDrillMic(){
           body:wav
         });
         const txt=await res.text();
+        window._lastPronounceRaw=txt;
         let data; try{ data=JSON.parse(txt); }catch(e){ data=null; }
         if(!res.ok){ const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#e0533f;text-align:center;font-size:12.5px">채점 오류 ${res.status}: ${escapeHtml(txt.slice(0,80))}</div>`; }
         else renderDrillResult(data);
@@ -2746,7 +2770,12 @@ function renderDrillResult(data){
     if(st==="Success"||heard){ msg=`인식은 됐는데 점수가 안 왔어요.<br>들린 말: "${escapeHtml(heard||"?")}"`; }
     else if(/NoMatch|Silence|InitialSilence/i.test(st)){ msg=`소리가 잘 안 잡혔어요 🔇<br>마이크 가까이서 또렷하게 다시 말해보세요.`; }
     else { msg=`상태: ${escapeHtml(st)}`; }
-    r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px;line-height:1.6">${msg}</div>`;
+    const raw=(window._lastPronounceRaw||"").slice(0,700);
+    r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px;line-height:1.6">${msg}</div>
+      <details style="margin-top:12px"><summary style="font-size:12px;color:var(--muted);cursor:pointer">🔧 진단 정보 (개발용)</summary>
+      <pre style="white-space:pre-wrap;word-break:break-all;font-size:10.5px;color:#8b948c;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;max-height:160px;overflow:auto">${escapeHtml(raw||"(빈 응답)")}</pre>
+      <button id="copyRaw" style="margin-top:6px;width:100%;padding:8px;border-radius:8px;background:var(--mist);color:var(--text);border:1px solid var(--line);font-size:12px">📋 진단 정보 복사</button></details>`;
+    const cr=$("#copyRaw"); if(cr) cr.onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText(window._lastPronounceRaw||""); cr.textContent="복사됨 ✓"; };
     return;
   }
   const acc=Math.round(pa.AccuracyScore||0);
@@ -2844,7 +2873,24 @@ function questBump(cat){
   renderQuest();
 }
 function renderQuest(){ renderModeProgress(); }
+const MODE_HERO={
+  vocab:{emo:"📖",t:"단어 학습",d:"여러 다른 문장으로 단어를 익혀요",c:"#1fd3a0",bg:"rgba(31,211,160,.14)"},
+  block:{emo:"🧱",t:"블록 영어",d:"핵심 표현을 블록처럼 쌓아요",c:"#f0883e",bg:"rgba(240,136,62,.14)"},
+  talk: {emo:"🗣️",t:"실전 회화",d:"상황 속에서 직접 말해봐요",c:"#a78bfa",bg:"rgba(167,139,250,.16)"},
+  listen:{emo:"🎧",t:"듣기 훈련",d:"섀도잉·되말하기로 귀를 뚫어요",c:"#5b9bf5",bg:"rgba(91,155,245,.14)"}
+};
+function renderModeHero(){
+  const m=(state&&state.mode)||"vocab"; const h=MODE_HERO[m]||MODE_HERO.vocab;
+  const ic=$("#mhIcon"), ti=$("#mhTitle"), de=$("#mhDesc"), hero=$("#modeHero");
+  if(ic){ ic.textContent=h.emo; ic.style.background=h.bg; }
+  if(ti) ti.textContent=h.t;
+  if(de) de.textContent=h.d;
+  if(hero){ hero.style.borderColor=h.c; hero.style.boxShadow="0 10px 28px -14px "+h.c; }
+  const sb=$("#startBtn");
+  if(sb){ sb.style.background="linear-gradient(135deg,"+h.c+","+h.c+"cc)"; sb.style.boxShadow="0 10px 26px -10px "+h.c; sb.style.color="#0a0d0c"; }
+}
 function renderModeProgress(){
+  renderModeHero();
   const box=$("#modeProgress"); if(!box) return;
   const m=(state&&state.mode)||"vocab";
   const cat=(m==="talk")?"talk":(m==="listen")?"listen":(m==="block")?"block":"vocab";
@@ -2854,7 +2900,7 @@ function renderModeProgress(){
   if(lbl) lbl.textContent="오늘 "+meta.t+(fin?" ✓":"");
   if(lbl) lbl.style.color=fin?"var(--jade)":"var(--text)";
   if(cnt) cnt.textContent=cur+" / "+goal;
-  if(bar){ bar.style.width=pct+"%"; bar.style.background=fin?"var(--jade)":"linear-gradient(90deg,#1fd3a0,#13b488)"; }
+  if(bar){ const hc=(MODE_HERO[m]||MODE_HERO.vocab).c; bar.style.width=pct+"%"; bar.style.background=hc; }
 }
 function markPractice(last){
   const today=DAYN(); let tg=hGet("speakingroom:today",{date:0,count:0});
