@@ -809,9 +809,10 @@ body{background:var(--paper); color:var(--text)}
       </div>
 
       <div class="field" id="vocabField">
-        <label>어떤 단어를 익힐까요</label>
-        <div class="scn" id="vocabGrid"></div>
-        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:11px">단어를 <b>여러 다른 문장·상황</b>으로 익히고, 직접 <b>내 문장</b>도 만들어요. 한 틀에 안 갇히게.</p>
+        <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:18px">
+          <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">📖 오늘의 단어</div>
+          <p style="font-size:13px;color:var(--muted);line-height:1.6;margin:0">버튼만 누르면 바로 시작해요. 단어를 <b style="color:var(--text)">여러 다른 문장</b>으로 익히고, 직접 <b style="color:var(--text)">내 문장</b>도 만들어요. 한 틀에 안 갇히게.</p>
+        </div>
       </div>
 
       <button class="startbtn" id="startBtn" disabled>단어 시작</button>
@@ -948,7 +949,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.0.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.0.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1263,15 +1264,15 @@ function buildSetup(){
   tgrid.appendChild(tc);
   $("#topicCustomInput").addEventListener("input", e=>{ state.topicCustom=e.target.value.trim(); refreshStart(); }); attachMic($("#topicCustomInput"));
 
-  // vocab theme grid
+  // vocab theme grid (제거됨 — 단어는 바로 시작)
   const vgrid=$("#vocabGrid");
-  VOCAB_THEMES.forEach(t=>{
+  if(vgrid){ VOCAB_THEMES.forEach(t=>{
     const b=document.createElement("button");
     b.setAttribute("aria-pressed","false"); b.dataset.id=t.id;
     b.innerHTML=`<span class="emo">${t.emo}</span><span><span class="t">${t.t}</span><span class="d">${t.d}</span></span>`;
     b.onclick=()=>pickVocabTheme(t.id,b);
     vgrid.appendChild(b);
-  });
+  }); }
 
   // mode switch
   $("#modesw").querySelectorAll("button").forEach(b=>{
@@ -1354,7 +1355,8 @@ function refreshStart(){
   if(state.mode==="talk"){
     ok = state.scn && (state.scn.id!=="custom" || state.custom.length>3);
   }else if(state.mode==="vocab"){
-    ok = !!state.vocabTheme;
+    if(!state.vocabTheme) state.vocabTheme=nextVocabTheme();
+    ok = true;   // 주제선택 없음 — 바로 시작
   }else{
     ok = state.topic && (state.topic.id!=="custom" || state.topicCustom.length>3);
   }
@@ -2303,31 +2305,34 @@ async function prefetchVocab(theme){
   try{ const set=await aiVocabSet(theme); if(set&&set.length) pushToBank(theme.id,set); }catch(e){}
   prefetchingTheme=null;
 }
+// 주제 로테이션 (사용자 선택 없이 자동으로 골고루)
+function nextVocabTheme(){
+  let i=hGet("speakingroom:vrot",0); const t=VOCAB_THEMES[i%VOCAB_THEMES.length];
+  hSet("speakingroom:vrot",(i+1)%VOCAB_THEMES.length); return t;
+}
+// 모든 시드를 합친 즉시 풀 — 절대 안 기다림 (소비 안 함)
+function instantSet(){
+  const pool=[]; Object.values(SEED_VOCAB).forEach(sets=>sets.forEach(s=>s.forEach(w=>pool.push(w))));
+  for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  return pool.slice(0,5);
+}
 function startVocab(){
-  if(state.vocabTheme) markPractice({mode:"vocab", id:state.vocabTheme.id, emo:state.vocabTheme.emo||"📖", label:(state.vocabTheme.t||"단어")});
+  state.vocabTheme = state.vocabTheme || nextVocabTheme();
+  markPractice({mode:"vocab", id:state.vocabTheme.id, emo:"📖", label:"단어"});
   enterStage("vocab"); $("#ctxBar").style.display="none";
   $("#vbModeTag").textContent="📖 단어";
   generateVocab();
 }
 async function generateVocab(){
-  const theme=state.vocabTheme; if(!theme) return;
+  let theme=state.vocabTheme; if(!theme){ theme=state.vocabTheme=nextVocabTheme(); }
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
-  ensureSeed(theme.id);
-  // 1) 캐시/시드에서 즉시
+  // 1) 프리페치된 themed 세트 있으면 그걸로, 없으면 즉시 풀 — 어느 쪽이든 0초
   let set=takeFromBank(theme.id);
-  if(set && set.length){
-    vocabWords=set; vbIdx=0; showVocabCard();
-    prefetchVocab(theme);   // 백그라운드로 다음 세트 채우기
-    return;
-  }
-  // 2) 없으면 생성 (로딩 표시)
-  $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
-  try{
-    set=await aiVocabSet(theme);
-    if(!set.length) throw new Error("empty");
-    vocabWords=set; vbIdx=0; showVocabCard();
-    prefetchVocab(theme);
-  }catch(e){ $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
+  if(!set || !set.length) set=instantSet();
+  vocabWords=set; vbIdx=0; showVocabCard();
+  // 2) 다음을 위해 themed 세트 백그라운드 생성 + 다음 주제도 미리
+  prefetchVocab(theme);
+  prefetchVocab(VOCAB_THEMES[(hGet("speakingroom:vrot",0))%VOCAB_THEMES.length]);
 }
 async function _oldGenerateVocab(){
   $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
@@ -2948,7 +2953,31 @@ buildSetup();
 initRec();
 loadNotes();
 loadProgress();
+if(!state.vocabTheme) state.vocabTheme=nextVocabTheme();   // 단어 바로 시작 준비
 renderHome();
+syncSetupFields();
+checkForUpdate();   // 폰/PC 자동 최신화
+
+// ── 자동 업데이트: 켤 때 최신 버전 감지하면 알아서 새로고침 (캐시 문제 끝) ──
+async function checkForUpdate(){
+  try{
+    const res=await fetch("index.html?cb="+Date.now(), {cache:"no-store"});
+    if(!res.ok) return;
+    const txt=await res.text();
+    const m=txt.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if(!m) return;
+    const latest=m[1];
+    if(latest && latest!==APP_VERSION){
+      const cur=new URLSearchParams(location.search).get("v");
+      if(cur===latest) return;            // 이미 최신 URL — 무한루프 방지
+      const t=document.createElement("div");
+      t.textContent="새 버전 적용 중… ("+latest+")";
+      t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#06231b;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
+      document.body.appendChild(t);
+      setTimeout(()=>{ location.replace(location.pathname+"?v="+encodeURIComponent(latest)); }, 700);
+    }
+  }catch(e){}
+}
 $("#missionBtn").onclick=startMission;
 $("#homeName").onclick=openProfile;
 $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
