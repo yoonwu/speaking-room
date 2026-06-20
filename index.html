@@ -2279,13 +2279,31 @@ function initRec(){
   if(!navigator.mediaDevices){ micBtn.style.display="none"; return; }
 }
 function getBestMime(){
-  const types=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/aac","audio/ogg;codecs=opus"];
+  const types=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4","audio/aac"];
   return types.find(t=>MediaRecorder.isTypeSupported(t)) || "";
 }
-function mimeToAzure(mime){
-  if(mime.includes("mp4")||mime.includes("aac")) return "audio/wav"; // Azure accepts mp4/aac as wav fallback
-  if(mime.includes("ogg")) return "audio/ogg; codecs=opus";
-  return "audio/webm; codecs=opus";
+// 녹음 blob → WAV(PCM 16kHz mono). Azure가 제일 확실하게 받는 포맷.
+function encodeWAV(samples, rate){
+  const buf=new ArrayBuffer(44+samples.length*2), v=new DataView(buf);
+  const ws=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,"RIFF"); v.setUint32(4,36+samples.length*2,true); ws(8,"WAVE");
+  ws(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,rate,true); v.setUint32(28,rate*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  ws(36,"data"); v.setUint32(40,samples.length*2,true);
+  let o=44; for(let i=0;i<samples.length;i++){ let s=Math.max(-1,Math.min(1,samples[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); o+=2; }
+  return buf;
+}
+async function recordedToWav(blob){
+  const arrayBuf=await blob.arrayBuffer();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  const tmp=new AC();
+  const decoded=await tmp.decodeAudioData(arrayBuf);
+  tmp.close && tmp.close();
+  const rate=16000;
+  const off=new OfflineAudioContext(1, Math.max(1,Math.ceil(decoded.duration*rate)), rate);
+  const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start(0);
+  const rendered=await off.startRendering();
+  return new Blob([encodeWAV(rendered.getChannelData(0), rate)], {type:"audio/wav"});
 }
 async function toggleMic(){
   if(listening){ stopAzureSTT(); return; }
@@ -2300,34 +2318,36 @@ async function toggleMic(){
     mediaRec.onstop = async ()=>{
       stream.getTracks().forEach(t=>t.stop());
       listening=false; micBtn.classList.remove("live");
-      const blob = new Blob(audioChunks, {type: actualMime});
-      if(blob.size < 1000){ // 오디오가 거의 비었음
+      const raw = new Blob(audioChunks, {type: actualMime});
+      if(raw.size < 1000){
         hint.textContent="🔇 소리가 안 잡혔어요. 마이크 가까이서 다시.";
         setTimeout(()=>hint.textContent="",3000); return;
       }
-      hint.textContent="🔄 인식 중… ("+Math.round(blob.size/1024)+"KB)";
-      const azureMime = mimeToAzure(actualMime);
+      hint.textContent="🔄 인식 중…";
+      let wav;
+      try{ wav=await recordedToWav(raw); }
+      catch(err){ hint.textContent="오디오 변환 실패: "+String(err).slice(0,50); setTimeout(()=>hint.textContent="",4000); return; }
       try{
         const res = await fetch(PROXY_URL+"/stt",{
           method:"POST",
-          headers:{"Content-Type": azureMime},
-          body:blob
+          headers:{"Content-Type": "audio/wav"},
+          body:wav
         });
-        const raw = await res.text();
-        let data; try{ data=JSON.parse(raw); }catch(e){ data=null; }
-        if(!res.ok){ hint.textContent="STT 오류 "+res.status+": "+raw.slice(0,80); setTimeout(()=>hint.textContent="",5000); return; }
+        const txt = await res.text();
+        let data; try{ data=JSON.parse(txt); }catch(e){ data=null; }
+        if(!res.ok){ hint.textContent="STT 오류 "+res.status+": "+txt.slice(0,70); setTimeout(()=>hint.textContent="",5000); return; }
         if(data && data.RecognitionStatus==="Success" && data.DisplayText){
           const t = data.DisplayText.replace(/\.$/,"");
           msg.value = (msg.value?msg.value+" ":"")+t;
           autoSize(); refreshSend();
           hint.textContent="";
         } else {
-          hint.textContent="인식결과 없음: "+(data?data.RecognitionStatus:raw.slice(0,60));
-          setTimeout(()=>hint.textContent="",4000);
+          hint.textContent="안 들렸어요: "+(data?data.RecognitionStatus:txt.slice(0,50));
+          setTimeout(()=>hint.textContent="",3500);
         }
-      }catch(e){ hint.textContent="네트워크 오류: "+String(e).slice(0,60); setTimeout(()=>hint.textContent="",4000); }
+      }catch(e){ hint.textContent="네트워크 오류: "+String(e).slice(0,50); setTimeout(()=>hint.textContent="",4000); }
     };
-    mediaRec.start(250); // 250ms마다 청크 수집 (안드로이드 빈오디오 방지)
+    mediaRec.start(250);
     listening=true; micBtn.classList.add("live");
     hint.textContent="🎤 듣고 있어요… 말하고 다시 누르면 전송";
     setTimeout(()=>{ if(listening) stopAzureSTT(); }, 15000);
@@ -2368,19 +2388,26 @@ async function toggleDrillMic(){
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     drillChunks=[];
-    const mimeType=MediaRecorder.isTypeSupported("audio/webm;codecs=opus")?"audio/webm;codecs=opus":"audio/webm";
-    drillMR=new MediaRecorder(stream,{mimeType});
+    const mimeType=getBestMime();
+    drillMR= mimeType ? new MediaRecorder(stream,{mimeType}) : new MediaRecorder(stream);
+    const actualMime=drillMR.mimeType||mimeType;
     drillMR.ondataavailable=e=>{ if(e.data.size>0) drillChunks.push(e.data); };
     drillMR.onstop=async()=>{
       stream.getTracks().forEach(t=>t.stop());
       drillRecording=false;
       const btn=$("#drillSpeak"); if(btn){ btn.textContent="🔄 채점 중…"; btn.disabled=true; }
-      const blob=new Blob(drillChunks,{type:mimeType});
+      const raw=new Blob(drillChunks,{type:actualMime});
+      let wav;
+      try{ wav=await recordedToWav(raw); }
+      catch(err){
+        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">오디오 변환 실패. 다시 시도해주세요.</div>`;
+        if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; } return;
+      }
       try{
         const res=await fetch(PROXY_URL+"/pronounce",{
           method:"POST",
-          headers:{"Content-Type":mimeType,"X-Pronunciation-Text":drillTarget},
-          body:blob
+          headers:{"Content-Type":"audio/wav","X-Pronunciation-Text":drillTarget},
+          body:wav
         });
         const data=await res.json();
         renderDrillResult(data);
@@ -2389,7 +2416,7 @@ async function toggleDrillMic(){
       }
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
-    drillMR.start(); drillRecording=true;
+    drillMR.start(250); drillRecording=true;
     const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#e0533f"; }
     setTimeout(()=>{ if(drillRecording) stopDrillMic(); },8000);
   }catch(e){
