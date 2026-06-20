@@ -757,6 +757,16 @@ body{background:var(--paper); color:var(--text)}
 #kidCard .kt b{display:block;font-size:16px;font-weight:900;color:#fff}
 #kidCard .kt i{font-size:12px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600}
 #kidCard .ka{font-size:24px;color:#fff;font-weight:900}
+/* 3 엔진 카드 */
+.eng{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:none;border-radius:20px;padding:18px 18px;margin-bottom:12px;cursor:pointer;box-shadow:0 8px 22px -12px rgba(0,0,0,.5)}
+.eng-emo{font-size:30px;flex:none;width:52px;height:52px;display:grid;place-items:center;border-radius:16px;background:rgba(255,255,255,.16)}
+.eng-tx{flex:1;min-width:0}
+.eng-tx b{display:block;font-size:20px;font-weight:900;color:#fff;line-height:1.1}
+.eng-tx i{font-size:12.5px;color:rgba(255,255,255,.92);font-style:normal;font-weight:600;margin-top:3px;display:block}
+.eng-ar{font-size:26px;color:rgba(255,255,255,.9);font-weight:900}
+.eng-out{background:linear-gradient(135deg,#10b981,#059669)}
+.eng-in{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.eng-real{background:linear-gradient(135deg,#f59e0b,#ea580c)}
 </style>
 </head>
 <body>
@@ -797,12 +807,21 @@ body{background:var(--paper); color:var(--text)}
           </div>
           <div class="streak" id="streakBadge"><span>🔥</span><b id="streakN">1</b>일 연속</div>
         </div>
-        <!-- 메인 트레이닝 (70%) -->
-        <button class="mission" id="trainCard" style="text-align:left;width:100%;cursor:pointer;display:block">
-          <span class="mission-tag">오늘의 트레이닝</span>
-          <div class="mission-title">듣고 · 이해하고 · 말하기</div>
-          <div class="mission-meta" id="trainMeta">실제 영어를 귀로 듣고 → 따라 말하고 → 내 말로 써먹어요</div>
-          <span class="mission-btn" id="trainBtn"><span>▶</span> 시작하기</span>
+        <!-- 3 엔진 -->
+        <button class="eng eng-out" id="engOut">
+          <span class="eng-emo">🗣️</span>
+          <span class="eng-tx"><b>꺼내기</b><i>아는 영어를 입 밖으로</i></span>
+          <span class="eng-ar">›</span>
+        </button>
+        <button class="eng eng-in" id="engIn">
+          <span class="eng-emo">🎧</span>
+          <span class="eng-tx"><b>귀뚫기</b><i>원어민 소리를 들리게</i></span>
+          <span class="eng-ar">›</span>
+        </button>
+        <button class="eng eng-real" id="engReal">
+          <span class="eng-emo">🌎</span>
+          <span class="eng-tx"><b>실전상황</b><i>전화·병원·학교·고객센터 버티기</i></span>
+          <span class="eng-ar">›</span>
         </button>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
@@ -811,20 +830,24 @@ body{background:var(--paper); color:var(--text)}
         </button>
       </div>
 
+      <!-- 🔥 오늘의 생존 표현 -->
+      <div id="dailyCard"></div>
+
       <!-- 습득 지표 (점수 아님 — 자신감·인출속도·이해) -->
       <div id="acqStats" style="display:flex;gap:9px;margin-bottom:14px"></div>
 
-      <!-- 리스닝 부스터(20%) · 단어 강화(10%) -->
-      <div style="display:flex;gap:10px;margin-bottom:16px">
-        <button id="boosterCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:18px;padding:15px 14px;cursor:pointer">
-          <div style="width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:rgba(91,155,245,.16);color:#5b9bf5;margin-bottom:9px">🎧</div>
-          <div style="font-size:14.5px;font-weight:800;color:var(--text)">리스닝 부스터</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">연음·축약 귀 훈련<br>wudja · wanna · gonna</div>
+      <!-- 추가 연습 -->
+      <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin:2px 2px 8px">추가 연습</div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <button id="boosterCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:16px;padding:13px 13px;cursor:pointer">
+          <div style="font-size:20px">🎧</div>
+          <div style="font-size:13.5px;font-weight:800;color:var(--text);margin-top:5px">연음 부스터</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">wudja·wanna·gonna</div>
         </button>
-        <button id="vocabCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:18px;padding:15px 14px;cursor:pointer">
-          <div style="width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:rgba(31,211,160,.14);color:#1fd3a0;margin-bottom:9px">🗣️</div>
-          <div style="font-size:14.5px;font-weight:800;color:var(--text)">단어 강화</div>
-          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">외우지 않고<br>상황에서 직접 써보기</div>
+        <button id="vocabCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:16px;padding:13px 13px;cursor:pointer">
+          <div style="font-size:20px">💬</div>
+          <div style="font-size:13.5px;font-weight:800;color:var(--text);margin-top:5px">단어 강화</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px">상황에서 직접 써보기</div>
         </button>
       </div>
 
@@ -1025,7 +1048,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.6.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.8.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1207,6 +1230,7 @@ const VOCAB_THEMES = [
 const state = {
   level:"초급",
   lvl:3,             // 난이도 1~10 (진실원본). level은 버킷 파생값.
+  engine:"input",    // 'output'(꺼내기) | 'input'(귀뚫기) | 'survival'(실전상황)
   mode:"vocab",      // 'talk' | 'listen' | 'block' | 'vocab'
   scn:null,
   custom:"",
@@ -1292,6 +1316,33 @@ function scnRole(){
        : "the most fitting person for this situation";
 }
 function rolePrompt(){
+  // 🗣️ 꺼내기 Engine — 한국어 상황 먼저, 힌트 없이 영어로 꺼내게
+  if(state.engine==="output"){
+    return [
+"You are an OUTPUT coach for a Korean adult learner. Their problem is NOT knowledge — it's RETRIEVAL. Make them pull English out of memory under mild pressure.",
+"Every turn works EXACTLY like this:",
+"1) Give ONE realistic everyday SITUATION described IN KOREAN (one short line), e.g. '카페에서 아메리카노 라지 한 잔을 주문하세요.' Do NOT show any English example. Do NOT give hints.",
+"2) Wait for the learner to answer in English.",
+"3) When they answer: judge if the MEANING got across. Accept imperfect grammar if it communicates. Then on ONE line show the natural native version in English (start with 👍 if they communicated). Keep it short — no grammar lecture.",
+"4) Immediately give the NEXT situation in Korean — sometimes REUSE the same target expression in a different setting (restaurant→hotel→phone) so they retrieve it again.",
+levelHint(),
+"Format each of your turns as: a Korean situation line. After they answer, a short feedback line (👍 + native English) then the next Korean situation. Never reveal English before they try.",
+"TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again."
+    ].join("\n");
+  }
+  // 🌎 실전상황 Engine — 생존 시뮬레이션 (상대가 영어로, 사용자가 영어로 대응)
+  if(state.engine==="survival"){
+    return [
+"You are simulating a REAL high-pressure real-life situation in Malaysia/abroad for a Korean learner. This is SURVIVAL English practice, not a lesson.",
+"Situation: "+scnDesc(),
+"You play "+scnRole()+". Speak ONLY natural spoken English, 1-3 sentences per turn, like a real staff member / agent on the phone or in person.",
+"Drive the situation forward: ask real questions, raise realistic complications (need their info, a problem, a follow-up) so the learner must respond to survive.",
+"Stay fully in character. If their English is broken, understand the intent and keep going — never switch to Korean, never lecture about grammar.",
+levelHint(),
+"Keep it realistic and a little demanding, but fair. End each turn with something the learner must respond to.",
+"If it fits naturally, create a moment where the learner would say today's key expression: \""+dailyExpr().en+"\" — so they get to use it under real pressure."
+    ].join("\n");
+  }
   if(state.scn && state.scn.id==="freetalk"){
     return [
 "You are a warm, encouraging English speaking COACH helping a Korean learner (level: "+state.level+") practice FREE speaking — producing English from scratch, which is the hardest part for them.",
@@ -1532,7 +1583,11 @@ async function startSession(){
   setBusy(true);
   showTyping();
   try{
-    const kickoff = (state.scn && state.scn.id==="freetalk")
+    const kickoff = state.engine==="output"
+      ? "Start now. Give me the first situation in Korean (one line). Do not show any English."
+      : state.engine==="survival"
+      ? "Start the situation now. Say your first line to me in English, in character."
+      : (state.scn && state.scn.id==="freetalk")
       ? "Start now. Greet me warmly in one short line and ask me your first easy question."
       : "Begin the role-play now. Say your first line to me.";
     const data = await callClaude(rolePrompt(), [{role:"user", content:kickoff}]);
@@ -2012,6 +2067,10 @@ async function loSubmit(answer){
   // 인출 기록 + 저장(STEP 7 미래 인출)
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
   if(loData.target){ if(addReviewItem(loData.target, sitKo, "chunk")){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); } }
+  // Active Vocabulary: 의사소통 성공 시 이 상황을 인출 컨텍스트로 기록
+  let becameActive=false;
+  if(fb.communicated && answer && loData.target){ becameActive = avRetrieve(loData.target, "", "lo:"+(sitKo||loRound).slice(0,24)); }
+  fb._active=becameActive;
   if(loRound===1){ addXP(answer?8:3, "출력 연습"); bumpCount&&bumpCount("talk"); questBump&&questBump("talk"); }
   renderOutputResult(answer, elapsed, fb);
 }
@@ -2020,6 +2079,7 @@ function renderOutputResult(answer, elapsed, fb){
   const ok = fb.communicated && answer;
   $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
     <div class="lmeta">${ok?"✅ 통했어요!":(answer?"💬 좋아요, 거의 됐어요":"💡 이렇게 말하면 돼요")}</div>
+    ${fb._active?`<div style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:900;font-size:13px;border-radius:12px;padding:8px;margin:8px 0">💎 능동 어휘 달성! 3가지 상황에서 꺼냈어요</div>`:""}
     ${answer?`<div style="font-size:13px;color:var(--muted);margin:8px 0 2px">내 말: "${escapeHtml(answer)}"</div>`:""}
     ${fb.praise?`<div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:8px">${escapeHtml(fb.praise)}</div>`:""}
     <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:6px">원어민은 보통 이렇게 말해요</div>
@@ -3397,9 +3457,18 @@ const PH_DIGRAPH=[
  {w:"chip",emoji:"🍟",s:["ch","ih","puh"]},{w:"chick",emoji:"🐤",s:["ch","ih","kuh"]},
  {w:"thumb",emoji:"👍",s:["th","uh","muh"]},{w:"bath",emoji:"🛁",s:["buh","ah","th"]},
  {w:"ring",emoji:"💍",s:["ruh","ih","ng"]},{w:"king",emoji:"🤴",s:["kuh","ih","ng"]},
- {w:"whale",emoji:"🐳",s:["wh","ay","luh"]},{w:"sheep",emoji:"🐑",s:["sh","ee","puh"]}
+ {w:"whale",emoji:"🐳",s:["wh","ay","luh"]},{w:"sheep",emoji:"🐑",s:["sh","ee","puh"]},
+ {w:"shoe",emoji:"👟",s:["sh","oo"]},{w:"shark",emoji:"🦈",s:["sh","ar","kuh"]},
+ {w:"cheese",emoji:"🧀",s:["ch","ee","zzz"]},{w:"cherry",emoji:"🍒",s:["ch","eh","ree"]},
+ {w:"chain",emoji:"⛓️",s:["ch","ay","nuh"]},{w:"thick",emoji:"📚",s:["th","ih","kuh"]},
+ {w:"three",emoji:"3️⃣",s:["th","ree"]},{w:"teeth",emoji:"🦷",s:["tuh","ee","th"]},
+ {w:"wing",emoji:"🪽",s:["wuh","ih","ng"]},{w:"song",emoji:"🎵",s:["sss","ah","ng"]},
+ {w:"duck",emoji:"🦆",s:["duh","uh","ck"]},{w:"sock",emoji:"🧦",s:["sss","ah","ck"]},
+ {w:"clock",emoji:"⏰",s:["kuh","luh","ah","ck"]},{w:"black",emoji:"⬛",s:["buh","luh","ah","ck"]},
+ {w:"phone",emoji:"📞",s:["fuh","oh","nuh"]},{w:"wheel",emoji:"🛞",s:["wh","ee","luh"]}
 ];
 
+function phShuf(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function phStars(add){ let n=hGet("speakingroom:kidstars",0); if(add){ n+=add; hSet("speakingroom:kidstars",n); } return n; }
 function speakRate(text,rate){ if(!TTS||!SSU)return; TTS.cancel(); const u=new SSU(text); if(voiceA)u.voice=voiceA; u.lang="en-US"; u.rate=rate||0.9; TTS.speak(u); }
 function speakChain(parts){ if(!TTS||!SSU)return; TTS.cancel(); let i=0; (function go(){ if(i>=parts.length)return; const p=parts[i++]; const u=new SSU(p.t); if(voiceA)u.voice=voiceA; u.lang="en-US"; u.rate=p.rate||0.9; u.onend=()=>setTimeout(go,p.gap||120); TTS.speak(u); })(); }
@@ -3455,9 +3524,9 @@ function phMenu(){
    </div>`;
   $("#phHome").onclick=goToSetup;
   $("#phLetters").onclick=()=>{ phLi=0; phLetter(); };
-  $("#phBlend").onclick=()=>{ phBlendSrc=PH_CVC; phBlendTitle="단어 읽기"; phBi=0; phBlendCard(); };
-  { const d=$("#phDigraph"); if(d) d.onclick=()=>{ phBlendSrc=PH_DIGRAPH; phBlendTitle="이중 글자"; phBi=0; phBlendCard(); }; }
-  $("#phSight").onclick=()=>{ phSi=0; phSightCard(); };
+  $("#phBlend").onclick=()=>{ phBlendSrc=phShuf(PH_CVC); phBlendTitle="단어 읽기"; phBi=0; phBlendCard(); };
+  { const d=$("#phDigraph"); if(d) d.onclick=()=>{ phBlendSrc=phShuf(PH_DIGRAPH); phBlendTitle="이중 글자"; phBi=0; phBlendCard(); }; }
+  $("#phSight").onclick=()=>{ phSightList=phShuf(PH_SIGHT); phSi=0; phSightCard(); };
 }
 // 글자 소리 — 큰 글자 + 그림 + 예시 단어. 듣고 따라 말하기(예시 단어로 채점)
 let phLi=0;
@@ -3522,13 +3591,13 @@ function phBlendCard(){
     phMic(it.w, b, (r)=>{ phScoreFx(r, st, it.w); }); };
 }
 // 자주 나오는 말 (사이트워드)
-let phSi=0;
+let phSi=0, phSightList=PH_SIGHT;
 function phSightCard(){
-  if(phSi>=PH_SIGHT.length) return phCelebrate("자주 나오는 말 끝!", phMenu);
-  const w=PH_SIGHT[phSi];
+  if(phSi>=phSightList.length) return phCelebrate("자주 나오는 말 끝!", phMenu);
+  const w=phSightList[phSi];
   $("#phonicsScroll").innerHTML=`
    <div class="phwrap">
-    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phSi+1} / ${PH_SIGHT.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
+    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phSi+1} / ${phSightList.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
     <div class="phcard">
       <div class="phsight">${w}</div>
       <div class="phstat" id="phStat">🔊 듣고 따라 말해요</div>
@@ -3621,31 +3690,123 @@ function autoTopic(){
   return {id:"daily", t:"실생활", emo:"💬", topic:"everyday real-life situations"};
 }
 function startMainTraining(){
-  lsBoosterMode=false;
+  lsBoosterMode=false; state.engine="input";
   state.mode="listen"; state.topic=autoTopic();
   startListening();
 }
 function startBooster(){
-  lsBoosterMode=true;
+  lsBoosterMode=true; state.engine="input";
   state.mode="listen"; state.topic={id:"booster", t:"리스닝 부스터", emo:"🎧", topic:"casual fast everyday talk full of reductions and contractions"};
   startListening();
 }
+// 🗣️ 꺼내기 Engine — 한국어 상황 먼저, 힌트 없이 영어로
+function startOutputEngine(){
+  state.engine="output"; state.mode="talk";
+  state.scn={ id:"output", t:"꺼내기", emo:"🗣️", role:"an output coach", ctx:"retrieval practice" };
+  startSession();
+}
+// 🌎 실전상황 Engine — 생존 시뮬레이션
+const SURVIVAL=[
+ {id:"sv_ms",   emo:"💳", t:"카드 결제 문제", role:"a customer-service agent at a software company (like Microsoft)", ctx:"The learner called customer service because their card expired and a payment/subscription failed. They must explain the problem, verify the account, and get it fixed."},
+ {id:"sv_clinic",emo:"🏥", t:"병원 예약·접수", role:"a hospital/clinic receptionist", ctx:"The learner needs to make an appointment or check in, describe a symptom, and answer questions about insurance and personal info."},
+ {id:"sv_school",emo:"🏫", t:"아이 학교 상담", role:"the learner's child's school teacher", ctx:"Meeting or calling about how their child is settling in; ask questions and share concerns."},
+ {id:"sv_bank", emo:"🏦", t:"은행 계좌 개설", role:"a bank teller", ctx:"The learner wants to open a bank account: answer ID/address questions, choose an account type, handle paperwork."},
+ {id:"sv_phone",emo:"📱", t:"휴대폰 개통", role:"a mobile carrier shop staff", ctx:"The learner wants a SIM/phone plan: discuss plans, data, price, ID, activation."},
+ {id:"sv_hotel",emo:"🏨", t:"호텔 체크인 문제", role:"a hotel front-desk clerk", ctx:"There's a problem at check-in (reservation not found / room issue); the learner must explain and resolve it."},
+ {id:"sv_parcel",emo:"📦", t:"택배 분실 문의", role:"a delivery/courier customer-service agent", ctx:"The learner's package is lost or delayed; give tracking info, explain the problem, ask for a solution."},
+ {id:"sv_pharm", emo:"💊", t:"약국에서 약 사기", role:"a pharmacist", ctx:"The learner needs medicine for a symptom: explain what's wrong and ask about dosage."}
+];
+function openSurvival(){
+  const sc=document.createElement("div"); sc.id="svPick";
+  sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
+  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line);max-height:80vh;overflow:auto">
+    <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">🌎 실전상황 고르기</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">상대가 영어로 말 걸어와요. 버티면서 영어로 대응해보세요.</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      ${SURVIVAL.map(s=>`<button data-id="${s.id}" class="svItem" style="display:flex;align-items:center;gap:12px;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:14px;cursor:pointer">
+        <span style="font-size:24px">${s.emo}</span>
+        <span style="flex:1"><b style="display:block;font-size:15px;color:var(--text);font-weight:800">${s.t}</b><i style="font-size:11.5px;color:var(--muted);font-style:normal">${escapeHtml(s.role)}</i></span>
+        <span style="color:var(--muted);font-size:20px">›</span></button>`).join("")}
+    </div>
+    <button id="svClose" style="width:100%;margin-top:14px;padding:13px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px">닫기</button>
+  </div>`;
+  document.body.appendChild(sc);
+  sc.querySelectorAll(".svItem").forEach(b=>{ b.onclick=()=>{ const s=SURVIVAL.find(x=>x.id===b.dataset.id); sc.remove(); startSurvival(s); }; });
+  $("#svClose").onclick=()=>sc.remove();
+  sc.onclick=(e)=>{ if(e.target===sc) sc.remove(); };
+}
+function startSurvival(s){
+  state.engine="survival"; state.mode="talk";
+  state.scn={ id:s.id, t:s.t, emo:s.emo, role:s.role, ctx:s.ctx };
+  startSession();
+}
 function startVocabCoach(){
-  lsBoosterMode=false;
+  lsBoosterMode=false; state.engine="input";
   state.mode="vocab"; state.vocabTheme=nextVocabTheme();
   startVocab();
 }
-// 습득 지표 (점수 아님): 연속일 · 오늘 말한 문장 · 평균 인출속도
+// 습득 지표 (점수 아님): 능동 어휘 · 연속일 · 평균 인출속도
+/* ===== Active Vocabulary (4단계) + 오늘의 생존 표현 =====
+   서로 다른 3개 상황에서 인출 성공 → STATE 4 (능동 어휘). 측정은 능동 어휘 수. */
+function avKey(en){ return String(en||"").toLowerCase().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim(); }
+function avGet(){ return hGet("speakingroom:activevocab",{}); }
+function avSave(o){ hSet("speakingroom:activevocab",o); }
+function avSeen(en, ko){ const k=avKey(en); if(!k) return; const m=avGet(); if(!m[k]){ m[k]={en:en,ko:ko||"",ctx:[],state:1}; } else if(m[k].state<2){ m[k].state=2; } avSave(m); }
+// 인출 성공 기록. situationKey가 새로우면 컨텍스트 추가. 3개 서로 다른 상황 → 능동(4). 반환: 방금 능동 승급이면 true
+function avRetrieve(en, ko, situationKey){
+  const k=avKey(en); if(!k) return false; const m=avGet();
+  if(!m[k]) m[k]={en:en,ko:ko||"",ctx:[],state:1};
+  const sk=String(situationKey||"").slice(0,40)||("s"+(m[k].ctx.length+1));
+  const wasActive=m[k].state>=4;
+  if(!m[k].ctx.includes(sk)) m[k].ctx.push(sk);
+  if(m[k].ctx.length>=3) m[k].state=4; else if(m[k].state<3) m[k].state=3;
+  if(ko && !m[k].ko) m[k].ko=ko;
+  avSave(m);
+  return (!wasActive && m[k].state>=4);
+}
+function avActiveCount(){ const m=avGet(); return Object.values(m).filter(x=>x.state>=4).length; }
+function avProgressOf(en){ const m=avGet(); const x=m[avKey(en)]; return x?{state:x.state,ctx:x.ctx.length}:{state:0,ctx:0}; }
+
+const DAILY_EXPRESSIONS=[
+ {en:"I'd like to ...",ko:"~하고 싶어요"},{en:"Could you ...?",ko:"~해 주시겠어요?"},
+ {en:"Do you have ...?",ko:"~ 있나요?"},{en:"Can I get ...?",ko:"~ 받을 수 있을까요?"},
+ {en:"I'm looking for ...",ko:"~ 찾고 있어요"},{en:"I need help with ...",ko:"~ 도움이 필요해요"},
+ {en:"Could you say that again?",ko:"다시 말씀해 주시겠어요?"},{en:"How much is it?",ko:"얼마예요?"},
+ {en:"Where can I ...?",ko:"어디서 ~할 수 있나요?"},{en:"Is it possible to ...?",ko:"~ 가능할까요?"},
+ {en:"Can you help me?",ko:"도와주실 수 있어요?"},{en:"What do you mean?",ko:"무슨 뜻이에요?"},
+ {en:"I have a problem with ...",ko:"~에 문제가 있어요"},{en:"Could you speak more slowly?",ko:"좀 천천히 말해 주시겠어요?"},
+ {en:"Let me check.",ko:"확인해 볼게요"}
+];
+function dailyExpr(){
+  const today=DAYN(); let d=hGet("speakingroom:daily",null);
+  if(!d || d.date!==today){ const idx=today%DAILY_EXPRESSIONS.length; const e=DAILY_EXPRESSIONS[idx]; d={date:today, en:e.en, ko:e.ko}; hSet("speakingroom:daily",d); avSeen(e.en,e.ko); }
+  return d;
+}
+function renderDailyCard(){
+  const box=$("#dailyCard"); if(!box) return;
+  const d=dailyExpr(); const p=avProgressOf(d.en);
+  const dots=[1,2,3].map(i=>`<span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:${p.ctx>=i?'#fff':'rgba(255,255,255,.35)'}"></span>`).join("");
+  box.innerHTML=`<div style="background:linear-gradient(135deg,#f97316,#ea580c);border-radius:18px;padding:15px 16px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.03em">🔥 오늘의 생존 표현</div>
+    <div style="font-size:21px;font-weight:900;color:#fff;margin:4px 0 2px">${escapeHtml(d.en)}</div>
+    <div style="font-size:12.5px;color:rgba(255,255,255,.92)">${escapeHtml(d.ko)} · 오늘 이 표현을 여러 상황에서 써먹어요</div>
+    <div style="display:flex;align-items:center;gap:7px;margin-top:9px">
+      <span style="font-size:10.5px;color:rgba(255,255,255,.9)">3상황 인출</span>${dots}
+      <span style="font-size:10.5px;color:rgba(255,255,255,.9);margin-left:auto;font-weight:800">${p.state>=4?"✅ 능동 어휘 달성!":""}</span>
+    </div>
+  </div>`;
+}
 function renderAcqStats(){
   const box=$("#acqStats"); if(!box) return;
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
-  const tg=hGet("speakingroom:today",{date:0,count:0}); const todayN=(tg.date===DAYN())?(tg.count||0):0;
-  // 평균 인출속도 (단어 아웃풋 코치에서 누적)
+  const active=avActiveCount();
+  // 평균 인출속도 (인출 성공 시 누적)
   let avgTxt="—";
   try{ const arr=hGet("speakingroom:recall",[]); if(arr&&arr.length){ const last=arr.slice(-12); const a=last.reduce((s,x)=>s+x,0)/last.length; avgTxt=a.toFixed(1)+"초"; } }catch(e){}
   const tiles=[
+    {ic:"💎", v:active, l:"능동 어휘"},
     {ic:"🔥", v:streak+"일", l:"연속 사용"},
-    {ic:"🗣️", v:todayN, l:"오늘 말한 문장"},
     {ic:"⚡", v:avgTxt, l:"평균 인출속도"}
   ];
   box.innerHTML=tiles.map(t=>`<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:13px 8px;text-align:center">
@@ -3664,7 +3825,8 @@ function renderHome(){
   if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
     st.n = (st.last===yd)?(st.n||0)+1:1; st.last=today; hSet("speakingroom:streak",st); }
   $("#streakN").textContent=st.n||1;
-  // 습득 지표
+  // 오늘의 생존 표현 + 습득 지표
+  renderDailyCard();
   renderAcqStats();
   // continue
   const last=hGet("speakingroom:last",null); const cc=$("#continueCard");
@@ -3794,6 +3956,32 @@ function renderProfile(){
 async function endAndEvaluate(){
   const userTurns=(state.convo||[]).filter(m=>m.role==="user").length;
   if(userTurns<1){ goToSetup(); return; }
+  // 🌎 실전상황 — survival score + 핵심표현 3개 저장
+  if(state.engine==="survival"){
+    openModal({title:"상황 종료", msg:"이 실전상황을 마치고 생존 점수와 핵심표현을 받을까요?", input:false, okText:"평가받기", onOk:async()=>{
+      xpToast(0); const t=$("#xpToast"); if(t){ t.innerHTML="AI가 채점 중…"; t.classList.add("show"); }
+      const transcript=state.convo.map(m=>(m.role==="user"?"Learner: ":"Other: ")+m.text).join("\n");
+      const sys=[
+"You are evaluating a Korean learner's SURVIVAL English in a real-life situation: "+scnDesc(),
+"Score 0-100 using these weights: 40% communication (did they get their need met), 30% retrieval (pulling English out under pressure), 20% confidence, 10% accuracy. Grammar is NOT the main metric — reward someone who communicated even with imperfect English.",
+"Then pick the 3 MOST useful short English expressions FROM THIS SITUATION they should remember and reuse, each with a short Korean meaning.",
+'Return ONLY JSON: {"score":<0-100>,"ko":"한 줄 한국어 총평","phrases":[{"en":"expression","ko":"뜻"},{"en":"","ko":""},{"en":"","ko":""}]}'
+      ].join("\n");
+      let score=70, ko="", phrases=[];
+      try{ const d=await callClaude(sys,[{role:"user",content:transcript}]); const o=parseJSON(extractText(d)); score=Math.max(0,Math.min(100,Math.round(o.score||70))); ko=o.ko||""; phrases=Array.isArray(o.phrases)?o.phrases:[]; }catch(e){}
+      if(t) t.classList.remove("show");
+      let saved=0, active=0;
+      phrases.forEach(p=>{ if(p&&p.en){ if(addReviewItem(p.en, p.ko||"", "chunk")) saved++; if(avRetrieve(p.en, p.ko||"", "sv:"+state.scn.id)) active++; } });
+      if(score>=60){ const dx=dailyExpr(); if(avRetrieve(dx.en, dx.ko, "sv:"+state.scn.id)) active++; }
+      if(saved){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); }
+      bumpCount("talk"); addXP(Math.max(5,Math.round(score/10)),"실전상황 생존");
+      goToSetup();
+      const plist=phrases.filter(p=>p&&p.en).map(p=>`• ${p.en}${p.ko?" — "+p.ko:""}`).join("\n");
+      const activeLine = active? `\n\n💎 능동 어휘 +${active}` : "";
+      setTimeout(()=>openModal({title:`생존 점수 ${score} / 100 🌎`, msg:(ko?ko+"\n\n":"")+(plist?"💾 저장된 핵심표현:\n"+plist:"")+activeLine, input:false, okText:"좋아요"}), 380);
+    }});
+    return;
+  }
   openModal({title:"끝내고 평가받기", msg:"이 대화를 마치고 AI 점수(1~20점)를 받을까요?", input:false, okText:"평가받기", onOk:async()=>{
     xpToast(0); const t=$("#xpToast"); if(t){ t.innerHTML="AI가 채점 중…"; t.classList.add("show"); }
     const transcript=state.convo.map(m=>(m.role==="user"?"Learner: ":"Coach: ")+m.text).join("\n");
@@ -3840,8 +4028,9 @@ async function checkForUpdate(){
     }
   }catch(e){}
 }
-{ const tc=$("#trainCard"); if(tc) tc.onclick=startMainTraining; }
-{ const tb=$("#trainBtn"); if(tb) tb.onclick=(e)=>{ e.stopPropagation(); startMainTraining(); }; }
+{ const e1=$("#engOut"); if(e1) e1.onclick=startOutputEngine; }
+{ const e2=$("#engIn"); if(e2) e2.onclick=startMainTraining; }
+{ const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
 { const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 { const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
