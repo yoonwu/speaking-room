@@ -972,7 +972,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.0.3";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.1.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2414,26 +2414,57 @@ function renderVocabQuiz(w){
     </div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   const inp=$("#qzInput"), status=$("#mbStatus"), blank=$("#mbBlank"), micB=$("#mbMic");
+  let attempts=0, done=false;
+  const na=normAns(answer);
+  const isCorrect=(val)=>{ const nv=normAns(val); if(!nv) return false;
+    return nv===na || nv.includes(na) || (na.includes(nv) && nv.length>=3); };
+  const fillGreen=()=>{ if(blank){ blank.classList.remove("blankbox"); blank.className="filled"; blank.textContent=answer; } };
+  const requeueWrong=()=>{ if(w._again) return; const rest=vocabWords.length-(vbIdx+1);
+    const pos=vbIdx+2+Math.floor(Math.random()*Math.max(1,rest)); 
+    vocabWords.splice(Math.min(pos,vocabWords.length),0, Object.assign({},w,{_again:true})); };
 
   const finish=(val)=>{
-    const ok = val && (normAns(val)===normAns(answer) || (normAns(answer).includes(normAns(val)) && normAns(val).length>=3));
-    if(blank){ blank.classList.remove("blankbox"); blank.className="filled"; blank.textContent=answer; }
-    if(ok){ status.textContent="정답이에요! 🎉 +3"; status.style.color="var(--jade)"; addXP(3,"빈칸 정답"); }
-    else { status.textContent="정답: "+answer; status.style.color="#e6ad4a"; }
-    setTimeout(()=>renderVocabReveal(w, ok?"correct":"wrong"), 1200);
+    if(done) return;
+    if(isCorrect(val)){
+      done=true; fillGreen();
+      status.textContent="정답! 🎉  +3"; status.style.color="var(--jade)";
+      addXP(3,"빈칸 정답");
+      setTimeout(()=>advanceVocab(w), 700);   // 스피드: 바로 다음 문제
+      return;
+    }
+    attempts++;
+    if(attempts>=4){            // 3번 틀리고 힌트까지 봤는데도 틀림 → 정답 공개
+      done=true; fillGreen();
+      status.textContent=`정답은 "${answer}" 였어요. 이 단어는 뒤에서 다시 만나요!`;
+      status.style.color="#e6ad4a";
+      requeueWrong();
+      setTimeout(()=>renderVocabReveal(w,"wrong"), 1500);
+    }else if(attempts===3){     // 3번째 틀림 → 힌트
+      status.innerHTML=`💡 힌트: <b>${escapeHtml(answer[0].toUpperCase())}</b>${"·".repeat(Math.max(1,answer.replace(/\s/g,"").length-1))} — 다시!`;
+      status.style.color="#e6ad4a";
+    }else{                      // 1~2번째 틀림 → 정답 숨기고 재시도
+      status.textContent=`아냐, 다시 한 번! (${attempts}/3)`; status.style.color="#e0533f";
+    }
   };
-  // 마이크 (큰 버튼) — 한 번 녹음 → STT → 자동 채점
+  // 마이크 (큰 버튼) — 녹음 → STT → 자동 채점
   micB.onclick=()=>{
+    if(done) return;
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
     micB.classList.add("live"); status.textContent="듣고 있어요…";
     micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } });
   };
-  // 힌트
-  let hintN=0;
-  $("#mbHint").onclick=()=>{ hintN++; if(hintN===1) status.textContent="첫 글자: "+answer[0].toUpperCase(); else { status.textContent="정답: "+answer; } };
+  // 힌트 (수동) — 첫 글자만, 정답은 안 알려줌
+  $("#mbHint").onclick=()=>{ if(done) return; status.innerHTML=`💡 첫 글자: <b>${escapeHtml(answer[0].toUpperCase())}</b>`; status.style.color="#e6ad4a"; };
   // 키보드 모드
   $("#mbKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
-  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(inp.value.trim()) finish(inp.value.trim()); }});
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ finish(v); if(!done){ inp.select(); } } }});
+}
+// 정답/넘김 공용 — 집계(복습 등록·XP·퀘스트) 후 다음 카드
+function advanceVocab(w){
+  if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); }
+  const pts={1:5,2:8,3:10}[w.diff]||7; addXP(pts,"단어 "+w.word);
+  bumpCount("vocab"); questBump("vocab");
+  vbIdx++; showVocabCard();
 }
 // 콜백형 음성 입력 (큰 마이크용)
 async function micFillCb(cb){
@@ -2540,7 +2571,7 @@ function renderVocabReveal(w, quizRes){
   $("#vMoreEx").onclick=()=>{ const e=w.examples&&w.examples[(Math.random()*w.examples.length)|0]; if(e) speakEn(e.en); $("#vInfo").click(); };
   $("#vMineBtn").onclick=()=>openMine(w);
   $("#vDrillBtn").onclick=()=>openDrill(w.word, w.ko);
-  $("#vNextBtn").onclick=()=>{ if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } const pts={1:5,2:8,3:10}[w.diff]||7; addXP(pts,"단어 "+w.word); bumpCount("vocab"); questBump("vocab"); vbIdx++; showVocabCard(); };
+  $("#vNextBtn").onclick=()=>advanceVocab(w);
 }
 function openMine(w){
   openModal({title:"✏️ 내 문장 만들기", msg:`'${w.word}' 로 네 일상 문장을 만들어 적어보세요. (한글 섞여도 OK)`, input:true, placeholder:`'${w.word}' 가 들어가는 내 상황`, okText:"확인받기", onOk:(t)=>{ if(t) checkMine(w, t); }});
@@ -2762,10 +2793,12 @@ async function toggleDrillMic(){
 function stopDrillMic(){ if(drillMR&&drillMR.state!=="inactive"){ drillMR.stop(); drillRecording=false; } }
 function renderDrillResult(data){
   const r=$("#drillResult"); if(!r) return;
-  const pa=data?.NBest?.[0]?.PronunciationAssessment;
+  const n=data?.NBest?.[0];
+  // REST detailed 포맷은 점수를 NBest[0] 바로 위에 둠. (SDK는 .PronunciationAssessment 중첩)
+  const pa = n && (n.PronunciationAssessment || (n.AccuracyScore!=null ? n : null));
   if(!pa){
     const st=data?.RecognitionStatus||"(상태없음)";
-    const heard=data?.DisplayText||data?.NBest?.[0]?.Display||"";
+    const heard=data?.DisplayText||n?.Display||"";
     let msg;
     if(st==="Success"||heard){ msg=`인식은 됐는데 점수가 안 왔어요.<br>들린 말: "${escapeHtml(heard||"?")}"`; }
     else if(/NoMatch|Silence|InitialSilence/i.test(st)){ msg=`소리가 잘 안 잡혔어요 🔇<br>마이크 가까이서 또렷하게 다시 말해보세요.`; }
@@ -2781,18 +2814,19 @@ function renderDrillResult(data){
   const acc=Math.round(pa.AccuracyScore||0);
   const flu=Math.round(pa.FluencyScore||0);
   const comp=Math.round(pa.CompletenessScore||0);
-  const overall=Math.round((acc*0.5+flu*0.3+comp*0.2));
+  // Azure가 PronScore(종합)를 주면 그걸 우선 사용
+  const overall=Math.round(pa.PronScore!=null ? pa.PronScore : (acc*0.5+flu*0.3+comp*0.2));
   const color=overall>=80?"#1fd3a0":overall>=60?"#e6ad4a":"#e0533f";
   const emoji=overall>=80?"😊":overall>=60?"🙂":"😅";
-  // 단어별 색상
-  const words=(data?.NBest?.[0]?.Words||[]);
+  // 단어별 색상 (점수는 단어 객체 바로 위 또는 중첩 둘 다 대응)
+  const words=(n?.Words||[]);
   const wordHtml=words.map(w=>{
-    const ws=Math.round(w.PronunciationAssessment?.AccuracyScore||0);
+    const ws=Math.round((w.PronunciationAssessment&&w.PronunciationAssessment.AccuracyScore!=null?w.PronunciationAssessment.AccuracyScore:w.AccuracyScore)||0);
     const wc=ws>=80?"#1fd3a0":ws>=60?"#e6ad4a":"#e0533f";
     return `<span style="color:${wc};font-family:var(--serif);font-size:17px;margin:0 3px" title="${ws}점">${escapeHtml(w.Word)}</span>`;
   }).join(" ");
-  // XP 지급
-  const xp=Math.round(overall/10);
+  // XP 지급 — 80점 이상이면 확실히 보상
+  const xp = overall>=80 ? Math.max(5, Math.round(overall/10)) : Math.round(overall/10);
   if(xp>0) addXP(xp,"발음 드릴");
   r.innerHTML=`
     <div style="text-align:center;margin-bottom:12px">
