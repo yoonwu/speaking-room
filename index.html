@@ -1055,7 +1055,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.12.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.12.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2186,7 +2186,7 @@ function playDialogue(slow){
     const u=new SSU(ln.en||"");
     u.voice = (ln.speaker==="B" ? voiceB : voiceA) || enVoice;
     u.lang="en-US"; u.rate=rate;
-    if(i===lines.length-1) u.onend=()=>{ setPlayUI(false, slow); if(!passageAwarded){ passageAwarded=true; addXP(5,"듣기 완료"); bumpCount("listen"); questBump("listen"); } };
+    if(i===lines.length-1) u.onend=()=>{ setPlayUI(false, slow); if(!passageAwarded){ passageAwarded=true; awardXP("listen",5,"듣기 완료","ls:passage"); bumpCount("listen"); questBump("listen"); } };
     TTS.speak(u);
   });
 }
@@ -2206,7 +2206,7 @@ let shIdx=0;
 function startShadow(){ shIdx=0; renderShadow(); }
 function renderShadow(){
   const lines=(curPassage&&curPassage.lines)||[];
-  if(shIdx>=lines.length){ addXP(6,"섀도잉 완료"); renderPassage(curPassage); return; }
+  if(shIdx>=lines.length){ awardXP("listen",6,"섀도잉 완료","ls:shadow"); renderPassage(curPassage); return; }
   const ln=lines[shIdx], sp=curPassage.speakers||{A:"A",B:"B"};
   const name=(ln.speaker==="B"?sp.B:sp.A)||ln.speaker;
   $("#lnext").style.display="none";
@@ -2238,7 +2238,7 @@ let rtIdx=0;
 function startRetell(){ rtIdx=0; renderRetell(); }
 function renderRetell(){
   const lines=(curPassage&&curPassage.lines)||[];
-  if(rtIdx>=lines.length){ addXP(6,"되말하기 완료"); renderPassage(curPassage); return; }
+  if(rtIdx>=lines.length){ awardXP("listen",6,"되말하기 완료","ls:retell"); renderPassage(curPassage); return; }
   const ln=lines[rtIdx], sp=curPassage.speakers||{A:"A",B:"B"};
   const name=(ln.speaker==="B"?sp.B:sp.A)||ln.speaker;
   $("#lnext").style.display="none";
@@ -2460,7 +2460,7 @@ function reviewDone(){
 }
 function speakEn(text){
   if(!TTS||!SSU) return;
-  if(/[\uac00-\ud7a3]/.test(text)){ speakKo(text); return; } // 한글이면 한국어 음성으로
+  if(/[\uac00-\ud7a3]/.test(text)){ speakSmart(text); return; } // 한글 포함이면 한·영 자동 분리
   TTS.cancel();
   const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
   TTS.speak(u);
@@ -2644,7 +2644,7 @@ function studyDrillDone(){
   $("#studyMaster").onclick=masterPair;
 }
 function masterPair(){
-  state.studyPair.forEach(b=>{ if(!state.mastered.includes(b)){ state.mastered.push(b); addXP(10,"블록 마스터"); bumpCount("block"); questBump("block"); } });
+  state.studyPair.forEach(b=>{ if(!state.mastered.includes(b)){ state.mastered.push(b); awardXP("vocab",10,"블록 마스터","blk:"+b); bumpCount("block"); questBump("block"); } });
   saveProgress();
   const more=BLOCKS.filter(b=>!state.mastered.includes(b)).length;
   $("#blkBody").innerHTML=`
@@ -3023,7 +3023,7 @@ function renderVocabQuiz(w){
     if(isCorrect(val)){
       done=true; fillGreen();
       status.textContent="정답! 🎉  +3"; status.style.color="var(--jade)";
-      addXP(3,"빈칸 정답");
+      awardXP("vocab",3,"빈칸 정답","vq:"+(w.word||""));
       setTimeout(()=>advanceVocab(w), 700);   // 스피드: 바로 다음 문제
       return;
     }
@@ -3057,7 +3057,7 @@ function renderVocabQuiz(w){
 // 정답/넘김 공용 — 집계(복습 등록·XP·퀘스트) 후 다음 카드
 function advanceVocab(w){
   if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); }
-  const pts={1:5,2:8,3:10}[w.diff]||7; addXP(pts,"단어 "+w.word);
+  const pts={1:5,2:8,3:10}[w.diff]||7; awardXP("vocab",pts,"단어 "+w.word,"vr:"+w.word);
   bumpCount("vocab"); questBump("vocab");
   vbIdx++; showVocabCard();
 }
@@ -3246,14 +3246,33 @@ if(TTS){
   pickVoice();
   TTS.onvoiceschanged=pickVoice;
 }
-function speak(text){
-  if(!TTS||!SSU) return;
+// 한·영 혼합 문장을 자동으로 나눠 각각 한국어/영어 음성으로 읽기
+function speakSmart(text){
+  if(!TTS||!SSU||!text) return;
   TTS.cancel();
-  const u=new SSU(text);
-  if(enVoice) u.voice=enVoice;
-  u.lang="en-US"; u.rate = state.level==="초급"?0.9 : state.level==="고급"?1.05 : 0.97;
-  TTS.speak(u);
+  const s=String(text); const segs=[]; let cur="", curKo=null;
+  for(const ch of s){
+    const ko=/[\uac00-\ud7a3]/.test(ch);
+    const neutral=/[\s0-9.,!?~…·"'()\[\]%:;\-—’“”]/.test(ch);
+    if(cur===""){ cur=ch; curKo=ko; }
+    else if(neutral){ cur+=ch; }
+    else if(ko===curKo){ cur+=ch; }
+    else { segs.push([cur,curKo]); cur=ch; curKo=ko; }
+  }
+  if(cur) segs.push([cur,curKo]);
+  let i=0;
+  (function go(){
+    if(i>=segs.length) return;
+    const seg=segs[i][0], ko=segs[i][1]; i++;
+    if(!seg.trim()){ go(); return; }
+    const u=new SSU(seg);
+    if(ko){ if(koVoice) u.voice=koVoice; u.lang="ko-KR"; u.rate=0.98; }
+    else { if(enVoice) u.voice=enVoice; u.lang="en-US"; u.rate=(typeof levelRate==="function")?levelRate(false):0.97; }
+    u.onend=()=>setTimeout(go,70);
+    TTS.speak(u);
+  })();
 }
+function speak(text){ speakSmart(text); }
 
 /* ============ Azure STT — 회화 마이크 ============ */
 let mediaRec=null, listening=false, audioChunks=[];
@@ -3450,7 +3469,7 @@ function renderDrillResult(data){
   }).join(" ");
   // XP 지급 — 80점 이상이면 확실히 보상
   const xp = overall>=80 ? Math.max(5, Math.round(overall/10)) : Math.round(overall/10);
-  if(xp>0) addXP(xp,"발음 드릴");
+  if(xp>0) awardXP("phonics",xp,"발음 드릴","drill:"+(drillTarget||""));
   r.innerHTML=`
     <div style="text-align:center;margin-bottom:12px">
       <div style="font-size:48px;font-weight:900;color:${color}">${overall}</div>
@@ -4192,7 +4211,7 @@ async function endAndEvaluate(){
     let score=10, ko="";
     try{ const data=await callClaude(sys,[{role:"user",content:transcript}]); const o=parseJSON(extractText(data)); score=Math.max(1,Math.min(20,Math.round(o.score||10))); ko=o.ko||""; }catch(e){}
     if(t) t.classList.remove("show");
-    bumpCount("talk"); addXP(score,"회화 평가");
+    bumpCount("talk"); awardXP("output",score,"회화 평가","conv:eval");
     goToSetup();
     setTimeout(()=>openModal({title:`회화 점수 ${score} / 20 🎉`, msg:ko||"수고했어요! 계속 말할수록 늘어요.", input:false, okText:"좋아요"}), 380);
   }});
