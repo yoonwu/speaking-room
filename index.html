@@ -483,8 +483,11 @@ input,textarea{font-family:inherit}
   .setup-inner{max-width:100%}
   .setup .lead{font-size:25px; line-height:1.32}
   .setup .sub{font-size:13.5px}
-  .scn{grid-template-columns:1fr; gap:9px}
-  .scn button{padding:13px}
+  .scn{grid-template-columns:1fr 1fr; gap:8px; max-height:232px}
+  .scn button{padding:11px}
+  .scn button .emo{width:38px; height:38px; font-size:19px}
+  .scn button .t{font-size:13px}
+  .scn button .d{font-size:10.5px}
 
   /* mode tabs: fit 4 on narrow screens */
   .modesw{padding:4px; gap:3px}
@@ -914,7 +917,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.5.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v1.6.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1374,6 +1377,7 @@ function scrollDown(){ requestAnimationFrame(()=>{ thread.scrollTop=thread.scrol
 async function startSession(){
   if(state.scn) markPractice({mode:"talk", id:state.scn.id, emo:state.scn.emo||"🗣️", label:(state.scn.id==="custom"?"직접 입력 회화":(state.scn.t||"회화"))});
   setup.style.display="none"; stage.style.display="flex"; $("#ctxBar").style.display="flex";
+  pushScreen("talk");
   $("#ctxScn").textContent = state.scn.id==="custom" ? "직접 입력" : state.scn.t;
   $("#ctxLvl").textContent = state.level;
   $("#evalBtn").style.display="";
@@ -1578,7 +1582,7 @@ listenLen(),
 }
 function startListening(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:state.topic.emo||"🎧", label:(state.topic.id==="custom"?"직접 입력 듣기":(state.topic.t||"듣기")+" 듣기")});
-  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex";
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen");
   $("#ctxBar").style.display="flex";
   $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
@@ -1781,7 +1785,7 @@ function renderRetell(){
 let floodOn=false, floodCount=0;
 function startFlood(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:"🎧", label:(state.topic.t||"")+" 흘려듣기"});
-  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex";
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen");
   $("#ctxBar").style.display="flex"; $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
@@ -1870,6 +1874,13 @@ function scheduleItem(n, ok){
   else { n.lapses=(n.lapses||0)+1; n.box=Math.max(0,(n.box||0)-2); }
   n.due = Date.now() + INTERVALS[n.box]*DAY;
 }
+let curScreen="setup";
+function pushScreen(which){
+  if(which!=="setup"){
+    try{ if(curScreen==="setup") history.pushState({s:which},""); else history.replaceState({s:which},""); }catch(e){}
+  }
+  curScreen=which;
+}
 function enterStage(which){
   setup.style.display = which==="setup"?"block":"none";
   stage.style.display = which==="talk"?"flex":"none";
@@ -1877,6 +1888,7 @@ function enterStage(which){
   $("#review").style.display = which==="review"?"flex":"none";
   $("#block").style.display = which==="block"?"flex":"none";
   $("#vocab").style.display = which==="vocab"?"flex":"none";
+  pushScreen(which);
 }
 
 let rvQueue=[], rvOkCount=0, rvSessionTotal=0, rvWeak=new Set(), rvActive=false;
@@ -2213,10 +2225,75 @@ async function generateVocab(){
 function showVocabCard(){
   if(vbIdx>=vocabWords.length) return vocabDone();
   const w=vocabWords[vbIdx];
-  const exHtml=(w.examples||[]).map(ex=>`<div class="ex"><span class="exen">${escapeHtml(ex.en)}</span><span class="exsp" data-say="${escapeAttr(ex.en)}">🔊</span></div><div class="exko">${escapeHtml(ex.ko||"")}</div>`).join("");
-  const colHtml=(w.colloc||[]).map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("");
+  $("#vbBarFill").style.width=Math.round((vbIdx/vocabWords.length)*100)+"%";
+  $("#vbProgTxt").textContent=`${vbIdx+1} / ${vocabWords.length}`;
+  if(w.blank && w.blank.en && /_/.test(w.blank.en)) renderVocabQuiz(w);
+  else renderVocabReveal(w, null);
+}
+function normAns(s){ return String(s||"").toLowerCase().replace(/^to\s+/,"").replace(/[^a-z0-9 ]/g,"").trim(); }
+function renderVocabQuiz(w){
+  const bl=w.blank; const answer=bl.answer||w.word;
   const card=document.createElement("div"); card.className="vcard";
   card.innerHTML=`
+    <div class="vlabel" style="margin-bottom:14px">빈칸에 들어갈 단어는? 🤔 (생각해보고 입력/말하기)</div>
+    <div style="font-family:var(--serif);font-size:25px;line-height:1.5;color:var(--text);margin-bottom:8px">${escapeHtml(bl.en).replace(/_+/g,'<span style="color:var(--jade);font-weight:700">______</span>')}</div>
+    <div style="font-size:15px;color:var(--muted);margin-bottom:22px">${escapeHtml(bl.ko||w.ko||"")}</div>
+    <input id="qzInput" type="text" inputmode="text" autocomplete="off" placeholder="여기에 영어 단어 입력" style="width:100%;max-width:380px;padding:14px 16px;border-radius:14px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center;margin-bottom:12px">
+    <div class="blk-actions" style="max-width:380px">
+      <button class="blk-save" id="qzMic">🎤 말하기</button>
+      <button class="blk-next" id="qzCheck">정답 확인</button>
+    </div>
+    <button id="qzReveal" style="margin-top:14px;background:transparent;color:var(--muted);font-size:13px;text-decoration:underline">모르겠어요 — 정답 보기</button>
+    <div id="qzResult" style="margin-top:14px;min-height:24px"></div>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  const inp=$("#qzInput");
+  setTimeout(()=>{ try{inp.focus();}catch(e){} },100);
+  const submit=()=>{
+    const val=inp.value.trim(); if(!val){ inp.focus(); return; }
+    const ok = normAns(val)===normAns(answer) || normAns(answer).includes(normAns(val)) && normAns(val).length>=3;
+    const rs=$("#qzResult");
+    if(ok){ rs.innerHTML=`<div style="color:var(--jade);font-weight:800;font-size:16px">정답! 🎉 +3 XP</div>`; addXP(3,"빈칸 정답"); }
+    else { rs.innerHTML=`<div style="color:#e6ad4a;font-weight:700;font-size:15px">정답: <b style="color:var(--text)">${escapeHtml(answer)}</b></div>`; }
+    setTimeout(()=>renderVocabReveal(w, ok?"correct":"wrong"), 1100);
+  };
+  $("#qzCheck").onclick=submit;
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); }});
+  $("#qzReveal").onclick=()=>renderVocabReveal(w, null);
+  $("#qzMic").onclick=()=>quizRecord(inp, $("#qzMic"));
+}
+// 빈칸 답 말하기 (한 번 녹음 → STT → 입력칸 채움)
+let qzMR=null, qzRecording=false, qzChunks=[];
+async function quizRecord(inp, btn){
+  if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    qzChunks=[]; const mime=getBestMime();
+    qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    const am=qzMR.mimeType||mime;
+    qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
+    qzMR.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop()); qzRecording=false; btn.textContent="🎤 말하기";
+      const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
+      btn.textContent="🔄…";
+      try{
+        const wav=await recordedToWav(raw);
+        const res=await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":"audio/wav"},body:wav});
+        const data=await res.json();
+        if(data.DisplayText){ inp.value=data.DisplayText.replace(/[.?!]$/,""); }
+      }catch(e){}
+      btn.textContent="🎤 말하기";
+    };
+    qzMR.start(250); qzRecording=true; btn.textContent="⏹ 멈추기";
+    setTimeout(()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); },8000);
+  }catch(e){}
+}
+function renderVocabReveal(w, quizRes){
+  const exHtml=(w.examples||[]).map(ex=>`<div class="ex"><span class="exen">${escapeHtml(ex.en)}</span><span class="exsp" data-say="${escapeAttr(ex.en)}">🔊</span></div><div class="exko">${escapeHtml(ex.ko||"")}</div>`).join("");
+  const colHtml=(w.colloc||[]).map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("");
+  const banner = quizRes==="correct" ? `<div style="background:var(--mist);border-radius:12px;padding:8px;text-align:center;color:var(--jade);font-weight:700;font-size:13px;margin-bottom:12px">✓ 맞혔어요!</div>` : "";
+  const card=document.createElement("div"); card.className="vcard";
+  card.innerHTML=`
+    ${banner}
     <div class="vword">${escapeHtml(w.word)}</div>
     <div class="vmean">${escapeHtml(w.ko||"")}</div>
     <div class="vlabel">여러 상황에서 — 한 틀에 안 갇히게</div>
@@ -2229,8 +2306,6 @@ function showVocabCard(){
       <button class="blk-next" id="vNextBtn">⭐ 저장 & 다음</button>
     </div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
-  $("#vbBarFill").style.width=Math.round((vbIdx/vocabWords.length)*100)+"%";
-  $("#vbProgTxt").textContent=`${vbIdx+1} / ${vocabWords.length}`;
   card.querySelectorAll(".exsp").forEach(s=>{ s.onclick=()=>speakEn(s.getAttribute("data-say")); });
   $("#vMineBtn").onclick=()=>openMine(w);
   $("#vDrillBtn").onclick=()=>openDrill(w.word, w.ko);
@@ -2647,7 +2722,7 @@ $("#rvSpeed").onclick=startSpeed;
 $("#rvBack").onclick=goToSetup;
 $("#lNext").onclick=()=>{ TTS && TTS.cancel(); loadPassage(); };
 $("#lBack").onclick=goToSetup;
-function goToSetup(){
+function goToSetup(fromPop){
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
@@ -2657,7 +2732,11 @@ function goToSetup(){
   $("#notesToggle").style.display=""; $("#ttsBtn").style.display="";
   refreshRvBanner();
   renderHome();
+  const dm=$("#drillModal"); if(dm) dm.remove();
+  const wasStage = curScreen!=="setup"; curScreen="setup";
+  if(!fromPop && wasStage && history.state && history.state.s){ try{ history.back(); }catch(e){} }
 }
+window.addEventListener("popstate", ()=>{ if(curScreen!=="setup") goToSetup(true); });
 sendBtn.onclick=sendMessage;
 micBtn.onclick=toggleMic;
 $("#helpBtn").onclick=askHelp;
