@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="스피킹 룸">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230e100f'/%3E%3Ctext x='50' y='50' font-size='52' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%97%A3%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -782,6 +785,7 @@ body{background:var(--paper); color:var(--text)}
       </div>
 
       <button class="startbtn" id="startBtn" disabled>단어 시작</button>
+      <div id="verFoot" style="text-align:center;margin-top:18px;font-size:11.5px;color:var(--muted);opacity:.7;letter-spacing:.03em"></div>
     </div>
   </div>
 
@@ -910,6 +914,8 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
+const APP_VERSION = "v1.4.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 비용 줄이려면 "claude-haiku-4-5-20251001" 로 바꿔도 됨
 /* ============================================================ */
 
@@ -2507,6 +2513,8 @@ function renderHome(){
   const last=hGet("speakingroom:last",null); const cc=$("#continueCard");
   if(last&&last.emo){ cc.style.display="flex"; $("#contEmo").textContent=last.emo; $("#contDesc").textContent=last.label||""; }
   else cc.style.display="none";
+  // version
+  const vf=$("#verFoot"); if(vf) vf.textContent="스피킹 룸 "+APP_VERSION+" · "+APP_BUILD;
 }
 function markPractice(last){
   const today=DAYN(); let tg=hGet("speakingroom:today",{date:0,count:0});
