@@ -917,7 +917,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.6.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v1.8.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -948,6 +948,7 @@ function openModal(opts){
   t.textContent=opts.title||"";
   m.textContent=opts.msg||""; m.style.display=opts.msg?"block":"none";
   inp.style.display=opts.input?"block":"none"; inp.value=""; inp.placeholder=opts.placeholder||"";
+  if(opts.input) attachMic(inp);
   document.getElementById("modalOk").textContent=opts.okText||"확인";
   document.getElementById("modalCancel").textContent=opts.cancelText||"취소";
   document.getElementById("modalScrim").classList.add("show");
@@ -1213,7 +1214,7 @@ function buildSetup(){
       b.setAttribute("aria-pressed","true"); state.level=b.dataset.lvl;
     };
   });
-  $("#customInput").addEventListener("input", e=>{ state.custom=e.target.value.trim(); refreshStart(); });
+  $("#customInput").addEventListener("input", e=>{ state.custom=e.target.value.trim(); refreshStart(); }); attachMic($("#customInput"));
 
   // topic grid (listening)
   const tgrid=$("#topicGrid");
@@ -1229,7 +1230,7 @@ function buildSetup(){
   tc.innerHTML=`<span class="emo">✏️</span><span><span class="t">직접 입력</span><span class="d">원하는 주제 쓰기</span></span>`;
   tc.onclick=()=>pickTopic("custom",tc);
   tgrid.appendChild(tc);
-  $("#topicCustomInput").addEventListener("input", e=>{ state.topicCustom=e.target.value.trim(); refreshStart(); });
+  $("#topicCustomInput").addEventListener("input", e=>{ state.topicCustom=e.target.value.trim(); refreshStart(); }); attachMic($("#topicCustomInput"));
 
   // vocab theme grid
   const vgrid=$("#vocabGrid");
@@ -1263,6 +1264,7 @@ function pickVocabTheme(id, btn){
   $("#vocabGrid").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
   btn.setAttribute("aria-pressed","true");
   state.vocabTheme = VOCAB_THEMES.find(t=>t.id===id);
+  if(state.vocabTheme){ ensureSeed(state.vocabTheme.id); prefetchVocab(state.vocabTheme); }
   refreshStart();
 }
 function refreshBlockPanel(){
@@ -1595,7 +1597,7 @@ async function loadPassage(){
   $("#listenScroll").innerHTML=`<div class="lloading">새로운 글을 만드는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   const sys=passageSys();
   try{
-    const data=await callClaude(sys,[{role:"user", content:"Create one dialogue now."}]);
+    const data=await callClaude(sys,[{role:"user", content:"Create one dialogue now."}], FAST_MODEL);
     curPassage=parseJSON(extractText(data));
     if(!curPassage.lines && curPassage.en) curPassage.lines=[{speaker:"A", en:curPassage.en, ko:curPassage.ko||""}];
     renderPassage(curPassage);
@@ -2063,6 +2065,9 @@ function startStudy(){
   generateStudyExplain(two);
 }
 async function generateStudyExplain(two){
+  const key="speakingroom:blkx:"+two.join("|");
+  const cached=hGet(key,null);
+  if(cached){ renderExplain(cached, two); return; }   // 한 번 만든 설명은 즉시
   $("#blkBody").innerHTML=`<div class="lloading">설명을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   $("#blkBarFill").style.width="0%"; $("#blkProgTxt").textContent="설명";
   const sys=[
@@ -2072,8 +2077,10 @@ async function generateStudyExplain(two){
 'Return ONLY JSON: {"blocks":[{"block":"...","meaning":"한국어 의미","when":"언제 어떻게 쓰는지 한국어","examples":["en example 1","en example 2"]}],"compare":"두 블록 차이 한국어 설명, 차이 없으면 빈 문자열"}'
   ].join("\n");
   try{
-    const data=await callClaude(sys,[{role:"user",content:"Teach them now."}]);
-    renderExplain(parseJSON(extractText(data)), two);
+    const data=await callClaude(sys,[{role:"user",content:"Teach them now."}], FAST_MODEL);
+    const obj=parseJSON(extractText(data));
+    hSet(key,obj);
+    renderExplain(obj, two);
   }catch(e){ $("#blkBody").innerHTML=`<div class="lloading">불러오지 못했어요. 다시 시도해 주세요.</div>`; }
 }
 function renderExplain(obj, two){
@@ -2095,6 +2102,9 @@ function renderExplain(obj, two){
 }
 let studyItems=[], studyIdx=0;
 async function startStudyDrill(two){
+  const key="speakingroom:blkd:"+two.join("|");
+  const cached=hGet(key,null);
+  if(cached && cached.length){ studyItems=cached; studyIdx=0; showStudyCard(); return; }
   $("#blkBody").innerHTML=`<div class="lloading">연습 문제를 만드는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   const seed=Math.floor(Math.random()*100000);
   const sys=[
@@ -2104,10 +2114,11 @@ async function startStudyDrill(two){
 'Return ONLY JSON: {"items":[{"ko":"상황","target":"can I get","en":"natural answer","alts":[{"en":"alternative","note":"한국어 뉘앙스"}]}]}'
   ].join("\n");
   try{
-    const data=await callClaude(sys,[{role:"user",content:"Create the drill now."}]);
+    const data=await callClaude(sys,[{role:"user",content:"Create the drill now."}], FAST_MODEL);
     const obj=parseJSON(extractText(data));
     studyItems=(obj.items||[]).filter(x=>x&&x.en&&x.ko); studyIdx=0;
     if(!studyItems.length) throw new Error("empty");
+    hSet(key, studyItems);
     showStudyCard();
   }catch(e){ $("#blkBody").innerHTML=`<div class="lloading">문제를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
 }
@@ -2198,6 +2209,60 @@ function randomSetDone(){
 
 /* ============ vocab mode (A: varied frames + B: my own sentence) ============ */
 let vocabWords=[], vbIdx=0;
+
+/* ============ 단어 DB: 시드 내장 + 캐시 + 백그라운드 미리생성 ============ */
+const SEED_VOCAB = {
+  cafe: [[
+    {word:"refill",ko:"리필",diff:1,examples:[{en:"Can I get a refill?",ko:"리필 받을 수 있을까요?"},{en:"Are refills free here?",ko:"여기 리필 무료예요?"},{en:"She asked for a refill.",ko:"그녀는 리필을 요청했어요."}],blank:{en:"Can I get a ____?",ko:"리필 받을 수 있을까요?",answer:"refill"},colloc:["get a refill","free refill"]},
+    {word:"to go",ko:"포장(테이크아웃)",diff:1,examples:[{en:"I'll have it to go, please.",ko:"포장해 주세요."},{en:"Is this for here or to go?",ko:"드시고 가세요, 포장이세요?"},{en:"Two coffees to go.",ko:"커피 두 잔 포장이요."}],blank:{en:"I'll have it ____, please.",ko:"포장해 주세요.",answer:"to go"},colloc:["to go","for here"]},
+    {word:"decaf",ko:"디카페인",diff:2,examples:[{en:"Do you have decaf?",ko:"디카페인 있어요?"},{en:"I'll take a decaf latte.",ko:"디카페인 라떼로 할게요."},{en:"It's late, so make it decaf.",ko:"늦었으니 디카페인으로요."}],blank:{en:"Do you have ____?",ko:"디카페인 있어요?",answer:"decaf"},colloc:["decaf coffee","switch to decaf"]},
+    {word:"extra shot",ko:"샷 추가",diff:2,examples:[{en:"Can you add an extra shot?",ko:"샷 추가해 주실 수 있어요?"},{en:"I need an extra shot today.",ko:"오늘은 샷 추가가 필요해요."},{en:"One latte with an extra shot.",ko:"라떼 하나 샷 추가요."}],blank:{en:"Can you add an ____?",ko:"샷 추가해 주실 수 있어요?",answer:"extra shot"},colloc:["extra shot","add a shot"]},
+    {word:"foam",ko:"거품",diff:2,examples:[{en:"Light on the foam, please.",ko:"거품 적게 해 주세요."},{en:"This has too much foam.",ko:"거품이 너무 많아요."},{en:"Do you want extra foam?",ko:"거품 많이 드릴까요?"}],blank:{en:"Light on the ____, please.",ko:"거품 적게 해 주세요.",answer:"foam"},colloc:["extra foam","no foam"]}
+  ]],
+  smalltalk: [[
+    {word:"no way",ko:"말도 안 돼 / 설마",diff:1,examples:[{en:"No way, that's amazing!",ko:"말도 안 돼, 대박이다!"},{en:"No way — when did that happen?",ko:"설마 — 언제 그랬어?"},{en:"He actually said no way.",ko:"걔 진짜 말도 안 된다고 했어."}],blank:{en:"____, that's amazing!",ko:"말도 안 돼, 대박이다!",answer:"no way"},colloc:["no way","there's no way"]},
+    {word:"that's great",ko:"잘됐다 / 좋다",diff:1,examples:[{en:"That's great to hear!",ko:"그 소식 잘됐다!"},{en:"Oh, that's great news.",ko:"오, 좋은 소식이네."},{en:"That's great, congrats!",ko:"잘됐다, 축하해!"}],blank:{en:"That's great to ____!",ko:"그 소식 잘됐다!",answer:"hear"},colloc:["that's great","sounds great"]},
+    {word:"I get it",ko:"이해했어 / 알겠어",diff:1,examples:[{en:"Ah, I get it now.",ko:"아, 이제 이해했어."},{en:"I totally get it.",ko:"완전 이해해."},{en:"Do you get it?",ko:"이해돼?"}],blank:{en:"Ah, I ____ it now.",ko:"아, 이제 이해했어.",answer:"get"},colloc:["I get it","get the idea"]},
+    {word:"for real",ko:"진짜로 / 정말",diff:2,examples:[{en:"For real? That's wild.",ko:"진짜? 대박이다."},{en:"I'm tired, for real.",ko:"나 진짜 피곤해."},{en:"Wait, for real?",ko:"잠깐, 진짜로?"}],blank:{en:"Wait, ____?",ko:"잠깐, 진짜로?",answer:"for real"},colloc:["for real","are you for real"]},
+    {word:"kind of",ko:"좀 / 약간",diff:1,examples:[{en:"It's kind of cold today.",ko:"오늘 좀 춥다."},{en:"I'm kind of busy right now.",ko:"나 지금 좀 바빠."},{en:"That's kind of funny.",ko:"그거 좀 웃기다."}],blank:{en:"It's ____ cold today.",ko:"오늘 좀 춥다.",answer:"kind of"},colloc:["kind of","sort of"]}
+  ]]
+};
+function vbankGet(){ return hGet("speakingroom:vbank",{}); }
+function vbankSave(b){ hSet("speakingroom:vbank",b); }
+function ensureSeed(themeId){
+  const b=vbankGet();
+  if(b[themeId]===undefined && SEED_VOCAB[themeId]){ b[themeId]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
+}
+function takeFromBank(themeId){
+  const b=vbankGet(); const arr=b[themeId]||[];
+  if(arr.length){ const set=arr.shift(); b[themeId]=arr; vbankSave(b); return set; }
+  return null;
+}
+function pushToBank(themeId,set){
+  const b=vbankGet(); const arr=b[themeId]||[]; arr.push(set); while(arr.length>6) arr.shift(); b[themeId]=arr; vbankSave(b);
+}
+function vocabPrompt(theme){
+  const seed=Math.floor(Math.random()*100000);
+  return [
+"Create a vocabulary set for a Korean learner (level: "+state.level+"). Theme: "+theme.topic+".",
+"Pick 5 genuinely useful everyday words or short expressions. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way). This teaches the word across varied contexts. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
+"CRITICAL: 'word' MUST be the ENGLISH word/phrase (e.g. 'to clean'), and 'ko' MUST be its KOREAN meaning (e.g. '청소하다'). NEVER swap them. All 'en' fields are English, all 'ko' fields are Korean. Also include a 'blank' field: ONE example sentence as fill-in-the-blank with the target word replaced by '____', plus the 'answer'.",
+'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
+  ].join("\n");
+}
+async function aiVocabSet(theme){
+  const data=await callClaude(vocabPrompt(theme),[{role:"user",content:"Create the vocabulary set now."}], FAST_MODEL);
+  const obj=parseJSON(extractText(data));
+  return (obj.words||[]).filter(w=>w&&w.word);
+}
+let prefetchingTheme=null;
+async function prefetchVocab(theme){
+  if(!theme) return;
+  const b=vbankGet(); if((b[theme.id]||[]).length>=3) return;
+  if(prefetchingTheme===theme.id) return; prefetchingTheme=theme.id;
+  try{ const set=await aiVocabSet(theme); if(set&&set.length) pushToBank(theme.id,set); }catch(e){}
+  prefetchingTheme=null;
+}
 function startVocab(){
   if(state.vocabTheme) markPractice({mode:"vocab", id:state.vocabTheme.id, emo:state.vocabTheme.emo||"📖", label:(state.vocabTheme.t||"단어")});
   enterStage("vocab"); $("#ctxBar").style.display="none";
@@ -2205,6 +2270,26 @@ function startVocab(){
   generateVocab();
 }
 async function generateVocab(){
+  const theme=state.vocabTheme; if(!theme) return;
+  $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
+  ensureSeed(theme.id);
+  // 1) 캐시/시드에서 즉시
+  let set=takeFromBank(theme.id);
+  if(set && set.length){
+    vocabWords=set; vbIdx=0; showVocabCard();
+    prefetchVocab(theme);   // 백그라운드로 다음 세트 채우기
+    return;
+  }
+  // 2) 없으면 생성 (로딩 표시)
+  $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  try{
+    set=await aiVocabSet(theme);
+    if(!set.length) throw new Error("empty");
+    vocabWords=set; vbIdx=0; showVocabCard();
+    prefetchVocab(theme);
+  }catch(e){ $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
+}
+async function _oldGenerateVocab(){
   $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
   const seed=Math.floor(Math.random()*100000);
@@ -2235,10 +2320,12 @@ function renderVocabQuiz(w){
   const bl=w.blank; const answer=bl.answer||w.word;
   const card=document.createElement("div"); card.className="vcard";
   card.innerHTML=`
-    <div class="vlabel" style="margin-bottom:14px">빈칸에 들어갈 단어는? 🤔 (생각해보고 입력/말하기)</div>
-    <div style="font-family:var(--serif);font-size:25px;line-height:1.5;color:var(--text);margin-bottom:8px">${escapeHtml(bl.en).replace(/_+/g,'<span style="color:var(--jade);font-weight:700">______</span>')}</div>
-    <div style="font-size:15px;color:var(--muted);margin-bottom:22px">${escapeHtml(bl.ko||w.ko||"")}</div>
-    <input id="qzInput" type="text" inputmode="text" autocomplete="off" placeholder="여기에 영어 단어 입력" style="width:100%;max-width:380px;padding:14px 16px;border-radius:14px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center;margin-bottom:12px">
+    <div class="vlabel" style="margin-bottom:6px">이 뜻의 영어 단어는? 🤔</div>
+    <div style="font-family:var(--serif);font-size:30px;font-weight:600;color:var(--jade);margin-bottom:18px">${escapeHtml(w.ko||"")}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">이 문장의 빈칸에 들어가요</div>
+    <div style="font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--text);margin-bottom:4px">${escapeHtml(bl.en).replace(/_+/g,'<span style="color:var(--jade);font-weight:700">______</span>')}</div>
+    <div style="font-size:13.5px;color:var(--muted);margin-bottom:20px">${escapeHtml(bl.ko||"")}</div>
+    <input id="qzInput" type="text" inputmode="text" autocomplete="off" placeholder="영어 단어 입력 (또는 🎤)" style="width:100%;max-width:380px;padding:14px 16px;border-radius:14px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center;margin-bottom:12px">
     <div class="blk-actions" style="max-width:380px">
       <button class="blk-save" id="qzMic">🎤 말하기</button>
       <button class="blk-next" id="qzCheck">정답 확인</button>
@@ -2261,9 +2348,10 @@ function renderVocabQuiz(w){
   $("#qzReveal").onclick=()=>renderVocabReveal(w, null);
   $("#qzMic").onclick=()=>quizRecord(inp, $("#qzMic"));
 }
-// 빈칸 답 말하기 (한 번 녹음 → STT → 입력칸 채움)
+// 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
-async function quizRecord(inp, btn){
+async function micFill(inp, btn, restoreLabel){
+  const lbl = restoreLabel || btn.dataset.lbl || "🎤";
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   try{
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -2272,20 +2360,34 @@ async function quizRecord(inp, btn){
     const am=qzMR.mimeType||mime;
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
-      stream.getTracks().forEach(t=>t.stop()); qzRecording=false; btn.textContent="🎤 말하기";
+      stream.getTracks().forEach(t=>t.stop()); qzRecording=false; btn.textContent=lbl;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
-      btn.textContent="🔄…";
+      btn.textContent="🔄";
       try{
         const wav=await recordedToWav(raw);
         const res=await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":"audio/wav"},body:wav});
         const data=await res.json();
-        if(data.DisplayText){ inp.value=data.DisplayText.replace(/[.?!]$/,""); }
+        if(data.DisplayText){ const t=data.DisplayText.replace(/[.?!]$/,""); inp.value=inp.value?inp.value+" "+t:t; inp.dispatchEvent(new Event("input")); }
       }catch(e){}
-      btn.textContent="🎤 말하기";
+      btn.textContent=lbl;
     };
-    qzMR.start(250); qzRecording=true; btn.textContent="⏹ 멈추기";
+    qzMR.start(250); qzRecording=true; btn.textContent="⏹";
     setTimeout(()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); },8000);
   }catch(e){}
+}
+function quizRecord(inp, btn){ return micFill(inp, btn, "🎤 말하기"); }
+// 입력칸 옆에 작은 🎤 버튼을 붙임 (중복 방지)
+function attachMic(inp){
+  if(!inp || inp._micAttached) return; inp._micAttached=true;
+  const b=document.createElement("button");
+  b.type="button"; b.textContent="🎤"; b.dataset.lbl="🎤"; b.title="말하기";
+  b.style.cssText="flex:none;width:42px;height:42px;border-radius:11px;background:var(--mist);border:1px solid var(--line);font-size:18px;line-height:1";
+  b.onclick=()=>micFill(inp, b, "🎤");
+  // 입력칸을 flex 래퍼로 감싸기
+  const wrap=document.createElement("div");
+  wrap.style.cssText="display:flex;gap:8px;align-items:flex-end;width:100%";
+  inp.parentNode.insertBefore(wrap, inp);
+  inp.style.flex="1"; wrap.appendChild(inp); wrap.appendChild(b);
 }
 function renderVocabReveal(w, quizRes){
   const exHtml=(w.examples||[]).map(ex=>`<div class="ex"><span class="exen">${escapeHtml(ex.en)}</span><span class="exsp" data-say="${escapeAttr(ex.en)}">🔊</span></div><div class="exko">${escapeHtml(ex.ko||"")}</div>`).join("");
