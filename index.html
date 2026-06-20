@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="스피킹 룸">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230e100f'/%3E%3Ctext x='50' y='50' font-size='52' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%97%A3%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%3E%3Cdefs%3E%3ClinearGradient%20id%3D%27g%27%20x1%3D%270%27%20y1%3D%270%27%20x2%3D%271%27%20y2%3D%271%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27%231fd3a0%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27%239b98ec%27%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2724%27%20fill%3D%27%230e100f%27%2F%3E%3Crect%20x%3D%277%27%20y%3D%277%27%20width%3D%2786%27%20height%3D%2786%27%20rx%3D%2721%27%20fill%3D%27none%27%20stroke%3D%27%231fd3a0%27%20stroke-opacity%3D%27.30%27%20stroke-width%3D%272%27%2F%3E%3Cpath%20d%3D%27M26%2024%20h48%20a11%2011%200%200%201%2011%2011%20v22%20a11%2011%200%200%201%20-11%2011%20h-28%20l-15%2012%20v-12%20h-5%20a11%2011%200%200%201%20-11%20-11%20v-22%20a11%2011%200%200%201%2011%20-11%20z%27%20fill%3D%27url%28%23g%29%27%2F%3E%3Cpath%20d%3D%27M54%2031%20l-16%2021%20h11%20l-5%2016%2018%20-23%20h-11%20z%27%20fill%3D%27%230e100f%27%2F%3E%3Ccircle%20cx%3D%2780%27%20cy%3D%2720%27%20r%3D%273.2%27%20fill%3D%27%231fd3a0%27%2F%3E%3C%2Fsvg%3E">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
@@ -31,6 +31,58 @@
   --soft2:0 10px 30px -12px rgba(0,0,0,.6);
   --card2:#1f2421;
 }
+/* ===== 🎮 HERO ZONE + DOPAMINE FX ===== */
+.hero{position:relative;border-radius:24px;padding:18px 18px 16px;margin-bottom:16px;overflow:hidden;
+  background:radial-gradient(120% 140% at 0% 0%,rgba(31,211,160,.22),transparent 55%),radial-gradient(120% 140% at 100% 0%,rgba(155,152,236,.20),transparent 55%),linear-gradient(160deg,#1c2320,#14110f);
+  border:1px solid rgba(31,211,160,.28);box-shadow:0 18px 44px -22px rgba(31,211,160,.55),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer}
+.hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 90% at 85% -10%,rgba(255,255,255,.10),transparent 60%);pointer-events:none}
+.hero:active{transform:scale(.985)}
+.hero-row{display:flex;align-items:center;gap:15px;position:relative;z-index:1}
+.ring-wrap{position:relative;width:78px;height:78px;flex:0 0 auto}
+.ring-wrap svg{width:78px;height:78px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.10);stroke-width:7}
+.ring-fg{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 6px rgba(31,211,160,.6))}
+.ring-lv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ring-lv b{font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ring-lv span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--jade);margin-top:1px}
+.hero-mid{flex:1;min-width:0}
+.hero-hello{font-size:12px;color:var(--ink-soft);font-weight:600}
+.hero-name{font-size:20px;font-weight:900;color:#fff;letter-spacing:-.01em;line-height:1.15;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-chips{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+.hchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;padding:5px 9px;border-radius:99px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08)}
+.hchip.flame{color:#ffb454;border-color:rgba(255,160,60,.35);background:rgba(255,140,40,.14)}
+.hchip.flame.lit{animation:flamepulse 1.6s ease-in-out infinite}
+@keyframes flamepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,150,50,0)}50%{box-shadow:0 0 14px 0 rgba(255,150,50,.5)}}
+.hchip.gem{color:#7be0c4;border-color:rgba(31,211,160,.3);background:rgba(31,211,160,.12)}
+.hero-reward{position:relative;z-index:1;margin-top:13px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.07)}
+.hero-reward .rwemo{font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.hero-reward .rwtx{flex:1;min-width:0}
+.hero-reward .rwtop{font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.hero-reward .rwname{font-size:13px;color:#fff;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-reward .rwbar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:5px}
+.hero-reward .rwbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec);box-shadow:0 0 8px rgba(31,211,160,.6);transition:width .9s cubic-bezier(.22,1,.36,1)}
+.hero-reward .rwgo{font-size:11px;font-weight:900;color:var(--jade);white-space:nowrap}
+/* XP toast — bouncy pop */
+.xptoast.show{animation:xppop .5s cubic-bezier(.18,1.4,.4,1)}
+@keyframes xppop{0%{transform:translateX(-50%) scale(.6);opacity:0}60%{transform:translateX(-50%) scale(1.08)}100%{transform:translateX(-50%) scale(1);opacity:1}}
+/* Level-up celebration overlay */
+#lvlCelebrate{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(60% 40% at 50% 45%,rgba(31,211,160,.18),transparent 70%)}
+#lvlCelebrate.show{display:flex;animation:celebFade .35s ease}
+@keyframes celebFade{from{opacity:0}to{opacity:1}}
+.celeb-card{text-align:center;transform:translateY(8px);animation:celebPop .6s cubic-bezier(.18,1.5,.4,1)}
+@keyframes celebPop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.celeb-badge{font-size:74px;filter:drop-shadow(0 8px 20px rgba(31,211,160,.6));animation:celebSpin 1.1s ease}
+@keyframes celebSpin{0%{transform:rotate(-18deg) scale(.6)}100%{transform:rotate(0) scale(1)}}
+.celeb-lv{font-size:15px;font-weight:900;letter-spacing:.2em;color:var(--jade);margin-top:4px}
+.celeb-big{font-size:40px;font-weight:900;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.5);line-height:1.1}
+.celeb-sub{font-size:14px;color:var(--ink-soft);font-weight:700;margin-top:8px}
+.confetti{position:fixed;top:-12px;width:10px;height:14px;z-index:201;border-radius:2px;pointer-events:none;animation:conffall linear forwards}
+@keyframes conffall{to{transform:translateY(105vh) rotate(720deg);opacity:.9}}
+/* Combo shake */
+@keyframes comboShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.combo-shake{animation:comboShake .42s ease}
+.combo-pop{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:30;font-size:40px;font-weight:900;color:#ffb454;text-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none;animation:comboPop .8s cubic-bezier(.18,1.5,.4,1) forwards}
+@keyframes comboPop{0%{transform:translate(-50%,10px) scale(.5);opacity:0}40%{transform:translate(-50%,-6px) scale(1.15);opacity:1}100%{transform:translate(-50%,-40px) scale(1);opacity:0}}
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
 body{
@@ -758,15 +810,27 @@ body{background:var(--paper); color:var(--text)}
 #kidCard .kt i{font-size:12px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600}
 #kidCard .ka{font-size:24px;color:#fff;font-weight:900}
 /* 3 엔진 카드 */
-.eng{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:none;border-radius:20px;padding:18px 18px;margin-bottom:12px;cursor:pointer;box-shadow:0 8px 22px -12px rgba(0,0,0,.5)}
-.eng-emo{font-size:30px;flex:none;width:52px;height:52px;display:grid;place-items:center;border-radius:16px;background:rgba(255,255,255,.16)}
-.eng-tx{flex:1;min-width:0}
-.eng-tx b{display:block;font-size:20px;font-weight:900;color:#fff;line-height:1.1}
-.eng-tx i{font-size:12.5px;color:rgba(255,255,255,.92);font-style:normal;font-weight:600;margin-top:3px;display:block}
-.eng-ar{font-size:26px;color:rgba(255,255,255,.9);font-weight:900}
-.eng-out{background:linear-gradient(135deg,#10b981,#059669)}
-.eng-in{background:linear-gradient(135deg,#3b82f6,#2563eb)}
-.eng-real{background:linear-gradient(135deg,#f59e0b,#ea580c)}
+.eng{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:none;border-radius:22px;padding:18px;margin-bottom:13px;cursor:pointer;overflow:hidden;
+  box-shadow:0 14px 30px -14px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .12s cubic-bezier(.22,1,.36,1),box-shadow .2s}
+.eng::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.20),transparent 42%);pointer-events:none}
+.eng::after{content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.30),transparent);transform:skewX(-18deg);pointer-events:none;animation:engshine 5.5s ease-in-out infinite}
+@keyframes engshine{0%,72%{left:-60%}88%{left:130%}100%{left:130%}}
+.eng:active{transform:scale(.96);box-shadow:0 6px 16px -10px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.22)}
+.eng-emo{position:relative;z-index:1;font-size:30px;flex:none;width:54px;height:54px;display:grid;place-items:center;border-radius:16px;background:rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 10px -4px rgba(0,0,0,.4)}
+.eng-tx{position:relative;z-index:1;flex:1;min-width:0}
+.eng-tx b{display:block;font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.25)}
+.eng-tx i{font-size:12.5px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600;margin-top:3px;display:block}
+.eng-ar{position:relative;z-index:1;font-size:20px;color:#fff;font-weight:900;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.eng-out{background:linear-gradient(135deg,#13e6a3,#059669);box-shadow:0 14px 32px -14px rgba(16,185,129,.75),inset 0 1px 0 rgba(255,255,255,.25)}
+.eng-in{background:linear-gradient(135deg,#4f9bff,#2563eb);box-shadow:0 14px 32px -14px rgba(59,130,246,.75),inset 0 1px 0 rgba(255,255,255,.25)}
+.eng-real{background:linear-gradient(135deg,#ffb454,#ea580c);box-shadow:0 14px 32px -14px rgba(245,158,11,.75),inset 0 1px 0 rgba(255,255,255,.25)}
+#engSprint{background:linear-gradient(135deg,#ffd34d,#ff7a45 60%,#9b5cff);box-shadow:0 16px 36px -14px rgba(255,140,60,.8),inset 0 1px 0 rgba(255,255,255,.3)}
+#engSprint .eng-emo{animation:boltpulse 1.8s ease-in-out infinite}
+@keyframes boltpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12) rotate(-4deg)}}
+/* progress bar shimmer */
+.rwbar i,.rwbar2 i{position:relative;overflow:hidden}
+.rwbar i::after,.hero-reward .rwbar i::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:translateX(-100%);animation:barsweep 2.6s ease-in-out infinite}
+@keyframes barsweep{0%{transform:translateX(-100%)}55%,100%{transform:translateX(220%)}}
 </style>
 </head>
 <body>
@@ -800,13 +864,8 @@ body{background:var(--paper); color:var(--text)}
   <div class="setup" id="setup">
     <div class="setup-inner">
       <div class="home" id="homeCard">
-        <div class="home-top">
-          <div>
-            <div class="home-hi" id="homeHi">반가워요,</div>
-            <div class="home-name" id="homeName" title="이름 설정">친구님 👋</div>
-          </div>
-          <div class="streak" id="streakBadge"><span>🔥</span><b id="streakN">1</b>일 연속</div>
-        </div>
+        <!-- 🎮 HERO ZONE -->
+        <div class="hero" id="heroZone" title="내 프로필"></div>
         <!-- 연령 모드 -->
         <div id="ageToggle" style="display:flex;gap:6px;background:var(--mist);border-radius:13px;padding:4px;margin:4px 0 14px">
           <button data-age="adult" style="flex:1;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:800;cursor:pointer">🧑 어른</button>
@@ -1054,6 +1113,7 @@ body{background:var(--paper); color:var(--text)}
 
   <!-- XP TOAST -->
   <div class="xptoast" id="xpToast"></div>
+  <div id="lvlCelebrate"></div>
 
 </div>
 
@@ -1064,7 +1124,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.15.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.19.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3612,54 +3672,56 @@ function phMic(ref, btn, cb){
 // ===== Core Phrase DB (1차: 48 핵심 청크) — AI 호출 없이 로컬 출제 =====
 // 구조: {id, phrase, ko, level, tags, kid, adult, examples:[{en,ko}], activeState}
 const CORE_PHRASES=[
- {id:"can_i_get_001", phrase:"Can I get...?", ko:"~을 받을 수 있을까요?", level:1, tags:["restaurant","shopping","travel","daily"], kid:true, adult:true, examples:[{en:"Can I get some water?",ko:"물 좀 주시겠어요?"},{en:"Can I get a receipt?",ko:"영수증 받을 수 있을까요?"}]},
- {id:"id_like_to_002", phrase:"I'd like to...", ko:"~하고 싶어요", level:2, tags:["restaurant","hotel","travel","daily"], kid:false, adult:true, examples:[{en:"I'd like to order.",ko:"주문하고 싶어요."},{en:"I'd like to check in.",ko:"체크인하고 싶어요."}]},
- {id:"could_you_help_003", phrase:"Could you help me?", ko:"도와주시겠어요?", level:1, tags:["support","travel","school","daily"], kid:true, adult:true, examples:[{en:"Could you help me?",ko:"저 좀 도와주시겠어요?"},{en:"Could you help me with this?",ko:"이것 좀 도와주시겠어요?"}]},
- {id:"do_you_have_004", phrase:"Do you have...?", ko:"~있어요?", level:1, tags:["shopping","restaurant","hotel","daily"], kid:true, adult:true, examples:[{en:"Do you have this in blue?",ko:"이거 파란색 있어요?"},{en:"Do you have a menu?",ko:"메뉴 있어요?"}]},
- {id:"im_looking_for_005", phrase:"I'm looking for...", ko:"~을 찾고 있어요", level:2, tags:["shopping","travel","daily"], kid:false, adult:true, examples:[{en:"I'm looking for the restroom.",ko:"화장실을 찾고 있어요."},{en:"I'm looking for size medium.",ko:"미디엄 사이즈를 찾고 있어요."}]},
- {id:"i_need_006", phrase:"I need...", ko:"~이 필요해요", level:1, tags:["daily","hospital","support","travel"], kid:true, adult:true, examples:[{en:"I need some help.",ko:"도움이 필요해요."},{en:"I need a doctor.",ko:"의사가 필요해요."}]},
- {id:"i_forgot_007", phrase:"I forgot...", ko:"~을 잊어버렸어요", level:2, tags:["school","daily","work"], kid:true, adult:true, examples:[{en:"I forgot my homework.",ko:"숙제를 깜빡했어요."},{en:"I forgot my password.",ko:"비밀번호를 잊어버렸어요."}]},
- {id:"dont_understand_008", phrase:"I don't understand.", ko:"이해가 안 돼요.", level:1, tags:["school","support","daily","travel"], kid:true, adult:true, examples:[{en:"Sorry, I don't understand.",ko:"죄송해요, 이해가 안 돼요."},{en:"I don't understand this part.",ko:"이 부분이 이해가 안 돼요."}]},
- {id:"say_again_009", phrase:"Could you say that again?", ko:"다시 말씀해 주시겠어요?", level:1, tags:["support","daily","travel","school"], kid:true, adult:true, examples:[{en:"Could you say that again?",ko:"다시 말씀해 주시겠어요?"},{en:"Sorry, can you say that again?",ko:"죄송해요, 다시 말해 주시겠어요?"}]},
- {id:"where_can_i_010", phrase:"Where can I...?", ko:"어디서 ~할 수 있어요?", level:2, tags:["travel","daily","shopping"], kid:false, adult:true, examples:[{en:"Where can I buy a ticket?",ko:"표를 어디서 살 수 있어요?"},{en:"Where can I find taxis?",ko:"택시는 어디서 탈 수 있어요?"}]},
- {id:"how_much_011", phrase:"How much is it?", ko:"얼마예요?", level:1, tags:["shopping","restaurant","travel","daily"], kid:true, adult:true, examples:[{en:"How much is it?",ko:"얼마예요?"},{en:"How much is this one?",ko:"이건 얼마예요?"}]},
- {id:"im_hungry_012", phrase:"I'm hungry.", ko:"배고파요.", level:1, tags:["food","daily","family"], kid:true, adult:true, examples:[{en:"I'm hungry.",ko:"배고파요."},{en:"I'm so hungry.",ko:"너무 배고파요."}]},
- {id:"im_thirsty_013", phrase:"I'm thirsty.", ko:"목말라요.", level:1, tags:["food","daily","family"], kid:true, adult:true, examples:[{en:"I'm thirsty.",ko:"목말라요."},{en:"Can I get a drink?",ko:"마실 것 좀 주시겠어요?"}]},
- {id:"help_me_014", phrase:"Help me, please.", ko:"도와주세요.", level:1, tags:["support","daily","travel","school"], kid:true, adult:true, examples:[{en:"Help me, please.",ko:"도와주세요."},{en:"Please help me.",ko:"좀 도와주세요."}]},
- {id:"im_tired_015", phrase:"I'm tired.", ko:"피곤해요.", level:1, tags:["daily","family","school"], kid:true, adult:true, examples:[{en:"I'm tired today.",ko:"오늘 피곤해요."},{en:"I'm really tired.",ko:"정말 피곤해요."}]},
- {id:"im_from_korea_016", phrase:"I'm from Korea.", ko:"저는 한국에서 왔어요.", level:1, tags:["travel","daily","school"], kid:true, adult:true, examples:[{en:"I'm from Korea.",ko:"저는 한국에서 왔어요."},{en:"I came from Korea.",ko:"한국에서 왔어요."}]},
- {id:"learning_english_017", phrase:"I'm learning English.", ko:"영어를 배우고 있어요.", level:2, tags:["school","daily","work"], kid:true, adult:true, examples:[{en:"I'm learning English.",ko:"영어를 배우고 있어요."},{en:"I'm still learning English.",ko:"아직 영어를 배우고 있어요."}]},
- {id:"want_to_go_018", phrase:"I want to go with you.", ko:"같이 가고 싶어요.", level:1, tags:["friends","family","daily"], kid:true, adult:true, examples:[{en:"I want to go with you.",ko:"같이 가고 싶어요."},{en:"Can I go with you?",ko:"같이 가도 돼요?"}]},
- {id:"where_is_019", phrase:"Where is...?", ko:"~이 어디예요?", level:1, tags:["travel","shopping","daily","hotel"], kid:true, adult:true, examples:[{en:"Where is the bathroom?",ko:"화장실이 어디예요?"},{en:"Where is the exit?",ko:"출구가 어디예요?"}]},
- {id:"can_you_020", phrase:"Can you...?", ko:"~해 주실 수 있어요?", level:1, tags:["support","daily","restaurant"], kid:true, adult:true, examples:[{en:"Can you help me?",ko:"도와주실 수 있어요?"},{en:"Can you slow down?",ko:"천천히 말해 주실 수 있어요?"}]},
- {id:"i_have_a_021", phrase:"I have a...", ko:"~이 있어요", level:1, tags:["hospital","daily","work"], kid:true, adult:true, examples:[{en:"I have a headache.",ko:"머리가 아파요."},{en:"I have a question.",ko:"질문이 있어요."}]},
- {id:"can_i_022", phrase:"Can I...?", ko:"~해도 돼요?", level:1, tags:["school","daily","restaurant","travel"], kid:true, adult:true, examples:[{en:"Can I sit here?",ko:"여기 앉아도 돼요?"},{en:"Can I go to the bathroom?",ko:"화장실 가도 돼요?"}]},
- {id:"thank_you_for_023", phrase:"Thank you for...", ko:"~해 줘서 고마워요", level:2, tags:["daily","work","friends"], kid:true, adult:true, examples:[{en:"Thank you for your help.",ko:"도와줘서 고마워요."},{en:"Thank you for waiting.",ko:"기다려 줘서 고마워요."}]},
- {id:"im_sorry_024", phrase:"I'm sorry, but...", ko:"죄송하지만 ~", level:2, tags:["support","work","daily"], kid:false, adult:true, examples:[{en:"I'm sorry, I'm late.",ko:"죄송해요, 늦었어요."},{en:"I'm sorry, but I can't.",ko:"죄송하지만 안 될 것 같아요."}]},
- {id:"is_there_025", phrase:"Is there...?", ko:"~이 있나요?", level:2, tags:["travel","hotel","daily"], kid:false, adult:true, examples:[{en:"Is there a pharmacy nearby?",ko:"근처에 약국이 있나요?"},{en:"Is there free wifi?",ko:"무료 와이파이 있나요?"}]},
- {id:"i_think_026", phrase:"I think...", ko:"~인 것 같아요", level:2, tags:["work","daily","school"], kid:false, adult:true, examples:[{en:"I think it's broken.",ko:"고장 난 것 같아요."},{en:"I think you're right.",ko:"맞는 것 같아요."}]},
- {id:"could_i_have_027", phrase:"Could I have...?", ko:"~을 주시겠어요?", level:2, tags:["restaurant","hotel","shopping"], kid:false, adult:true, examples:[{en:"Could I have the bill?",ko:"계산서 주시겠어요?"},{en:"Could I have a bag?",ko:"봉투 주시겠어요?"}]},
- {id:"let_me_028", phrase:"Let me...", ko:"제가 ~할게요", level:2, tags:["work","daily","support"], kid:false, adult:true, examples:[{en:"Let me check.",ko:"제가 확인해 볼게요."},{en:"Let me try again.",ko:"다시 해 볼게요."}]},
- {id:"do_you_know_029", phrase:"Do you know...?", ko:"~을 아세요?", level:2, tags:["travel","daily","support"], kid:false, adult:true, examples:[{en:"Do you know the way?",ko:"길 아세요?"},{en:"Do you know what time it is?",ko:"몇 시인지 아세요?"}]},
- {id:"how_do_i_030", phrase:"How do I...?", ko:"어떻게 ~해요?", level:2, tags:["support","travel","work"], kid:false, adult:true, examples:[{en:"How do I get there?",ko:"거기 어떻게 가요?"},{en:"How do I use this?",ko:"이거 어떻게 써요?"}]},
- {id:"play_together_031", phrase:"Do you want to play?", ko:"같이 놀래요?", level:1, tags:["friends","games","school"], kid:true, adult:false, examples:[{en:"Do you want to play?",ko:"같이 놀래요?"},{en:"Let's play together!",ko:"같이 놀자!"}]},
- {id:"lend_me_ball_032", phrase:"Can I borrow the ball?", ko:"공 빌려주세요.", level:1, tags:["sports","friends","games"], kid:true, adult:false, examples:[{en:"Can I borrow the ball?",ko:"공 빌려줄래?"},{en:"Can I use the ball?",ko:"공 써도 돼?"}]},
- {id:"i_like_dogs_033", phrase:"I like dogs.", ko:"강아지를 좋아해요.", level:1, tags:["animals","family","friends"], kid:true, adult:false, examples:[{en:"I like dogs.",ko:"강아지를 좋아해요."},{en:"I love puppies!",ko:"강아지 너무 좋아요!"}]},
- {id:"i_like_roblox_034", phrase:"I like Roblox.", ko:"로블록스를 좋아해요.", level:1, tags:["games","friends"], kid:true, adult:false, examples:[{en:"I like Roblox.",ko:"로블록스를 좋아해요."},{en:"Roblox is fun!",ko:"로블록스 재밌어요!"}]},
- {id:"my_name_is_035", phrase:"My name is...", ko:"제 이름은 ~이에요", level:1, tags:["school","friends","daily"], kid:true, adult:true, examples:[{en:"My name is Minjun.",ko:"제 이름은 민준이에요."},{en:"Hi, my name is Sora.",ko:"안녕, 내 이름은 소라야."}]},
- {id:"i_am_years_old_036", phrase:"I'm ... years old.", ko:"저는 ~살이에요", level:1, tags:["school","friends","family"], kid:true, adult:false, examples:[{en:"I'm nine years old.",ko:"저는 아홉 살이에요."},{en:"I'm eight years old.",ko:"저는 여덟 살이에요."}]},
- {id:"may_i_go_037", phrase:"May I go to the bathroom?", ko:"화장실 가도 돼요?", level:1, tags:["school","daily"], kid:true, adult:true, examples:[{en:"May I go to the bathroom?",ko:"화장실 가도 돼요?"},{en:"Can I go to the toilet?",ko:"화장실 다녀와도 돼요?"}]},
- {id:"i_dont_know_038", phrase:"I don't know.", ko:"잘 모르겠어요.", level:1, tags:["school","daily","support"], kid:true, adult:true, examples:[{en:"I don't know.",ko:"잘 모르겠어요."},{en:"Sorry, I don't know.",ko:"죄송해요, 모르겠어요."}]},
- {id:"one_more_time_039", phrase:"One more time, please.", ko:"한 번만 더요.", level:1, tags:["school","support","daily"], kid:true, adult:true, examples:[{en:"One more time, please.",ko:"한 번만 더 해 주세요."},{en:"Again, please.",ko:"다시 한 번요."}]},
- {id:"check_in_040", phrase:"I have a reservation.", ko:"예약했어요.", level:2, tags:["hotel","restaurant","travel"], kid:false, adult:true, examples:[{en:"I have a reservation.",ko:"예약했어요."},{en:"I booked a room.",ko:"방을 예약했어요."}]},
- {id:"not_working_041", phrase:"It's not working.", ko:"작동이 안 돼요.", level:2, tags:["support","work","hotel"], kid:false, adult:true, examples:[{en:"It's not working.",ko:"작동이 안 돼요."},{en:"The wifi isn't working.",ko:"와이파이가 안 돼요."}]},
- {id:"can_i_pay_042", phrase:"Can I pay by card?", ko:"카드로 결제해도 돼요?", level:2, tags:["shopping","restaurant","travel"], kid:false, adult:true, examples:[{en:"Can I pay by card?",ko:"카드로 결제해도 돼요?"},{en:"Do you take cards?",ko:"카드 되나요?"}]},
- {id:"running_late_043", phrase:"I'm running late.", ko:"좀 늦을 것 같아요.", level:2, tags:["work","daily"], kid:false, adult:true, examples:[{en:"I'm running late.",ko:"좀 늦을 것 같아요."},{en:"Sorry, I'm running late.",ko:"죄송해요, 늦고 있어요."}]},
- {id:"could_you_repeat_044", phrase:"Could you speak slowly?", ko:"천천히 말해 주시겠어요?", level:2, tags:["support","travel","daily"], kid:false, adult:true, examples:[{en:"Could you speak slowly?",ko:"천천히 말해 주시겠어요?"},{en:"Please speak slowly.",ko:"천천히 말해 주세요."}]},
- {id:"i_feel_sick_045", phrase:"I feel sick.", ko:"몸이 안 좋아요.", level:1, tags:["hospital","daily","family"], kid:true, adult:true, examples:[{en:"I feel sick.",ko:"몸이 안 좋아요."},{en:"I don't feel well.",ko:"컨디션이 안 좋아요."}]},
- {id:"see_you_later_046", phrase:"See you later.", ko:"나중에 봐요.", level:1, tags:["friends","daily","family"], kid:true, adult:true, examples:[{en:"See you later.",ko:"나중에 봐요."},{en:"See you tomorrow.",ko:"내일 봐요."}]},
- {id:"i_agree_047", phrase:"I agree.", ko:"동의해요.", level:2, tags:["work","school","daily"], kid:false, adult:true, examples:[{en:"I agree with you.",ko:"동의해요."},{en:"That sounds good.",ko:"좋은 것 같아요."}]},
- {id:"excuse_me_048", phrase:"Excuse me.", ko:"실례합니다.", level:1, tags:["travel","daily","support","shopping"], kid:true, adult:true, examples:[{en:"Excuse me.",ko:"실례합니다."},{en:"Excuse me, sir.",ko:"실례합니다, 저기요."}]}
+ {id:"id_like_to_001",phrase:"I'd like to...",ko:"~하고 싶어요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"주문하고 싶어요.",en:"I'd like to order."},{ko:"진료받고 싶어요.",en:"I'd like to see a doctor."},{ko:"선생님과 얘기하고 싶어요.",en:"I'd like to speak with the teacher."},{ko:"체크인하고 싶어요.",en:"I'd like to check in."},{ko:"요금제를 바꾸고 싶어요.",en:"I'd like to change my plan."}]},
+ {id:"can_i_get_002",phrase:"Can I get...?",ko:"~ 주실 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"물 좀 주실 수 있어요?",en:"Can I get some water?"},{ko:"처방전 받을 수 있어요?",en:"Can I get a prescription?"},{ko:"복사본 받을 수 있어요?",en:"Can I get a copy?"},{ko:"수건 더 받을 수 있어요?",en:"Can I get extra towels?"},{ko:"환불받을 수 있어요?",en:"Can I get a refund?"}]},
+ {id:"could_you_003",phrase:"Could you...?",ko:"~해 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","support","transportation","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"계산서 가져다주시겠어요?",en:"Could you bring the bill?"},{ko:"이거 설명해 주시겠어요?",en:"Could you explain this?"},{ko:"제 아이 좀 도와주시겠어요?",en:"Could you help my son?"},{ko:"택시 좀 불러 주시겠어요?",en:"Could you call a taxi?"},{ko:"제 계정 확인해 주시겠어요?",en:"Could you check my account?"}]},
+ {id:"i_need_004",phrase:"I need...",ko:"~이 필요해요",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"포크가 필요해요.",en:"I need a fork."},{ko:"지금 의사가 필요해요.",en:"I need a doctor now."},{ko:"누구랑 얘기 좀 해야 해요.",en:"I need to talk to someone."},{ko:"방 열쇠가 필요해요.",en:"I need a room key."},{ko:"이거 도움이 필요해요.",en:"I need help with this."}]},
+ {id:"do_you_have_005",phrase:"Do you have...?",ko:"~ 있어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"영어 메뉴 있어요?",en:"Do you have an English menu?"},{ko:"영어 하는 의사 있어요?",en:"Do you have an English-speaking doctor?"},{ko:"신청서 있어요?",en:"Do you have a form?"},{ko:"빈 방 있어요?",en:"Do you have a room available?"},{ko:"제 주문번호 있어요?",en:"Do you have my order number?"}]},
+ {id:"where_can_i_006",phrase:"Where is...? / Where can I...?",ko:"~ 어디예요? / 어디서 ~할 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"화장실 어디예요?",en:"Where is the restroom?"},{ko:"약국 어디예요?",en:"Where is the pharmacy?"},{ko:"사무실 어디예요?",en:"Where is the office?"},{ko:"어디에 주차할 수 있어요?",en:"Where can I park?"},{ko:"이거 어디서 내요?",en:"Where can I pay this?"}]},
+ {id:"say_again_007",phrase:"Could you say that again?",ko:"다시 말씀해 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"죄송한데, 다시 말씀해 주시겠어요?",en:"Sorry, could you say that again?"},{ko:"천천히 다시 말씀해 주시겠어요?",en:"Could you say that again, slowly?"},{ko:"다시 한 번 말해 주시겠어요?",en:"Could you repeat that?"},{ko:"죄송해요, 다시요?",en:"Sorry, again please?"},{ko:"한 번만 더 말씀해 주시겠어요?",en:"Could you say that one more time?"}]},
+ {id:"speak_slowly_008",phrase:"Could you speak slowly?",ko:"천천히 말해 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"천천히 말해 주시겠어요?",en:"Could you speak slowly, please?"},{ko:"천천히 말해 주세요.",en:"Please speak slowly."},{ko:"조금만 더 천천히요?",en:"A little slower, please?"},{ko:"천천히요.",en:"Slowly, please."},{ko:"조금만 천천히 말해 주시겠어요?",en:"Could you slow down a bit?"}]},
+ {id:"dont_understand_009",phrase:"I don't understand.",ko:"이해가 안 돼요.",level:1,tags:["restaurant","hospital","school","hotel","support","government","banking","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"죄송한데 이해가 안 돼요.",en:"Sorry, I don't understand."},{ko:"안내가 이해가 안 돼요.",en:"I don't understand the instructions."},{ko:"이 부분이 이해가 안 돼요.",en:"I don't understand this part."},{ko:"이 요금이 이해가 안 돼요.",en:"I don't understand the charge."},{ko:"왜 그런지 이해가 안 돼요.",en:"I don't understand why."}]},
+ {id:"how_much_010",phrase:"How much is it?",ko:"얼마예요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"얼마예요?",en:"How much is it?"},{ko:"진료비 얼마예요?",en:"How much is the visit?"},{ko:"수업료 얼마예요?",en:"How much is the fee?"},{ko:"하룻밤 얼마예요?",en:"How much for one night?"},{ko:"제가 얼마 내야 해요?",en:"How much do I owe?"}]},
+ {id:"can_i_011",phrase:"Can I...?",ko:"~해도 돼요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"여기 앉아도 돼요?",en:"Can I sit here?"},{ko:"들어가도 돼요?",en:"Can I come in?"},{ko:"질문해도 돼요?",en:"Can I ask a question?"},{ko:"늦게 체크아웃해도 돼요?",en:"Can I check out late?"},{ko:"나중에 내도 돼요?",en:"Can I pay later?"}]},
+ {id:"is_there_012",phrase:"Is there...?",ko:"~ 있나요?",level:2,tags:["restaurant","hospital","school","hotel","transportation","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"2인 자리 있나요?",en:"Is there a table for two?"},{ko:"진료 가능한 의사 있나요?",en:"Is there a doctor available?"},{ko:"버스 있나요?",en:"Is there a bus?"},{ko:"무료 와이파이 있나요?",en:"Is there free wifi?"},{ko:"다른 방법 있나요?",en:"Is there another option?"}]},
+ {id:"looking_for_013",phrase:"I'm looking for...",ko:"~을 찾고 있어요",level:2,tags:["restaurant","hospital","school","hotel","shopping","government","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"채식 메뉴를 찾고 있어요.",en:"I'm looking for a vegetarian dish."},{ko:"응급실을 찾고 있어요.",en:"I'm looking for the ER."},{ko:"5번 방을 찾고 있어요.",en:"I'm looking for room 5."},{ko:"엘리베이터를 찾고 있어요.",en:"I'm looking for the elevator."},{ko:"제 영수증을 찾고 있어요.",en:"I'm looking for my receipt."}]},
+ {id:"help_me_014",phrase:"Can you help me?",ko:"도와주실 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"주문 좀 도와주실 수 있어요?",en:"Can you help me order?"},{ko:"좀 도와주실 수 있어요?",en:"Can you help me, please?"},{ko:"이거 작성 좀 도와주실 수 있어요?",en:"Can you help me fill this out?"},{ko:"가방 좀 도와주실 수 있어요?",en:"Can you help me with my bags?"},{ko:"이거 고치는 거 도와주실 수 있어요?",en:"Can you help me fix this?"}]},
+ {id:"how_do_i_015",phrase:"How do I...?",ko:"어떻게 ~해요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"여기서 어떻게 주문해요?",en:"How do I order here?"},{ko:"예약 어떻게 해요?",en:"How do I make an appointment?"},{ko:"등록 어떻게 해요?",en:"How do I register?"},{ko:"역까지 어떻게 가요?",en:"How do I get to the station?"},{ko:"이거 어떻게 취소해요?",en:"How do I cancel?"}]},
+ {id:"what_time_016",phrase:"What time...?",ko:"몇 시에 ~?",level:1,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"몇 시에 닫아요?",en:"What time do you close?"},{ko:"제 예약 몇 시예요?",en:"What time is my appointment?"},{ko:"몇 시에 시작해요?",en:"What time does it start?"},{ko:"체크아웃 몇 시예요?",en:"What time is checkout?"},{ko:"몇 시에 열어요?",en:"What time do you open?"}]},
+ {id:"i_have_a_017",phrase:"I have a...",ko:"~이 있어요 / ~이 아파요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"예약했어요.",en:"I have a reservation."},{ko:"머리가 아파요.",en:"I have a headache."},{ko:"질문이 있어요.",en:"I have a question."},{ko:"예약이 있어요.",en:"I have a booking."},{ko:"문제가 있어요.",en:"I have a problem."}]},
+ {id:"can_i_have_018",phrase:"Can I have...?",ko:"~ 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴 주시겠어요?",en:"Can I have the menu?"},{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"펜 좀 주시겠어요?",en:"Can I have a pen?"},{ko:"제 열쇠 주시겠어요?",en:"Can I have my key?"},{ko:"성함 알려주시겠어요?",en:"Can I have your name?"}]},
+ {id:"sorry_but_019",phrase:"I'm sorry, but...",ko:"죄송하지만 ~",level:2,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"죄송한데 이거 차가워요.",en:"I'm sorry, but this is cold."},{ko:"죄송한데 제가 늦었어요.",en:"I'm sorry, but I'm late."},{ko:"죄송한데 못 가요.",en:"I'm sorry, but I can't come."},{ko:"죄송한데 방이 더러워요.",en:"I'm sorry, but the room is dirty."},{ko:"죄송한데 이거 잘못됐어요.",en:"I'm sorry, but this is wrong."}]},
+ {id:"not_working_020",phrase:"It's not working.",ko:"작동이 안 돼요.",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"카드 단말기가 안 돼요.",en:"The card machine's not working."},{ko:"이게 작동이 안 돼요.",en:"This isn't working."},{ko:"컴퓨터가 안 돼요.",en:"The computer's not working."},{ko:"에어컨이 안 돼요.",en:"The AC isn't working."},{ko:"앱이 안 돼요.",en:"My app's not working."}]},
+ {id:"show_me_021",phrase:"Can you show me...?",ko:"보여 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴 보여 주시겠어요?",en:"Can you show me the menu?"},{ko:"어디인지 보여 주시겠어요?",en:"Can you show me where?"},{ko:"길 좀 보여 주시겠어요?",en:"Can you show me the way?"},{ko:"방 보여 주시겠어요?",en:"Can you show me the room?"},{ko:"어떻게 하는지 보여 주시겠어요?",en:"Can you show me how?"}]},
+ {id:"i_think_022",phrase:"I think...",ko:"~인 것 같아요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"이거 잘못된 것 같아요.",en:"I think this is wrong."},{ko:"열이 나는 것 같아요.",en:"I think I have a fever."},{ko:"제 아이가 아픈 것 같아요.",en:"I think my child is sick."},{ko:"뭔가 착오가 있는 것 같아요.",en:"I think there's a mistake."},{ko:"제가 과다청구된 것 같아요.",en:"I think I was overcharged."}]},
+ {id:"pay_by_card_023",phrase:"Can I pay by card?",ko:"카드로 계산돼요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"카드로 계산돼요?",en:"Can I pay by card?"},{ko:"여기 카드 되나요?",en:"Do you take cards?"},{ko:"온라인으로 낼 수 있어요?",en:"Can I pay online?"},{ko:"카드로 결제할게요.",en:"I'll pay by card."},{ko:"할부로 낼 수 있어요?",en:"Can I pay in installments?"}]},
+ {id:"excuse_me_024",phrase:"Excuse me.",ko:"실례합니다 / 저기요",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"저기요, 준비됐어요.",en:"Excuse me, we're ready."},{ko:"저기요, 질문이 있어요.",en:"Excuse me, I have a question."},{ko:"실례지만 선생님이세요?",en:"Excuse me, are you the teacher?"},{ko:"저기요, 도와주실 수 있어요?",en:"Excuse me, can you help?"},{ko:"저기요, 계세요?",en:"Excuse me, are you there?"}]},
+ {id:"one_moment_025",phrase:"One moment, please.",ko:"잠깐만요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"잠깐만요.",en:"One moment, please."},{ko:"잠시만요.",en:"Just a moment."},{ko:"1초만요.",en:"One second, please."},{ko:"잠깐만 기다려 주시겠어요?",en:"Could I have a moment?"},{ko:"잠시만 기다려 주시겠어요?",en:"Can you hold on a second?"}]},
+ {id:"do_you_know_026",phrase:"Do you know...?",ko:"~을 아세요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"여기 뭐가 맛있는지 아세요?",en:"Do you know what's good here?"},{ko:"얼마나 걸리는지 아세요?",en:"Do you know how long it takes?"},{ko:"일정 아세요?",en:"Do you know the schedule?"},{ko:"어디인지 아세요?",en:"Do you know where it is?"},{ko:"제 잔액 아세요?",en:"Do you know my balance?"}]},
+ {id:"make_a_027",phrase:"I'd like to make a...",ko:"~을 하고 싶어요 (예약/신청)",level:2,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"예약하고 싶어요.",en:"I'd like to make a reservation."},{ko:"진료 예약하고 싶어요.",en:"I'd like to make an appointment."},{ko:"선생님과 면담 예약하고 싶어요.",en:"I'd like to make an appointment with the teacher."},{ko:"예약하고 싶어요.",en:"I'd like to make a booking."},{ko:"민원을 넣고 싶어요.",en:"I'd like to make a complaint."}]},
+ {id:"can_i_change_028",phrase:"Can I change...?",ko:"~ 바꿀 수 있어요?",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"주문 바꿀 수 있어요?",en:"Can I change my order?"},{ko:"예약 바꿀 수 있어요?",en:"Can I change my appointment?"},{ko:"날짜 바꿀 수 있어요?",en:"Can I change the date?"},{ko:"방 바꿀 수 있어요?",en:"Can I change rooms?"},{ko:"요금제 바꿀 수 있어요?",en:"Can I change my plan?"}]},
+ {id:"can_i_cancel_029",phrase:"Can I cancel...?",ko:"~ 취소할 수 있어요?",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"주문 취소할 수 있어요?",en:"Can I cancel my order?"},{ko:"예약 취소할 수 있어요?",en:"Can I cancel my appointment?"},{ko:"수업 취소할 수 있어요?",en:"Can I cancel the class?"},{ko:"예약 취소할 수 있어요?",en:"Can I cancel my booking?"},{ko:"구독 취소할 수 있어요?",en:"Can I cancel my subscription?"}]},
+ {id:"is_this_030",phrase:"Is this...?",ko:"이거 ~예요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"이거 매워요?",en:"Is this spicy?"},{ko:"이거 정상이에요?",en:"Is this normal?"},{ko:"여기 맞는 방이에요?",en:"Is this the right room?"},{ko:"이거 포함이에요?",en:"Is this included?"},{ko:"이거 무료예요?",en:"Is this free?"}]},
+ {id:"how_long_031",phrase:"How long...?",ko:"얼마나 걸려요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"얼마나 기다려요?",en:"How long is the wait?"},{ko:"얼마나 걸려요?",en:"How long will it take?"},{ko:"수업 얼마나 해요?",en:"How long is the class?"},{ko:"얼마나 머물 수 있어요?",en:"How long can I stay?"},{ko:"고쳐질 때까지 얼마나 걸려요?",en:"How long until it's fixed?"}]},
+ {id:"i_forgot_032",phrase:"I forgot my...",ko:"~을 깜빡했어요/잃어버렸어요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"지갑을 깜빡했어요.",en:"I forgot my wallet."},{ko:"카드를 깜빡했어요.",en:"I forgot my card."},{ko:"신청서를 깜빡했어요.",en:"I forgot the form."},{ko:"열쇠를 깜빡했어요.",en:"I forgot my key."},{ko:"비밀번호를 잊어버렸어요.",en:"I forgot my password."}]},
+ {id:"write_it_down_033",phrase:"Can you write it down?",ko:"적어 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","support","government","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"적어 주시겠어요?",en:"Can you write it down?"},{ko:"복용량 적어 주시겠어요?",en:"Can you write down the dosage?"},{ko:"날짜 적어 주시겠어요?",en:"Can you write down the date?"},{ko:"주소 적어 주시겠어요?",en:"Can you write the address?"},{ko:"번호 적어 주시겠어요?",en:"Can you write down the number?"}]},
+ {id:"what_mean_034",phrase:"What does this mean?",ko:"이게 무슨 뜻이에요?",level:2,tags:["restaurant","hospital","school","hotel","support","government","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"이게 무슨 뜻이에요?",en:"What does this mean?"},{ko:"이 단어 무슨 뜻이에요?",en:"What does this word mean?"},{ko:"이 안내문 무슨 뜻이에요?",en:"What does this note mean?"},{ko:"이 요금 뭐예요?",en:"What does this charge mean?"},{ko:"이 오류 무슨 뜻이에요?",en:"What does this error mean?"}]},
+ {id:"refund_035",phrase:"Can I get a refund?",ko:"환불 받을 수 있어요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"환불 받을 수 있어요?",en:"Can I get a refund?"},{ko:"이거 환불 받을 수 있어요?",en:"Can I get a refund for this?"},{ko:"수업료 환불돼요?",en:"Can I get a refund on the fee?"},{ko:"환불 받을 수 있어요?",en:"Can I get a refund?"},{ko:"환불 좀 해주시겠어요?",en:"Can I get a refund, please?"}]},
+ {id:"problem_with_036",phrase:"There's a problem with...",ko:"~에 문제가 있어요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","transportation","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"제 주문에 문제가 있어요.",en:"There's a problem with my order."},{ko:"제 처방에 문제가 있어요.",en:"There's a problem with my prescription."},{ko:"일정에 문제가 있어요.",en:"There's a problem with the schedule."},{ko:"제 방에 문제가 있어요.",en:"There's a problem with my room."},{ko:"제 청구서에 문제가 있어요.",en:"There's a problem with my bill."}]},
+ {id:"could_you_check_037",phrase:"Could you check...?",ko:"~ 확인해 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"제 주문 확인해 주시겠어요?",en:"Could you check my order?"},{ko:"제 결과 확인해 주시겠어요?",en:"Could you check my results?"},{ko:"명단 확인해 주시겠어요?",en:"Could you check the list?"},{ko:"제 예약 확인해 주시겠어요?",en:"Could you check my booking?"},{ko:"제 계정 확인해 주시겠어요?",en:"Could you check my account?"}]},
+ {id:"not_sure_038",phrase:"I'm not sure.",ko:"잘 모르겠어요",level:2,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"뭘 시킬지 잘 모르겠어요.",en:"I'm not sure what to order."},{ko:"뭐가 문제인지 잘 모르겠어요.",en:"I'm not sure what's wrong."},{ko:"어디로 가야 할지 모르겠어요.",en:"I'm not sure where to go."},{ko:"제 방 번호를 잘 모르겠어요.",en:"I'm not sure of my room number."},{ko:"무슨 일인지 잘 모르겠어요.",en:"I'm not sure what happened."}]},
+ {id:"ask_question_039",phrase:"Can I ask a question?",ko:"질문 하나 해도 돼요?",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴에 대해 질문해도 돼요?",en:"Can I ask a question about the menu?"},{ko:"질문 하나 해도 돼요?",en:"Can I ask a question?"},{ko:"뭐 좀 물어봐도 돼요?",en:"Can I ask you something?"},{ko:"체크아웃 관련 물어봐도 돼요?",en:"Can I ask about checkout?"},{ko:"하나만 더 물어봐도 돼요?",en:"Can I ask one more thing?"}]},
+ {id:"thank_you_help_040",phrase:"Thank you for your help.",ko:"도와주셔서 감사해요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"도와주셔서 감사해요.",en:"Thank you for your help."},{ko:"감사합니다, 선생님.",en:"Thank you, doctor."},{ko:"시간 내주셔서 감사해요.",en:"Thank you for your time."},{ko:"도와주셔서 감사해요.",en:"Thanks for your help."},{ko:"도와주셔서 감사해요.",en:"Thank you for helping me."}]},
+ {id:"recommend_041",phrase:"Could you recommend...?",ko:"추천해 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"메뉴 추천해 주시겠어요?",en:"Could you recommend a dish?"},{ko:"전문의 추천해 주시겠어요?",en:"Could you recommend a specialist?"},{ko:"수업 추천해 주시겠어요?",en:"Could you recommend a class?"},{ko:"근처에 좋은 곳 추천해 주시겠어요?",en:"Could you recommend a place nearby?"},{ko:"요금제 추천해 주시겠어요?",en:"Could you recommend a plan?"}]},
+ {id:"ill_take_042",phrase:"I'll take this one.",ko:"이걸로 할게요",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"이걸로 할게요.",en:"I'll take this one."},{ko:"오전 시간으로 할게요.",en:"I'll take the morning slot."},{ko:"그 옵션으로 할게요.",en:"I'll take that option."},{ko:"이 방으로 할게요.",en:"I'll take the room."},{ko:"기본 요금제로 할게요.",en:"I'll take the basic plan."}]},
+ {id:"can_you_call_043",phrase:"Can you call...?",ko:"~ 불러/전화해 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"매니저 불러 주시겠어요?",en:"Can you call the manager?"},{ko:"간호사 불러 주시겠어요?",en:"Can you call a nurse?"},{ko:"제 아이 선생님께 전화해 주시겠어요?",en:"Can you call my child's teacher?"},{ko:"택시 불러 주시겠어요?",en:"Can you call a taxi?"},{ko:"다시 전화해 주시겠어요?",en:"Can you call me back?"}]},
+ {id:"what_should_i_044",phrase:"What should I do?",ko:"어떻게 해야 하죠?",level:2,tags:["restaurant","hospital","school","hotel","support","government","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"주문하려면 어떻게 해야 해요?",en:"What should I do to order?"},{ko:"이제 어떻게 해야 하죠?",en:"What should I do now?"},{ko:"다음에 뭘 해야 하죠?",en:"What should I do next?"},{ko:"열쇠는 어떻게 해야 하죠?",en:"What should I do with the key?"},{ko:"고치려면 어떻게 해야 하죠?",en:"What should I do to fix it?"}]},
+ {id:"receipt_045",phrase:"Can I have a receipt?",ko:"영수증 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"보험용 영수증 주시겠어요?",en:"Can I have a receipt for insurance?"},{ko:"수업료 영수증 주시겠어요?",en:"Can I have a receipt for the fee?"},{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"영수증 이메일로 주시겠어요?",en:"Can I have a receipt by email?"}]},
+ {id:"is_it_possible_046",phrase:"Is it possible to...?",ko:"~ 가능할까요?",level:3,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"밖에 앉는 거 가능할까요?",en:"Is it possible to sit outside?"},{ko:"오늘 진료 가능할까요?",en:"Is it possible to see someone today?"},{ko:"내일 만나는 거 가능할까요?",en:"Is it possible to meet tomorrow?"},{ko:"일찍 체크인 가능할까요?",en:"Is it possible to check in early?"},{ko:"기한 연장 가능할까요?",en:"Is it possible to get an extension?"}]},
+ {id:"appointment_047",phrase:"I have an appointment.",ko:"예약했어요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"7시에 예약했어요.",en:"I have a reservation at 7."},{ko:"3시에 예약했어요.",en:"I have an appointment at 3."},{ko:"선생님과 면담 예약했어요.",en:"I have an appointment with the teacher."},{ko:"김으로 예약했어요.",en:"I have a reservation under Kim."},{ko:"예약된 통화가 있어요.",en:"I have a scheduled call."}]},
+ {id:"spell_that_048",phrase:"Can you spell that?",ko:"철자를 알려 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"철자 알려 주시겠어요?",en:"Can you spell that?"},{ko:"약 이름 철자 알려 주시겠어요?",en:"Can you spell the medicine?"},{ko:"이름 철자 알려 주시겠어요?",en:"Can you spell the name?"},{ko:"도로명 철자 알려 주시겠어요?",en:"Can you spell the street?"},{ko:"성 철자 알려 주시겠어요?",en:"Can you spell your last name?"}]},
+ {id:"not_what_049",phrase:"That's not what I ordered.",ko:"제가 주문/요청한 게 아니에요",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"제가 주문한 게 아니에요.",en:"That's not what I ordered."},{ko:"제가 요청한 게 아니에요.",en:"That's not what I asked for."},{ko:"우리가 얘기한 게 아니에요.",en:"That's not what we discussed."},{ko:"제가 예약한 방이 아니에요.",en:"That's not the room I booked."},{ko:"제가 신청한 게 아니에요.",en:"That's not what I signed up for."}]},
+ {id:"wait_second_050",phrase:"Could you wait a second?",ko:"잠시 기다려 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"잠시 기다려 주시겠어요?",en:"Could you wait a second?"},{ko:"확인하는 동안 기다려 주시겠어요?",en:"Could you wait while I check?"},{ko:"잠깐 기다려 주시겠어요?",en:"Could you wait a moment?"},{ko:"기다려 주시겠어요?",en:"Could you wait, please?"},{ko:"잠시만 기다려 주시겠어요?",en:"Could you hold for a second?"}]}
 ];
 // 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
 function pickPhrases(opts){
@@ -3773,6 +3835,7 @@ function spPassItem(it, heard){
   spTimes.push(Math.round(elapsed*10)/10);
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
   spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
+  if(spCombo===3||spCombo===5||spCombo===10||(spCombo>10&&spCombo%5===0)){ try{ comboFx(spCombo, spMult()); }catch(e){} }
   const speedBonus = elapsed<=2?5 : elapsed<=4?3 : elapsed<=6?1 : 0;
   const gained = awardXP("output", Math.max(1, speedBonus*spMult()), "스프린트 ⚡", "sprint");
   bumpCount&&bumpCount("talk"); questBump&&questBump("talk");
@@ -4161,18 +4224,84 @@ function applyAgeUI(){
   const dc=$("#dailyCard"); if(dc) dc.style.display=kid?"none":"";
 }
 function setAge(a){ state.age=a; hSet("speakingroom:age",a); applyAgeUI(); }
+function renderHero(){
+  const hz=$("#heroZone"); if(!hz) return;
+  const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
+  const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
+  const name=hGet("speakingroom:name","")||"친구";
+  const nr=nextReward(li.level); const active=avActiveCount();
+  const R=33, C=2*Math.PI*R, off=C*(1-pct);
+  const lvBucket = li.level>=20?"MASTER": li.level>=10?"PRO": li.level>=5?"HERO":"ROOKIE";
+  hz.innerHTML=`
+   <div class="hero-row">
+     <div class="ring-wrap">
+       <svg viewBox="0 0 78 78"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+         <stop offset="0" stop-color="#1fd3a0"/><stop offset="1" stop-color="#9b98ec"/></linearGradient></defs>
+         <circle class="ring-bg" cx="39" cy="39" r="${R}"/>
+         <circle class="ring-fg" cx="39" cy="39" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/>
+       </svg>
+       <div class="ring-lv"><b>${li.level}</b><span>LV</span></div>
+     </div>
+     <div class="hero-mid">
+       <div class="hero-hello">${escapeHtml(homeGreeting())} · ${lvBucket}</div>
+       <div class="hero-name">${escapeHtml(name)} ${kidMode()?"🧒":"🧑"}</div>
+       <div class="hero-chips">
+         <span class="hchip flame ${streak>=2?'lit':''}">🔥 ${streak}일</span>
+         <span class="hchip gem">💎 ${active}</span>
+         <span class="hchip">⚡ ${todayXP()} XP</span>
+       </div>
+     </div>
+   </div>
+   <div class="hero-reward">
+     <span class="rwemo">${nr?nr.emo:"🏆"}</span>
+     <div class="rwtx">
+       <div class="rwtop">다음 보물까지</div>
+       <div class="rwname">${nr?("Lv."+nr.lv+" · "+escapeHtml(nr.t)):"전부 달성! 최고예요"}</div>
+       <div class="rwbar"><i style="width:${Math.round(pct*100)}%"></i></div>
+     </div>
+     <span class="rwgo">${nr?("D-"+(nr.lv-li.level)):"MAX"}</span>
+   </div>`;
+  // 링 애니메이션 (다음 프레임에 채움)
+  const fg=hz.querySelector(".ring-fg");
+  if(fg) requestAnimationFrame(()=>requestAnimationFrame(()=>{ fg.style.strokeDashoffset=off.toFixed(1); }));
+}
+// 🎉 레벨업 풀스크린 축포
+function levelUpCelebrate(level){
+  const ov=$("#lvlCelebrate"); if(!ov) return;
+  const nr=nextReward(level); const unlocked=REWARDS.find(r=>r.lv===level);
+  ov.innerHTML=`<div class="celeb-card">
+    <div class="celeb-badge">${unlocked?unlocked.emo:"⭐"}</div>
+    <div class="celeb-lv">LEVEL UP</div>
+    <div class="celeb-big">Lv.${level}</div>
+    <div class="celeb-sub">${unlocked?("🎁 보상 해금: "+escapeHtml(unlocked.t)):(nr?("다음 보물까지 "+(nr.lv-level)+"레벨!"):"최고 레벨 도달! 🏆")}</div>
+  </div>`;
+  ov.classList.add("show");
+  // 색종이
+  const colors=["#1fd3a0","#9b98ec","#ffb454","#ff6b9d","#5b9bf5","#fff"];
+  for(let i=0;i<80;i++){ const c=document.createElement("div"); c.className="confetti";
+    c.style.left=(Math.random()*100)+"vw"; c.style.background=colors[(Math.random()*colors.length)|0];
+    c.style.animationDuration=(1.6+Math.random()*1.6)+"s"; c.style.animationDelay=(Math.random()*0.4)+"s";
+    c.style.opacity=String(.7+Math.random()*.3); document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 3400); }
+  try{ if(navigator.vibrate) navigator.vibrate([0,40,30,40]); }catch(e){}
+  clearTimeout(levelUpCelebrate._t); levelUpCelebrate._t=setTimeout(()=>ov.classList.remove("show"), 2600);
+}
+// 🔥 콤보 연출 — 화면 흔들기 + 콤보 팝
+function comboFx(combo, mult){
+  const box=$("#sprint"); if(box){ box.classList.remove("combo-shake"); void box.offsetWidth; box.classList.add("combo-shake"); }
+  const sc=$("#sprintScroll"); if(sc){ const pop=document.createElement("div"); pop.className="combo-pop";
+    pop.textContent=`x${mult} 🔥${combo}`; sc.appendChild(pop); setTimeout(()=>pop.remove(), 850); }
+  try{ if(navigator.vibrate) navigator.vibrate(25); }catch(e){}
+}
 function renderHome(){
   if(!$("#homeCard")) return;
   state.age=hGet("speakingroom:age","adult");
   applyAgeUI();
-  $("#homeHi").textContent=homeGreeting();
-  const name=hGet("speakingroom:name","");
-  $("#homeName").textContent=(name||"친구")+"님 👋";
-  // streak
+  // streak (calc first so hero can show it)
   let st=hGet("speakingroom:streak",{last:0,n:0}); const today=DAYN();
   if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
     st.n = (st.last===yd)?(st.n||0)+1:1; st.last=today; hSet("speakingroom:streak",st); }
-  $("#streakN").textContent=st.n||1;
+  renderHero();
   // 오늘의 생존 표현 + 퀘스트 + 습득 지표
   renderDailyCard();
   renderQuestBox();
@@ -4309,7 +4438,9 @@ function addXP(amount,label){
   const p=getProf(); const before=levelInfo(p.xp).level;
   p.xp=(p.xp||0)+amount; hSet("speakingroom:prof",p);
   const after=levelInfo(p.xp).level;
-  xpToast(amount,label, after>before?after:0); renderHome();
+  xpToast(amount,label, after>before?after:0);
+  if(after>before){ try{ levelUpCelebrate(after); }catch(e){} }
+  renderHome();
 }
 function xpToast(amount,label,lvUp){
   const t=$("#xpToast"); if(!t) return;
@@ -4478,7 +4609,7 @@ async function checkForUpdate(){
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 { const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
 { const tg=$("#ageToggle"); if(tg) tg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>setAge(b.dataset.age); }); }
-$("#homeName").onclick=openProfile;
+{ const hz=$("#heroZone"); if(hz) hz.onclick=openProfile; }
 $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
 $("#profScrim").onclick=(e)=>{ if(e.target.id==="profScrim") closeProfile(); };
 { const eb=$("#evalBtn"); if(eb) eb.onclick=endAndEvaluate; }

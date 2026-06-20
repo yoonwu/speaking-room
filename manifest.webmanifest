@@ -1,18 +1,25 @@
 {
   "name": "스피킹 룸",
-  "short_name": "스피킹 룸",
-  "description": "영어 회화 트레이너",
+  "short_name": "스피킹룸",
+  "description": "모험처럼 영어가 트이는 생존 스피킹 트레이너",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#0e100f",
   "theme_color": "#0e100f",
-  "lang": "ko",
-  "dir": "ltr",
+  "orientation": "portrait",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
