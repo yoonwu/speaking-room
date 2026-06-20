@@ -752,12 +752,13 @@ body{background:var(--paper); color:var(--text)}
           </div>
           <div class="streak" id="streakBadge"><span>🔥</span><b id="streakN">1</b>일 연속</div>
         </div>
-        <div class="mission" id="missionCard">
-          <span class="mission-tag">오늘의 미션</span>
-          <div class="mission-title" id="missionTitle">카페에서 주문하기</div>
-          <div class="mission-meta" id="missionMeta">⏱ 약 3분 · 회화</div>
-          <button class="mission-btn" id="missionBtn"><span>▶</span> 지금 말하기 시작</button>
-        </div>
+        <!-- 메인 트레이닝 (70%) -->
+        <button class="mission" id="trainCard" style="text-align:left;width:100%;cursor:pointer;display:block">
+          <span class="mission-tag">오늘의 트레이닝</span>
+          <div class="mission-title">듣고 · 이해하고 · 말하기</div>
+          <div class="mission-meta" id="trainMeta">실제 영어를 귀로 듣고 → 따라 말하고 → 내 말로 써먹어요</div>
+          <span class="mission-btn" id="trainBtn"><span>▶</span> 시작하기</span>
+        </button>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
           <span class="cont-txt"><span class="cont-t">이어서 연습하기</span><span class="cont-d" id="contDesc"></span></span>
@@ -765,49 +766,46 @@ body{background:var(--paper); color:var(--text)}
         </button>
       </div>
 
-      <p class="sub" style="margin-bottom:4px">막히면 한국어로 물어보고, 끝나면 교정받아요. 매번 새로 말해주니까 외운 티가 안 나요.</p>
+      <!-- 습득 지표 (점수 아님 — 자신감·인출속도·이해) -->
+      <div id="acqStats" style="display:flex;gap:9px;margin-bottom:14px"></div>
 
+      <!-- 리스닝 부스터(20%) · 단어 강화(10%) -->
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button id="boosterCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:18px;padding:15px 14px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:rgba(91,155,245,.16);color:#5b9bf5;margin-bottom:9px">🎧</div>
+          <div style="font-size:14.5px;font-weight:800;color:var(--text)">리스닝 부스터</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">연음·축약 귀 훈련<br>wudja · wanna · gonna</div>
+        </button>
+        <button id="vocabCard" style="flex:1;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:18px;padding:15px 14px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:rgba(31,211,160,.14);color:#1fd3a0;margin-bottom:9px">🗣️</div>
+          <div style="font-size:14.5px;font-weight:800;color:var(--text)">단어 강화</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">외우지 않고<br>상황에서 직접 써보기</div>
+        </button>
+      </div>
+
+      <!-- 다시 만날 표현 (STEP 8 · 미래 인출) -->
       <div class="rvbanner" id="rvBanner" style="display:none">
-        <div class="rvb-l"><span class="rvb-n" id="rvCount">0</span><span class="rvb-t">오늘 복습할 표현</span></div>
+        <div class="rvb-l"><span class="rvb-n" id="rvCount">0</span><span class="rvb-t">다시 만날 표현</span></div>
         <div class="rvb-btns">
-          <button id="rvStart">복습 시작</button>
-          <button id="rvSpeed">⚡ 속도 드릴</button>
+          <button id="rvStart">다시 말해보기</button>
+          <button id="rvSpeed">⚡ 속도</button>
         </div>
       </div>
 
-      <div class="modesw" id="modesw">
-        <button data-mode="vocab" aria-pressed="true"><span class="ti">📖</span><span class="tl">단어</span></button>
-        <button data-mode="block" aria-pressed="false"><span class="ti">🧱</span><span class="tl">블록</span></button>
-        <button data-mode="talk" aria-pressed="false"><span class="ti">🗣️</span><span class="tl">회화</span></button>
-        <button data-mode="listen" aria-pressed="false"><span class="ti">🎧</span><span class="tl">듣기</span></button>
-      </div>
-
-      <div id="modeHero" style="display:flex;align-items:center;gap:14px;border-radius:20px;padding:18px 18px;margin-bottom:12px;border:1.5px solid var(--line);background:var(--card2)">
-        <div id="mhIcon" style="width:58px;height:58px;flex:none;border-radius:18px;display:grid;place-items:center;font-size:30px;background:rgba(31,211,160,.14)">📖</div>
-        <div style="flex:1;min-width:0">
-          <div id="mhTitle" style="font-size:19px;font-weight:800;color:var(--text);line-height:1.2">단어 학습</div>
-          <div id="mhDesc" style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:3px">여러 다른 문장으로 단어를 익혀요</div>
-        </div>
-      </div>
-
-      <div id="modeProgress" style="display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin-bottom:20px">
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
-            <span id="mpLabel" style="color:var(--text);font-weight:700">오늘 단어</span>
-            <span id="mpCount" style="color:var(--muted)">0 / 20</span>
-          </div>
-          <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div id="mpBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1fd3a0,#13b488);border-radius:99px;transition:width .4s"></div></div>
-        </div>
-      </div>
-
-      <div class="field" id="levelField">
-        <label>난이도</label>
-        <div class="levels" id="levels">
+      <!-- 난이도 (코치가 맞춰줌) -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">난이도</span>
+        <div class="levels" id="levels" style="flex:1">
           <button data-lvl="초급" aria-pressed="false">초급<span class="en">slow & simple</span></button>
           <button data-lvl="중급" aria-pressed="true">중급<span class="en">everyday pace</span></button>
           <button data-lvl="고급" aria-pressed="false">고급<span class="en">native speed</span></button>
         </div>
       </div>
+      <div id="verFoot" style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--muted);opacity:.7;letter-spacing:.03em"></div>
+
+      <!-- (구) 설정 영역 — 코치형에선 숨김, 엔진 호환 위해 유지 -->
+      <div style="display:none">
+      <div class="field" id="levelField"></div>
 
       <div class="field" id="talkField" style="display:none">
         <label>어떤 상황을 연습할까요</label>
@@ -839,7 +837,7 @@ body{background:var(--paper); color:var(--text)}
       </div>
 
       <button class="startbtn" id="startBtn" disabled>단어 시작</button>
-      <div id="verFoot" style="text-align:center;margin-top:18px;font-size:11.5px;color:var(--muted);opacity:.7;letter-spacing:.03em"></div>
+      </div><!-- /hidden legacy -->
     </div>
   </div>
 
@@ -972,7 +970,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.2.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.4.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1297,8 +1295,8 @@ function buildSetup(){
     vgrid.appendChild(b);
   }); }
 
-  // mode switch
-  $("#modesw").querySelectorAll("button").forEach(b=>{
+  // mode switch (구 탭 — 코치형 홈에선 제거됨; 존재 시에만 배선)
+  if($("#modesw")){ $("#modesw").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
       $("#modesw").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
       b.setAttribute("aria-pressed","true"); state.mode=b.dataset.mode;
@@ -1307,7 +1305,7 @@ function buildSetup(){
       renderModeProgress();
       refreshStart();
     };
-  });
+  }); }
 }
 // 탭에 맞는 설정 영역만 보이게 강제 동기화 (상황 그리드는 회화에서만)
 function syncSetupFields(){
@@ -1673,12 +1671,15 @@ function startListening(){
   lsGenerate();
 }
 // 실전 구어 한 문장 생성
+let lsBoosterMode=false;
 function listenSentenceSys(){
   const seed=Math.floor(Math.random()*100000);
   const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
+  const booster = lsBoosterMode ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
   return [
 "This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
 "Produce ONE natural spoken English sentence for a Korean learner (level: "+state.level+"). Topic context: "+topicDesc()+".",
+booster,
 prev,
 state.level==="초급"?"Short and clear but still natural (5-9 words)." : state.level==="고급"?"Fully native-paced and natural with real reductions (8-16 words)." : "Everyday natural pace (6-12 words).",
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
@@ -2510,12 +2511,173 @@ async function _oldGenerateVocab(){
   }catch(e){ $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
 }
 function showVocabCard(){
-  if(vbIdx>=vocabWords.length) return vocabDone();
-  const w=vocabWords[vbIdx];
-  $("#vbBarFill").style.width=Math.round((vbIdx/vocabWords.length)*100)+"%";
-  $("#vbProgTxt").textContent=`${vbIdx+1} / ${vocabWords.length}`;
-  if(w.blank && w.blank.en && /_/.test(w.blank.en)) renderVocabQuiz(w);
-  else renderVocabReveal(w, null);
+  voStart(vocabWords);
+}
+
+/* ============================================================
+   단어 = 아웃풋 코치 (인지 아님 → 즉각 인출·사용)
+   소개→듣기→따라하기→실제 상황→사용 강제→피드백→다른 상황 재등장→인출속도
+   ============================================================ */
+let voWords=[], voOrder=[], voPos=0, voRound=1, voT0=0, voTimes={};
+function voShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function voStart(words){
+  voWords=(words||[]).filter(w=>w&&w.word).slice(0,5);
+  if(!voWords.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
+  voRound=1; voPos=0; voTimes={}; voOrder=voWords.map((_,i)=>i);
+  voNext();
+}
+function voNext(){
+  const total=voWords.length*2;
+  const done=(voRound===1?0:voWords.length)+voPos;
+  $("#vbBarFill").style.width=Math.round(done/total*100)+"%";
+  $("#vbProgTxt").textContent=`라운드 ${voRound}/2 · ${Math.min(voPos+1,voWords.length)} / ${voWords.length}`;
+  if(voPos>=voOrder.length){
+    if(voRound===1){ voRound=2; voPos=0; voOrder=voShuffle(voWords.map((_,i)=>i)); voNext(); return; }
+    return voDone();
+  }
+  const w=voWords[voOrder[voPos]];
+  if(voRound===1) renderVoIntro(w); else renderVoUse(w);   // 2라운드 = 재등장, 바로 인출
+}
+// 1·2·3) 소개 + 듣기 + 따라 말하기
+function renderVoIntro(w){
+  const card=document.createElement("div"); card.style.cssText="flex:1;display:flex;flex-direction:column";
+  card.innerHTML=`
+    <div class="mbtab">새 단어 ${voPos+1}</div>
+    <div class="mbcard" style="text-align:center;padding:30px 22px">
+      <div style="font-family:var(--serif);font-size:40px;font-weight:500;color:var(--jade)">${escapeHtml(w.word)}</div>
+      <div style="font-size:16px;color:var(--muted);margin-top:6px">${escapeHtml(w.ko||"")}</div>
+      ${(w.colloc&&w.colloc.length)?`<div class="vcols" style="margin-top:14px">${w.colloc.map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("")}</div>`:""}
+    </div>
+    <div class="mbstatus" id="voStatus" style="font-size:14px;color:var(--muted);font-weight:600">🔊 듣고 → 따라 말해보세요</div>
+    <div class="mbmicwrap" style="margin-top:6px">
+      <button class="mbside" id="voHear"><span class="ic">🔊</span>다시 듣기</button>
+      <button class="mbmic" id="voRepeat" aria-label="따라 말하기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>
+      <button class="mbside" id="voSkipRep"><span class="ic">→</span>바로 사용</button>
+    </div>
+    <button class="sh-next" id="voToUse" style="margin-top:18px">이 단어로 말해보기 →</button>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  setTimeout(()=>speakEn(w.word),320);
+  $("#voHear").onclick=()=>speakEn(w.word);
+  $("#voRepeat").onclick=()=>{ const b=$("#voRepeat"), s=$("#voStatus"); b.classList.add("live"); s.textContent="듣고 있어요…";
+    micFillCb((t)=>{ b.classList.remove("live"); if(t){ s.textContent='"'+t+'" — 좋아요! 이제 문장으로 👇'; s.style.color="var(--jade)"; } else { s.textContent="다시 한 번 따라 말해보세요"; } }); };
+  $("#voSkipRep").onclick=()=>renderVoUse(w);
+  $("#voToUse").onclick=()=>renderVoUse(w);
+}
+// 4·5) 실제 상황 + 사용 강제 (타이머 시작)
+function voSituation(w){
+  const ex=w.examples||[];
+  const idx = voRound===1 ? 0 : (ex.length>1?1:0);
+  const e = ex[idx] || ex[0] || {en:w.word, ko:w.ko};
+  return {ko:e.ko||w.ko||"", model:e.en||w.word};
+}
+function renderVoUse(w){
+  const sit=voSituation(w);
+  w._sit=sit;
+  const card=document.createElement("div"); card.style.cssText="flex:1;display:flex;flex-direction:column";
+  card.innerHTML=`
+    <div class="mbtab">${voRound===2?"🔁 다시 — 다른 상황":"실전 상황"}</div>
+    <div class="mbcard" style="padding:24px 22px">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">이 상황을 영어로 — <span style="color:var(--jade)">${escapeHtml(w.word)}</span> 꼭 쓰기</div>
+      <div style="font-size:21px;font-weight:600;color:var(--text);line-height:1.5">${escapeHtml(sit.ko)}</div>
+    </div>
+    <div class="mbstatus" id="voStatus">🎤 눌러서 영어로 말해보세요</div>
+    <div class="mbmicwrap">
+      <button class="mbside" id="voHint2"><span class="ic">💡</span>힌트</button>
+      <button class="mbmic" id="voUseMic" aria-label="말하기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>
+      <button class="mbside" id="voKbd2"><span class="ic">⌨️</span>키보드</button>
+    </div>
+    <input id="voInput" type="text" autocomplete="off" placeholder="영어로 입력 후 Enter" class="mbkbd" style="display:none">
+    <button class="rv-stop" id="voGiveup" style="margin-top:10px">모르겠어요 — 모범답안</button>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  const status=$("#voStatus"), inp=$("#voInput");
+  voT0=Date.now();   // 인출 속도 측정 시작
+  let hintN=0;
+  $("#voHint2").onclick=()=>{ hintN++; const m=sit.model;
+    if(hintN===1) status.textContent="힌트: "+m.split(/\s+/).slice(0,2).join(" ")+" …";
+    else status.innerHTML="모범: <b>"+escapeHtml(m)+"</b>"; status.style.color="var(--muted)"; };
+  $("#voUseMic").onclick=()=>{ const b=$("#voUseMic"); if(b.classList.contains("live")) return;
+    b.classList.add("live"); status.textContent="듣고 있어요…"; status.style.color="var(--muted)";
+    micFillCb((t)=>{ b.classList.remove("live"); if(t){ voSubmit(w, t); } else { status.textContent="다시 말해보세요"; } }); };
+  $("#voKbd2").onclick=()=>{ inp.style.display="block"; inp.focus(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) voSubmit(w,v); }});
+  $("#voGiveup").onclick=()=>voSubmit(w, "");
+}
+// 6) 피드백 + 인출속도
+async function voSubmit(w, answer){
+  const elapsed=Math.max(0.1,(Date.now()-voT0)/1000);
+  const sit=w._sit||voSituation(w);
+  $("#voStatus") && ($("#voStatus").textContent="채점 중…");
+  const usedWord = answer && normAns(answer).includes(normAns(w.word).split(" ")[0]);
+  let fb={used:usedWord, natural:sit.model, tip:""};
+  if(answer){
+    try{
+      const sys=[
+"A Korean learner is practicing spontaneous OUTPUT of the English word \""+w.word+"\" (meaning: "+(w.ko||"")+").",
+"They were asked to say an English sentence USING this word for this situation (in Korean): \""+sit.ko+"\".",
+"Judge their answer. Did they actually use the target word? Is it natural? Give the natural version they SHOULD say (it must use \""+w.word+"\"), and ONE short Korean coaching tip.",
+'Return ONLY JSON: {"used":true or false,"natural":"natural English using the word","tip":"짧은 한국어 피드백"}'
+      ].join("\n");
+      const d=await callClaude(sys,[{role:"user",content:answer}], FAST_MODEL);
+      const o=parseJSON(extractText(d)); fb={used:!!o.used, natural:o.natural||sit.model, tip:o.tip||""};
+    }catch(e){}
+  }
+  // 인출속도 기록
+  if(!voTimes[w.word]) voTimes[w.word]={};
+  voTimes[w.word][voRound]=elapsed;
+  try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+  // 첫 등장(라운드1)에서 1회만 집계
+  if(voRound===1){
+    if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); }
+    const pts={1:5,2:8,3:10}[w.diff]||7; addXP(pts,"단어 "+w.word); bumpCount("vocab"); questBump("vocab");
+  } else if(fb.used){ addXP(2,"빠른 인출"); }
+  renderVoResult(w, answer, elapsed, fb);
+}
+function renderVoResult(w, answer, elapsed, fb){
+  const sit=w._sit||voSituation(w);
+  const t1=voTimes[w.word] && voTimes[w.word][1];
+  const t2=voTimes[w.word] && voTimes[w.word][2];
+  const speedLine = (voRound===2 && t1) ? `<div style="font-size:13px;color:var(--jade);margin-top:4px">⚡ ${t1.toFixed(1)}초 → ${elapsed.toFixed(1)}초 ${elapsed<t1?"· 더 빨라졌어요! 🚀":""}</div>` : "";
+  const card=document.createElement("div");
+  card.innerHTML=`
+    <div class="mbtab">${fb.used?"✅ 사용 성공":"💬 피드백"}</div>
+    <div class="mbcard" style="padding:22px">
+      ${answer?`<div style="font-size:13px;color:var(--muted);margin-bottom:4px">내 말: "${escapeHtml(answer)}"</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:4px">(건너뜀)</div>`}
+      <div style="font-size:12px;color:var(--jade);font-weight:700;margin:10px 0 3px">이렇게 말하면 자연스러워요</div>
+      <div style="font-family:var(--serif);font-size:21px;color:var(--text);line-height:1.5">${escapeHtml(fb.natural)}</div>
+      <button class="ans-replay" id="voSay" style="margin-top:8px;color:var(--jade);font-size:13px;font-weight:700">🔊 듣기</button>
+      ${fb.tip?`<div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:10px;border-top:1px solid var(--line);padding-top:10px">💡 ${escapeHtml(fb.tip)}</div>`:""}
+      <div style="font-size:13px;color:var(--text);margin-top:10px">⏱ 인출 속도: <b style="color:${elapsed<3?"var(--jade)":elapsed<6?"var(--amber)":"var(--muted)"}">${elapsed.toFixed(1)}초</b> ${elapsed<3?"· 거의 입에 붙었어요!":elapsed<6?"· 좋아요":"· 반복하면 빨라져요"}</div>
+      ${speedLine}
+    </div>
+    <div class="mbbig" style="margin-top:14px">
+      <button id="voDrill"><span class="ic">🎤</span>발음 진단</button>
+      <button id="voNextBtn" style="color:#06231b;background:linear-gradient(135deg,#1fd3a0,#13b488);border:none"><span class="ic">▶</span>${(voRound===2 && voPos===voWords.length-1)?"끝내기":"다음"}</button>
+    </div>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  setTimeout(()=>speakEn(fb.natural),280);
+  $("#voSay").onclick=()=>speakEn(fb.natural);
+  $("#voDrill").onclick=()=>openDrill(fb.natural, sit.ko);
+  $("#voNextBtn").onclick=()=>{ voPos++; voNext(); };
+}
+function voDone(){
+  $("#vbBarFill").style.width="100%"; $("#vbProgTxt").textContent="완료";
+  // 인출속도 요약
+  let rows="";
+  voWords.forEach(w=>{
+    const tt=voTimes[w.word]||{}; const a=tt[1], b=tt[2];
+    const imp = (a&&b)? (b<a?`🚀 ${a.toFixed(1)}→${b.toFixed(1)}초`:`${a?a.toFixed(1):"-"}→${b?b.toFixed(1):"-"}초`) : "";
+    rows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-family:var(--serif);font-size:16px;color:var(--text)">${escapeHtml(w.word)}</span><span style="font-size:12.5px;color:var(--muted)">${imp}</span></div>`;
+  });
+  $("#vbBody").innerHTML=`
+    <div class="rv-done" style="max-width:460px"><div class="em">🗣️</div><h2>단어 세트 완료!</h2>
+    <p>각 단어를 <b>두 번, 서로 다른 상황</b>에서 직접 말해봤어요.<br>"안다"가 아니라 <b>"쓸 수 있다"</b>로 — 이게 진짜 실력이에요.</p>
+    <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px;margin:0 0 22px">${rows}</div>
+    <div class="blk-actions" style="max-width:340px">
+      <button class="blk-save" id="voHome">나가기</button>
+      <button class="blk-next" id="voAgain">새 단어 ↻</button>
+    </div></div>`;
+  $("#voHome").onclick=goToSetup;
+  $("#voAgain").onclick=generateVocab;
 }
 function normAns(s){ return String(s||"").toLowerCase().replace(/^to\s+/,"").replace(/[^a-z0-9 ]/g,"").trim(); }
 function renderVocabQuiz(w){
@@ -3003,6 +3165,47 @@ function homeGreeting(){ const h=new Date().getHours();
   if(h<17) return "좋은 오후예요,"; if(h<22) return "좋은 저녁이에요,"; return "오늘도 수고했어요,"; }
 function dailyScenario(){ const pool=SCENARIOS.filter(s=>s.id!=="freetalk"); return pool[DAYN()%pool.length]; }
 function missionLabel(s){ const m={cafe:"카페에서 주문하기",resto:"식당에서 주문하기",resto_book:"식당 예약 전화하기",grocery:"마트에서 쇼핑하기",clothes:"옷 가게에서 쇼핑하기",neighbor:"이웃과 스몰톡 하기",newperson:"처음 만난 사람과 대화",clinic:"병원에서 증상 말하기",pharmacy:"약국에서 약 사기",airport:"공항·입국심사 통과하기",hotel:"호텔 체크인하기",taxi:"택시 타고 길 찾기",bank:"은행·관공서 일 보기",phone_cs:"고객센터에 전화하기",interview:"영어로 면접 보기",coworker:"직장 동료와 대화",complaint:"환불·불만 요청하기",friend:"친구와 자유 대화"}; return m[s.id]||(s.t+" 연습하기"); }
+/* ===== 코치형 진입점 (과목 없음 · 70/20/10) ===== */
+function autoTopic(){
+  // 메인 트레이닝 = 매번 자연스러운 실생활 주제 자동 회전
+  const pool = (typeof TOPICS!=="undefined" && TOPICS.length) ? TOPICS : null;
+  if(pool){ const i = hGet("speakingroom:trot",0)%pool.length; hSet("speakingroom:trot", i+1); return pool[i]; }
+  return {id:"daily", t:"실생활", emo:"💬", topic:"everyday real-life situations"};
+}
+function startMainTraining(){
+  lsBoosterMode=false;
+  state.mode="listen"; state.topic=autoTopic();
+  startListening();
+}
+function startBooster(){
+  lsBoosterMode=true;
+  state.mode="listen"; state.topic={id:"booster", t:"리스닝 부스터", emo:"🎧", topic:"casual fast everyday talk full of reductions and contractions"};
+  startListening();
+}
+function startVocabCoach(){
+  lsBoosterMode=false;
+  state.mode="vocab"; state.vocabTheme=nextVocabTheme();
+  startVocab();
+}
+// 습득 지표 (점수 아님): 연속일 · 오늘 말한 문장 · 평균 인출속도
+function renderAcqStats(){
+  const box=$("#acqStats"); if(!box) return;
+  const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
+  const tg=hGet("speakingroom:today",{date:0,count:0}); const todayN=(tg.date===DAYN())?(tg.count||0):0;
+  // 평균 인출속도 (단어 아웃풋 코치에서 누적)
+  let avgTxt="—";
+  try{ const arr=hGet("speakingroom:recall",[]); if(arr&&arr.length){ const last=arr.slice(-12); const a=last.reduce((s,x)=>s+x,0)/last.length; avgTxt=a.toFixed(1)+"초"; } }catch(e){}
+  const tiles=[
+    {ic:"🔥", v:streak+"일", l:"연속 사용"},
+    {ic:"🗣️", v:todayN, l:"오늘 말한 문장"},
+    {ic:"⚡", v:avgTxt, l:"평균 인출속도"}
+  ];
+  box.innerHTML=tiles.map(t=>`<div style="flex:1;background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:13px 8px;text-align:center">
+    <div style="font-size:18px">${t.ic}</div>
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-top:3px;line-height:1.1">${t.v}</div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:3px;letter-spacing:.01em">${t.l}</div>
+  </div>`).join("");
+}
 function renderHome(){
   if(!$("#homeCard")) return;
   $("#homeHi").textContent=homeGreeting();
@@ -3013,11 +3216,8 @@ function renderHome(){
   if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
     st.n = (st.last===yd)?(st.n||0)+1:1; st.last=today; hSet("speakingroom:streak",st); }
   $("#streakN").textContent=st.n||1;
-  // mission
-  const sc=dailyScenario(); $("#missionTitle").textContent=missionLabel(sc);
-  $("#missionMeta").textContent="⏱ 약 3분 · 회화 · "+state.level; $("#missionCard").dataset.scn=sc.id;
-  // 일일 퀘스트
-  renderQuest();
+  // 습득 지표
+  renderAcqStats();
   // continue
   const last=hGet("speakingroom:last",null); const cc=$("#continueCard");
   if(last&&last.emo){ cc.style.display="flex"; $("#contEmo").textContent=last.emo; $("#contDesc").textContent=last.label||""; }
@@ -3077,7 +3277,7 @@ function markPractice(last){
   if(last) hSet("speakingroom:last",last);
 }
 function editName(){ openModal({title:"이름 설정", msg:"앱에서 부를 이름을 적어주세요.", input:true, placeholder:"예: 지훈", okText:"저장", onOk:(v)=>{ hSet("speakingroom:name",(v||"").trim().slice(0,12)); renderHome(); if($("#profScrim").classList.contains("show")) renderProfile(); }}); }
-function startMission(){ const sc=SCENARIOS.find(s=>s.id===$("#missionCard").dataset.scn)||dailyScenario(); state.mode="talk"; state.scn=sc; startSession(); }
+function startMission(){ const sc=dailyScenario(); state.mode="talk"; state.scn=sc; startSession(); }
 function resumeLast(last){
   if(!last) return;
   if(last.mode==="talk"){ const s=SCENARIOS.find(x=>x.id===last.id); if(s){ state.mode="talk"; state.scn=s; startSession(); return; } }
@@ -3192,7 +3392,10 @@ async function checkForUpdate(){
     }
   }catch(e){}
 }
-$("#missionBtn").onclick=startMission;
+{ const tc=$("#trainCard"); if(tc) tc.onclick=startMainTraining; }
+{ const tb=$("#trainBtn"); if(tb) tb.onclick=(e)=>{ e.stopPropagation(); startMainTraining(); }; }
+{ const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
+{ const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 $("#homeName").onclick=openProfile;
 $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
 $("#profScrim").onclick=(e)=>{ if(e.target.id==="profScrim") closeProfile(); };
