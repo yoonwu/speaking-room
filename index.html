@@ -2277,7 +2277,15 @@ function speak(text){
 let mediaRec=null, listening=false, audioChunks=[];
 function initRec(){
   if(!navigator.mediaDevices){ micBtn.style.display="none"; return; }
-  // 마이크 권한은 첫 녹음 시 요청
+}
+function getBestMime(){
+  const types=["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/aac","audio/ogg;codecs=opus"];
+  return types.find(t=>MediaRecorder.isTypeSupported(t)) || "";
+}
+function mimeToAzure(mime){
+  if(mime.includes("mp4")||mime.includes("aac")) return "audio/wav"; // Azure accepts mp4/aac as wav fallback
+  if(mime.includes("ogg")) return "audio/ogg; codecs=opus";
+  return "audio/webm; codecs=opus";
 }
 async function toggleMic(){
   if(listening){ stopAzureSTT(); return; }
@@ -2285,36 +2293,46 @@ async function toggleMic(){
   try{
     const stream = await navigator.mediaDevices.getUserMedia({audio:true});
     audioChunks=[];
-    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-      ? "audio/webm;codecs=opus" : "audio/webm";
-    mediaRec = new MediaRecorder(stream, {mimeType});
+    const mimeType = getBestMime();
+    mediaRec = mimeType ? new MediaRecorder(stream, {mimeType}) : new MediaRecorder(stream);
+    const actualMime = mediaRec.mimeType || mimeType;
     mediaRec.ondataavailable = e=>{ if(e.data.size>0) audioChunks.push(e.data); };
     mediaRec.onstop = async ()=>{
       stream.getTracks().forEach(t=>t.stop());
       listening=false; micBtn.classList.remove("live");
-      hint.textContent="🔄 인식 중…";
-      const blob = new Blob(audioChunks, {type: mimeType});
+      const blob = new Blob(audioChunks, {type: actualMime});
+      if(blob.size < 1000){ // 오디오가 거의 비었음
+        hint.textContent="🔇 소리가 안 잡혔어요. 마이크 가까이서 다시.";
+        setTimeout(()=>hint.textContent="",3000); return;
+      }
+      hint.textContent="🔄 인식 중… ("+Math.round(blob.size/1024)+"KB)";
+      const azureMime = mimeToAzure(actualMime);
       try{
-        const res = await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":mimeType},body:blob});
-        const data = await res.json();
-        if(data.RecognitionStatus==="Success" && data.DisplayText){
+        const res = await fetch(PROXY_URL+"/stt",{
+          method:"POST",
+          headers:{"Content-Type": azureMime},
+          body:blob
+        });
+        const raw = await res.text();
+        let data; try{ data=JSON.parse(raw); }catch(e){ data=null; }
+        if(!res.ok){ hint.textContent="STT 오류 "+res.status+": "+raw.slice(0,80); setTimeout(()=>hint.textContent="",5000); return; }
+        if(data && data.RecognitionStatus==="Success" && data.DisplayText){
           const t = data.DisplayText.replace(/\.$/,"");
           msg.value = (msg.value?msg.value+" ":"")+t;
           autoSize(); refreshSend();
           hint.textContent="";
         } else {
-          hint.textContent="다시 말해보세요.";
-          setTimeout(()=>hint.textContent="",2000);
+          hint.textContent="인식결과 없음: "+(data?data.RecognitionStatus:raw.slice(0,60));
+          setTimeout(()=>hint.textContent="",4000);
         }
-      }catch(e){ hint.textContent="인식 오류. 다시 시도해주세요."; setTimeout(()=>hint.textContent="",2500); }
+      }catch(e){ hint.textContent="네트워크 오류: "+String(e).slice(0,60); setTimeout(()=>hint.textContent="",4000); }
     };
-    mediaRec.start();
+    mediaRec.start(250); // 250ms마다 청크 수집 (안드로이드 빈오디오 방지)
     listening=true; micBtn.classList.add("live");
     hint.textContent="🎤 듣고 있어요… 말하고 다시 누르면 전송";
-    // 15초 안전 타임아웃
     setTimeout(()=>{ if(listening) stopAzureSTT(); }, 15000);
   }catch(e){
-    hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류";
+    hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
 }
 function stopAzureSTT(){ if(mediaRec && mediaRec.state!=="inactive"){ mediaRec.stop(); } }
