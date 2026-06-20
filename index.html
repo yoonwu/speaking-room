@@ -717,13 +717,6 @@ body{background:var(--paper); color:var(--text)}
           <div class="mission-meta" id="missionMeta">⏱ 약 3분 · 회화</div>
           <button class="mission-btn" id="missionBtn"><span>▶</span> 지금 말하기 시작</button>
         </div>
-        <div class="mission" id="questCard" style="margin-top:12px;background:radial-gradient(120% 140% at 100% 0%, #1c2a24 0%, #15201b 55%, #131715 100%)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
-            <span class="mission-tag">🗓 오늘의 퀘스트</span>
-            <span id="questReward" style="font-size:12px;font-weight:800;color:var(--muted)"></span>
-          </div>
-          <div id="questRows"></div>
-        </div>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
           <span class="cont-txt"><span class="cont-t">이어서 연습하기</span><span class="cont-d" id="contDesc"></span></span>
@@ -746,6 +739,16 @@ body{background:var(--paper); color:var(--text)}
         <button data-mode="block" aria-pressed="false"><span class="ti">🧱</span><span class="tl">블록</span></button>
         <button data-mode="talk" aria-pressed="false"><span class="ti">🗣️</span><span class="tl">회화</span></button>
         <button data-mode="listen" aria-pressed="false"><span class="ti">🎧</span><span class="tl">듣기</span></button>
+      </div>
+
+      <div id="modeProgress" style="display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin-bottom:20px">
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+            <span id="mpLabel" style="color:var(--text);font-weight:700">오늘 단어</span>
+            <span id="mpCount" style="color:var(--muted)">0 / 20</span>
+          </div>
+          <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div id="mpBar" style="height:100%;width:0%;background:linear-gradient(90deg,#1fd3a0,#13b488);border-radius:99px;transition:width .4s"></div></div>
+        </div>
       </div>
 
       <div class="field" id="levelField">
@@ -919,7 +922,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.9.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v1.9.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1258,6 +1261,7 @@ function buildSetup(){
       $("#startBtn").style.display = isBlock?"none":"block";
       $("#startBtn").textContent = state.mode==="talk"?"연습 시작" : state.mode==="listen"?"듣기 시작" : "단어 시작";
       if(isBlock) refreshBlockPanel();
+      renderModeProgress();
       refreshStart();
     };
   });
@@ -2742,29 +2746,18 @@ function questBump(cat){
   else hSet("speakingroom:quest",q);
   renderQuest();
 }
-function renderQuest(){
-  const box=$("#questRows"); if(!box) return;
-  const q=questGet();
-  let done=0; const total=Object.keys(QUEST_GOALS).length;
-  box.innerHTML=Object.keys(QUEST_GOALS).map(k=>{
-    const cur=q[k]||0, goal=QUEST_GOALS[k], pct=Math.min(100,Math.round(cur/goal*100));
-    const fin=cur>=goal; if(fin) done++;
-    const m=QUEST_META[k];
-    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-      <span style="font-size:18px;width:22px;text-align:center">${m.emo}</span>
-      <div style="flex:1">
-        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
-          <span style="color:${fin?'var(--jade)':'var(--text)'};font-weight:700">${m.t} ${fin?'✓':''}</span>
-          <span style="color:var(--muted)">${cur} / ${goal}</span>
-        </div>
-        <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:${fin?'var(--jade)':'linear-gradient(90deg,#1fd3a0,#13b488)'};border-radius:99px;transition:width .4s"></div></div>
-      </div></div>`;
-  }).join("");
-  const rw=$("#questReward");
-  if(rw){
-    if(q.rewarded) rw.textContent="🏆 완료! +30XP";
-    else rw.textContent=`${done}/${total} 클리어`;
-  }
+function renderQuest(){ renderModeProgress(); }
+function renderModeProgress(){
+  const box=$("#modeProgress"); if(!box) return;
+  const m=(state&&state.mode)||"vocab";
+  const cat=(m==="talk")?"talk":(m==="listen")?"listen":(m==="block")?"block":"vocab";
+  const q=questGet(); const cur=q[cat]||0, goal=QUEST_GOALS[cat], pct=Math.min(100,Math.round(cur/goal*100));
+  const meta=QUEST_META[cat]; const fin=cur>=goal;
+  const lbl=$("#mpLabel"), cnt=$("#mpCount"), bar=$("#mpBar");
+  if(lbl) lbl.textContent="오늘 "+meta.t+(fin?" ✓":"");
+  if(lbl) lbl.style.color=fin?"var(--jade)":"var(--text)";
+  if(cnt) cnt.textContent=cur+" / "+goal;
+  if(bar){ bar.style.width=pct+"%"; bar.style.background=fin?"var(--jade)":"linear-gradient(90deg,#1fd3a0,#13b488)"; }
 }
 function markPractice(last){
   const today=DAYN(); let tg=hGet("speakingroom:today",{date:0,count:0});
