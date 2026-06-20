@@ -731,6 +731,7 @@ body{background:var(--paper); color:var(--text)}
 .pht1{background:linear-gradient(135deg,#fb923c,#f97316)}
 .pht2{background:linear-gradient(135deg,#34d399,#10b981)}
 .pht3{background:linear-gradient(135deg,#a78bfa,#8b5cf6)}
+.pht4{background:linear-gradient(135deg,#38bdf8,#0ea5e9)}
 .phvideo{display:block;text-align:center;background:#fff;border:2px dashed #93c5fd;color:#2563eb;font-weight:800;font-size:14px;border-radius:18px;padding:14px;margin-top:6px;text-decoration:none}
 .phcard{background:#fff;border-radius:28px;padding:26px 22px;box-shadow:0 10px 30px -12px rgba(0,0,0,.25);text-align:center}
 .phbig{font-size:96px;font-weight:900;color:#f97316;line-height:1}
@@ -839,15 +840,18 @@ body{background:var(--paper); color:var(--text)}
         </div>
       </div>
 
-      <!-- 난이도 (코치가 맞춰줌) -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <span style="font-size:12px;font-weight:700;color:var(--muted)">난이도</span>
-        <div class="levels" id="levels" style="flex:1">
-          <button data-lvl="초급" aria-pressed="false">초급<span class="en">slow & simple</span></button>
-          <button data-lvl="중급" aria-pressed="true">중급<span class="en">everyday pace</span></button>
-          <button data-lvl="고급" aria-pressed="false">고급<span class="en">native speed</span></button>
+      <!-- 난이도 1~10 (세분화) -->
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:800;color:var(--text)">난이도</span>
+          <span id="lvlLabel" style="font-size:13px;font-weight:800;color:var(--jade)">Lv.3 초급</span>
+        </div>
+        <input type="range" id="lvlRange" min="1" max="10" step="1" value="3" style="width:100%;accent-color:#1fd3a0">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
+          <span>왕초보</span><span>중급</span><span>원어민급</span>
         </div>
       </div>
+      <div class="levels" id="levels" style="display:none"></div>
       <div id="verFoot" style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--muted);opacity:.7;letter-spacing:.03em"></div>
 
       <!-- (구) 설정 영역 — 코치형에선 숨김, 엔진 호환 위해 유지 -->
@@ -1021,7 +1025,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.5.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.6.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1201,7 +1205,8 @@ const VOCAB_THEMES = [
 
 /* ============ state ============ */
 const state = {
-  level:"중급",
+  level:"초급",
+  lvl:3,             // 난이도 1~10 (진실원본). level은 버킷 파생값.
   mode:"vocab",      // 'talk' | 'listen' | 'block' | 'vocab'
   scn:null,
   custom:"",
@@ -1251,6 +1256,28 @@ function parseJSON(text){
 }
 
 /* ============ prompt builders ============ */
+// 난이도 1~10 → 기존 버킷/프롬프트/속도로 매핑
+function lvlBucket(){ const v=state.lvl||3; return v<=3?"초급":(v>=7?"고급":"중급"); }
+function syncLevel(){ state.level=lvlBucket(); }
+const LVL_NAMES={1:"왕초보",2:"왕초보+",3:"초급",4:"초급+",5:"중급",6:"중급+",7:"중상급",8:"고급",9:"고급+",10:"원어민급"};
+function levelName(){ return "Lv."+(state.lvl||3)+" "+(LVL_NAMES[state.lvl||3]||""); }
+function levelRate(slow){ const v=state.lvl||3; const base=0.74 + (v-1)*(0.30/9); return slow? Math.max(0.6, base-0.16) : base; } // 1→0.74 … 10→1.04
+function levelHint(){
+  const v=state.lvl||3;
+  const map={
+1:"Difficulty 1/10 — absolute beginner. 2-4 words ONLY. The most basic words a child knows (hi, this, water, go). Present tense only. NO contractions, NO idioms, NO slang. Speak very slowly.",
+2:"Difficulty 2/10 — beginner. 3-5 very short words. Super common everyday words. Simple present tense. Almost no contractions.",
+3:"Difficulty 3/10 — easy. 4-6 short words. Common daily words, one simple idea. Basic contractions (I'm, it's) ok.",
+4:"Difficulty 4/10 — easy+. 5-7 words. Everyday situations, simple connectors (and, but).",
+5:"Difficulty 5/10 — intermediate. 6-9 words at a comfortable everyday pace. Natural contractions.",
+6:"Difficulty 6/10 — intermediate+. 7-10 words, normal everyday speech, light reductions (gonna, wanna).",
+7:"Difficulty 7/10 — upper-int. 8-12 words, natural rhythm, common idioms and reductions.",
+8:"Difficulty 8/10 — advanced. 9-14 words, native pace, idioms, real connected speech.",
+9:"Difficulty 9/10 — advanced+. Fully native, fast casual speech, heavy reductions and slang.",
+10:"Difficulty 10/10 — native. No simplification at all. Fast, idiomatic, reduced, exactly as natives talk to each other."
+  };
+  return map[v]||map[3];
+}
 function levelLine(){
   if(state.level==="초급") return "Use simple, common words and short sentences. Speak slowly and clearly. Avoid idioms and slang.";
   if(state.level==="고급") return "Speak fully naturally at native pace, with idioms and casual expressions.";
@@ -1312,6 +1339,10 @@ function buildSetup(){
   c.onclick=()=>pickScn("custom",c);
   grid.appendChild(c);
 
+  // 난이도 슬라이더 1~10
+  const lr=$("#lvlRange");
+  if(lr){ lr.value=state.lvl||3; const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); };
+    lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
       $("#levels").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
@@ -1494,7 +1525,7 @@ async function startSession(){
   setup.style.display="none"; stage.style.display="flex"; $("#ctxBar").style.display="flex";
   pushScreen("talk");
   $("#ctxScn").textContent = state.scn.id==="custom" ? "직접 입력" : state.scn.t;
-  $("#ctxLvl").textContent = state.level;
+  $("#ctxLvl").textContent = levelName();
   $("#evalBtn").style.display="";
   state.convo=[];
   threadInner.innerHTML="";
@@ -1716,7 +1747,7 @@ function startListening(){
   $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
-  $("#ctxLvl").textContent = state.level + " · 듣기";
+  $("#ctxLvl").textContent = levelName()+" · 듣기";
   $("#lnext").style.display="none";
   lsPrevReply=""; lsCount=0;
   lsGenerate();
@@ -1729,10 +1760,10 @@ function listenSentenceSys(){
   const booster = lsBoosterMode ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
   return [
 "This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
-"Produce ONE natural spoken English sentence for a Korean learner (level: "+state.level+"). Topic context: "+topicDesc()+".",
+"Produce ONE natural spoken English sentence for a Korean learner. Topic context: "+topicDesc()+".",
 booster,
 prev,
-state.level==="초급"?"Short and clear but still natural (5-9 words)." : state.level==="고급"?"Fully native-paced and natural with real reductions (8-16 words)." : "Everyday natural pace (6-12 words).",
+levelHint(),
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻"}'
   ].join("\n");
@@ -1754,7 +1785,7 @@ async function lsGenerate(){
 // 1) 듣기 (자막 없이)
 function renderListenPlay(){
   $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
-    <div class="lmeta">🎧 ${state.topic.id==="custom"?"직접 입력":state.topic.t} · ${state.level} · ${lsCount}번째 문장</div>
+    <div class="lmeta">🎧 ${state.topic.id==="custom"?"직접 입력":state.topic.t} · ${levelName()} · ${lsCount}번째 문장</div>
     <div style="font-size:15px;color:var(--muted);margin:8px 0 22px;line-height:1.6">잘 듣고, <b style="color:var(--text)">들린 대로</b> 받아써 보세요.<br>자막은 없어요 — 귀로만!</div>
     <button class="bigplay" id="lsPlay">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1777,7 +1808,7 @@ function lsSpeak(slow){
   if(!TTS||!SSU||!lsItem) return;
   TTS.cancel();
   const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
-  u.rate = slow?0.66 : (state.level==="초급"?0.9 : state.level==="고급"?1.02 : 0.96);
+  u.rate = levelRate(slow);
   TTS.speak(u);
 }
 // 2) 받아쓰기
@@ -1879,14 +1910,14 @@ function renderListenShadow(){
       <button id="lsShSlow">🐢 천천히</button>
       <button id="lsShDrill">🎤 발음 진단</button>
     </div>
-    <button class="sh-next" id="lsToReply">💬 대화 이어가기 →</button>
+    <button class="sh-next" id="lsToReply">💬 이 상황에서 직접 말하기 →</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>lsSpeak(false),320);
   $("#lsShReplay").onclick=()=>lsSpeak(false);
   $("#lsShSlow").onclick=()=>lsSpeak(true);
   $("#lsShDrill").onclick=()=>openDrill(lsItem.en||"", lsItem.ko||"");
-  $("#lsToReply").onclick=lsContinue;
+  $("#lsToReply").onclick=lsOutput;
 }
 // 7) AI 대화 이어가기
 async function lsContinue(){
@@ -1917,6 +1948,95 @@ async function lsContinue(){
   $("#lsRepPlay").onclick=speakRep;
   $("#lsNextS").onclick=lsGenerate;
   $("#lsExit").onclick=goToSetup;
+}
+
+/* ===== 출력 코치 (꺼내기) — 상황만 주고 힌트·정답 없이 말하게 강제 ===== */
+let loData=null, loRound=1, loT0=0;
+async function lsOutput(){
+  TTS&&TTS.cancel();
+  $("#listenScroll").innerHTML=`<div class="lloading">상황을 만드는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  const sys=[
+"You are an OUTPUT coach. The learner just heard and understood: \""+(lsItem.en||"")+"\".",
+"Pick ONE useful, reusable target expression a learner should be able to SAY (a chunk like \"Could you say that again?\", \"I'd like to ...\", \"Do you have ...?\"). Keep it close to the sentence's function.",
+"Create TWO different realistic situations (in Korean) where the learner would naturally NEED to say that target. Different settings (e.g. cafe vs hotel vs phone). Describe each situation briefly in Korean — describe the NEED, do NOT reveal the English.",
+levelHint(),
+'Return ONLY JSON: {"target":"natural English target expression","sit1_ko":"상황 설명 한국어","sit2_ko":"다른 상황 설명 한국어"}'
+  ].join("\n");
+  try{ const d=await callClaude(sys,[{role:"user",content:"Make it now."}], FAST_MODEL);
+    loData=parseJSON(extractText(d)); if(!loData||!loData.target) throw new Error("empty");
+  }catch(e){ loData={target:lsItem.en||"", sit1_ko:lsItem.ko||"이 상황에서 영어로 말해보세요.", sit2_ko:"비슷한 다른 상황에서도 말해보세요."}; }
+  loRound=1; renderOutput();
+}
+function renderOutput(){
+  const sitKo = loRound===1 ? (loData.sit1_ko||"") : (loData.sit2_ko||"");
+  $("#listenScroll").innerHTML=`<div class="lcard">
+    <div class="lmeta" style="text-align:center">🗣 ${loRound===2?"다른 상황 — 또 꺼내보기":"이 상황, 영어로 말해보기"}</div>
+    <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">📍 상황</div>
+      <div style="font-size:19px;font-weight:600;color:var(--text);line-height:1.5">${escapeHtml(sitKo)}</div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:8px">힌트도 정답도 없어요. 떠오르는 대로 <b style="color:var(--text)">직접</b> 말해보세요.</div>
+    <div class="lctrls" style="justify-content:center">
+      <button id="loMic" class="bigplay" style="width:auto;padding:14px 22px">🎤 영어로 말하기</button>
+      <button id="loKbd">⌨️ 입력</button>
+    </div>
+    <input id="loInput" type="text" autocomplete="off" placeholder="영어로 입력 후 Enter" class="mbkbd" style="display:none;margin-top:10px">
+    <div id="loStat" style="text-align:center;font-size:14px;color:var(--muted);margin-top:10px;min-height:20px"></div>
+    <button class="rv-stop" id="loSkip" style="margin-top:6px">안 떠올라요</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  loT0=Date.now();
+  const inp=$("#loInput"), stat=$("#loStat");
+  $("#loMic").onclick=function(){ const b=this; if(b.classList.contains("live"))return; b.classList.add("live"); stat.textContent="🎙️ 듣고 있어요…";
+    micFillCb((t)=>{ b.classList.remove("live"); if(t){ loSubmit(t); } else { stat.textContent="다시 한 번 말해보세요"; } }); };
+  $("#loKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) loSubmit(v); }});
+  $("#loSkip").onclick=()=>loSubmit("");
+}
+async function loSubmit(answer){
+  const elapsed=Math.max(0.1,(Date.now()-loT0)/1000);
+  const sitKo = loRound===1 ? (loData.sit1_ko||"") : (loData.sit2_ko||"");
+  $("#loStat") && ($("#loStat").textContent="확인 중…");
+  let fb={communicated:!!answer, native:loData.target||"", praise:"", tip:""};
+  if(answer){
+    try{ const sys=[
+"You are an OUTPUT coach (not a teacher). Situation (Korean): \""+sitKo+"\". Target expression: \""+(loData.target||"")+"\".",
+"The learner SAID: \""+answer+"\". Judge ONLY whether they COMMUNICATED the intent. Accept imperfect grammar if meaning is clear — do NOT overcorrect.",
+"Then give the natural native version (use the target naturally). Keep praise warm and short in Korean.",
+'Return ONLY JSON: {"communicated":true or false,"native":"natural native English","praise":"짧은 한국어 칭찬","tip":"꼭 필요할 때만 아주 짧은 한국어 팁, 없으면 빈 문자열"}'
+    ].join("\n");
+      const d=await callClaude(sys,[{role:"user",content:answer}], FAST_MODEL);
+      const o=parseJSON(extractText(d)); fb={communicated:!!o.communicated, native:o.native||loData.target||"", praise:o.praise||"", tip:o.tip||""};
+    }catch(e){}
+  }
+  // 인출 기록 + 저장(STEP 7 미래 인출)
+  try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+  if(loData.target){ if(addReviewItem(loData.target, sitKo, "chunk")){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); } }
+  if(loRound===1){ addXP(answer?8:3, "출력 연습"); bumpCount&&bumpCount("talk"); questBump&&questBump("talk"); }
+  renderOutputResult(answer, elapsed, fb);
+}
+function renderOutputResult(answer, elapsed, fb){
+  const last = (loRound===2);
+  const ok = fb.communicated && answer;
+  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+    <div class="lmeta">${ok?"✅ 통했어요!":(answer?"💬 좋아요, 거의 됐어요":"💡 이렇게 말하면 돼요")}</div>
+    ${answer?`<div style="font-size:13px;color:var(--muted);margin:8px 0 2px">내 말: "${escapeHtml(answer)}"</div>`:""}
+    ${fb.praise?`<div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:8px">${escapeHtml(fb.praise)}</div>`:""}
+    <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:6px">원어민은 보통 이렇게 말해요</div>
+    <div class="sh-line" style="margin:4px 0">${escapeHtml(fb.native)}</div>
+    <button class="ans-replay" id="loSay" style="color:var(--jade);font-size:13px;font-weight:700;margin-bottom:6px">🔊 듣기</button>
+    ${fb.tip?`<div style="font-size:13px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line);padding-top:8px;margin-top:6px">💡 ${escapeHtml(fb.tip)}</div>`:""}
+    <div style="font-size:13px;color:var(--text);margin-top:8px">⏱ 인출 ${elapsed.toFixed(1)}초 ${elapsed<3?"· 거의 입에 붙었어요!":elapsed<6?"· 좋아요":""}</div>
+    <div class="lctrls" style="justify-content:center;margin-top:10px">
+      <button id="loDrill">🎤 발음 진단</button>
+      <button class="sh-next" id="loNext" style="margin:0">${last?"다음 문장 →":"다른 상황에서 또 말하기 →"}</button>
+    </div>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  setTimeout(()=>speakEn(fb.native),280);
+  $("#loSay").onclick=()=>speakEn(fb.native);
+  $("#loDrill").onclick=()=>openDrill(fb.native, "");
+  $("#loNext").onclick=()=>{ if(last){ lsGenerate(); } else { loRound=2; renderOutput(); } };
 }
 function setPlayUI(playing, slow){
   const bp=$("#bigplay"); if(!bp) return;
@@ -2042,7 +2162,7 @@ function startFlood(){
   $("#ctxBar").style.display="flex"; $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
-  $("#ctxLvl").textContent = state.level + " · 흘려듣기";
+  $("#ctxLvl").textContent = levelName()+" · 흘려듣기";
   floodOn=true; floodCount=0; $("#lnext").style.display="none";
   floodLoop();
 }
@@ -2814,6 +2934,34 @@ function advanceVocab(w){
   vbIdx++; showVocabCard();
 }
 // 콜백형 음성 입력 (큰 마이크용)
+// 말 끝나면(침묵) 자동 종료 — 고정 타임아웃 대기 제거. 실패 시 maxMs 폴백.
+function attachVAD(stream, onStop, opts){
+  opts=opts||{};
+  const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    const ac=new AC(); const src=ac.createMediaStreamSource(stream);
+    const an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
+    const buf=new Uint8Array(an.fftSize);
+    const t0=Date.now(); let lastLoud=0, spoke=false, done=false;
+    function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
+    function tick(){
+      if(done)return;
+      an.getByteTimeDomainData(buf);
+      let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
+      const rms=Math.sqrt(sum/buf.length), now=Date.now();
+      if(rms>thresh){ lastLoud=now; if(now-t0>minSpeechMs) spoke=true; }
+      if(spoke && lastLoud && (now-lastLoud)>silenceMs){ return fin(); }
+      if(now-t0>maxMs){ return fin(); }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    return ()=>{ if(!done){ done=true; try{ac.close();}catch(e){} } };
+  }catch(e){
+    const id=setTimeout(onStop, maxMs);
+    return ()=>clearTimeout(id);
+  }
+}
 async function micFillCb(cb){
   if(qzRecording){ return; }
   try{
@@ -2833,7 +2981,7 @@ async function micFillCb(cb){
       }catch(e){ cb(""); }
     };
     qzMR.start(250); qzRecording=true;
-    setTimeout(()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); },7000);
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {maxMs:7000, silenceMs:900});
   }catch(e){ cb(""); }
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
@@ -2860,7 +3008,7 @@ async function micFill(inp, btn, restoreLabel){
       btn.textContent=lbl;
     };
     qzMR.start(250); qzRecording=true; btn.textContent="⏹";
-    setTimeout(()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); },8000);
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {maxMs:8000, silenceMs:1000});
   }catch(e){}
 }
 function quizRecord(inp, btn){ return micFill(inp, btn, "🎤 말하기"); }
@@ -3056,7 +3204,7 @@ async function toggleMic(){
     mediaRec.start(250);
     listening=true; micBtn.classList.add("live");
     hint.textContent="🎤 듣고 있어요… 말하고 다시 누르면 전송";
-    setTimeout(()=>{ if(listening) stopAzureSTT(); }, 15000);
+    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:1100});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
@@ -3131,8 +3279,8 @@ async function toggleDrillMic(){
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
     drillMR.start(250); drillRecording=true;
+    attachVAD(stream, ()=>{ if(drillRecording) stopDrillMic(); }, {maxMs:8000, silenceMs:1000});
     const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#e0533f"; }
-    setTimeout(()=>{ if(drillRecording) stopDrillMic(); },8000);
   }catch(e){
     const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">마이크 권한을 허용해 주세요.</div>`;
   }
@@ -3226,9 +3374,31 @@ const PH_CVC=[
  {w:"fox",emoji:"🦊",s:["fuh","ah","ks"]},{w:"net",emoji:"🥅",s:["nuh","eh","tuh"]},
  {w:"map",emoji:"🗺️",s:["muh","ah","puh"]},{w:"jam",emoji:"🍓",s:["juh","ah","muh"]},
  {w:"pen",emoji:"🖊️",s:["puh","eh","nuh"]},{w:"lip",emoji:"👄",s:["luh","ih","puh"]},
- {w:"ten",emoji:"🔟",s:["tuh","eh","nuh"]},{w:"mom",emoji:"👩",s:["muh","ah","muh"]}
+ {w:"ten",emoji:"🔟",s:["tuh","eh","nuh"]},{w:"mom",emoji:"👩",s:["muh","ah","muh"]},
+ {w:"bat",emoji:"🦇",s:["buh","ah","tuh"]},{w:"bag",emoji:"🎒",s:["buh","ah","guh"]},
+ {w:"can",emoji:"🥫",s:["kuh","ah","nuh"]},{w:"car",emoji:"🚗",s:["kuh","ah","ruh"]},
+ {w:"cow",emoji:"🐮",s:["kuh","ah","wuh"]},{w:"cake",emoji:"🍰",s:["kuh","ay","kuh"]},
+ {w:"egg",emoji:"🥚",s:["eh","guh"]},{w:"fan",emoji:"🪭",s:["fuh","ah","nuh"]},
+ {w:"gum",emoji:"🍬",s:["guh","uh","muh"]},{w:"ham",emoji:"🍖",s:["huh","ah","muh"]},
+ {w:"hen",emoji:"🐔",s:["huh","eh","nuh"]},{w:"jet",emoji:"✈️",s:["juh","eh","tuh"]},
+ {w:"key",emoji:"🔑",s:["kuh","ee"]},{w:"leg",emoji:"🦵",s:["luh","eh","guh"]},
+ {w:"log",emoji:"🪵",s:["luh","ah","guh"]},{w:"mug",emoji:"☕",s:["muh","uh","guh"]},
+ {w:"nut",emoji:"🥜",s:["nuh","uh","tuh"]},{w:"pot",emoji:"🍲",s:["puh","ah","tuh"]},
+ {w:"rat",emoji:"🐀",s:["ruh","ah","tuh"]},{w:"web",emoji:"🕸️",s:["wuh","eh","buh"]},
+ {w:"zip",emoji:"🤐",s:["zzz","ih","puh"]},{w:"bee",emoji:"🐝",s:["buh","ee"]},
+ {w:"star",emoji:"⭐",s:["sss","tuh","ar"]},{w:"frog",emoji:"🐸",s:["fuh","ruh","ah","guh"]},
+ {w:"milk",emoji:"🥛",s:["muh","ih","luh","kuh"]},{w:"book",emoji:"📖",s:["buh","oo","kuh"]}
 ];
-const PH_SIGHT=["the","is","you","and","to","it","he","was","for","my","we","go","see","like","me","are"];
+const PH_SIGHT=["the","is","you","and","to","it","he","she","we","go","see","like","me","are","my","at",
+ "in","on","up","can","big","red","yes","no","do","was","said","play","look","come","here","this","that",
+ "have","they","with","what","good","love","run","jump","help"];
+const PH_DIGRAPH=[
+ {w:"ship",emoji:"🚢",s:["sh","ih","puh"]},{w:"fish",emoji:"🐟",s:["fuh","ih","sh"]},
+ {w:"chip",emoji:"🍟",s:["ch","ih","puh"]},{w:"chick",emoji:"🐤",s:["ch","ih","kuh"]},
+ {w:"thumb",emoji:"👍",s:["th","uh","muh"]},{w:"bath",emoji:"🛁",s:["buh","ah","th"]},
+ {w:"ring",emoji:"💍",s:["ruh","ih","ng"]},{w:"king",emoji:"🤴",s:["kuh","ih","ng"]},
+ {w:"whale",emoji:"🐳",s:["wh","ay","luh"]},{w:"sheep",emoji:"🐑",s:["sh","ee","puh"]}
+];
 
 function phStars(add){ let n=hGet("speakingroom:kidstars",0); if(add){ n+=add; hSet("speakingroom:kidstars",n); } return n; }
 function speakRate(text,rate){ if(!TTS||!SSU)return; TTS.cancel(); const u=new SSU(text); if(voiceA)u.voice=voiceA; u.lang="en-US"; u.rate=rate||0.9; TTS.speak(u); }
@@ -3251,11 +3421,13 @@ function phMic(ref, btn, cb){
         const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64},body:wav});
         const t=await res.text(); let d; try{d=JSON.parse(t);}catch(e){d=null;}
         const n=d&&d.NBest&&d.NBest[0]; const pa=n&&(n.PronunciationAssessment||(n.AccuracyScore!=null?n:null));
-        cb(pa?Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0)):null);
+        const heard=(d&&d.DisplayText)||(n&&(n.Display||n.Lexical))||"";
+        const score=pa?Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0)):null;
+        cb({score:score, heard:String(heard||"").replace(/[.?!,]/g,"").trim(), status:(d&&d.RecognitionStatus)||""});
       }catch(e){ cb(null); }
     };
     phMR.start(250);
-    setTimeout(()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, 3200);
+    attachVAD(stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, {maxMs:5000, silenceMs:850});
   }).catch(e=>cb(null));
 }
 
@@ -3278,11 +3450,13 @@ function phMenu(){
     <button class="phtile pht1" id="phLetters"><span class="e">🔡</span><span class="tx"><b>글자 소리</b><i>A는 "아"… 26글자 소리</i></span><span class="ar">›</span></button>
     <button class="phtile pht2" id="phBlend"><span class="e">🐱</span><span class="tx"><b>단어 읽기</b><i>c-a-t → cat! 소리 합치기</i></span><span class="ar">›</span></button>
     <button class="phtile pht3" id="phSight"><span class="e">⭐</span><span class="tx"><b>자주 나오는 말</b><i>the, you, is… 통째로</i></span><span class="ar">›</span></button>
+    <button class="phtile pht4" id="phDigraph"><span class="e">🚢</span><span class="tx"><b>이중 글자</b><i>sh · ch · th · ng 소리</i></span><span class="ar">›</span></button>
     <a class="phvideo" href="https://www.youtube.com/results?search_query=alphablocks+phonics" target="_blank" rel="noopener">📺 영상으로 생생한 소리 배우기 (Alphablocks)</a>
    </div>`;
   $("#phHome").onclick=goToSetup;
   $("#phLetters").onclick=()=>{ phLi=0; phLetter(); };
-  $("#phBlend").onclick=()=>{ phBi=0; phBlendCard(); };
+  $("#phBlend").onclick=()=>{ phBlendSrc=PH_CVC; phBlendTitle="단어 읽기"; phBi=0; phBlendCard(); };
+  { const d=$("#phDigraph"); if(d) d.onclick=()=>{ phBlendSrc=PH_DIGRAPH; phBlendTitle="이중 글자"; phBi=0; phBlendCard(); }; }
   $("#phSight").onclick=()=>{ phSi=0; phSightCard(); };
 }
 // 글자 소리 — 큰 글자 + 그림 + 예시 단어. 듣고 따라 말하기(예시 단어로 채점)
@@ -3312,16 +3486,16 @@ function phLetter(){
   $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
     if(phRec){ phMic(null,b); return; }
     st.textContent="🎙️ 잘 듣고 있어요…";
-    phMic(it.word, b, (sc)=>{ phScoreFx(sc, st); }); };
+    phMic(it.word, b, (r)=>{ phScoreFx(r, st, it.word); }); };
 }
 // 단어 읽기 (CVC 블렌딩)
-let phBi=0;
+let phBi=0, phBlendSrc=PH_CVC, phBlendTitle="단어 읽기";
 function phBlendCard(){
-  if(phBi>=PH_CVC.length) return phCelebrate("단어 읽기 끝!", phMenu);
-  const it=PH_CVC[phBi]; const letters=it.w.split("");
+  if(phBi>=phBlendSrc.length) return phCelebrate(phBlendTitle+" 끝!", phMenu);
+  const it=phBlendSrc[phBi]; const letters=it.w.split("");
   $("#phonicsScroll").innerHTML=`
    <div class="phwrap">
-    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phBi+1} / ${PH_CVC.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
+    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phBi+1} / ${phBlendSrc.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
     <div class="phcard">
       <div class="phemoji big">${it.emoji}</div>
       <div class="phletters">${letters.map((c,i)=>`<button class="phl" data-i="${i}">${c}</button>`).join("")}</div>
@@ -3345,7 +3519,7 @@ function phBlendCard(){
   $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
     if(phRec){ phMic(null,b); return; }
     st.textContent="🎙️ 잘 듣고 있어요…";
-    phMic(it.w, b, (sc)=>{ phScoreFx(sc, st, it.w); }); };
+    phMic(it.w, b, (r)=>{ phScoreFx(r, st, it.w); }); };
 }
 // 자주 나오는 말 (사이트워드)
 let phSi=0;
@@ -3372,21 +3546,34 @@ function phSightCard(){
   $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
     if(phRec){ phMic(null,b); return; }
     st.textContent="🎙️ 잘 듣고 있어요…";
-    phMic(w, b, (sc)=>{ phScoreFx(sc, st); }); };
+    phMic(w, b, (r)=>{ phScoreFx(r, st, w); }); };
 }
 // 점수 → 별/칭찬 (관대하게)
-function phScoreFx(sc, st, alsoNote){
-  if(sc==null){ st.innerHTML=`<span style="color:#e87">🔇 한 번 더! 마이크 가까이</span>`; return; }
-  let stars=0, msg;
-  if(sc>=75){ stars=3; msg=`🌟🌟🌟 완벽해요!`; }
-  else if(sc>=55){ stars=2; msg=`⭐⭐ 잘했어요!`; }
-  else if(sc>=35){ stars=1; msg=`⭐ 좋아요! 한 번 더 해볼까?`; }
-  else { stars=1; msg=`👏 도전 성공! (${sc}점)`; }
-  phStars(stars);
-  st.innerHTML=`<span style="color:#10b981;font-weight:900">${msg}</span>`;
-  // 상단 별 갱신
-  const sb=$("#phonicsScroll").querySelector(".phstars"); if(sb) sb.textContent="⭐ "+phStars();
-  burstStars(stars);
+// 점수 → 실제 숫자 + 인식된 발음 + 정직한 별 (목표와 다르면 낮은 점수)
+function phScoreFx(res, st, target){
+  if(!res || res.score==null){
+    const heard=res&&res.heard;
+    st.innerHTML = heard ? `<span style="color:#ef4444;font-weight:800">"${escapeHtml(heard)}"로 들렸어요 — 다시 해볼까? 🎤</span>`
+                         : `<span style="color:#ef4444;font-weight:800">🔇 소리가 안 잡혔어요. 마이크 가까이서 또렷하게!</span>`;
+    return;
+  }
+  let sc=res.score;
+  const tgt=String(target||"").toLowerCase().replace(/[^a-z]/g,"");
+  const heard=String(res.heard||"").toLowerCase();
+  const heardWords=heard.replace(/[^a-z ]/g,"").split(/\s+/).filter(Boolean);
+  const matched = !tgt || (heardWords.some(w=> w===tgt || (tgt.length>2 && (w.includes(tgt)||tgt.includes(w)))));
+  if(tgt && heardWords.length && !matched) sc=Math.min(sc,30);   // 다른 말 → 정직하게 낮춤
+  let stars, msg, col;
+  if(sc>=80){ stars=3; msg="완벽해요!"; col="#10b981"; }
+  else if(sc>=60){ stars=2; msg="잘했어요!"; col="#10b981"; }
+  else if(sc>=40){ stars=1; msg="좋아요, 한 번 더!"; col="#f59e0b"; }
+  else { stars=0; msg=(tgt&&!matched)?"다른 소리가 났어요. 다시!":"다시 해볼까?"; col="#ef4444"; }
+  st.innerHTML=`<div style="font-size:22px;font-weight:900;color:${col}">${sc}점 <span style="font-size:15px">${"⭐".repeat(stars)||"🙂"}</span></div>
+    <div style="font-size:13px;color:#475569;font-weight:700;margin-top:2px">${msg}</div>
+    ${res.heard?`<div style="font-size:12px;color:#94a3b8;margin-top:3px">들린 발음: "${escapeHtml(res.heard)}"</div>`:""}`;
+  if(stars>0){ phStars(stars); burstStars(stars);
+    const sb=$("#phonicsScroll").querySelector(".phstars"); if(sb) sb.textContent="⭐ "+phStars();
+  }
 }
 function burstStars(n){
   const host=$("#phonics"); if(!host) return;
