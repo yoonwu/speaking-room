@@ -972,7 +972,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.1.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.2.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1647,6 +1647,19 @@ listenLen(),
 "key = 2 to 4 genuinely useful expressions or chunks from the dialogue worth memorizing."
   ].join("\n");
 }
+/* ============================================================
+   듣기 트레이너 — 실전 구어 듣기 훈련 (단어 암기 아님)
+   흐름: 문장생성 → 듣기 → 받아쓰기 → 오답분석 → 연음설명
+        → 다시듣기 → 따라말하기 → 대화 이어가기 → 다음 문장
+   ============================================================ */
+let lsItem=null;      // {en, ko}
+let lsPrevReply="";   // 직전 상대 응답 (대화 연속성)
+let lsAnswer="";      // 받아쓰기 답
+let lsAnalysis=null;  // 오답 분석
+let lsConn=null;      // 연음 설명
+let lsCount=0;        // 진행한 문장 수
+let lsAwarded=false;
+
 function startListening(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:state.topic.emo||"🎧", label:(state.topic.id==="custom"?"직접 입력 듣기":(state.topic.t||"듣기")+" 듣기")});
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen");
@@ -1655,82 +1668,203 @@ function startListening(){
   $("#evalBtn").style.display="none";
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
   $("#ctxLvl").textContent = state.level + " · 듣기";
-  loadPassage();
-}
-async function loadPassage(){
   $("#lnext").style.display="none";
-  $("#listenScroll").innerHTML=`<div class="lloading">새로운 글을 만드는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
-  const sys=passageSys();
+  lsPrevReply=""; lsCount=0;
+  lsGenerate();
+}
+// 실전 구어 한 문장 생성
+function listenSentenceSys(){
+  const seed=Math.floor(Math.random()*100000);
+  const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
+  return [
+"This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
+"Produce ONE natural spoken English sentence for a Korean learner (level: "+state.level+"). Topic context: "+topicDesc()+".",
+prev,
+state.level==="초급"?"Short and clear but still natural (5-9 words)." : state.level==="고급"?"Fully native-paced and natural with real reductions (8-16 words)." : "Everyday natural pace (6-12 words).",
+"Concrete and fresh (variety seed "+seed+"). One sentence only.",
+'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻"}'
+  ].join("\n");
+}
+async function lsGenerate(){
+  lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
+  $("#listenScroll").innerHTML=`<div class="lloading">다음 문장을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   try{
-    const data=await callClaude(sys,[{role:"user", content:"Create one dialogue now."}], FAST_MODEL);
-    curPassage=parseJSON(extractText(data));
-    if(!curPassage.lines && curPassage.en) curPassage.lines=[{speaker:"A", en:curPassage.en, ko:curPassage.ko||""}];
-    renderPassage(curPassage);
+    const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
+    lsItem=parseJSON(extractText(data));
+    if(!lsItem || !lsItem.en) throw new Error("empty");
+    lsCount++;
+    renderListenPlay();
   }catch(e){
-    $("#listenScroll").innerHTML=`<div class="lloading">글을 만들지 못했어요. 다시 시도해 주세요.<br><span style="font-size:12px">(이 앱은 claude.ai 안에서 작동합니다.)</span></div>`;
-    $("#lnext").style.display="flex";
+    $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
+    const r=$("#lsRetry"); if(r) r.onclick=lsGenerate;
   }
 }
-function renderPassage(p){
-  passageAwarded=false;
-  const sp = p.speakers || {A:"A", B:"B"};
-  const lines = p.lines || [];
-  const enHTML = lines.map(l=>{
-    const cls = l.speaker==="B" ? "b" : "a";
-    const name = (l.speaker==="B" ? sp.B : sp.A) || l.speaker;
-    return `<div class="dline ${cls}"><span class="spk">${escapeHtml(name)}</span><span class="dl-en">${escapeHtml(l.en||"")}</span></div>`;
-  }).join("");
-  const koHTML = lines.map(l=>{
-    const name = (l.speaker==="B" ? sp.B : sp.A) || l.speaker;
-    return `<div class="dline"><span class="spk">${escapeHtml(name)}</span><span class="dl-en">${escapeHtml(l.ko||"")}</span></div>`;
-  }).join("");
-
-  const wrap=document.createElement("div"); wrap.className="lcard";
-  wrap.innerHTML=`
-    <div class="ltitle">${escapeHtml(p.title||"Conversation")}</div>
-    <div class="lmeta">${state.topic.id==="custom"?"직접 입력":state.topic.t} · ${state.level} · 대화 ${lines.length}턴</div>
-    <button class="bigplay" id="bigplay">
+// 1) 듣기 (자막 없이)
+function renderListenPlay(){
+  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+    <div class="lmeta">🎧 ${state.topic.id==="custom"?"직접 입력":state.topic.t} · ${state.level} · ${lsCount}번째 문장</div>
+    <div style="font-size:15px;color:var(--muted);margin:8px 0 22px;line-height:1.6">잘 듣고, <b style="color:var(--text)">들린 대로</b> 받아써 보세요.<br>자막은 없어요 — 귀로만!</div>
+    <button class="bigplay" id="lsPlay">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      <span id="bigplayLabel">대화 들어보기</span>
+      <span id="lsPlayLabel">듣기 ▶</span>
     </button>
-    <div class="lblind">두 사람의 대화를 먼저 자막 없이 들어보세요. 누가 뭐라는지 흐름만 잡으면 성공.<br>안 들리면 🐢 천천히 → 📝 자막 → 🇰🇷 뜻 순서로.</div>
-    <div class="lctrls">
-      <button id="cSlow">🐢 천천히</button>
-      <button id="cText" aria-pressed="false">📝 자막</button>
-      <button id="cTrans" aria-pressed="false">🇰🇷 뜻</button>
-      <button id="cKey" aria-pressed="false">⭐ 핵심 표현</button>
+    <div class="lctrls" style="justify-content:center;margin-top:14px">
+      <button id="lsSlow">🐢 천천히</button>
     </div>
-    <div class="ltext" id="lText">${enHTML}</div>
-    <div class="ltrans" id="lTrans">${koHTML}</div>
-    <div class="lkey" id="lKey"></div>
-    <div class="lpractice">
-      <button id="pShadow">🗣 섀도잉<br>따라 말하기</button>
-      <button id="pRetell">🔁 되말하기<br>B 역할로</button>
+    <button class="sh-next" id="lsToDict">✏️ 받아쓰기 하기 →</button>
+    <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  setTimeout(()=>lsSpeak(false),350);
+  $("#lsPlay").onclick=()=>lsSpeak(false);
+  $("#lsSlow").onclick=()=>lsSpeak(true);
+  $("#lsToDict").onclick=renderListenDictation;
+  $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
+}
+function lsSpeak(slow){
+  if(!TTS||!SSU||!lsItem) return;
+  TTS.cancel();
+  const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
+  u.rate = slow?0.66 : (state.level==="초급"?0.9 : state.level==="고급"?1.02 : 0.96);
+  TTS.speak(u);
+}
+// 2) 받아쓰기
+function renderListenDictation(){
+  TTS&&TTS.cancel();
+  $("#listenScroll").innerHTML=`<div class="lcard">
+    <div class="lmeta" style="text-align:center">✏️ 받아쓰기 · ${lsCount}번째</div>
+    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 16px">들린 대로 적어보세요. 정확히 몰라도 OK — 들린 단어만이라도!</div>
+    <button class="bigplay" id="lsPlay2" style="margin-bottom:14px">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <span>🔊 다시 듣기</span>
+    </button>
+    <textarea id="lsDictInput" rows="2" placeholder="여기에 들린 문장을 적거나 🎤로 말하세요" style="width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:13px;font-size:16px;line-height:1.5;resize:none;background:var(--mist);color:var(--text)"></textarea>
+    <button class="sh-next" id="lsCheck">채점하기 →</button>
+    <button class="rv-stop" id="lsBackToPlay">← 다시 듣기로</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  const inp=$("#lsDictInput"); attachMic(inp); setTimeout(()=>inp.focus(),80);
+  $("#lsPlay2").onclick=()=>lsSpeak(false);
+  $("#lsCheck").onclick=()=>{ lsAnswer=(inp.value||"").trim(); lsRunAnalysis(); };
+  $("#lsBackToPlay").onclick=renderListenPlay;
+}
+// 3) 오답 분석 + 4) 연음 설명 (동시 호출)
+async function lsRunAnalysis(){
+  TTS&&TTS.cancel();
+  $("#listenScroll").innerHTML=`<div class="lloading">받아쓰기를 분석하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  const analyzeSys=[
+"You are an expert listening coach for Korean learners. Compare the original spoken sentence with the user's dictation and find exactly what they missed.",
+"Explain simply (in Korean for the reason/tip fields): 1) missing words 2) wrong words 3) why it was hard to HEAR 4) connected speech 5) reductions 6) native pronunciation patterns. Keep it simple. This is listening training, not grammar.",
+'Return ONLY JSON: {"correct_sentence":"","missed_words":[],"mistakes":[],"listening_reason":"왜 안 들렸는지 한국어","pronunciation_tip":"한국어 팁","native_pattern":"원어민 패턴 한국어"}'
+  ].join("\n");
+  const connSys=[
+"You help Korean learners UNDERSTAND spoken English (listening, not grammar).",
+"For the sentence, explain how native speakers actually pronounce it: reductions, contractions, connected speech. Give the spoken/reduced form (e.g. 'Would you'->'Wudja', 'want to'->'wanna', 'going to'->'gonna'). Keep it simple. Do NOT teach grammar.",
+'Return ONLY JSON: {"spoken_version":"how it really sounds","explanation":"무엇이 어떻게 연음/축약되는지 한국어 설명","korean_tip":"짧은 한국어 듣기 팁"}'
+  ].join("\n");
+  const orig=lsItem.en||"";
+  try{
+    const [aD,cD]=await Promise.all([
+      callClaude(analyzeSys,[{role:"user",content:`Original: ${orig}\nUser answer: ${lsAnswer||"(빈 답)"}`}], FAST_MODEL),
+      callClaude(connSys,[{role:"user",content:`Sentence: ${orig}`}], FAST_MODEL)
+    ]);
+    lsAnalysis=parseJSON(extractText(aD));
+    lsConn=parseJSON(extractText(cD));
+  }catch(e){ lsAnalysis={correct_sentence:orig,missed_words:[],mistakes:[],listening_reason:"",pronunciation_tip:"",native_pattern:""}; lsConn=null; }
+  if(!lsAwarded){ lsAwarded=true; addXP(6,"받아쓰기"); bumpCount("listen"); questBump("listen"); }
+  renderListenAnalysis();
+}
+function diffHighlight(correct, answer){
+  const ans=new Set(normAns(answer).split(/\s+/).filter(Boolean));
+  return (correct||"").split(/(\s+)/).map(tok=>{
+    if(/^\s+$/.test(tok)) return tok;
+    const clean=normAns(tok);
+    if(clean && !ans.has(clean)) return `<span style="color:#e0533f;font-weight:700;border-bottom:2px solid #e0533f">${escapeHtml(tok)}</span>`;
+    return escapeHtml(tok);
+  }).join("");
+}
+function renderListenAnalysis(){
+  const a=lsAnalysis||{}; const c=lsConn||{};
+  const correct=a.correct_sentence||lsItem.en||"";
+  const missed=(a.missed_words||[]).filter(Boolean);
+  const mistakes=(a.mistakes||[]).filter(Boolean);
+  $("#listenScroll").innerHTML=`<div class="lcard">
+    <div class="lmeta" style="text-align:center">🔍 오답 분석</div>
+    <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">정답 문장 <span style="color:#e0533f">(빨강 = 놓친 부분)</span></div>
+    <div style="font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--text);margin-bottom:6px">${diffHighlight(correct, lsAnswer)}</div>
+    ${lsAnswer?`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">내 답: "${escapeHtml(lsAnswer)}"</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">(답을 건너뛰었어요)</div>`}
+    ${missed.length?`<div class="lkey show" style="margin-bottom:10px"><div class="ki"><span><span class="ken">놓친 단어</span><span class="kko">${missed.map(escapeHtml).join(" · ")}</span></span></div></div>`:""}
+    ${mistakes.length?`<div style="font-size:13.5px;color:var(--text);background:var(--mist);border-radius:11px;padding:11px 13px;margin-bottom:10px"><b>잘못 들은 것:</b> ${mistakes.map(escapeHtml).join(", ")}</div>`:""}
+    ${a.listening_reason?`<div style="font-size:13.5px;line-height:1.6;color:var(--text);background:var(--amber-soft);border:1px solid #3a3320;border-radius:11px;padding:12px 14px;margin-bottom:10px">👂 <b>왜 안 들렸나:</b> ${escapeHtml(a.listening_reason)}</div>`:""}
+    ${c.spoken_version?`<div style="background:rgba(31,211,160,.1);border:1px solid rgba(31,211,160,.3);border-radius:11px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--jade);font-weight:800;margin-bottom:4px">🔗 실제 발음 (연음·축약)</div>
+      <div style="font-family:var(--serif);font-size:19px;color:var(--jade)">${escapeHtml(c.spoken_version)}</div>
+      ${c.explanation?`<div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:6px">${escapeHtml(c.explanation)}</div>`:""}
+      ${c.korean_tip?`<div style="font-size:12.5px;color:var(--muted);margin-top:5px">💡 ${escapeHtml(c.korean_tip)}</div>`:""}
+    </div>`:""}
+    ${a.pronunciation_tip?`<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px">🗣 ${escapeHtml(a.pronunciation_tip)}</div>`:""}
+    ${a.native_pattern?`<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px">🎯 원어민 패턴: ${escapeHtml(a.native_pattern)}</div>`:""}
+    <div class="lctrls" style="justify-content:center;margin-top:6px"><button id="lsReplay">🔊 다시 듣기</button><button id="lsSaveNote">＋ 노트 저장</button></div>
+    <button class="sh-next" id="lsToShadow">🗣 따라 말하기 →</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  setTimeout(()=>lsSpeak(false),300);
+  $("#lsReplay").onclick=()=>lsSpeak(false);
+  $("#lsSaveNote").onclick=function(){ if(addReviewItem(lsItem.en, lsItem.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } this.textContent="저장됨 ✓"; this.disabled=true; };
+  $("#lsToShadow").onclick=renderListenShadow;
+}
+// 5) 다시듣기 + 6) 따라말하기 (발음 진단)
+function renderListenShadow(){
+  const c=lsConn||{};
+  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+    <div class="lmeta">🗣 따라 말하기</div>
+    <div class="sh-line" style="margin:10px 0 4px">${escapeHtml(lsItem.en||"")}</div>
+    ${c.spoken_version?`<div style="font-size:14px;color:var(--jade);margin-bottom:2px">≈ ${escapeHtml(c.spoken_version)}</div>`:""}
+    <div class="sh-ko">${escapeHtml(lsItem.ko||"")}</div>
+    <div class="sh-hint">🔊 듣고 → <b>똑같이</b> 따라 말해보세요</div>
+    <div class="lctrls" style="justify-content:center;flex-wrap:wrap">
+      <button id="lsShReplay">🔊 다시</button>
+      <button id="lsShSlow">🐢 천천히</button>
+      <button id="lsShDrill">🎤 발음 진단</button>
     </div>
-  `;
-  const sc=$("#listenScroll"); sc.innerHTML=""; sc.appendChild(wrap);
-  $("#lnext").style.display="flex"; sc.scrollTop=0;
-
-  // key expressions
-  const keyBox=$("#lKey");
-  (p.key||[]).forEach(k=>{
-    if(!k||!k.en) return;
-    const row=document.createElement("div"); row.className="ki";
-    row.innerHTML=`<span><span class="ken">${escapeHtml(k.en)}</span><span class="kko">${escapeHtml(k.ko||"")}</span></span><button>＋ 노트</button>`;
-    const btn=row.querySelector("button");
-    if(state.notes.some(n=>n.en===k.en)){ btn.textContent="저장됨 ✓"; btn.disabled=true; }
-    btn.onclick=()=>{ if(addReviewItem(k.en, k.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } btn.textContent="저장됨 ✓"; btn.disabled=true; };
-    keyBox.appendChild(row);
-  });
-
-  // wire controls
-  $("#bigplay").onclick=()=>playDialogue(false);
-  $("#cSlow").onclick=()=>playDialogue(true);
-  $("#cText").onclick=function(){ const el=$("#lText"); el.classList.toggle("show"); this.setAttribute("aria-pressed", el.classList.contains("show")); };
-  $("#cTrans").onclick=function(){ const el=$("#lTrans"); el.classList.toggle("show"); this.setAttribute("aria-pressed", el.classList.contains("show")); };
-  $("#cKey").onclick=function(){ const el=$("#lKey"); el.classList.toggle("show"); this.setAttribute("aria-pressed", el.classList.contains("show")); };
-  $("#pShadow").onclick=startShadow;
-  $("#pRetell").onclick=startRetell;
+    <button class="sh-next" id="lsToReply">💬 대화 이어가기 →</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  setTimeout(()=>lsSpeak(false),320);
+  $("#lsShReplay").onclick=()=>lsSpeak(false);
+  $("#lsShSlow").onclick=()=>lsSpeak(true);
+  $("#lsShDrill").onclick=()=>openDrill(lsItem.en||"", lsItem.ko||"");
+  $("#lsToReply").onclick=lsContinue;
+}
+// 7) AI 대화 이어가기
+async function lsContinue(){
+  TTS&&TTS.cancel();
+  $("#listenScroll").innerHTML=`<div class="lloading">상대방의 대답을 듣는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  const sys=[
+"You are an AI speaking partner. The learner just understood this spoken line: \""+(lsItem.en||"")+"\".",
+"Continue the conversation naturally with ONE short, casual, real reply from the other speaker (1 sentence). Natural real-world spoken English.",
+'Return ONLY JSON: {"reply":"","translation":"한국어 뜻"}'
+  ].join("\n");
+  let reply="", tr="";
+  try{ const d=await callClaude(sys,[{role:"user",content:"Continue now."}], FAST_MODEL); const o=parseJSON(extractText(d)); reply=o.reply||""; tr=o.translation||""; }catch(e){}
+  if(!reply){ lsPrevReply=lsItem.en||""; lsGenerate(); return; }
+  lsPrevReply=reply;
+  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+    <div class="lmeta">💬 상대방의 대답 — 이것도 들어보세요</div>
+    <button class="bigplay" id="lsRepPlay" style="margin:14px 0">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>🔊 듣기</span>
+    </button>
+    <div class="sh-line" style="font-size:21px">${escapeHtml(reply)}</div>
+    <div class="sh-ko" style="margin-top:6px">${escapeHtml(tr)}</div>
+    <button class="sh-next" id="lsNextS">다음 문장 →</button>
+    <button class="rv-stop" id="lsExit">그만하기</button>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  const speakRep=()=>{ if(!TTS||!SSU) return; TTS.cancel(); const u=new SSU(reply); if(enVoice) u.voice=enVoice; u.lang="en-US"; u.rate=state.level==="초급"?0.9:0.96; TTS.speak(u); };
+  setTimeout(speakRep,320);
+  $("#lsRepPlay").onclick=speakRep;
+  $("#lsNextS").onclick=lsGenerate;
+  $("#lsExit").onclick=goToSetup;
 }
 function setPlayUI(playing, slow){
   const bp=$("#bigplay"); if(!bp) return;
@@ -3071,7 +3205,7 @@ $("#vbBack").onclick=goToSetup;
 $("#rvStart").onclick=startReview;
 $("#rvSpeed").onclick=startSpeed;
 $("#rvBack").onclick=goToSetup;
-$("#lNext").onclick=()=>{ TTS && TTS.cancel(); loadPassage(); };
+$("#lNext").onclick=()=>{ TTS && TTS.cancel(); lsGenerate(); };
 $("#lBack").onclick=goToSetup;
 function goToSetup(fromPop){
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
