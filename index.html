@@ -712,6 +712,50 @@ body{background:var(--paper); color:var(--text)}
 .mbbig button{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:15px 6px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--jade);font-size:13px;font-weight:800}
 .mbbig button .ic{font-size:22px}
 .mbkbd{width:100%;max-width:400px;margin:10px auto 0;padding:13px 15px;border-radius:13px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center}
+/* ===== 아이 파닉스 (밝은 테마) ===== */
+#phonics{background:linear-gradient(180deg,#fef6e4 0%,#e0f7f1 100%)}
+.phwrap{max-width:520px;margin:0 auto}
+.phhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.phback{background:#fff;border:2px solid #ffd9a0;color:#b45309;font-weight:900;font-size:16px;border-radius:14px;padding:8px 14px;cursor:pointer}
+.phstars{background:#fff;border:2px solid #ffe08a;color:#d97706;font-weight:900;font-size:16px;border-radius:14px;padding:8px 14px}
+.phprog{background:#fff;border:2px solid #b9ead9;color:#0e9f6e;font-weight:900;font-size:14px;border-radius:14px;padding:8px 14px}
+.phtitle{font-size:30px;font-weight:900;color:#0f172a;text-align:center;margin:8px 0 2px}
+.phtitle span{font-size:30px}
+.phsub{font-size:15px;color:#475569;text-align:center;margin-bottom:20px;font-weight:600}
+.phtile{display:flex;align-items:center;gap:14px;width:100%;border:none;border-radius:22px;padding:18px 18px;margin-bottom:14px;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.08);text-align:left}
+.phtile .e{font-size:34px;flex:none}
+.phtile .tx{flex:1;display:flex;flex-direction:column}
+.phtile .tx b{font-size:20px;font-weight:900;color:#fff}
+.phtile .tx i{font-size:13px;color:rgba(255,255,255,.92);font-style:normal;margin-top:2px;font-weight:600}
+.phtile .ar{font-size:28px;color:#fff;font-weight:900}
+.pht1{background:linear-gradient(135deg,#fb923c,#f97316)}
+.pht2{background:linear-gradient(135deg,#34d399,#10b981)}
+.pht3{background:linear-gradient(135deg,#a78bfa,#8b5cf6)}
+.phvideo{display:block;text-align:center;background:#fff;border:2px dashed #93c5fd;color:#2563eb;font-weight:800;font-size:14px;border-radius:18px;padding:14px;margin-top:6px;text-decoration:none}
+.phcard{background:#fff;border-radius:28px;padding:26px 22px;box-shadow:0 10px 30px -12px rgba(0,0,0,.25);text-align:center}
+.phbig{font-size:96px;font-weight:900;color:#f97316;line-height:1}
+.phbig span{color:#10b981;margin-left:8px}
+.phemoji{font-size:72px;margin:6px 0}
+.phemoji.big{font-size:96px;margin:0 0 6px}
+.phword{font-size:30px;font-weight:900;color:#0f172a;letter-spacing:.01em}
+.phsight{font-size:64px;font-weight:900;color:#8b5cf6;padding:18px 0}
+.phletters{display:flex;justify-content:center;gap:10px;margin:6px 0 4px}
+.phl{font-size:44px;font-weight:900;color:#0f172a;background:#f1f5f9;border:3px solid #cbd5e1;border-radius:18px;width:64px;height:74px;cursor:pointer;transition:transform .12s}
+.phl.pop{transform:scale(1.18);background:#fde68a;border-color:#f59e0b}
+.phstat{font-size:16px;font-weight:800;color:#64748b;margin:16px 0}
+.phbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.phsound{background:#e0f2fe;border:2px solid #7dd3fc;color:#0369a1;font-weight:900;font-size:16px;border-radius:16px;padding:14px 18px;cursor:pointer}
+.phrec{background:linear-gradient(135deg,#34d399,#10b981);border:none;color:#fff;font-weight:900;font-size:17px;border-radius:16px;padding:14px 22px;cursor:pointer;box-shadow:0 4px 0 #059669}
+.phrec.rec{background:#ef4444;box-shadow:0 4px 0 #b91c1c;animation:phpulse .8s infinite}
+@keyframes phpulse{50%{transform:scale(1.05)}}
+.phnext{width:100%;background:#0f172a;color:#fff;border:none;font-weight:900;font-size:17px;border-radius:18px;padding:15px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.25)}
+/* 홈의 아이 파닉스 카드 */
+#kidCard{display:flex;align-items:center;gap:13px;width:100%;text-align:left;border:none;border-radius:20px;padding:16px 16px;margin-bottom:16px;cursor:pointer;background:linear-gradient(135deg,#fb923c,#fbbf24);box-shadow:0 6px 18px -8px rgba(251,146,60,.7)}
+#kidCard .ke{font-size:30px;flex:none}
+#kidCard .kt{flex:1}
+#kidCard .kt b{display:block;font-size:16px;font-weight:900;color:#fff}
+#kidCard .kt i{font-size:12px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600}
+#kidCard .ka{font-size:24px;color:#fff;font-weight:900}
 </style>
 </head>
 <body>
@@ -782,6 +826,9 @@ body{background:var(--paper); color:var(--text)}
           <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4">외우지 않고<br>상황에서 직접 써보기</div>
         </button>
       </div>
+
+      <!-- 아이 파닉스 (초등 저학년) -->
+      <button id="kidCard"><span class="ke">👦</span><span class="kt"><b>아이 파닉스 · 소리 학교</b><i>글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
 
       <!-- 다시 만날 표현 (STEP 8 · 미래 인출) -->
       <div class="rvbanner" id="rvBanner" style="display:none">
@@ -940,6 +987,10 @@ body{background:var(--paper); color:var(--text)}
       </button>
     </div>
   </div>
+  <!-- KIDS PHONICS -->
+  <div class="phonics" id="phonics" style="display:none;flex-direction:column;height:100%">
+    <div id="phonicsScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(26px + env(safe-area-inset-bottom))"></div>
+  </div>
   <!-- MODAL (custom; native prompt/confirm blocked in webview) -->
   <div class="modal-scrim" id="modalScrim">
     <div class="modal">
@@ -970,7 +1021,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.4.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.5.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3148,6 +3199,216 @@ function renderDrillResult(data){
 }
 
 /* ============ helpers ============ */
+/* ===================== 아이 파닉스 (초등 저학년 · 디코딩 연습) =====================
+   순수 음가 도입은 영상이 낫고, 앱은 '단어 읽기(블렌딩)+발음 별점'을 담당.
+   TTS는 글자 '이름'을 읽으므로, 소리는 발음하기 좋은 근사 철자(snd)로 재생.   */
+const PH_LETTERS=[
+ {L:"A",snd:"ah",word:"apple",emoji:"🍎"},{L:"B",snd:"buh",word:"ball",emoji:"⚽"},
+ {L:"C",snd:"kuh",word:"cat",emoji:"🐱"},{L:"D",snd:"duh",word:"dog",emoji:"🐶"},
+ {L:"E",snd:"eh",word:"egg",emoji:"🥚"},{L:"F",snd:"fuh",word:"fish",emoji:"🐟"},
+ {L:"G",snd:"guh",word:"goat",emoji:"🐐"},{L:"H",snd:"huh",word:"hat",emoji:"🎩"},
+ {L:"I",snd:"ih",word:"igloo",emoji:"🧊"},{L:"J",snd:"juh",word:"jam",emoji:"🍓"},
+ {L:"K",snd:"kuh",word:"key",emoji:"🔑"},{L:"L",snd:"luh",word:"lion",emoji:"🦁"},
+ {L:"M",snd:"muh",word:"moon",emoji:"🌙"},{L:"N",snd:"nuh",word:"nose",emoji:"👃"},
+ {L:"O",snd:"ah",word:"octopus",emoji:"🐙"},{L:"P",snd:"puh",word:"pig",emoji:"🐷"},
+ {L:"Q",snd:"kwuh",word:"queen",emoji:"👑"},{L:"R",snd:"ruh",word:"rabbit",emoji:"🐰"},
+ {L:"S",snd:"sss",word:"sun",emoji:"☀️"},{L:"T",snd:"tuh",word:"tiger",emoji:"🐯"},
+ {L:"U",snd:"uh",word:"umbrella",emoji:"☂️"},{L:"V",snd:"vuh",word:"van",emoji:"🚐"},
+ {L:"W",snd:"wuh",word:"water",emoji:"💧"},{L:"X",snd:"ks",word:"box",emoji:"📦"},
+ {L:"Y",snd:"yuh",word:"yoyo",emoji:"🪀"},{L:"Z",snd:"zzz",word:"zebra",emoji:"🦓"}
+];
+const PH_CVC=[
+ {w:"cat",emoji:"🐱",s:["kuh","ah","tuh"]},{w:"dog",emoji:"🐶",s:["duh","ah","guh"]},
+ {w:"sun",emoji:"☀️",s:["sss","uh","nuh"]},{w:"hat",emoji:"🎩",s:["huh","ah","tuh"]},
+ {w:"pig",emoji:"🐷",s:["puh","ih","guh"]},{w:"bed",emoji:"🛏️",s:["buh","eh","duh"]},
+ {w:"cup",emoji:"🥤",s:["kuh","uh","puh"]},{w:"bus",emoji:"🚌",s:["buh","uh","sss"]},
+ {w:"box",emoji:"📦",s:["buh","ah","ks"]},{w:"red",emoji:"🔴",s:["ruh","eh","duh"]},
+ {w:"fox",emoji:"🦊",s:["fuh","ah","ks"]},{w:"net",emoji:"🥅",s:["nuh","eh","tuh"]},
+ {w:"map",emoji:"🗺️",s:["muh","ah","puh"]},{w:"jam",emoji:"🍓",s:["juh","ah","muh"]},
+ {w:"pen",emoji:"🖊️",s:["puh","eh","nuh"]},{w:"lip",emoji:"👄",s:["luh","ih","puh"]},
+ {w:"ten",emoji:"🔟",s:["tuh","eh","nuh"]},{w:"mom",emoji:"👩",s:["muh","ah","muh"]}
+];
+const PH_SIGHT=["the","is","you","and","to","it","he","was","for","my","we","go","see","like","me","are"];
+
+function phStars(add){ let n=hGet("speakingroom:kidstars",0); if(add){ n+=add; hSet("speakingroom:kidstars",n); } return n; }
+function speakRate(text,rate){ if(!TTS||!SSU)return; TTS.cancel(); const u=new SSU(text); if(voiceA)u.voice=voiceA; u.lang="en-US"; u.rate=rate||0.9; TTS.speak(u); }
+function speakChain(parts){ if(!TTS||!SSU)return; TTS.cancel(); let i=0; (function go(){ if(i>=parts.length)return; const p=parts[i++]; const u=new SSU(p.t); if(voiceA)u.voice=voiceA; u.lang="en-US"; u.rate=p.rate||0.9; u.onend=()=>setTimeout(go,p.gap||120); TTS.speak(u); })(); }
+
+// 아이용 발음 녹음 → 점수(0~100). 탭하면 녹음, 3.2초 후 자동 종료
+let phMR=null, phRec=false;
+function phMic(ref, btn, cb){
+  if(phRec){ if(phMR&&phMR.state!=="inactive") phMR.stop(); return; }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    let chunks=[]; const mime=getBestMime();
+    phMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    const am=phMR.mimeType||mime; phRec=true; if(btn) btn.classList.add("rec");
+    phMR.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    phMR.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop()); phRec=false; if(btn) btn.classList.remove("rec");
+      const raw=new Blob(chunks,{type:am}); if(raw.size<1000){ cb(null); return; }
+      try{ const wav=await recordedToWav(raw);
+        const b64=btoa(unescape(encodeURIComponent(ref)));
+        const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64},body:wav});
+        const t=await res.text(); let d; try{d=JSON.parse(t);}catch(e){d=null;}
+        const n=d&&d.NBest&&d.NBest[0]; const pa=n&&(n.PronunciationAssessment||(n.AccuracyScore!=null?n:null));
+        cb(pa?Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0)):null);
+      }catch(e){ cb(null); }
+    };
+    phMR.start(250);
+    setTimeout(()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, 3200);
+  }).catch(e=>cb(null));
+}
+
+function openPhonics(){
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  $("#phonics").style.display="flex"; pushScreen("phonics"); $("#ctxBar").style.display="none";
+  phMenu();
+}
+function phMenu(){
+  const stars=phStars();
+  $("#phonicsScroll").innerHTML=`
+   <div class="phwrap">
+    <div class="phhead">
+      <button class="phback" id="phHome">‹ 나가기</button>
+      <div class="phstars">⭐ ${stars}</div>
+    </div>
+    <div class="phtitle">소리 학교 <span>🔤</span></div>
+    <div class="phsub">듣고 → 따라 말하면 → 별을 받아요</div>
+    <button class="phtile pht1" id="phLetters"><span class="e">🔡</span><span class="tx"><b>글자 소리</b><i>A는 "아"… 26글자 소리</i></span><span class="ar">›</span></button>
+    <button class="phtile pht2" id="phBlend"><span class="e">🐱</span><span class="tx"><b>단어 읽기</b><i>c-a-t → cat! 소리 합치기</i></span><span class="ar">›</span></button>
+    <button class="phtile pht3" id="phSight"><span class="e">⭐</span><span class="tx"><b>자주 나오는 말</b><i>the, you, is… 통째로</i></span><span class="ar">›</span></button>
+    <a class="phvideo" href="https://www.youtube.com/results?search_query=alphablocks+phonics" target="_blank" rel="noopener">📺 영상으로 생생한 소리 배우기 (Alphablocks)</a>
+   </div>`;
+  $("#phHome").onclick=goToSetup;
+  $("#phLetters").onclick=()=>{ phLi=0; phLetter(); };
+  $("#phBlend").onclick=()=>{ phBi=0; phBlendCard(); };
+  $("#phSight").onclick=()=>{ phSi=0; phSightCard(); };
+}
+// 글자 소리 — 큰 글자 + 그림 + 예시 단어. 듣고 따라 말하기(예시 단어로 채점)
+let phLi=0;
+function phLetter(){
+  if(phLi>=PH_LETTERS.length) return phCelebrate("글자 소리 끝!", phMenu);
+  const it=PH_LETTERS[phLi];
+  $("#phonicsScroll").innerHTML=`
+   <div class="phwrap">
+    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phLi+1} / ${PH_LETTERS.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
+    <div class="phcard">
+      <div class="phbig">${it.L}<span>${it.L.toLowerCase()}</span></div>
+      <div class="phemoji">${it.emoji}</div>
+      <div class="phword">${it.word}</div>
+      <div class="phstat" id="phStat">🔊 듣고 따라 해봐요</div>
+      <div class="phbtns">
+        <button class="phsound" id="phHear">🔊 소리</button>
+        <button class="phrec" id="phSay">🎤 따라 말하기</button>
+      </div>
+      <button class="phnext" id="phNext">다음 글자 →</button>
+    </div>
+   </div>`;
+  setTimeout(()=>speakChain([{t:it.snd,rate:0.85,gap:260},{t:it.snd,rate:0.85,gap:320},{t:it.word,rate:0.85}]),350);
+  $("#phBack").onclick=phMenu;
+  $("#phHear").onclick=()=>speakChain([{t:it.snd,rate:0.85,gap:280},{t:it.word,rate:0.85}]);
+  $("#phNext").onclick=()=>{ phLi++; phLetter(); };
+  $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
+    if(phRec){ phMic(null,b); return; }
+    st.textContent="🎙️ 잘 듣고 있어요…";
+    phMic(it.word, b, (sc)=>{ phScoreFx(sc, st); }); };
+}
+// 단어 읽기 (CVC 블렌딩)
+let phBi=0;
+function phBlendCard(){
+  if(phBi>=PH_CVC.length) return phCelebrate("단어 읽기 끝!", phMenu);
+  const it=PH_CVC[phBi]; const letters=it.w.split("");
+  $("#phonicsScroll").innerHTML=`
+   <div class="phwrap">
+    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phBi+1} / ${PH_CVC.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
+    <div class="phcard">
+      <div class="phemoji big">${it.emoji}</div>
+      <div class="phletters">${letters.map((c,i)=>`<button class="phl" data-i="${i}">${c}</button>`).join("")}</div>
+      <div class="phstat" id="phStat">한 소리씩 → 합쳐서 읽어요</div>
+      <div class="phbtns">
+        <button class="phsound" id="phSlow">🐢 천천히</button>
+        <button class="phsound" id="phBlendBtn">🔊 합쳐서</button>
+        <button class="phrec" id="phSay">🎤 읽기</button>
+      </div>
+      <button class="phnext" id="phNext">다음 단어 →</button>
+    </div>
+   </div>`;
+  // 글자 탭 → 그 소리
+  $("#phonicsScroll").querySelectorAll(".phl").forEach(el=>{ el.onclick=()=>{ const i=+el.dataset.i; speakRate(it.s[i],0.8); el.classList.add("pop"); setTimeout(()=>el.classList.remove("pop"),250); }; });
+  const blend=()=>speakChain(it.s.map((s,i)=>({t:s,rate:0.8,gap:230})).concat([{t:it.w,rate:0.6,gap:300},{t:it.w,rate:0.92}]));
+  setTimeout(blend,400);
+  $("#phBack").onclick=phMenu;
+  $("#phSlow").onclick=()=>speakChain(it.s.map(s=>({t:s,rate:0.75,gap:380})).concat([{t:it.w,rate:0.55}]));
+  $("#phBlendBtn").onclick=()=>speakChain([{t:it.w,rate:0.6,gap:260},{t:it.w,rate:0.92}]);
+  $("#phNext").onclick=()=>{ phBi++; phBlendCard(); };
+  $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
+    if(phRec){ phMic(null,b); return; }
+    st.textContent="🎙️ 잘 듣고 있어요…";
+    phMic(it.w, b, (sc)=>{ phScoreFx(sc, st, it.w); }); };
+}
+// 자주 나오는 말 (사이트워드)
+let phSi=0;
+function phSightCard(){
+  if(phSi>=PH_SIGHT.length) return phCelebrate("자주 나오는 말 끝!", phMenu);
+  const w=PH_SIGHT[phSi];
+  $("#phonicsScroll").innerHTML=`
+   <div class="phwrap">
+    <div class="phhead"><button class="phback" id="phBack">‹</button><div class="phprog">${phSi+1} / ${PH_SIGHT.length}</div><div class="phstars">⭐ ${phStars()}</div></div>
+    <div class="phcard">
+      <div class="phsight">${w}</div>
+      <div class="phstat" id="phStat">🔊 듣고 따라 말해요</div>
+      <div class="phbtns">
+        <button class="phsound" id="phHear">🔊 소리</button>
+        <button class="phrec" id="phSay">🎤 따라 말하기</button>
+      </div>
+      <button class="phnext" id="phNext">다음 →</button>
+    </div>
+   </div>`;
+  setTimeout(()=>speakRate(w,0.82),350);
+  $("#phBack").onclick=phMenu;
+  $("#phHear").onclick=()=>speakRate(w,0.82);
+  $("#phNext").onclick=()=>{ phSi++; phSightCard(); };
+  $("#phSay").onclick=function(){ const b=this, st=$("#phStat");
+    if(phRec){ phMic(null,b); return; }
+    st.textContent="🎙️ 잘 듣고 있어요…";
+    phMic(w, b, (sc)=>{ phScoreFx(sc, st); }); };
+}
+// 점수 → 별/칭찬 (관대하게)
+function phScoreFx(sc, st, alsoNote){
+  if(sc==null){ st.innerHTML=`<span style="color:#e87">🔇 한 번 더! 마이크 가까이</span>`; return; }
+  let stars=0, msg;
+  if(sc>=75){ stars=3; msg=`🌟🌟🌟 완벽해요!`; }
+  else if(sc>=55){ stars=2; msg=`⭐⭐ 잘했어요!`; }
+  else if(sc>=35){ stars=1; msg=`⭐ 좋아요! 한 번 더 해볼까?`; }
+  else { stars=1; msg=`👏 도전 성공! (${sc}점)`; }
+  phStars(stars);
+  st.innerHTML=`<span style="color:#10b981;font-weight:900">${msg}</span>`;
+  // 상단 별 갱신
+  const sb=$("#phonicsScroll").querySelector(".phstars"); if(sb) sb.textContent="⭐ "+phStars();
+  burstStars(stars);
+}
+function burstStars(n){
+  const host=$("#phonics"); if(!host) return;
+  for(let i=0;i<Math.max(3,n*3);i++){ const s=document.createElement("div"); s.textContent="⭐";
+    s.style.cssText=`position:fixed;left:${40+Math.random()*20}%;top:55%;font-size:${18+Math.random()*16}px;z-index:200;pointer-events:none;transition:transform 1s ease-out,opacity 1s`;
+    document.body.appendChild(s);
+    requestAnimationFrame(()=>{ s.style.transform=`translate(${(Math.random()-.5)*220}px,${-120-Math.random()*120}px) rotate(${(Math.random()-.5)*180}deg)`; s.style.opacity="0"; });
+    setTimeout(()=>s.remove(),1050);
+  }
+}
+function phCelebrate(title, done){
+  $("#phonicsScroll").innerHTML=`<div class="phwrap"><div class="phcard" style="text-align:center">
+    <div style="font-size:64px">🎉</div>
+    <div style="font-size:24px;font-weight:900;color:#0f172a;margin:8px 0">${title}</div>
+    <div style="font-size:15px;color:#475569;margin-bottom:6px">지금까지 모은 별</div>
+    <div style="font-size:36px;font-weight:900;color:#f59e0b;margin-bottom:22px">⭐ ${phStars()}</div>
+    <button class="phnext" id="phDone">처음으로</button>
+  </div></div>`;
+  burstStars(6);
+  $("#phDone").onclick=done;
+}
+
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 function escapeAttr(s){ return escapeHtml(s).replace(/'/g,"&#39;"); }
 function autoSize(){ msg.style.height="auto"; msg.style.height=Math.min(msg.scrollHeight,120)+"px"; }
@@ -3396,6 +3657,7 @@ async function checkForUpdate(){
 { const tb=$("#trainBtn"); if(tb) tb.onclick=(e)=>{ e.stopPropagation(); startMainTraining(); }; }
 { const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
+{ const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
 $("#homeName").onclick=openProfile;
 $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
 $("#profScrim").onclick=(e)=>{ if(e.target.id==="profScrim") closeProfile(); };
@@ -3415,7 +3677,7 @@ function goToSetup(fromPop){
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
   rvActive=false;
-  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; setup.style.display="block";
+  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none"; setup.style.display="block";
   $("#ctxBar").style.display="none";
   $("#notesToggle").style.display=""; $("#ttsBtn").style.display="";
   refreshRvBanner();
