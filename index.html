@@ -919,7 +919,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.9.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v1.9.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2601,6 +2601,10 @@ async function toggleDrillMic(){
       drillRecording=false;
       const btn=$("#drillSpeak"); if(btn){ btn.textContent="🔄 채점 중…"; btn.disabled=true; }
       const raw=new Blob(drillChunks,{type:actualMime});
+      if(raw.size<1000){
+        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px">🔇 소리가 안 잡혔어요. 마이크 가까이서 다시.</div>`;
+        if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; } return;
+      }
       let wav;
       try{ wav=await recordedToWav(raw); }
       catch(err){
@@ -2634,7 +2638,16 @@ function stopDrillMic(){ if(drillMR&&drillMR.state!=="inactive"){ drillMR.stop()
 function renderDrillResult(data){
   const r=$("#drillResult"); if(!r) return;
   const pa=data?.NBest?.[0]?.PronunciationAssessment;
-  if(!pa){ r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px">결과를 읽지 못했어요. 다시 시도해보세요.</div>`; return; }
+  if(!pa){
+    const st=data?.RecognitionStatus||"(상태없음)";
+    const heard=data?.DisplayText||data?.NBest?.[0]?.Display||"";
+    let msg;
+    if(st==="Success"||heard){ msg=`인식은 됐는데 점수가 안 왔어요.<br>들린 말: "${escapeHtml(heard||"?")}"`; }
+    else if(/NoMatch|Silence|InitialSilence/i.test(st)){ msg=`소리가 잘 안 잡혔어요 🔇<br>마이크 가까이서 또렷하게 다시 말해보세요.`; }
+    else { msg=`상태: ${escapeHtml(st)}`; }
+    r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px;line-height:1.6">${msg}</div>`;
+    return;
+  }
   const acc=Math.round(pa.AccuracyScore||0);
   const flu=Math.round(pa.FluencyScore||0);
   const comp=Math.round(pa.CompletenessScore||0);
