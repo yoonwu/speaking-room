@@ -914,9 +914,10 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.4.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v1.5.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
-const MODEL = "claude-sonnet-4-6";   // 비용 줄이려면 "claude-haiku-4-5-20251001" 로 바꿔도 됨
+const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
+const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
 /* ============================================================ */
 
 /* localStorage 기반 저장 (claude.ai 밖에서도 진행도가 저장됨) */
@@ -1121,11 +1122,11 @@ async function saveNotes(){
 }
 
 /* ============ Claude API ============ */
-async function callClaude(system, messages){
+async function callClaude(system, messages, model){
   const res = await fetch(PROXY_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ model:MODEL, max_tokens:2000, system, messages })
+    body:JSON.stringify({ model: model||MODEL, max_tokens:2000, system, messages })
   });
   if(!res.ok) throw new Error("API "+res.status);
   return res.json();
@@ -1515,9 +1516,10 @@ function renderFeedbackCard(obj){
   if(corr.length===0){
     html+=`<div style="color:#1c7a5c;font-weight:600;font-size:14px">완벽해요 — 고칠 게 없어요! 👏</div>`;
   }else{
-    corr.forEach(c2=>{
+    corr.forEach((c2,i)=>{
       html+=`<div class="corr"><div class="o">${escapeHtml(c2.original||"")}</div><div class="b">→ ${escapeHtml(c2.better||"")}</div>`;
       if(c2.why) html+=`<div class="w">${escapeHtml(c2.why)}</div>`;
+      html+=`<button class="resay" data-en="${escapeAttr(c2.better||"")}" data-ko="${escapeAttr(c2.ko||"")}" style="margin-top:8px;padding:9px 14px;border-radius:11px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-size:13px;font-weight:800">🎤 이렇게 다시 말해보기</button>`;
       html+=`</div>`;
     });
   }
@@ -1532,6 +1534,9 @@ function renderFeedbackCard(obj){
   }
   c.innerHTML=html;
   threadInner.appendChild(c); scrollDown();
+  c.querySelectorAll(".resay").forEach(b=>{
+    b.onclick=()=>openDrill(b.getAttribute("data-en"), b.getAttribute("data-ko"));
+  });
 }
 
 /* ============ notes panel ============ */
@@ -1942,8 +1947,15 @@ function reviewDone(){
 }
 function speakEn(text){
   if(!TTS||!SSU) return;
+  if(/[\uac00-\ud7a3]/.test(text)){ speakKo(text); return; } // 한글이면 한국어 음성으로
   TTS.cancel();
   const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
+  TTS.speak(u);
+}
+function speakKo(text){
+  if(!TTS||!SSU) return;
+  TTS.cancel();
+  const u=new SSU(text); if(koVoice) u.voice=koVoice; u.lang="ko-KR"; u.rate=0.98;
   TTS.speak(u);
 }
 
@@ -2187,10 +2199,11 @@ async function generateVocab(){
   const sys=[
 "Create a vocabulary set for a Korean learner (level: "+state.level+"). Theme: "+state.vocabTheme.topic+".",
 "Pick 5 genuinely useful everyday words or short expressions. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way, e.g. not all 'Can I get'). This teaches the word across varied contexts so it isn't bound to one phrase. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
-'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"colloc":["get a refill","free refill"]}]} where diff is the word difficulty 1 (easy/common) 2 (medium) or 3 (advanced).'
+"CRITICAL: 'word' MUST be the ENGLISH word/phrase (e.g. 'to clean'), and 'ko' MUST be its KOREAN meaning (e.g. '청소하다'). NEVER swap them. All 'en' fields are English, all 'ko' fields are Korean. Also include a 'blank' field: ONE of the 3 example sentences chosen as a fill-in-the-blank, written with the target word replaced by '____'.",
+'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is the word difficulty 1 (easy/common) 2 (medium) or 3 (advanced).'
   ].join("\n");
   try{
-    const data=await callClaude(sys,[{role:"user",content:"Create the vocabulary set now."}]);
+    const data=await callClaude(sys,[{role:"user",content:"Create the vocabulary set now."}], FAST_MODEL);
     const obj=parseJSON(extractText(data));
     vocabWords=(obj.words||[]).filter(w=>w&&w.word); vbIdx=0;
     if(!vocabWords.length) throw new Error("empty");
@@ -2255,9 +2268,11 @@ function vocabDone(){
 }
 
 /* ============ speech synthesis (TTS) ============ */
-let enVoice=null, voiceA=null, voiceB=null;
+let enVoice=null, voiceA=null, voiceB=null, koVoice=null;
 function pickVoice(){
   const vs=TTS.getVoices().filter(v=>/^en/i.test(v.lang));
+  const kos=TTS.getVoices().filter(v=>/^ko/i.test(v.lang));
+  koVoice = kos.find(v=>/Google|Yuna|Female|Heami/i.test(v.name)) || kos[0] || null;
   if(!vs.length) return;
   const us=vs.filter(v=>/en-US/i.test(v.lang));
   const pool = us.length>=2 ? us : vs;
@@ -2344,7 +2359,7 @@ async function toggleMic(){
         if(!res.ok){ hint.textContent="STT 오류 "+res.status+": "+txt.slice(0,70); setTimeout(()=>hint.textContent="",5000); return; }
         if(data && data.RecognitionStatus==="Success" && data.DisplayText){
           const t = data.DisplayText.replace(/\.$/,"");
-          msg.value = (msg.value?msg.value+" ":"")+t;
+          msg.value = t;   // 다시 말하면 기존(틀린) 문장 교체
           autoSize(); refreshSend();
           hint.textContent="";
         } else {
@@ -2410,15 +2425,18 @@ async function toggleDrillMic(){
         if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; } return;
       }
       try{
+        const b64ref = btoa(unescape(encodeURIComponent(drillTarget))); // 한글/특수문자 안전
         const res=await fetch(PROXY_URL+"/pronounce",{
           method:"POST",
-          headers:{"Content-Type":"audio/wav","X-Pronunciation-Text":drillTarget},
+          headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64ref},
           body:wav
         });
-        const data=await res.json();
-        renderDrillResult(data);
+        const txt=await res.text();
+        let data; try{ data=JSON.parse(txt); }catch(e){ data=null; }
+        if(!res.ok){ const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#e0533f;text-align:center;font-size:12.5px">채점 오류 ${res.status}: ${escapeHtml(txt.slice(0,80))}</div>`; }
+        else renderDrillResult(data);
       }catch(e){
-        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">채점 오류. 다시 시도해주세요.</div>`;
+        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#e0533f;text-align:center;font-size:12.5px">오류: ${escapeHtml(String(e).slice(0,80))}</div>`;
       }
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
