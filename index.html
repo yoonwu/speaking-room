@@ -828,6 +828,11 @@ body{background:var(--paper); color:var(--text)}
           <span class="eng-tx"><b>실전상황</b><i>전화·병원·학교·고객센터 버티기</i></span>
           <span class="eng-ar">›</span>
         </button>
+        <button class="eng" id="engSprint" style="background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(31,211,160,.12));border-color:rgba(245,158,11,.5)">
+          <span class="eng-emo">⚡</span>
+          <span class="eng-tx"><b>아웃풋 스프린트</b><i>2~5분 스피킹 짐 · 많이 말하기 트레이닝</i></span>
+          <span class="eng-ar">›</span>
+        </button>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
           <span class="cont-txt"><span class="cont-t">이어서 연습하기</span><span class="cont-d" id="contDesc"></span></span>
@@ -1025,6 +1030,10 @@ body{background:var(--paper); color:var(--text)}
   <div class="phonics" id="phonics" style="display:none;flex-direction:column;height:100%">
     <div id="phonicsScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(26px + env(safe-area-inset-bottom))"></div>
   </div>
+  <!-- OUTPUT SPRINT -->
+  <div class="sprint" id="sprint" style="display:none;flex-direction:column;height:100%">
+    <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(24px + env(safe-area-inset-bottom))"></div>
+  </div>
   <!-- MODAL (custom; native prompt/confirm blocked in webview) -->
   <div class="modal-scrim" id="modalScrim">
     <div class="modal">
@@ -1055,7 +1064,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.12.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.15.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1309,6 +1318,14 @@ function kidRules(){
 "- Give lots of success and praise. Never stressful, never impatient, never harsh."
   ].join("\n");
 }
+// NPC(상대)의 발화 길이 제한 — 레벨이 낮을수록 짧게. 아이 모드는 강하게.
+function npcLenRule(){
+  const v=state.lvl||3; const kid=kidMode();
+  let maxWords, maxSent;
+  if(kid){ maxSent=1; maxWords = v<=2?5 : v<=4?7 : 9; }
+  else   { maxSent = v<=3?1 : v<=6?2 : 3; maxWords = v<=3?8 : v<=6?12 : 18; }
+  return "HARD LENGTH LIMIT — YOUR OWN reply: at most "+maxSent+" short sentence"+(maxSent>1?"s":"")+", at most "+maxWords+" words TOTAL. Ask only ONE thing. NO paragraphs, NO lists, NO multi-part questions, NO long explanations. If your reply is longer than "+maxWords+" words, it is WRONG — shorten it.";
+}
 const KID_SITUATIONS=[
  {id:"kd_friend",emo:"🧒", t:"친구랑 놀기", role:"a friendly classmate", ctx:"Playing and talking with a friend at school — inviting them to play, sharing toys, talking about games."},
  {id:"kd_teacher",emo:"👩‍🏫", t:"선생님께 말하기", role:"a kind, patient teacher", ctx:"Talking to the teacher — asking for help, saying you don't understand, asking to go to the bathroom."},
@@ -1383,6 +1400,8 @@ levelHint(),
 "You play "+scnRole()+". Be warm, cheerful, patient, and encouraging at all times. Use friendly emojis.",
 "Talk like a real but kind friend: ask ONE simple question, wait, react happily, ask another. Keep a relaxed back-and-forth.",
 "NEVER create pressure, time limits, misunderstandings, or problems. Never be impatient or confused. If the child struggles, gently help and cheer them on.",
+npcLenRule(),
+"Example of the RIGHT length: \"Hi! What's your name? 😊\" or \"Cool! Do you like dogs? 🐶\". Keep it that short EVERY time.",
 kidRules()
       ].join("\n");
     }
@@ -1402,6 +1421,7 @@ kidRules()
 "• PRESSURE EVENT: at least once raise the stakes — running out of time, office closing soon, system outage, call dropping, \"I can only do this today\".",
 "• NOISE on calls: 'Sorry, you're breaking up.', 'Can you repeat that?', 'I didn't catch that.'",
 "Keep each turn SHORT — 1 to 3 sentences of natural spoken English. ONE new obstacle or question per turn. Never switch to Korean. Never lecture grammar. Stay 100% in character.",
+npcLenRule(),
 levelHint(),
 "Only after the learner has pushed through the confusion and SOLVED the problem (8+ turns) may you begin to wrap up. If it fits, force a moment where they need today's key expression: \""+dailyExpr().en+"\"."
     ].join("\n");
@@ -3587,6 +3607,209 @@ function phMic(ref, btn, cb){
   }).catch(e=>cb(null));
 }
 
+/* ===================== ⚡ OUTPUT SPRINT — 발화량·인출속도 스피킹 짐 =====================
+   한국어만 보여주고 즉시 말하기 → STT 막힘 없이 빠른 통과 → 콤보·속도 보너스 */
+// ===== Core Phrase DB (1차: 48 핵심 청크) — AI 호출 없이 로컬 출제 =====
+// 구조: {id, phrase, ko, level, tags, kid, adult, examples:[{en,ko}], activeState}
+const CORE_PHRASES=[
+ {id:"can_i_get_001", phrase:"Can I get...?", ko:"~을 받을 수 있을까요?", level:1, tags:["restaurant","shopping","travel","daily"], kid:true, adult:true, examples:[{en:"Can I get some water?",ko:"물 좀 주시겠어요?"},{en:"Can I get a receipt?",ko:"영수증 받을 수 있을까요?"}]},
+ {id:"id_like_to_002", phrase:"I'd like to...", ko:"~하고 싶어요", level:2, tags:["restaurant","hotel","travel","daily"], kid:false, adult:true, examples:[{en:"I'd like to order.",ko:"주문하고 싶어요."},{en:"I'd like to check in.",ko:"체크인하고 싶어요."}]},
+ {id:"could_you_help_003", phrase:"Could you help me?", ko:"도와주시겠어요?", level:1, tags:["support","travel","school","daily"], kid:true, adult:true, examples:[{en:"Could you help me?",ko:"저 좀 도와주시겠어요?"},{en:"Could you help me with this?",ko:"이것 좀 도와주시겠어요?"}]},
+ {id:"do_you_have_004", phrase:"Do you have...?", ko:"~있어요?", level:1, tags:["shopping","restaurant","hotel","daily"], kid:true, adult:true, examples:[{en:"Do you have this in blue?",ko:"이거 파란색 있어요?"},{en:"Do you have a menu?",ko:"메뉴 있어요?"}]},
+ {id:"im_looking_for_005", phrase:"I'm looking for...", ko:"~을 찾고 있어요", level:2, tags:["shopping","travel","daily"], kid:false, adult:true, examples:[{en:"I'm looking for the restroom.",ko:"화장실을 찾고 있어요."},{en:"I'm looking for size medium.",ko:"미디엄 사이즈를 찾고 있어요."}]},
+ {id:"i_need_006", phrase:"I need...", ko:"~이 필요해요", level:1, tags:["daily","hospital","support","travel"], kid:true, adult:true, examples:[{en:"I need some help.",ko:"도움이 필요해요."},{en:"I need a doctor.",ko:"의사가 필요해요."}]},
+ {id:"i_forgot_007", phrase:"I forgot...", ko:"~을 잊어버렸어요", level:2, tags:["school","daily","work"], kid:true, adult:true, examples:[{en:"I forgot my homework.",ko:"숙제를 깜빡했어요."},{en:"I forgot my password.",ko:"비밀번호를 잊어버렸어요."}]},
+ {id:"dont_understand_008", phrase:"I don't understand.", ko:"이해가 안 돼요.", level:1, tags:["school","support","daily","travel"], kid:true, adult:true, examples:[{en:"Sorry, I don't understand.",ko:"죄송해요, 이해가 안 돼요."},{en:"I don't understand this part.",ko:"이 부분이 이해가 안 돼요."}]},
+ {id:"say_again_009", phrase:"Could you say that again?", ko:"다시 말씀해 주시겠어요?", level:1, tags:["support","daily","travel","school"], kid:true, adult:true, examples:[{en:"Could you say that again?",ko:"다시 말씀해 주시겠어요?"},{en:"Sorry, can you say that again?",ko:"죄송해요, 다시 말해 주시겠어요?"}]},
+ {id:"where_can_i_010", phrase:"Where can I...?", ko:"어디서 ~할 수 있어요?", level:2, tags:["travel","daily","shopping"], kid:false, adult:true, examples:[{en:"Where can I buy a ticket?",ko:"표를 어디서 살 수 있어요?"},{en:"Where can I find taxis?",ko:"택시는 어디서 탈 수 있어요?"}]},
+ {id:"how_much_011", phrase:"How much is it?", ko:"얼마예요?", level:1, tags:["shopping","restaurant","travel","daily"], kid:true, adult:true, examples:[{en:"How much is it?",ko:"얼마예요?"},{en:"How much is this one?",ko:"이건 얼마예요?"}]},
+ {id:"im_hungry_012", phrase:"I'm hungry.", ko:"배고파요.", level:1, tags:["food","daily","family"], kid:true, adult:true, examples:[{en:"I'm hungry.",ko:"배고파요."},{en:"I'm so hungry.",ko:"너무 배고파요."}]},
+ {id:"im_thirsty_013", phrase:"I'm thirsty.", ko:"목말라요.", level:1, tags:["food","daily","family"], kid:true, adult:true, examples:[{en:"I'm thirsty.",ko:"목말라요."},{en:"Can I get a drink?",ko:"마실 것 좀 주시겠어요?"}]},
+ {id:"help_me_014", phrase:"Help me, please.", ko:"도와주세요.", level:1, tags:["support","daily","travel","school"], kid:true, adult:true, examples:[{en:"Help me, please.",ko:"도와주세요."},{en:"Please help me.",ko:"좀 도와주세요."}]},
+ {id:"im_tired_015", phrase:"I'm tired.", ko:"피곤해요.", level:1, tags:["daily","family","school"], kid:true, adult:true, examples:[{en:"I'm tired today.",ko:"오늘 피곤해요."},{en:"I'm really tired.",ko:"정말 피곤해요."}]},
+ {id:"im_from_korea_016", phrase:"I'm from Korea.", ko:"저는 한국에서 왔어요.", level:1, tags:["travel","daily","school"], kid:true, adult:true, examples:[{en:"I'm from Korea.",ko:"저는 한국에서 왔어요."},{en:"I came from Korea.",ko:"한국에서 왔어요."}]},
+ {id:"learning_english_017", phrase:"I'm learning English.", ko:"영어를 배우고 있어요.", level:2, tags:["school","daily","work"], kid:true, adult:true, examples:[{en:"I'm learning English.",ko:"영어를 배우고 있어요."},{en:"I'm still learning English.",ko:"아직 영어를 배우고 있어요."}]},
+ {id:"want_to_go_018", phrase:"I want to go with you.", ko:"같이 가고 싶어요.", level:1, tags:["friends","family","daily"], kid:true, adult:true, examples:[{en:"I want to go with you.",ko:"같이 가고 싶어요."},{en:"Can I go with you?",ko:"같이 가도 돼요?"}]},
+ {id:"where_is_019", phrase:"Where is...?", ko:"~이 어디예요?", level:1, tags:["travel","shopping","daily","hotel"], kid:true, adult:true, examples:[{en:"Where is the bathroom?",ko:"화장실이 어디예요?"},{en:"Where is the exit?",ko:"출구가 어디예요?"}]},
+ {id:"can_you_020", phrase:"Can you...?", ko:"~해 주실 수 있어요?", level:1, tags:["support","daily","restaurant"], kid:true, adult:true, examples:[{en:"Can you help me?",ko:"도와주실 수 있어요?"},{en:"Can you slow down?",ko:"천천히 말해 주실 수 있어요?"}]},
+ {id:"i_have_a_021", phrase:"I have a...", ko:"~이 있어요", level:1, tags:["hospital","daily","work"], kid:true, adult:true, examples:[{en:"I have a headache.",ko:"머리가 아파요."},{en:"I have a question.",ko:"질문이 있어요."}]},
+ {id:"can_i_022", phrase:"Can I...?", ko:"~해도 돼요?", level:1, tags:["school","daily","restaurant","travel"], kid:true, adult:true, examples:[{en:"Can I sit here?",ko:"여기 앉아도 돼요?"},{en:"Can I go to the bathroom?",ko:"화장실 가도 돼요?"}]},
+ {id:"thank_you_for_023", phrase:"Thank you for...", ko:"~해 줘서 고마워요", level:2, tags:["daily","work","friends"], kid:true, adult:true, examples:[{en:"Thank you for your help.",ko:"도와줘서 고마워요."},{en:"Thank you for waiting.",ko:"기다려 줘서 고마워요."}]},
+ {id:"im_sorry_024", phrase:"I'm sorry, but...", ko:"죄송하지만 ~", level:2, tags:["support","work","daily"], kid:false, adult:true, examples:[{en:"I'm sorry, I'm late.",ko:"죄송해요, 늦었어요."},{en:"I'm sorry, but I can't.",ko:"죄송하지만 안 될 것 같아요."}]},
+ {id:"is_there_025", phrase:"Is there...?", ko:"~이 있나요?", level:2, tags:["travel","hotel","daily"], kid:false, adult:true, examples:[{en:"Is there a pharmacy nearby?",ko:"근처에 약국이 있나요?"},{en:"Is there free wifi?",ko:"무료 와이파이 있나요?"}]},
+ {id:"i_think_026", phrase:"I think...", ko:"~인 것 같아요", level:2, tags:["work","daily","school"], kid:false, adult:true, examples:[{en:"I think it's broken.",ko:"고장 난 것 같아요."},{en:"I think you're right.",ko:"맞는 것 같아요."}]},
+ {id:"could_i_have_027", phrase:"Could I have...?", ko:"~을 주시겠어요?", level:2, tags:["restaurant","hotel","shopping"], kid:false, adult:true, examples:[{en:"Could I have the bill?",ko:"계산서 주시겠어요?"},{en:"Could I have a bag?",ko:"봉투 주시겠어요?"}]},
+ {id:"let_me_028", phrase:"Let me...", ko:"제가 ~할게요", level:2, tags:["work","daily","support"], kid:false, adult:true, examples:[{en:"Let me check.",ko:"제가 확인해 볼게요."},{en:"Let me try again.",ko:"다시 해 볼게요."}]},
+ {id:"do_you_know_029", phrase:"Do you know...?", ko:"~을 아세요?", level:2, tags:["travel","daily","support"], kid:false, adult:true, examples:[{en:"Do you know the way?",ko:"길 아세요?"},{en:"Do you know what time it is?",ko:"몇 시인지 아세요?"}]},
+ {id:"how_do_i_030", phrase:"How do I...?", ko:"어떻게 ~해요?", level:2, tags:["support","travel","work"], kid:false, adult:true, examples:[{en:"How do I get there?",ko:"거기 어떻게 가요?"},{en:"How do I use this?",ko:"이거 어떻게 써요?"}]},
+ {id:"play_together_031", phrase:"Do you want to play?", ko:"같이 놀래요?", level:1, tags:["friends","games","school"], kid:true, adult:false, examples:[{en:"Do you want to play?",ko:"같이 놀래요?"},{en:"Let's play together!",ko:"같이 놀자!"}]},
+ {id:"lend_me_ball_032", phrase:"Can I borrow the ball?", ko:"공 빌려주세요.", level:1, tags:["sports","friends","games"], kid:true, adult:false, examples:[{en:"Can I borrow the ball?",ko:"공 빌려줄래?"},{en:"Can I use the ball?",ko:"공 써도 돼?"}]},
+ {id:"i_like_dogs_033", phrase:"I like dogs.", ko:"강아지를 좋아해요.", level:1, tags:["animals","family","friends"], kid:true, adult:false, examples:[{en:"I like dogs.",ko:"강아지를 좋아해요."},{en:"I love puppies!",ko:"강아지 너무 좋아요!"}]},
+ {id:"i_like_roblox_034", phrase:"I like Roblox.", ko:"로블록스를 좋아해요.", level:1, tags:["games","friends"], kid:true, adult:false, examples:[{en:"I like Roblox.",ko:"로블록스를 좋아해요."},{en:"Roblox is fun!",ko:"로블록스 재밌어요!"}]},
+ {id:"my_name_is_035", phrase:"My name is...", ko:"제 이름은 ~이에요", level:1, tags:["school","friends","daily"], kid:true, adult:true, examples:[{en:"My name is Minjun.",ko:"제 이름은 민준이에요."},{en:"Hi, my name is Sora.",ko:"안녕, 내 이름은 소라야."}]},
+ {id:"i_am_years_old_036", phrase:"I'm ... years old.", ko:"저는 ~살이에요", level:1, tags:["school","friends","family"], kid:true, adult:false, examples:[{en:"I'm nine years old.",ko:"저는 아홉 살이에요."},{en:"I'm eight years old.",ko:"저는 여덟 살이에요."}]},
+ {id:"may_i_go_037", phrase:"May I go to the bathroom?", ko:"화장실 가도 돼요?", level:1, tags:["school","daily"], kid:true, adult:true, examples:[{en:"May I go to the bathroom?",ko:"화장실 가도 돼요?"},{en:"Can I go to the toilet?",ko:"화장실 다녀와도 돼요?"}]},
+ {id:"i_dont_know_038", phrase:"I don't know.", ko:"잘 모르겠어요.", level:1, tags:["school","daily","support"], kid:true, adult:true, examples:[{en:"I don't know.",ko:"잘 모르겠어요."},{en:"Sorry, I don't know.",ko:"죄송해요, 모르겠어요."}]},
+ {id:"one_more_time_039", phrase:"One more time, please.", ko:"한 번만 더요.", level:1, tags:["school","support","daily"], kid:true, adult:true, examples:[{en:"One more time, please.",ko:"한 번만 더 해 주세요."},{en:"Again, please.",ko:"다시 한 번요."}]},
+ {id:"check_in_040", phrase:"I have a reservation.", ko:"예약했어요.", level:2, tags:["hotel","restaurant","travel"], kid:false, adult:true, examples:[{en:"I have a reservation.",ko:"예약했어요."},{en:"I booked a room.",ko:"방을 예약했어요."}]},
+ {id:"not_working_041", phrase:"It's not working.", ko:"작동이 안 돼요.", level:2, tags:["support","work","hotel"], kid:false, adult:true, examples:[{en:"It's not working.",ko:"작동이 안 돼요."},{en:"The wifi isn't working.",ko:"와이파이가 안 돼요."}]},
+ {id:"can_i_pay_042", phrase:"Can I pay by card?", ko:"카드로 결제해도 돼요?", level:2, tags:["shopping","restaurant","travel"], kid:false, adult:true, examples:[{en:"Can I pay by card?",ko:"카드로 결제해도 돼요?"},{en:"Do you take cards?",ko:"카드 되나요?"}]},
+ {id:"running_late_043", phrase:"I'm running late.", ko:"좀 늦을 것 같아요.", level:2, tags:["work","daily"], kid:false, adult:true, examples:[{en:"I'm running late.",ko:"좀 늦을 것 같아요."},{en:"Sorry, I'm running late.",ko:"죄송해요, 늦고 있어요."}]},
+ {id:"could_you_repeat_044", phrase:"Could you speak slowly?", ko:"천천히 말해 주시겠어요?", level:2, tags:["support","travel","daily"], kid:false, adult:true, examples:[{en:"Could you speak slowly?",ko:"천천히 말해 주시겠어요?"},{en:"Please speak slowly.",ko:"천천히 말해 주세요."}]},
+ {id:"i_feel_sick_045", phrase:"I feel sick.", ko:"몸이 안 좋아요.", level:1, tags:["hospital","daily","family"], kid:true, adult:true, examples:[{en:"I feel sick.",ko:"몸이 안 좋아요."},{en:"I don't feel well.",ko:"컨디션이 안 좋아요."}]},
+ {id:"see_you_later_046", phrase:"See you later.", ko:"나중에 봐요.", level:1, tags:["friends","daily","family"], kid:true, adult:true, examples:[{en:"See you later.",ko:"나중에 봐요."},{en:"See you tomorrow.",ko:"내일 봐요."}]},
+ {id:"i_agree_047", phrase:"I agree.", ko:"동의해요.", level:2, tags:["work","school","daily"], kid:false, adult:true, examples:[{en:"I agree with you.",ko:"동의해요."},{en:"That sounds good.",ko:"좋은 것 같아요."}]},
+ {id:"excuse_me_048", phrase:"Excuse me.", ko:"실례합니다.", level:1, tags:["travel","daily","support","shopping"], kid:true, adult:true, examples:[{en:"Excuse me.",ko:"실례합니다."},{en:"Excuse me, sir.",ko:"실례합니다, 저기요."}]}
+];
+// 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
+function pickPhrases(opts){
+  opts=opts||{}; const age=opts.age||(typeof kidMode==="function"&&kidMode()?"kid":"adult");
+  const lvl=opts.level||(typeof state!=="undefined"&&state.lvl)||3; const topic=opts.topic||null; const n=opts.n||20;
+  let pool=CORE_PHRASES.filter(p=> age==="kid"? p.kid : p.adult );
+  if(topic) pool=pool.filter(p=>p.tags.includes(topic));
+  // 레벨: 현재 레벨 이하 위주(±0), 너무 적으면 전체로 완화
+  let lv=pool.filter(p=>p.level<= (lvl<=3?1: lvl<=6?2:3));
+  if(lv.length>=6) pool=lv;
+  // 미능동(능동 어휘 아닌 것) 우선
+  const notActive=pool.filter(p=>{ try{ return avProgressOf(p.examples[0].en).state<4; }catch(e){ return true; } });
+  let ranked = notActive.length>=Math.min(6,n)? notActive.concat(pool.filter(p=>!notActive.includes(p))) : pool.slice();
+  // 셔플
+  for(let i=ranked.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [ranked[i],ranked[j]]=[ranked[j],ranked[i]]; }
+  // 청크 → 스프린트 아이템(ko 프롬프트 / en 정답). 부족하면 같은 청크의 다른 예문으로 채움
+  const items=[]; let gi=0;
+  while(items.length<n && ranked.length){
+    const p=ranked[gi%ranked.length]; gi++;
+    const exIdx=Math.floor(gi/ranked.length)%p.examples.length;
+    const ex=p.examples[exIdx]||p.examples[0];
+    items.push({ko:ex.ko, en:ex.en, tag:(p.tags[0]||"daily"), pid:p.id});
+    if(gi>n*3) break;
+  }
+  return items.slice(0,n);
+}
+
+const SPRINT_LEN={easy:10, normal:20, hard:30};
+const SPRINT_ADULT="travel, hotel, restaurant, hospital, school, daily life, customer support, work";
+const SPRINT_KID="school, friends, games, food, animals, sports, family";
+let spItems=[], spIdx=0, spCombo=0, spMaxCombo=0, spT0=0, spSpoke=0, spTimes=[];
+function openSprintPicker(){
+  const sc=document.createElement("div"); sc.id="spPick";
+  sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
+  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line)">
+    <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
+    <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:3px">⚡ 아웃풋 스프린트</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">한국어를 보고 <b>3초 안에 바로</b> 영어로! 많이 말하는 게 목표예요 (2~5분)</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button class="spLen" data-len="easy"   style="text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:15px;cursor:pointer"><b style="color:var(--text);font-size:15px">🟢 쉬움 · 10문장</b></button>
+      <button class="spLen" data-len="normal" style="text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:15px;cursor:pointer"><b style="color:var(--text);font-size:15px">🟡 보통 · 20문장</b></button>
+      <button class="spLen" data-len="hard"   style="text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:15px;cursor:pointer"><b style="color:var(--text);font-size:15px">🔴 빡셈 · 30문장</b></button>
+    </div>
+    <button id="spClose" style="width:100%;margin-top:14px;padding:13px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px">닫기</button>
+  </div>`;
+  document.body.appendChild(sc);
+  sc.querySelectorAll(".spLen").forEach(b=>{ b.onclick=()=>{ const l=b.dataset.len; sc.remove(); startSprint(l); }; });
+  $("#spClose").onclick=()=>sc.remove();
+  sc.onclick=(e)=>{ if(e.target===sc) sc.remove(); };
+}
+function startSprint(len){
+  const n=SPRINT_LEN[len]||20;
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  spIdx=0; spCombo=0; spMaxCombo=0; spTimes=[];
+  // 로컬 Phrase DB에서 즉시 출제 — AI 호출 없음, 로딩 없음
+  spItems = pickPhrases({ n:n });
+  if(spItems && spItems.length){ spIdx=0; spNext(); }
+  else { $("#sprintScroll").innerHTML=`<div class="lloading">문장 준비 중…<div class="typing"><i></i><i></i><i></i></div></div>`; spGenerate(n); }
+}
+async function spGenerate(n){
+  const topics = kidMode()? SPRINT_KID : SPRINT_ADULT;
+  const seed=Math.floor(Math.random()*100000);
+  const sys=[
+"Generate "+n+" EXTREMELY common, short, everyday Korean sentences with their natural English versions, for rapid speaking practice.",
+kidMode()? "The learner is a young CHILD. Use very short, simple sentences (max 6 English words). Topics: "+topics+"."
+         : "Adult everyday survival English. Keep each English version short and natural (max 8 words). Topics: "+topics+".",
+"These must be things people say constantly (배고파요 / 도와주세요 / 얼마예요? / 다시 말해 주세요 / 같이 가고 싶어요 ...). Mix topics. Variety seed "+seed+".",
+'Return ONLY JSON: {"items":[{"ko":"한국어","en":"natural English"}]} with exactly '+n+" items."
+  ].join("\n");
+  try{
+    const d=await callClaude(sys,[{role:"user",content:"Generate now."}], FAST_MODEL);
+    const o=parseJSON(extractText(d)); spItems=(o.items||[]).filter(x=>x&&x.ko&&x.en).slice(0,n);
+    if(!spItems.length) throw new Error("empty");
+    spIdx=0; spNext();
+  }catch(e){ $("#sprintScroll").innerHTML=`<div class="lloading">문장을 못 만들었어요. <button class="sh-next" id="spRetry" style="max-width:200px;margin-top:12px">다시</button></div>`; const r=$("#spRetry"); if(r) r.onclick=()=>startSprint(Object.keys(SPRINT_LEN).find(k=>SPRINT_LEN[k]===spItems.length)||"normal"); }
+}
+function spMult(){ return spCombo>=10?5:spCombo>=5?3:spCombo>=3?2:1; }
+function spNext(){
+  if(spIdx>=spItems.length) return spDone();
+  const it=spItems[spIdx];
+  const mult=spMult();
+  $("#sprintScroll").innerHTML=`
+   <div style="max-width:520px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button class="phback" id="spExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 그만</button>
+      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${Math.round(spIdx/spItems.length*100)}%;background:linear-gradient(90deg,#1fd3a0,#13b488)"></div></div>
+      <div style="font-size:12px;font-weight:800;color:var(--muted)">${spIdx+1}/${spItems.length}</div>
+    </div>
+    <div id="spCombo" style="text-align:center;height:24px;font-size:15px;font-weight:900;color:#f59e0b">${spCombo>=3?`🔥 ${spCombo} 콤보 · x${mult} XP`:""}</div>
+    <div style="background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:34px 22px;text-align:center;margin:8px 0 18px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px">바로 영어로 말하세요 — 3초 안에!</div>
+      <div style="font-size:27px;font-weight:900;color:var(--text);line-height:1.4">${escapeHtml(it.ko)}</div>
+    </div>
+    <div id="spStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px">🎤 눌러서 바로 말하기</div>
+    <button id="spMicBtn" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
+    <button id="spPass" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">말했어요 — 다음으로 (STT 안 잡혀도 OK)</button>
+   </div>`;
+  spT0=Date.now(); spSpoke=0;
+  $("#spExit").onclick=spDone;
+  $("#spMicBtn").onclick=function(){ const b=this; if(qzRecording) return; if(!spSpoke) spSpoke=Date.now();
+    b.classList.add("live"); $("#spStat").textContent="듣는 중…";
+    micFillCb((t)=>{ b.classList.remove("live"); spPassItem(it, t); }); };
+  $("#spPass").onclick=()=>{ if(!spSpoke) spSpoke=Date.now(); spPassItem(it, ""); };
+}
+function spPassItem(it, heard){
+  // STT 관대화: 말한 시도는 무조건 통과 (인식 실패해도 막지 않음)
+  const startT=spSpoke||Date.now();
+  const elapsed=Math.max(0.1,(startT-spT0)/1000);   // 말 시작까지 걸린 시간(인출 속도)
+  spTimes.push(Math.round(elapsed*10)/10);
+  try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+  spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
+  const speedBonus = elapsed<=2?5 : elapsed<=4?3 : elapsed<=6?1 : 0;
+  const gained = awardXP("output", Math.max(1, speedBonus*spMult()), "스프린트 ⚡", "sprint");
+  bumpCount&&bumpCount("talk"); questBump&&questBump("talk");
+  // Active Vocabulary: 인출 기록 (서로 다른 상황 3회 → 능동 어휘)
+  try{ avSeen(it.en, it.ko); const promoted=avRetrieve(it.en, it.ko, it.tag||"sprint"); if(promoted) awardXP("output",25,"💎 능동 어휘 달성!"); }catch(e){}
+  // ✅ 빠른 피드백 — 가르치지 않고 리듬 유지
+  $("#sprintScroll").innerHTML=`
+   <div style="max-width:520px;margin:0 auto;text-align:center;padding-top:18px">
+    <div style="font-size:46px">✅</div>
+    <div style="font-size:20px;font-weight:900;color:#1fd3a0;margin:2px 0">Nice!${spCombo>=3?` 🔥${spCombo}콤보`:""}</div>
+    ${heard?`<div style="font-size:12px;color:var(--muted);margin-top:2px">들린 발음: "${escapeHtml(heard)}"</div>`:""}
+    <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:14px">원어민 표현</div>
+    <div style="font-family:var(--serif);font-size:24px;color:var(--text);margin:2px 0">${escapeHtml(it.en)}</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-top:8px">⚡ ${elapsed.toFixed(1)}초 · +${gained} XP</div>
+   </div>`;
+  setTimeout(()=>speakEn(it.en), 120);
+  setTimeout(()=>{ spIdx++; spNext(); }, 950);
+}
+function spDone(){
+  TTS&&TTS.cancel();
+  const said=spTimes.length;
+  const avg = said? (spTimes.reduce((s,x)=>s+x,0)/said).toFixed(1) : "—";
+  $("#sprintScroll").innerHTML=`
+   <div class="rv-done" style="max-width:460px"><div class="em">⚡</div><h2>스프린트 완료!</h2>
+   <p><b>${said}번</b> 입으로 영어를 꺼냈어요. 완벽함보다 <b>많이 말하기</b>가 입을 트이게 해요!</p>
+   <div style="display:flex;gap:10px;justify-content:center;margin:6px 0 22px">
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:var(--text)">${said}</div><div style="font-size:11px;color:var(--muted)">말한 횟수</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:var(--jade)">${avg}초</div><div style="font-size:11px;color:var(--muted)">평균 인출</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:#f59e0b">🔥${spMaxCombo}</div><div style="font-size:11px;color:var(--muted)">최고 콤보</div></div>
+   </div>
+   <div class="blk-actions" style="max-width:340px">
+     <button class="blk-save" id="spHome">나가기</button>
+     <button class="blk-next" id="spAgain">또 하기 ⚡</button>
+   </div></div>`;
+  $("#spHome").onclick=goToSetup;
+  $("#spAgain").onclick=openSprintPicker;
+}
 function openPhonics(){
   phAttempts=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -4251,6 +4474,7 @@ async function checkForUpdate(){
 { const e2=$("#engIn"); if(e2) e2.onclick=startMainTraining; }
 { const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
 { const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
+{ const sp=$("#engSprint"); if(sp) sp.onclick=openSprintPicker; }
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 { const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
 { const tg=$("#ageToggle"); if(tg) tg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>setAge(b.dataset.age); }); }
@@ -4273,7 +4497,7 @@ function goToSetup(fromPop){
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
   rvActive=false;
-  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none"; setup.style.display="block";
+  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none"; $("#sprint").style.display="none"; setup.style.display="block";
   $("#ctxBar").style.display="none";
   $("#notesToggle").style.display=""; $("#ttsBtn").style.display="";
   refreshRvBanner();
