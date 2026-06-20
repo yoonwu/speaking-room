@@ -15,15 +15,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#15172b; --ink-soft:#23264a;
-  --paper:#fbfaf7; --surface:#ffffff;
-  --mist:#eceef4; --line:#e2e4ec;
-  --jade:#13a37f; --jade-deep:#0e8568;
-  --amber:#dd9430; --amber-soft:#fbf3e3;
-  --lav:#6d6fd6; --lav-soft:#eeeefc;
-  --text:#191b2e; --muted:#6a6d84;
+  --ink:#2c2722; --ink-soft:#4a443c;
+  --paper:#faf5ee; --surface:#ffffff;
+  --mist:#f2ece3; --line:#ece4d8;
+  --jade:#17b890; --jade-deep:#0f9270;
+  --amber:#e3a23c; --amber-soft:#fcf3e1;
+  --lav:#7b78e0; --lav-soft:#f0effc;
+  --text:#2c2722; --muted:#938b7e;
   --serif:'Newsreader', Georgia, serif;
   --sans:'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --soft:0 4px 18px -8px rgba(120,90,50,.18);
+  --soft2:0 8px 30px -12px rgba(120,90,50,.22);
 }
 *{box-sizing:border-box; margin:0; padding:0}
 html,body{height:100%}
@@ -307,6 +309,24 @@ input,textarea{font-family:inherit}
 .blk-alts .alt{font-size:13px; color:var(--muted); margin-bottom:5px; line-height:1.5}
 .blk-alts .alt .ae{font-family:var(--serif); color:#1c7a5c; font-size:14.5px}
 
+/* vocab cards */
+.vcard{max-width:560px; width:100%; margin:auto; text-align:center}
+.vword{font-family:var(--serif); font-size:34px; font-weight:500; letter-spacing:-.01em; color:var(--jade-deep)}
+.vmean{font-size:15px; color:var(--muted); margin-top:2px; margin-bottom:20px}
+.vlabel{font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:12px}
+.vex{text-align:left}
+.vex .ex{display:flex; gap:9px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 13px; margin-bottom:3px}
+.vex .exen{font-family:var(--serif); font-size:16px; color:#1c1e30; flex:1; line-height:1.4}
+.vex .exsp{font-size:14px; cursor:pointer; flex:none}
+.vex .exko{font-size:12.5px; color:var(--muted); text-align:left; padding:2px 4px 10px}
+.vcols{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:12px}
+.vcol{font-size:12.5px; font-weight:600; color:var(--jade-deep); background:#eafaf3; padding:6px 12px; border-radius:999px}
+.vmine{margin-top:16px; text-align:left; background:var(--amber-soft); border:1px solid #f1e2c4; border-radius:13px; padding:14px 15px}
+.vmine-you{font-size:13px; color:var(--muted); margin-bottom:7px}
+.vmine-en{font-family:var(--serif); font-size:17px; color:#1c7a5c; font-weight:500; display:flex; align-items:center; gap:8px}
+.vmine-en .exsp{font-size:14px; cursor:pointer; background:none; border:none}
+.vmine-note{font-size:12.5px; color:#8a6410; margin-top:7px; line-height:1.5}
+
 /* custom modal (native prompt/confirm are blocked in sandboxed webviews) */
 .modal-scrim{position:fixed; inset:0; background:rgba(20,22,40,.5); z-index:60; display:none; align-items:center; justify-content:center; padding:22px}
 .modal-scrim.show{display:flex}
@@ -457,6 +477,49 @@ input,textarea{font-family:inherit}
 @media (prefers-reduced-motion:reduce){
   *{animation:none !important; transition:none !important; scroll-behavior:auto !important}
 }
+/* ================= warm & soft overhaul ================= */
+.topbar{background:var(--surface); border-bottom:none; box-shadow:0 2px 12px -8px rgba(120,90,50,.25)}
+.brand .dot{box-shadow:0 0 0 4px rgba(23,184,144,.18)}
+
+.setup .lead em{color:var(--jade-deep)}
+
+/* level pills */
+.levels button{border-radius:14px; border:1.5px solid transparent; background:var(--mist)}
+.levels button[aria-pressed="true"]{background:#e6f7f0; border-color:var(--jade); color:var(--jade-deep)}
+
+/* scenario / theme cards — emoji in colored tile, soft depth */
+.scn button{border-radius:18px; border:none; box-shadow:var(--soft); padding:14px; transition:transform .14s, box-shadow .14s}
+.scn button .emo{width:44px; height:44px; flex:none; display:grid; place-items:center; background:#eaf8f2; border-radius:14px; font-size:22px}
+.scn button:hover{transform:translateY(-2px); box-shadow:var(--soft2)}
+.scn button[aria-pressed="true"]{background:#e6f7f0; box-shadow:0 0 0 2px var(--jade), var(--soft2)}
+.scn button[aria-pressed="true"] .emo{background:#fff}
+
+.startbtn{border-radius:18px; background:linear-gradient(135deg,#1bc398,#0f9270); box-shadow:0 10px 26px -10px rgba(23,184,144,.6)}
+
+/* mode switch — fit 4, colorful active */
+.modesw{background:var(--mist); border-radius:17px; padding:5px; gap:4px}
+.modesw button{border-radius:13px; padding:11px 3px; font-size:13px; gap:2px}
+.modesw button .sm{font-size:9.5px}
+.modesw button[aria-pressed="true"]{background:#fff; color:var(--jade-deep); box-shadow:0 4px 12px -4px rgba(120,90,50,.28)}
+
+/* chat — green "me" bubbles, soft white coach bubbles, rounder */
+.coach .bubble{border:none; box-shadow:var(--soft); border-radius:22px; border-bottom-left-radius:7px}
+.me .bubble{background:linear-gradient(135deg,#1bc398,#129c77); color:#fff; border-radius:22px; border-bottom-right-radius:7px; font-weight:450}
+.composer{border-top:1px solid var(--line)}
+#msg{border-radius:18px}
+.mic{box-shadow:0 8px 20px -7px rgba(23,184,144,.55)}
+.send{background:var(--jade-deep)}
+.quick{border-radius:999px}
+
+/* generic surfaces — depth instead of outlines */
+.lcard,.modal,.expl-block{box-shadow:var(--soft2); border:none}
+.card{border-radius:20px}
+.rv-answer,.vex .ex{border-radius:16px}
+.bigplay,.rv-reveal{border-radius:16px}
+.note-item{border-radius:14px}
+.rvbanner,.blkp-prog{box-shadow:var(--soft2)}
+.vword{font-size:36px}
+.vex .ex .exen{font-size:16px}
 </style>
 </head>
 <body>
@@ -498,12 +561,13 @@ input,textarea{font-family:inherit}
       </div>
 
       <div class="modesw" id="modesw">
-        <button data-mode="talk" aria-pressed="true">🗣️ 회화<span class="sm">말하기</span></button>
-        <button data-mode="listen" aria-pressed="false">🎧 듣기<span class="sm">인풋</span></button>
+        <button data-mode="vocab" aria-pressed="true">📖 단어<span class="sm">어휘</span></button>
         <button data-mode="block" aria-pressed="false">🧱 블록<span class="sm">핵심표현</span></button>
+        <button data-mode="talk" aria-pressed="false">🗣️ 회화<span class="sm">말하기</span></button>
+        <button data-mode="listen" aria-pressed="false">🎧 듣기<span class="sm">인풋</span></button>
       </div>
 
-      <div class="field">
+      <div class="field" id="levelField">
         <label>난이도</label>
         <div class="levels" id="levels">
           <button data-lvl="초급" aria-pressed="false">초급<span class="en">slow & simple</span></button>
@@ -512,7 +576,7 @@ input,textarea{font-family:inherit}
         </div>
       </div>
 
-      <div class="field" id="talkField">
+      <div class="field" id="talkField" style="display:none">
         <label>어떤 상황을 연습할까요</label>
         <div class="scn" id="scnGrid"></div>
         <div id="customWrap">
@@ -533,8 +597,26 @@ input,textarea{font-family:inherit}
         <div id="blkPanel"></div>
       </div>
 
-      <button class="startbtn" id="startBtn" disabled>연습 시작</button>
+      <div class="field" id="vocabField">
+        <label>어떤 단어를 익힐까요</label>
+        <div class="scn" id="vocabGrid"></div>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:11px">단어를 <b>여러 다른 문장·상황</b>으로 익히고, 직접 <b>내 문장</b>도 만들어요. 한 틀에 안 갇히게.</p>
+      </div>
+
+      <button class="startbtn" id="startBtn" disabled>단어 시작</button>
     </div>
+  </div>
+
+  <!-- VOCAB STAGE -->
+  <div class="review" id="vocab" style="display:none">
+    <div class="rv-top">
+      <button class="rvback" id="vbBack" aria-label="나가기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="rv-prog"><div class="rv-progbar"><i id="vbBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="vbProgTxt"></div></div>
+      <div class="rv-mode" id="vbModeTag">📖 단어</div>
+    </div>
+    <div class="rv-body" id="vbBody"></div>
   </div>
 
   <!-- CHAT STAGE -->
@@ -641,7 +723,7 @@ input,textarea{font-family:inherit}
 /* ============================================================
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
-const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";  // ← Cloudflare Worker 주소 붙여넣기
+const PROXY_URL = "https://xxxx.yourname.workers.dev";   // ← Cloudflare Worker 주소 붙여넣기
 const MODEL = "claude-sonnet-4-6";   // 비용 줄이려면 "claude-haiku-4-5-20251001" 로 바꿔도 됨
 /* ============================================================ */
 
@@ -745,15 +827,25 @@ const BLOCKS = [
 ];
 const TIERS=[{n:20,name:"초급"},{n:50,name:"중급"},{n:100,name:"고급"}];
 
+const VOCAB_THEMES = [
+  {id:"cafe",  emo:"🍽", t:"카페 · 식당",  d:"주문·음식·맛",       topic:"cafe and restaurant words (ordering, food, taste, drinks)"},
+  {id:"shop",  emo:"🛒", t:"쇼핑 · 마트",  d:"물건·계산·환불",     topic:"shopping and store words (products, paying, sizes, returns)"},
+  {id:"travel",emo:"✈️", t:"여행",        d:"공항·호텔·길",       topic:"travel words (airport, hotel, directions, transport, booking)"},
+  {id:"daily", emo:"🏡", t:"일상",        d:"집·하루·가족",       topic:"everyday life words (home, daily routine, family, chores)"},
+  {id:"feel",  emo:"😀", t:"감정 · 상태",  d:"기분·느낌 형용사",   topic:"useful adjectives for feelings and states (tired, excited, annoyed, relieved, etc.)"},
+  {id:"mix",   emo:"🎲", t:"전체 믹스",   d:"두루두루 유용한",     topic:"a mix of the most useful everyday words across situations"},
+];
+
 /* ============ state ============ */
 const state = {
   level:"중급",
-  mode:"talk",       // 'talk' | 'listen'
+  mode:"vocab",      // 'talk' | 'listen' | 'block' | 'vocab'
   scn:null,
   custom:"",
   topic:null,        // listening topic
   topicCustom:"",
   blockCat:null,     // block-mode category
+  vocabTheme:null,   // vocab theme
   mastered:[],       // mastered block phrases (curriculum progress)
   studyPair:[],      // current 2 blocks being studied
   convo:[],          // {role:'user'|'assistant', text}
@@ -779,7 +871,7 @@ async function callClaude(system, messages){
   const res = await fetch(PROXY_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ model:MODEL, max_tokens:1000, system, messages })
+    body:JSON.stringify({ model:MODEL, max_tokens:2000, system, messages })
   });
   if(!res.ok) throw new Error("API "+res.status);
   return res.json();
@@ -870,6 +962,16 @@ function buildSetup(){
   tgrid.appendChild(tc);
   $("#topicCustomInput").addEventListener("input", e=>{ state.topicCustom=e.target.value.trim(); refreshStart(); });
 
+  // vocab theme grid
+  const vgrid=$("#vocabGrid");
+  VOCAB_THEMES.forEach(t=>{
+    const b=document.createElement("button");
+    b.setAttribute("aria-pressed","false"); b.dataset.id=t.id;
+    b.innerHTML=`<span class="emo">${t.emo}</span><span><span class="t">${t.t}</span><span class="d">${t.d}</span></span>`;
+    b.onclick=()=>pickVocabTheme(t.id,b);
+    vgrid.appendChild(b);
+  });
+
   // mode switch
   $("#modesw").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -879,12 +981,20 @@ function buildSetup(){
       $("#talkField").style.display   = state.mode==="talk"?"block":"none";
       $("#listenField").style.display = state.mode==="listen"?"block":"none";
       $("#blockField").style.display  = isBlock?"block":"none";
+      $("#vocabField").style.display  = state.mode==="vocab"?"block":"none";
+      $("#levelField").style.display  = isBlock?"none":"block";
       $("#startBtn").style.display = isBlock?"none":"block";
-      $("#startBtn").textContent = state.mode==="talk"?"연습 시작":"듣기 시작";
+      $("#startBtn").textContent = state.mode==="talk"?"연습 시작" : state.mode==="listen"?"듣기 시작" : "단어 시작";
       if(isBlock) refreshBlockPanel();
       refreshStart();
     };
   });
+}
+function pickVocabTheme(id, btn){
+  $("#vocabGrid").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
+  btn.setAttribute("aria-pressed","true");
+  state.vocabTheme = VOCAB_THEMES.find(t=>t.id===id);
+  refreshStart();
 }
 function refreshBlockPanel(){
   const n=state.mastered.length;
@@ -936,6 +1046,8 @@ function refreshStart(){
   let ok;
   if(state.mode==="talk"){
     ok = state.scn && (state.scn.id!=="custom" || state.custom.length>3);
+  }else if(state.mode==="vocab"){
+    ok = !!state.vocabTheme;
   }else{
     ok = state.topic && (state.topic.id!=="custom" || state.topicCustom.length>3);
   }
@@ -1170,7 +1282,7 @@ function topicDesc(){
 }
 function listenLen(){
   if(state.level==="초급") return "Keep it short and simple: 4 to 6 short turns total, common words, basic everyday sentences.";
-  if(state.level==="고급") return "Write 10 to 14 turns at natural native level, with idioms, contractions, and realistic back-and-forth.";
+  if(state.level==="고급") return "Write 8 to 12 turns at natural native level, with idioms, contractions, and realistic back-and-forth.";
   return "Write 6 to 10 turns of natural everyday spoken English.";
 }
 let curPassage=null;
@@ -1325,6 +1437,7 @@ function enterStage(which){
   $("#listen").style.display = which==="listen"?"flex":"none";
   $("#review").style.display = which==="review"?"flex":"none";
   $("#block").style.display = which==="block"?"flex":"none";
+  $("#vocab").style.display = which==="vocab"?"flex":"none";
 }
 
 let rvQueue=[], rvOkCount=0, rvSessionTotal=0, rvWeak=new Set(), rvActive=false;
@@ -1624,6 +1737,85 @@ function randomSetDone(){
   $("#rndAgain").onclick=generateRandomSet;
 }
 
+/* ============ vocab mode (A: varied frames + B: my own sentence) ============ */
+let vocabWords=[], vbIdx=0;
+function startVocab(){
+  enterStage("vocab"); $("#ctxBar").style.display="none";
+  $("#vbModeTag").textContent="📖 단어";
+  generateVocab();
+}
+async function generateVocab(){
+  $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
+  const seed=Math.floor(Math.random()*100000);
+  const sys=[
+"Create a vocabulary set for a Korean learner (level: "+state.level+"). Theme: "+state.vocabTheme.topic+".",
+"Pick 5 genuinely useful everyday words or short expressions. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way, e.g. not all 'Can I get'). This teaches the word across varied contexts so it isn't bound to one phrase. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
+'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"colloc":["get a refill","free refill"]}]}'
+  ].join("\n");
+  try{
+    const data=await callClaude(sys,[{role:"user",content:"Create the vocabulary set now."}]);
+    const obj=parseJSON(extractText(data));
+    vocabWords=(obj.words||[]).filter(w=>w&&w.word); vbIdx=0;
+    if(!vocabWords.length) throw new Error("empty");
+    showVocabCard();
+  }catch(e){ $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
+}
+function showVocabCard(){
+  if(vbIdx>=vocabWords.length) return vocabDone();
+  const w=vocabWords[vbIdx];
+  const exHtml=(w.examples||[]).map(ex=>`<div class="ex"><span class="exen">${escapeHtml(ex.en)}</span><span class="exsp" data-say="${escapeAttr(ex.en)}">🔊</span></div><div class="exko">${escapeHtml(ex.ko||"")}</div>`).join("");
+  const colHtml=(w.colloc||[]).map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("");
+  const card=document.createElement("div"); card.className="vcard";
+  card.innerHTML=`
+    <div class="vword">${escapeHtml(w.word)}</div>
+    <div class="vmean">${escapeHtml(w.ko||"")}</div>
+    <div class="vlabel">여러 상황에서 — 한 틀에 안 갇히게</div>
+    <div class="vex">${exHtml}</div>
+    ${colHtml?`<div class="vcols">${colHtml}</div>`:""}
+    <div id="vmineWrap"></div>
+    <div class="blk-actions" style="max-width:380px;margin-top:18px">
+      <button class="blk-save" id="vMineBtn">✏️ 내 문장 만들기</button>
+      <button class="blk-next" id="vNextBtn">⭐ 저장 & 다음</button>
+    </div>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  $("#vbBarFill").style.width=Math.round((vbIdx/vocabWords.length)*100)+"%";
+  $("#vbProgTxt").textContent=`${vbIdx+1} / ${vocabWords.length}`;
+  card.querySelectorAll(".exsp").forEach(s=>{ s.onclick=()=>speakEn(s.getAttribute("data-say")); });
+  $("#vMineBtn").onclick=()=>openMine(w);
+  $("#vNextBtn").onclick=()=>{ if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } vbIdx++; showVocabCard(); };
+}
+function openMine(w){
+  openModal({title:"✏️ 내 문장 만들기", msg:`'${w.word}' 로 네 일상 문장을 만들어 적어보세요. (한글 섞여도 OK)`, input:true, placeholder:`'${w.word}' 가 들어가는 내 상황`, okText:"확인받기", onOk:(t)=>{ if(t) checkMine(w, t); }});
+}
+async function checkMine(w, sentence){
+  const wrap=$("#vmineWrap"); if(!wrap) return;
+  wrap.innerHTML=`<div class="vmine"><div class="typing" style="display:flex;justify-content:center"><i></i><i></i><i></i></div></div>`;
+  const sys=[
+"A Korean learner is practicing the English word '"+w.word+"'. They wrote their own sentence (Korean or broken English is fine).",
+"Rewrite it as the natural English sentence they intended, USING '"+w.word+"'. Keep it natural and short.",
+'Return ONLY JSON: {"en":"natural English","note":"짧은 한국어 칭찬 또는 팁"}'
+  ].join("\n");
+  try{
+    const data=await callClaude(sys,[{role:"user",content:sentence}]);
+    const obj=parseJSON(extractText(data));
+    wrap.innerHTML=`<div class="vmine"><div class="vmine-you">나: ${escapeHtml(sentence)}</div><div class="vmine-en">${escapeHtml(obj.en||"")} <button class="exsp" data-say="${escapeAttr(obj.en||"")}">🔊</button></div>${obj.note?`<div class="vmine-note">${escapeHtml(obj.note)}</div>`:""}</div>`;
+    const b=wrap.querySelector(".exsp"); if(b) b.onclick=()=>speakEn(obj.en);
+  }catch(e){ wrap.innerHTML=""; }
+}
+function vocabDone(){
+  $("#vbBarFill").style.width="100%"; $("#vbProgTxt").textContent="완료";
+  $("#vbBody").innerHTML=`
+    <div class="rv-done"><div class="em">📖</div><h2>단어 세트 끝!</h2>
+    <p>저장한 단어는 복습에서 <b>다른 문장으로</b> 또 나와요. 그래야 안 까먹어요.</p>
+    <div class="blk-actions" style="max-width:340px">
+      <button class="blk-save" id="vHome">나가기</button>
+      <button class="blk-next" id="vAgain">새 단어 ↻</button>
+    </div></div>`;
+  $("#vHome").onclick=goToSetup;
+  $("#vAgain").onclick=generateVocab;
+}
+
 /* ============ speech synthesis (TTS) ============ */
 let enVoice=null, voiceA=null, voiceB=null;
 function pickVoice(){
@@ -1687,8 +1879,9 @@ initRec();
 loadNotes();
 loadProgress();
 
-$("#startBtn").onclick=()=>{ if(state.mode==="talk") startSession(); else if(state.mode==="listen") startListening(); };
+$("#startBtn").onclick=()=>{ if(state.mode==="talk") startSession(); else if(state.mode==="listen") startListening(); else if(state.mode==="vocab") startVocab(); };
 $("#blkBack").onclick=goToSetup;
+$("#vbBack").onclick=goToSetup;
 $("#rvStart").onclick=startReview;
 $("#rvSpeed").onclick=startSpeed;
 $("#rvBack").onclick=goToSetup;
@@ -1698,7 +1891,7 @@ function goToSetup(){
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
   rvActive=false;
-  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; setup.style.display="block";
+  stage.style.display="none"; $("#listen").style.display="none"; $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; setup.style.display="block";
   $("#ctxBar").style.display="none";
   $("#notesToggle").style.display=""; $("#ttsBtn").style.display="";
   refreshRvBanner();
