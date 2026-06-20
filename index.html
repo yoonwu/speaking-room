@@ -671,6 +671,32 @@ body{background:var(--paper); color:var(--text)}
 .xptoast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 .xptoast .xv{color:var(--jade); font-weight:800}
 .xptoast .lvup{display:block; font-size:12px; color:var(--jade); margin-top:3px; text-align:center}
+/* ===== 단어 화면 (말해보카 스타일) ===== */
+.mbwrap{display:flex;flex-direction:column;height:100%;padding:0 16px 16px}
+.mbtab{display:inline-block;background:var(--card2);border:1px solid var(--line);border-bottom:none;color:var(--muted);font-size:12px;font-weight:700;padding:6px 14px;border-radius:12px 12px 0 0;margin-left:6px}
+.mbcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;border-top-left-radius:4px;overflow:hidden}
+.mbtop{padding:26px 22px 22px;position:relative}
+.mbko{font-size:24px;font-weight:600;color:var(--text);line-height:1.45}
+.mbko b{color:var(--jade);font-weight:700}
+.mbnote{text-align:right;font-size:13px;color:var(--muted);margin-top:14px}
+.mbdiv{height:1px;background:var(--line)}
+.mbbot{padding:30px 22px 18px;min-height:96px;display:flex;align-items:center}
+.mben{font-size:25px;font-weight:600;color:var(--text);line-height:1.5}
+.mben .blankbox{display:inline-block;min-width:74px;height:38px;vertical-align:middle;background:var(--mist);border-radius:9px;margin:0 4px}
+.mben .filled{color:var(--jade);font-weight:700}
+.mbsrc{text-align:right;font-size:11px;color:var(--muted);opacity:.6;padding:0 22px 14px}
+.mbctrl{margin-top:auto;padding-top:14px}
+.mbmicwrap{display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+.mbmic{width:96px;height:96px;border-radius:50%;background:var(--jade);color:#06231b;display:grid;place-items:center;border:none;box-shadow:0 8px 30px -6px rgba(31,211,160,.5);position:relative}
+.mbmic.live{background:#e0533f;color:#fff}
+.mbmic svg{width:38px;height:38px}
+.mbside{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;width:78px}
+.mbside .ic{width:42px;height:42px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-size:19px}
+.mbstatus{text-align:center;font-size:17px;font-weight:800;color:var(--text);margin:16px 0}
+.mbbig{display:flex;gap:8px;margin-top:14px}
+.mbbig button{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:15px 6px;display:flex;flex-direction:column;align-items:center;gap:7px;color:var(--jade);font-size:13px;font-weight:800}
+.mbbig button .ic{font-size:22px}
+.mbkbd{width:100%;max-width:400px;margin:10px auto 0;padding:13px 15px;border-radius:13px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center}
 </style>
 </head>
 <body>
@@ -922,7 +948,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v1.9.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.0.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1252,19 +1278,23 @@ function buildSetup(){
     b.onclick=()=>{
       $("#modesw").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
       b.setAttribute("aria-pressed","true"); state.mode=b.dataset.mode;
-      const isBlock = state.mode==="block";
-      $("#talkField").style.display   = state.mode==="talk"?"block":"none";
-      $("#listenField").style.display = state.mode==="listen"?"block":"none";
-      $("#blockField").style.display  = isBlock?"block":"none";
-      $("#vocabField").style.display  = state.mode==="vocab"?"block":"none";
-      $("#levelField").style.display  = isBlock?"none":"block";
-      $("#startBtn").style.display = isBlock?"none":"block";
-      $("#startBtn").textContent = state.mode==="talk"?"연습 시작" : state.mode==="listen"?"듣기 시작" : "단어 시작";
-      if(isBlock) refreshBlockPanel();
+      syncSetupFields();
+      if(state.mode==="block") refreshBlockPanel();
       renderModeProgress();
       refreshStart();
     };
   });
+}
+// 탭에 맞는 설정 영역만 보이게 강제 동기화 (상황 그리드는 회화에서만)
+function syncSetupFields(){
+  const m=state.mode||"vocab"; const isBlock=m==="block";
+  $("#talkField").style.display   = m==="talk"?"block":"none";
+  $("#listenField").style.display = m==="listen"?"block":"none";
+  $("#blockField").style.display  = isBlock?"block":"none";
+  $("#vocabField").style.display  = m==="vocab"?"block":"none";
+  $("#levelField").style.display  = isBlock?"none":"block";
+  $("#startBtn").style.display    = isBlock?"none":"block";
+  $("#startBtn").textContent = m==="talk"?"연습 시작" : m==="listen"?"듣기 시작" : "단어 시작";
 }
 function pickVocabTheme(id, btn){
   $("#vocabGrid").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
@@ -2328,35 +2358,77 @@ function showVocabCard(){
 function normAns(s){ return String(s||"").toLowerCase().replace(/^to\s+/,"").replace(/[^a-z0-9 ]/g,"").trim(); }
 function renderVocabQuiz(w){
   const bl=w.blank; const answer=bl.answer||w.word;
-  const card=document.createElement("div"); card.className="vcard";
+  const diff=w.diff||1;
+  const enHtml=escapeHtml(bl.en).replace(/_+/g,'<span class="blankbox" id="mbBlank"></span>');
+  const card=document.createElement("div");
+  card.style.cssText="flex:1;display:flex;flex-direction:column";
   card.innerHTML=`
-    <div class="vlabel" style="margin-bottom:6px">이 뜻의 영어 단어는? 🤔</div>
-    <div style="font-family:var(--serif);font-size:30px;font-weight:600;color:var(--jade);margin-bottom:18px">${escapeHtml(w.ko||"")}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">이 문장의 빈칸에 들어가요</div>
-    <div style="font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--text);margin-bottom:4px">${escapeHtml(bl.en).replace(/_+/g,'<span style="color:var(--jade);font-weight:700">______</span>')}</div>
-    <div style="font-size:13.5px;color:var(--muted);margin-bottom:20px">${escapeHtml(bl.ko||"")}</div>
-    <input id="qzInput" type="text" inputmode="text" autocomplete="off" placeholder="영어 단어 입력 (또는 🎤)" style="width:100%;max-width:380px;padding:14px 16px;border-radius:14px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:16px;text-align:center;margin-bottom:12px">
-    <div class="blk-actions" style="max-width:380px">
-      <button class="blk-save" id="qzMic">🎤 말하기</button>
-      <button class="blk-next" id="qzCheck">정답 확인</button>
+    <div class="mbtab">레벨 ${diff} <span style="opacity:.6">❔</span></div>
+    <div class="mbcard">
+      <div class="mbtop">
+        <div class="mbko">${escapeHtml(bl.ko||w.ko||"")}</div>
+        <div class="mbnote">※ ${escapeHtml(w.ko||"")}</div>
+      </div>
+      <div class="mbdiv"></div>
+      <div class="mbbot"><div class="mben" id="mbEn">${enHtml}</div></div>
+      <div class="mbsrc">[어휘] ${escapeHtml((state.vocabTheme&&state.vocabTheme.t)||"")}</div>
     </div>
-    <button id="qzReveal" style="margin-top:14px;background:transparent;color:var(--muted);font-size:13px;text-decoration:underline">모르겠어요 — 정답 보기</button>
-    <div id="qzResult" style="margin-top:14px;min-height:24px"></div>`;
+    <div class="mbstatus" id="mbStatus">이제 말해 보세요.</div>
+    <div class="mbctrl">
+      <div class="mbmicwrap">
+        <button class="mbside" id="mbHint"><span class="ic">💡</span>힌트 보기</button>
+        <button class="mbmic" id="mbMic" aria-label="말하기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
+        </button>
+        <button class="mbside" id="mbKbd"><span class="ic">⌨️</span>키보드 모드</button>
+      </div>
+      <input id="qzInput" type="text" inputmode="text" autocomplete="off" placeholder="정답 입력 후 Enter" class="mbkbd" style="display:none">
+    </div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
-  const inp=$("#qzInput");
-  setTimeout(()=>{ try{inp.focus();}catch(e){} },100);
-  const submit=()=>{
-    const val=inp.value.trim(); if(!val){ inp.focus(); return; }
-    const ok = normAns(val)===normAns(answer) || normAns(answer).includes(normAns(val)) && normAns(val).length>=3;
-    const rs=$("#qzResult");
-    if(ok){ rs.innerHTML=`<div style="color:var(--jade);font-weight:800;font-size:16px">정답! 🎉 +3 XP</div>`; addXP(3,"빈칸 정답"); }
-    else { rs.innerHTML=`<div style="color:#e6ad4a;font-weight:700;font-size:15px">정답: <b style="color:var(--text)">${escapeHtml(answer)}</b></div>`; }
-    setTimeout(()=>renderVocabReveal(w, ok?"correct":"wrong"), 1100);
+  const inp=$("#qzInput"), status=$("#mbStatus"), blank=$("#mbBlank"), micB=$("#mbMic");
+
+  const finish=(val)=>{
+    const ok = val && (normAns(val)===normAns(answer) || (normAns(answer).includes(normAns(val)) && normAns(val).length>=3));
+    if(blank){ blank.classList.remove("blankbox"); blank.className="filled"; blank.textContent=answer; }
+    if(ok){ status.textContent="정답이에요! 🎉 +3"; status.style.color="var(--jade)"; addXP(3,"빈칸 정답"); }
+    else { status.textContent="정답: "+answer; status.style.color="#e6ad4a"; }
+    setTimeout(()=>renderVocabReveal(w, ok?"correct":"wrong"), 1200);
   };
-  $("#qzCheck").onclick=submit;
-  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); }});
-  $("#qzReveal").onclick=()=>renderVocabReveal(w, null);
-  $("#qzMic").onclick=()=>quizRecord(inp, $("#qzMic"));
+  // 마이크 (큰 버튼) — 한 번 녹음 → STT → 자동 채점
+  micB.onclick=()=>{
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+    micB.classList.add("live"); status.textContent="듣고 있어요…";
+    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } });
+  };
+  // 힌트
+  let hintN=0;
+  $("#mbHint").onclick=()=>{ hintN++; if(hintN===1) status.textContent="첫 글자: "+answer[0].toUpperCase(); else { status.textContent="정답: "+answer; } };
+  // 키보드 모드
+  $("#mbKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); if(inp.value.trim()) finish(inp.value.trim()); }});
+}
+// 콜백형 음성 입력 (큰 마이크용)
+async function micFillCb(cb){
+  if(qzRecording){ return; }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    qzChunks=[]; const mime=getBestMime();
+    qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    const am=qzMR.mimeType||mime;
+    qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
+    qzMR.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
+      const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb(""); return; }
+      try{
+        const wav=await recordedToWav(raw);
+        const res=await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":"audio/wav"},body:wav});
+        const data=await res.json();
+        cb(data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):"");
+      }catch(e){ cb(""); }
+    };
+    qzMR.start(250); qzRecording=true;
+    setTimeout(()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); },7000);
+  }catch(e){ cb(""); }
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
@@ -2400,25 +2472,44 @@ function attachMic(inp){
   inp.style.flex="1"; wrap.appendChild(inp); wrap.appendChild(b);
 }
 function renderVocabReveal(w, quizRes){
-  const exHtml=(w.examples||[]).map(ex=>`<div class="ex"><span class="exen">${escapeHtml(ex.en)}</span><span class="exsp" data-say="${escapeAttr(ex.en)}">🔊</span></div><div class="exko">${escapeHtml(ex.ko||"")}</div>`).join("");
-  const colHtml=(w.colloc||[]).map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("");
-  const banner = quizRes==="correct" ? `<div style="background:var(--mist);border-radius:12px;padding:8px;text-align:center;color:var(--jade);font-weight:700;font-size:13px;margin-bottom:12px">✓ 맞혔어요!</div>` : "";
-  const card=document.createElement("div"); card.className="vcard";
+  const bl=w.blank;
+  const enFilled = (bl&&bl.en) ? escapeHtml(bl.en).replace(/_+/g,`<span class="filled">${escapeHtml(bl.answer||w.word)}</span>`) : `<span class="filled">${escapeHtml(w.word)}</span>`;
+  const checkMark = quizRes==="correct" ? `<div style="text-align:center;font-size:30px;margin:-6px 0 6px">✅</div>` : "";
+  const card=document.createElement("div");
   card.innerHTML=`
-    ${banner}
-    <div class="vword">${escapeHtml(w.word)}</div>
-    <div class="vmean">${escapeHtml(w.ko||"")}</div>
-    <div class="vlabel">여러 상황에서 — 한 틀에 안 갇히게</div>
-    <div class="vex">${exHtml}</div>
-    ${colHtml?`<div class="vcols">${colHtml}</div>`:""}
-    <div id="vmineWrap"></div>
-    <div class="blk-actions" style="max-width:380px;margin-top:18px">
-      <button class="blk-save" id="vMineBtn">✏️ 내 문장 만들기</button>
-      <button class="blk-next" id="vDrillBtn">🎤 발음 드릴</button>
-      <button class="blk-next" id="vNextBtn">⭐ 저장 & 다음</button>
-    </div>`;
+    <div class="mbtab">레벨 ${w.diff||1} <span style="opacity:.6">❔</span></div>
+    <div class="mbcard">
+      ${checkMark}
+      <div class="mbtop">
+        <div class="mbko">${escapeHtml(bl&&bl.ko? bl.ko : (w.examples&&w.examples[0]?w.examples[0].ko:""))}</div>
+        <div class="mbnote">※ ${escapeHtml(w.ko||"")}</div>
+      </div>
+      <div class="mbdiv"></div>
+      <div class="mbbot"><div class="mben">${enFilled}</div></div>
+      <div class="mbsrc">[어휘] ${escapeHtml((state.vocabTheme&&state.vocabTheme.t)||"")}</div>
+    </div>
+    <div class="mbbig">
+      <button id="vMoreEx"><span class="ic">💬</span>다른 예문</button>
+      <button id="vInfo"><span class="ic">📖</span>단어 정보</button>
+      <button id="vDrillBtn"><span class="ic">🎤</span>발음 진단</button>
+    </div>
+    <div class="mbbig">
+      <button id="vMineBtn"><span class="ic">✏️</span>내 문장</button>
+      <button id="vNextBtn" style="color:#06231b;background:linear-gradient(135deg,#1fd3a0,#13b488);border:none"><span class="ic">▶</span>다음 문제</button>
+    </div>
+    <div id="vExtra" style="margin-top:14px"></div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
-  card.querySelectorAll(".exsp").forEach(s=>{ s.onclick=()=>speakEn(s.getAttribute("data-say")); });
+  // 단어 정보 (예문 + 콜로케이션) 토글
+  $("#vInfo").onclick=()=>{
+    const ex=$("#vExtra");
+    if(ex.dataset.open){ ex.innerHTML=""; ex.dataset.open=""; return; }
+    ex.dataset.open="1";
+    const exHtml=(w.examples||[]).map(e=>`<div class="ex"><span class="exen">${escapeHtml(e.en)}</span><span class="exsp" data-say="${escapeAttr(e.en)}">🔊</span></div><div class="exko">${escapeHtml(e.ko||"")}</div>`).join("");
+    const colHtml=(w.colloc||[]).map(c=>`<span class="vcol">${escapeHtml(c)}</span>`).join("");
+    ex.innerHTML=`<div class="vcard" style="padding:16px"><div class="vword" style="font-size:24px">${escapeHtml(w.word)}</div><div class="vmean">${escapeHtml(w.ko||"")}</div><div class="vex">${exHtml}</div>${colHtml?`<div class="vcols">${colHtml}</div>`:""}</div>`;
+    ex.querySelectorAll(".exsp").forEach(s=>{ s.onclick=()=>speakEn(s.getAttribute("data-say")); });
+  };
+  $("#vMoreEx").onclick=()=>{ const e=w.examples&&w.examples[(Math.random()*w.examples.length)|0]; if(e) speakEn(e.en); $("#vInfo").click(); };
   $("#vMineBtn").onclick=()=>openMine(w);
   $("#vDrillBtn").onclick=()=>openDrill(w.word, w.ko);
   $("#vNextBtn").onclick=()=>{ if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } const pts={1:5,2:8,3:10}[w.diff]||7; addXP(pts,"단어 "+w.word); bumpCount("vocab"); questBump("vocab"); vbIdx++; showVocabCard(); };
@@ -2427,7 +2518,8 @@ function openMine(w){
   openModal({title:"✏️ 내 문장 만들기", msg:`'${w.word}' 로 네 일상 문장을 만들어 적어보세요. (한글 섞여도 OK)`, input:true, placeholder:`'${w.word}' 가 들어가는 내 상황`, okText:"확인받기", onOk:(t)=>{ if(t) checkMine(w, t); }});
 }
 async function checkMine(w, sentence){
-  const wrap=$("#vmineWrap"); if(!wrap) return;
+  const wrap=$("#vExtra")||$("#vmineWrap"); if(!wrap) return;
+  if(wrap.id==="vExtra") wrap.dataset.open="1";
   wrap.innerHTML=`<div class="vmine"><div class="typing" style="display:flex;justify-content:center"><i></i><i></i><i></i></div></div>`;
   const sys=[
 "A Korean learner is practicing the English word '"+w.word+"'. They wrote their own sentence (Korean or broken English is fine).",
@@ -2882,6 +2974,7 @@ function goToSetup(fromPop){
   $("#notesToggle").style.display=""; $("#ttsBtn").style.display="";
   refreshRvBanner();
   renderHome();
+  syncSetupFields();
   const dm=$("#drillModal"); if(dm) dm.remove();
   const pq=$("#pinnedQ"); if(pq) pq.style.display="none";
   const wasStage = curScreen!=="setup"; curScreen="setup";
