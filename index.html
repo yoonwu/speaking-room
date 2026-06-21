@@ -100,6 +100,24 @@
 .tut-skip{width:100%;margin-top:9px;padding:10px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer}
 .tut-kid .tut-ico{font-size:66px}
 .tut-kid .tut-title{font-size:25px}
+/* 🧠 학습 컨텍스트 패널 */
+.learn-panel{display:flex;flex-direction:column;gap:9px;max-width:520px;margin:16px auto 0;width:100%}
+.lp-loading{text-align:center;color:var(--muted);font-size:13px;padding:14px}
+.lp-card{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:14px 15px}
+.lp-h{font-size:12.5px;font-weight:800;color:var(--text);margin-bottom:9px}
+.lp-orig{font-family:var(--serif);font-size:18px;color:var(--text);text-align:center}
+.lp-arrow{text-align:center;color:var(--muted);font-size:15px;margin:3px 0}
+.lp-line{display:block;width:100%;text-align:left;background:var(--mist);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:7px;font-family:var(--serif);font-size:15.5px;color:var(--text);cursor:pointer}
+.lp-line:active{transform:scale(.99)}
+.lp-line.up{border-color:rgba(155,152,236,.35)}
+.lp-line.wk{font-family:inherit;border-color:rgba(248,113,113,.32)}
+.lp-ko{font-size:12px;color:var(--muted);font-family:var(--font)}
+.lp-dia{font-size:14px;color:var(--text);padding:7px 0;line-height:1.5}
+.lp-who{display:inline-block;font-size:11px;font-weight:800;color:var(--muted);background:var(--mist);border-radius:6px;padding:2px 7px;margin-right:7px}
+.lp-who.me{color:#06231b;background:var(--jade)}
+.lp-bar{height:7px;border-radius:99px;background:var(--mist);overflow:hidden;margin:9px 0 5px}
+.lp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec)}
+.lp-sub{font-size:12px;color:var(--muted)}
 /* 📊 진척 푸터 — 빈 하단 채우기 */
 .prog-footer{display:flex;flex-direction:column;gap:9px;margin:18px auto 0;max-width:520px;width:100%}
 .pf-card{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:13px 15px}
@@ -1338,7 +1356,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.48.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.49.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2399,6 +2417,46 @@ function lsCheckAnswer(){
   }
 }
 // 정답 화면 — 자동 분석 없이 사용자가 선택
+// 🧠 학습 컨텍스트 패널 — 방금 배운 문장을 패턴으로 확장 (암기X, 패턴 학습)
+let patternCache={};   // en -> {similar:[], realA, realB, upgrade:[]}
+async function loadPatternPanel(en, ko){
+  const host=$("#learnPanel"); if(!host) return;
+  if(patternCache[en]){ renderPatternPanel(patternCache[en], en); return; }
+  const sys=[
+"You expand ONE English sentence into learning patterns for a Korean learner. Keep everything SHORT and at the same simple level as the original.",
+"Original sentence: \""+en+"\""+(ko?(" (뜻: "+ko+")"):""),
+levelCap(),
+"Produce: (1) 3 'similar' sentences with the SAME pattern but different words. (2) one tiny real-world mini-dialogue: a friend's question + the original as the answer. (3) 3 'upgrade' variations of the original (e.g. add 'really', make it negative, make it a question) — keep them natural and level-appropriate.",
+'Return ONLY JSON: {"similar":["..","..",".."],"q_en":"friend question in English","q_ko":"한국어 번역","upgrade":[{"en":"..","ko":".."},{"en":"..","ko":".."},{"en":"..","ko":".."}]}'
+  ].join("\n");
+  try{
+    const d=await callClaude(sys,[{role:"user",content:"Expand it now."}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(o && o.similar){ patternCache[en]=o; renderPatternPanel(o, en); }
+  }catch(e){}
+}
+function renderPatternPanel(o, en){
+  const host=$("#learnPanel"); if(!host) return;
+  const sim=(o.similar||[]).slice(0,3);
+  const up=(o.upgrade||[]).slice(0,3);
+  host.innerHTML=`
+    <div class="lp-card">
+      <div class="lp-h">🍎 비슷한 문장 — 패턴으로 익히기</div>
+      <div class="lp-orig">${escapeHtml(en)}</div>
+      <div class="lp-arrow">↓</div>
+      ${sim.map(s=>`<button class="lp-line" data-say="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join("")}
+    </div>
+    ${o.q_en?`<div class="lp-card">
+      <div class="lp-h">🌎 이런 상황에서 써요</div>
+      <div class="lp-dia"><span class="lp-who">친구</span> ${escapeHtml(o.q_en)}${o.q_ko?`<span class="lp-ko"> (${escapeHtml(o.q_ko)})</span>`:""}</div>
+      <div class="lp-dia"><span class="lp-who me">나</span> ${escapeHtml(en)}</div>
+    </div>`:""}
+    ${up.length?`<div class="lp-card">
+      <div class="lp-h">⚡ 한 단계 업그레이드</div>
+      ${up.map(u=>`<button class="lp-line up" data-say="${escapeAttr(u.en)}">${escapeHtml(u.en)}${u.ko?`<span class="lp-ko"> ${escapeHtml(u.ko)}</span>`:""}</button>`).join("")}
+    </div>`:""}`;
+  host.querySelectorAll(".lp-line").forEach(b=>{ b.onclick=()=>{ const t=b.dataset.say; if(t&&TTS&&SSU){ TTS.cancel(); const u=new SSU(t); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=levelRate(false); TTS.speak(u); } }; });
+}
 function renderListenCorrect(){
   TTS&&TTS.cancel();
   const orig=(lsItem&&lsItem.en)||"";
@@ -2413,12 +2471,14 @@ function renderListenCorrect(){
     </div>
     <button class="sh-next" id="lcNext">다음 문제 →</button>
     <button class="rv-stop" id="lcOut" style="margin-top:6px">그만하기</button>
-  </div>`;
+  </div>
+  <div id="learnPanel" class="learn-panel"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
   $("#listenScroll").scrollTop=0;
   $("#lcReplay").onclick=()=>lsSpeak(false);
   $("#lcAnalyze").onclick=()=>lsRunAnalysis();
   $("#lcNext").onclick=()=>{ lsPrevReply=lsItem.en||""; lsGenerate(); };   // 바로 새 듣기 문장
   $("#lcOut").onclick=()=>goToSetup();
+  loadPatternPanel(orig, lsItem.ko||"");
 }
 // 3) 오답 분석 + 4) 연음 설명 (동시 호출)
 async function lsRunAnalysis(){
@@ -2479,13 +2539,15 @@ function renderListenAnalysis(){
     <div class="lctrls" style="justify-content:center;margin-top:6px"><button id="lsReplay">🔊 다시 듣기</button><button id="lsSaveNote">＋ 노트 저장</button></div>
     <button class="sh-next" id="lsToShadow">🗣 따라 말하기 →</button>
     <button id="lsAnNext" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">건너뛰고 다음 문제 →</button>
-  </div>`;
+  </div>
+  <div id="learnPanel" class="learn-panel"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>lsSpeak(false),300);
   $("#lsReplay").onclick=()=>lsSpeak(false);
   $("#lsSaveNote").onclick=function(){ if(addReviewItem(lsItem.en, lsItem.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } this.textContent="저장됨 ✓"; this.disabled=true; };
   $("#lsToShadow").onclick=renderListenShadow;
   $("#lsAnNext").onclick=()=>{ lsPrevReply=lsItem.en||""; lsGenerate(); };
+  loadPatternPanel(lsItem.en||"", lsItem.ko||"");
 }
 // 5) 다시듣기 + 6) 따라말하기 (발음 진단)
 function renderListenShadow(){
@@ -2649,13 +2711,33 @@ function renderOutputResult(answer, elapsed, fb){
       <button class="sh-next" id="loNext" style="margin:0">${last?"다음 문장 →":"다른 상황에서 또 말하기 →"}</button>
     </div>
     ${last?"":`<button id="loSkip2" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">건너뛰고 새 표현으로 →</button>`}
-  </div>`;
+  </div>
+  <div class="learn-panel">${weakChunkPanel(loData&&loData.target)}</div>`;
   $("#listenScroll").scrollTop=0;
+  $("#listenScroll").querySelectorAll(".lp-line.wk").forEach(b=>{ b.onclick=()=>{ const pid=b.dataset.pid; if(pid) startChunkTraining(pid); }; });
   setTimeout(()=>speakEn(fb.native),280);
   $("#loSay").onclick=()=>speakEn(fb.native);
   $("#loDrill").onclick=()=>openDrill(fb.native, "");
   $("#loNext").onclick=()=>{ if(last){ lsGenerate(); } else { loRound=2; renderOutput(); } };
   const sk2=$("#loSkip2"); if(sk2) sk2.onclick=()=>lsGenerate();
+}
+// 🔥 약점 청크 패널 (클릭하면 집중 훈련) + 💎 현재 청크 마스터리
+function weakChunkPanel(currentChunk){
+  let html="";
+  if(currentChunk){
+    const w=weakGet()[ (Object.keys(weakGet()).find(k=>weakGet()[k].chunk===currentChunk)) ];
+    const miss=w?w.miss:0; const need=7, got=Math.max(0,need-miss);
+    html+=`<div class="lp-card"><div class="lp-h">💎 지금 연습한 표현</div>
+      <div class="lp-orig" style="color:var(--jade)">${escapeHtml(currentChunk)}</div>
+      <div class="lp-bar"><i style="width:${Math.round(got/need*100)}%"></i></div>
+      <div class="lp-sub">마스터리 ${got}/${need} · ${got>=need?"마스터! ⭐":(need-got)+"번 더 성공하면 레벨업"}</div></div>`;
+  }
+  const weak=weakList(3);
+  if(weak.length){
+    html+=`<div class="lp-card"><div class="lp-h">🔥 약한 청크 — 탭하면 집중 훈련</div>
+      ${weak.map(w=>`<button class="lp-line wk" data-pid="${escapeAttr(w.pid)}"><b>${escapeHtml(w.chunk||w.ko)}</b><span class="lp-ko"> (${w.miss}회 막힘)</span></button>`).join("")}</div>`;
+  }
+  return html;
 }
 function setPlayUI(playing, slow){
   const bp=$("#bigplay"); if(!bp) return;
