@@ -1384,7 +1384,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.58.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.59.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3442,7 +3442,7 @@ function showVocabCard(){
    📝 WORD POWER — 빈칸 인출 엔진 (retrieval-first)
    한 단어 → 여러 빈칸 문장(다른 상황) → 정답 인출 → SRS
    ============================================================ */
-let wpQueue=[], wpPos=0, wpT0=0, wpStats={correct:0, total:0};
+let wpQueue=[], wpPos=0, wpT0=0, wpStats={correct:0, total:0}, wpSeenWord={};
 // 단어의 빈칸 문장들 만들기 (examples를 빈칸으로 변환 + blank 포함, 최대 4)
 function wpBlanksFor(w){
   const out=[]; const word=w.word||"";
@@ -3475,22 +3475,43 @@ levelCap(),
   }catch(e){}
   return null;
 }
+function wpInterleave(items){
+  // 같은 단어가 연속으로 나오지 않도록 분산 배치
+  const byWord={}; items.forEach(q=>{ const k=q.word.word; (byWord[k]=byWord[k]||[]).push(q); });
+  const groups=Object.values(byWord);
+  for(const g of groups){ for(let i=g.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [g[i],g[j]]=[g[j],g[i]]; } }
+  const out=[]; let remaining=items.length; let last=null;
+  while(remaining>0){
+    // 남은 게 가장 많은 그룹 중, 직전과 다른 단어를 우선 선택
+    groups.sort((a,b)=>b.length-a.length);
+    let pick=groups.find(g=>g.length>0 && (!last || g[0].word.word!==last)) || groups.find(g=>g.length>0);
+    if(!pick) break;
+    out.push(pick.shift()); last=out[out.length-1].word.word; remaining--;
+  }
+  return out;
+}
 function wpStart(words){
   const ws=(words||[]).filter(w=>w&&w.word).slice(0,5);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
-  // 큐 구성: seed 빈칸으로 즉시 시작 (대기 0)
-  wpQueue=[]; ws.forEach(w=>{ const blanks=wpBlanksFor(w); blanks.forEach((b,i)=>{ wpQueue.push({word:w, blank:b, idxInWord:i, totalInWord:blanks.length}); }); });
+  // 각 단어의 빈칸들을 모아서 → 같은 단어 연속 안 나오게 인터리브
+  let all=[]; ws.forEach(w=>{ const blanks=wpBlanksFor(w); blanks.forEach((b,i)=>{ all.push({word:w, blank:b, idxInWord:i, totalInWord:blanks.length}); }); });
+  wpQueue=wpInterleave(all);
+  wpSeenWord={};   // 단어별 첫 등장 여부 (새 표현 vs 다른 상황 라벨용)
   wpPos=0; wpStats={correct:0,total:0};
   wpNext();
-  // 백그라운드: 각 단어를 AI로 6상황 확장해 큐에 보충 (멀티컨텍스트)
+  // 백그라운드: AI 6상황 확장 → 큐 뒷부분에 분산 삽입
   ws.forEach(async w=>{
     const items=await wpExpandWord(w);
     if(items && items.length){
-      // 기존 seed 빈칸 뒤에 다양한 상황 추가 (중복 문장 제외)
       const existing=new Set(wpQueue.filter(q=>q.word.word===w.word).map(q=>normAns(q.blank.en)));
-      let added=0;
       items.forEach(it=>{ const norm=normAns(it.en); if(!existing.has(norm)){ existing.add(norm);
-        wpQueue.push({word:w, blank:{en:it.en.replace(/_{2,}/,"[ ___ ]"), ko:it.ko, answer:it.answer, ctx:it.ctx}, idxInWord:99, totalInWord:0, _ctx:it.ctx}); added++; } });
+        const item={word:w, blank:{en:it.en.replace(/_{2,}/,"[ ___ ]"), ko:it.ko, answer:it.answer, ctx:it.ctx}, idxInWord:99, totalInWord:0, _ctx:it.ctx};
+        // 현재 위치보다 뒤, 같은 단어 직후가 아닌 랜덤 위치에 삽입
+        let pos=wpPos+2+((Math.random()* (wpQueue.length-wpPos))|0);
+        pos=Math.min(wpQueue.length, Math.max(wpPos+2, pos));
+        if(wpQueue[pos-1] && wpQueue[pos-1].word.word===w.word) pos++;
+        wpQueue.splice(pos,0,item);
+      } });
     }
   });
 }
@@ -3503,15 +3524,16 @@ function wpNext(){
   const card=document.createElement("div"); card.style.cssText="flex:1;display:flex;flex-direction:column";
   const ctxMap={friend:"👫 친구",family:"👨‍👩‍👧 가족",school:"🏫 학교",restaurant:"🍽 식당",shopping:"🛍 쇼핑",travel:"✈️ 여행",hospital:"🏥 병원",customer:"📞 고객센터",daily:"☕ 일상"};
   const ctxLabel = q._ctx? (ctxMap[q._ctx]||"🌎 "+q._ctx) : "";
-  const tabTxt = (q.idxInWord===0 && !q._ctx) ? "🆕 새 표현"
-    : ctxLabel ? ctxLabel+" — 같은 단어, 다른 상황"
-    : "🔁 같은 단어 · 다른 상황";
+  const firstTime = !wpSeenWord[q.word.word];
+  const tabTxt = firstTime ? "🆕 새 표현"
+    : ctxLabel ? ctxLabel+" — 또 나왔어요!"
+    : "🔁 또 나왔어요 — 기억나요?";
   card.innerHTML=`
     <div class="mbtab">${tabTxt}</div>
-    <div class="mbcard" style="padding:26px 22px;text-align:center">
-      <div style="font-family:var(--serif);font-size:26px;line-height:1.5;color:var(--text)">${escapeHtml(q.blank.en)}</div>
-      <div style="font-size:16px;color:var(--jade);font-weight:700;margin-top:14px">${escapeHtml(q.blank.ko)}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:8px">빈칸에 들어갈 영어를 <b>말하거나 입력</b>하세요</div>
+    <div class="mbcard" style="padding:32px 22px;text-align:center">
+      <div style="font-family:var(--serif);font-size:34px;line-height:1.45;color:var(--text);font-weight:500">${escapeHtml(q.blank.en)}</div>
+      <div style="font-size:19px;color:var(--jade);font-weight:700;margin-top:18px">${escapeHtml(q.blank.ko)}</div>
+      <div style="font-size:14px;color:var(--muted);margin-top:12px">빈칸에 들어갈 영어를 <b>말하거나 입력</b>하세요</div>
     </div>
     <div class="mbstatus" id="wpStatus">🎤 눌러서 말하기</div>
     <div class="mbmicwrap">
@@ -3533,6 +3555,7 @@ function wpNext(){
   $("#wpKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
+  wpSeenWord[q.word.word]=true;
 }
 // 정답 판정: 답(단어만/문장 전체 둘 다 OK)에 정답 단어(들)가 모두 포함되면 정답.
 // 복수형·과거형 등 가벼운 변형도 허용.
@@ -3570,10 +3593,13 @@ function wpSubmit(q, answer){
   wpResult(q, answer, correct, elapsed);
 }
 function wpRescheduleFail(q){
-  // 같은 빈칸을 3문제 후, 10문제 후 다시 (간격 반복)
-  const reuse={word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _retry:true};
-  const at3=Math.min(wpQueue.length, wpPos+4), at10=Math.min(wpQueue.length, wpPos+11);
-  wpQueue.splice(at10,0,reuse); wpQueue.splice(at3,0,JSON.parse(JSON.stringify({word:{word:q.word.word,ko:q.word.ko},blank:q.blank,idxInWord:q.idxInWord,totalInWord:q.totalInWord})));
+  // 실패한 빈칸을 3~4문제 후, 10~12문제 후 다시 (간격 반복), 같은 단어 연속 방지
+  const mk=()=>({word:{word:q.word.word,ko:q.word.ko}, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _retry:true, _ctx:q._ctx});
+  const ins=(base)=>{ let p=Math.min(wpQueue.length, wpPos+base);
+    if(wpQueue[p-1] && wpQueue[p-1].word.word===q.word.word) p++;
+    if(wpQueue[p] && wpQueue[p].word.word===q.word.word) p++;
+    wpQueue.splice(Math.min(wpQueue.length,p),0,mk()); };
+  ins(4); ins(11);
 }
 function wpResult(q, answer, correct, elapsed){
   const a=q.blank.answer; const full=q.blank.en.replace("[ ___ ]", a);
@@ -3581,13 +3607,13 @@ function wpResult(q, answer, correct, elapsed){
   const card=document.createElement("div");
   card.innerHTML=`
     <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
-    <div class="mbcard" style="padding:24px 22px;text-align:center">
-      ${answer?`<div style="font-size:13px;color:var(--muted);margin-bottom:8px">내 답: "${escapeHtml(answer)}"${correct?"":' <span style="color:#f87171">✗</span>'}</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:8px">(건너뜀)</div>`}
-      <div style="font-size:13px;color:var(--jade);font-weight:700;margin-bottom:4px">정답</div>
-      <div style="font-family:var(--serif);font-size:26px;color:var(--jade);font-weight:600">${escapeHtml(a)}</div>
-      <div style="font-family:var(--serif);font-size:18px;color:var(--text);margin-top:12px;line-height:1.5">${escapeHtml(full)}</div>
-      <div style="font-size:14px;color:var(--muted);margin-top:6px">${escapeHtml(q.blank.ko)}</div>
-      <button class="ans-replay" id="wpSay" style="margin-top:10px;color:var(--jade);font-size:13px;font-weight:700">🔊 듣기</button>
+    <div class="mbcard" style="padding:28px 22px;text-align:center">
+      ${answer?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}"${correct?"":' <span style="color:#f87171">✗</span>'}</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">(건너뜀)</div>`}
+      <div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:6px">정답</div>
+      <div style="font-family:var(--serif);font-size:38px;color:var(--jade);font-weight:700;line-height:1.2">${escapeHtml(a)}</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${escapeHtml(full)}</div>
+      <div style="font-size:16px;color:var(--muted);margin-top:10px">${escapeHtml(q.blank.ko)}</div>
+      <button class="ans-replay" id="wpSay" style="margin-top:14px;color:var(--jade);font-size:15px;font-weight:700">🔊 듣기</button>
       ${!correct?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
     <!-- 🎧 발음 3속도 -->
