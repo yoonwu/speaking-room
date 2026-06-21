@@ -1319,7 +1319,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.46.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.47.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2271,18 +2271,29 @@ function renderListenPlay(){
     <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
-  setTimeout(()=>lsSpeak(false),350);
+  setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
   $("#lsPlay").onclick=()=>lsSpeak(false);
   $("#lsSlow").onclick=()=>lsSpeak(true);
   $("#lsToDict").onclick=renderListenDictation;
   $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
 }
+let ttsWarmed=false;
 function lsSpeak(slow){
   if(!TTS||!SSU||!lsItem) return;
   TTS.cancel();
-  const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
-  u.rate = levelRate(slow);
-  TTS.speak(u);
+  const doSpeak=()=>{
+    const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
+    u.rate = levelRate(slow);
+    TTS.speak(u);
+  };
+  // 첫 발화 직전 무음 워밍업 — 엔진이 첫 단어 앞부분을 먹는 문제 방지
+  if(!ttsWarmed){
+    ttsWarmed=true;
+    try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
+    setTimeout(doSpeak, 260);
+  } else {
+    setTimeout(doSpeak, 60);
+  }
 }
 // 2) 받아쓰기 — 단어별 누적: 들린 단어는 채워져 고정, 안 들린 빈칸만 다시
 function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
@@ -2326,6 +2337,8 @@ function renderListenDictation(){
   $("#lsDictType").onclick=()=>{ const ti=$("#lsTypeIn"); ti.style.display="block"; ti.focus(); };
   $("#lsTypeIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); lsFillFromHeard(e.target.value); e.target.value="";
     if(lsFilled.every(Boolean)){ lsAnswer=lsTargets.join(" "); lsCheckAnswer(); } }});
+  // 화면 뜨자마자 마이크 자동 시작 (정답 말하기 = 바로 말하기)
+  setTimeout(()=>{ const m=$("#lsDictMic"); if(m && !qzRecording) m.click(); }, 250);
 }
 function lsRenderSlots(){
   const box=$("#lsSlots"); if(!box) return;
