@@ -178,7 +178,7 @@ button{font-family:inherit; cursor:pointer; border:none; background:none; color:
 input,textarea{font-family:inherit}
 
 /* ---------- App shell ---------- */
-#app{display:flex; flex-direction:column; height:100vh; height:100dvh; max-width:1100px; margin:0 auto; position:relative}
+#app{display:flex; flex-direction:column; height:100vh; height:100svh; max-width:1100px; margin:0 auto; position:relative}
 
 /* ---------- Top bar ---------- */
 .topbar{
@@ -544,7 +544,7 @@ input,textarea{font-family:inherit}
 .fb .chunks-added{font-size:12px; color:#8a7320; margin-top:9px; padding-top:9px; border-top:1px dashed #e8d3a8}
 
 /* ---------- Composer ---------- */
-.composer{border-top:1px solid var(--line); background:var(--surface); padding:12px 16px max(18px, calc(14px + env(safe-area-inset-bottom)))}
+.composer{border-top:1px solid var(--line); background:var(--surface); padding:12px 16px max(28px, calc(16px + env(safe-area-inset-bottom)))}
 .composer-inner{max-width:640px; margin:0 auto}
 .quickrow{display:flex; gap:8px; margin-bottom:11px}
 .quick{
@@ -640,9 +640,9 @@ input,textarea{font-family:inherit}
   .lctrls button,.quick{min-height:42px}
 
   /* safe-area bottom for fixed bars */
-  .composer{padding:11px 14px max(18px, calc(13px + env(safe-area-inset-bottom)))}
-  .lnext{padding-bottom:max(12px, env(safe-area-inset-bottom))}
-  .review{padding-bottom:max(12px, env(safe-area-inset-bottom))}
+  .composer{padding:11px 14px max(28px, calc(15px + env(safe-area-inset-bottom)))}
+  .lnext{padding-bottom:max(20px, env(safe-area-inset-bottom))}
+  .review{padding-bottom:max(20px, env(safe-area-inset-bottom))}
 
   /* practice / card sizing */
   .sh-line{font-size:21px}
@@ -788,7 +788,7 @@ body{background:var(--paper); color:var(--text)}
 /* ================= profile sheet + XP ================= */
 .prof-scrim{position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:70; display:none; align-items:flex-end; justify-content:center}
 .prof-scrim.show{display:flex}
-.prof-sheet{width:100%; max-width:560px; max-height:92vh; overflow-y:auto; background:var(--paper); border-radius:24px 24px 0 0; border-top:1px solid var(--line); padding:8px 20px calc(28px + env(safe-area-inset-bottom)); box-shadow:0 -20px 50px -20px rgba(0,0,0,.7)}
+.prof-sheet{width:100%; max-width:560px; max-height:92vh; overflow-y:auto; background:var(--paper); border-radius:24px 24px 0 0; border-top:1px solid var(--line); padding:8px 20px max(40px, calc(28px + env(safe-area-inset-bottom))); box-shadow:0 -20px 50px -20px rgba(0,0,0,.7)}
 .prof-grab{width:42px; height:5px; border-radius:99px; background:var(--line); margin:8px auto 14px}
 .prof-hd{display:flex; align-items:center; gap:14px; margin-bottom:18px}
 .prof-av{width:60px; height:60px; flex:none; border-radius:18px; display:grid; place-items:center; font-size:26px; font-weight:800; color:#06231b; background:linear-gradient(135deg,#1fd3a0,#16b9a6)}
@@ -1272,11 +1272,11 @@ body{background:var(--paper); color:var(--text)}
   </div>
   <!-- KIDS PHONICS -->
   <div class="phonics" id="phonics" style="display:none;flex-direction:column;height:100%">
-    <div id="phonicsScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px calc(26px + env(safe-area-inset-bottom))"></div>
+    <div id="phonicsScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px max(40px, calc(26px + env(safe-area-inset-bottom)))"></div>
   </div>
   <!-- OUTPUT SPRINT -->
   <div class="sprint" id="sprint" style="display:none;flex-direction:column;height:100%">
-    <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(24px + env(safe-area-inset-bottom))"></div>
+    <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px max(40px, calc(24px + env(safe-area-inset-bottom)))"></div>
   </div>
   <!-- MODAL (custom; native prompt/confirm blocked in webview) -->
   <div class="modal-scrim" id="modalScrim">
@@ -1310,7 +1310,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.37.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.38.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3759,7 +3759,7 @@ function openDrill(text, koText){
   const scrim=document.createElement("div"); scrim.id="drillModal";
   scrim.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
   scrim.innerHTML=`
-    <div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:24px 22px calc(32px + env(safe-area-inset-bottom));border-top:1px solid var(--line)">
+    <div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:24px 22px max(44px, calc(32px + env(safe-area-inset-bottom)));border-top:1px solid var(--line)">
       <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 18px"></div>
       <div style="font-size:13px;font-weight:800;color:var(--muted);margin-bottom:8px;letter-spacing:.03em">발음 드릴</div>
       <div id="drillWord" style="font-family:var(--serif);font-size:28px;font-weight:500;color:var(--text);margin-bottom:4px">${escapeHtml(text)}</div>
@@ -4071,7 +4071,7 @@ function openSprintPicker(){
   if(!tutSeenAll().sprint){ showTutorial("sprint", false, ()=>openSprintPicker()); return; }
   const sc=document.createElement("div"); sc.id="spPick";
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
-  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line)">
+  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px max(40px, calc(28px + env(safe-area-inset-bottom)));border-top:1px solid var(--line)">
     <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
     <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:3px">⚡ 아웃풋 스프린트</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:16px">한국어를 보고 <b>3초 안에 바로</b> 영어로! 많이 말하는 게 목표예요 (2~5분)</div>
@@ -4782,7 +4782,7 @@ function openSurvival(){
   const kid=kidMode(); const LIST=kid?KID_SITUATIONS:SURVIVAL;
   const sc=document.createElement("div"); sc.id="svPick";
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
-  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line);max-height:80vh;overflow:auto">
+  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px max(40px, calc(28px + env(safe-area-inset-bottom)));border-top:1px solid var(--line);max-height:80vh;overflow:auto">
     <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
     <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">${kid?"🏘️ 어린이 마을":"🌎 모험 월드맵"}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:16px">${kid?"친구·선생님과 영어로 재미있게 이야기해요 😊":"상대가 영어로 말 걸어와요. 버티면서 영어로 대응해보세요."}</div>
