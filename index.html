@@ -1381,7 +1381,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.56.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.57.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3496,11 +3496,27 @@ function wpNext(){
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
 }
+// 정답 판정: 답(단어만/문장 전체 둘 다 OK)에 정답 단어(들)가 모두 포함되면 정답.
+// 복수형·과거형 등 가벼운 변형도 허용.
+function wpMatch(ansNorm, targetNorm){
+  if(!ansNorm||!targetNorm) return false;
+  if(ansNorm===targetNorm) return true;
+  const ansWords=ansNorm.split(/\s+/).filter(Boolean);
+  const tgtWords=targetNorm.split(/\s+/).filter(Boolean);
+  // 정답의 모든 단어가 답 안에 (어형 변형 허용) 들어있으면 통과
+  return tgtWords.every(tw=> ansWords.some(aw=> wpWordEq(aw, tw) ));
+}
+function wpWordEq(a, b){
+  if(a===b) return true;
+  // 길이 3 이상일 때 어간 비교 (복수 s/es, 과거 ed, ing 무시)
+  const stem=w=> w.replace(/(ies|es|s|ed|ing)$/,"");
+  if(a.length>=3 && b.length>=3 && stem(a)===stem(b)) return true;
+  return false;
+}
 function wpSubmit(q, answer){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
-  // 정답 판정: 타깃 단어가 들어있으면 정답 (말하기 STT 관대화)
-  const correct = !!answer && (ans===target || ans.includes(target) || target.includes(ans) && ans.length>=Math.max(2,target.length-2));
+  const correct = !!answer && wpMatch(ans, target);
   wpStats.total++; if(correct) wpStats.correct++;
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
