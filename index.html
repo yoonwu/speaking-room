@@ -949,6 +949,18 @@ body{background:var(--paper); color:var(--text)}
   box-shadow:0 18px 40px -16px rgba(255,150,60,.7),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -30px 44px -20px rgba(0,0,0,.55)}
 #engSprint .eng-emo{animation:boltpulse 1.8s ease-in-out infinite}
 @keyframes boltpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12) rotate(-4deg)}}
+/* 💬 단어 강화 — 청록 보석 동굴 */
+#vocabCard{--glow:rgba(31,211,160,.55);background:
+  radial-gradient(80% 120% at 14% 0%,rgba(60,235,185,.34),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(20,120,150,.5),transparent 60%),
+  linear-gradient(160deg,#10433f,#0a1c20 80%);
+  box-shadow:0 16px 36px -16px rgba(25,200,165,.55),inset 0 1px 0 rgba(255,255,255,.13),inset 0 -30px 40px -20px rgba(0,0,0,.55)}
+/* 🎧 연음 부스터 — 보랏빛 음파 */
+#boosterCard{--glow:rgba(150,130,255,.55);background:
+  radial-gradient(80% 120% at 14% 0%,rgba(160,150,255,.34),transparent 55%),
+  radial-gradient(90% 130% at 100% 120%,rgba(90,60,180,.5),transparent 60%),
+  linear-gradient(160deg,#2e2a55,#15122a 80%);
+  box-shadow:0 16px 36px -16px rgba(120,100,240,.55),inset 0 1px 0 rgba(255,255,255,.13),inset 0 -30px 40px -20px rgba(0,0,0,.55)}
 /* 🏰 사운드 아카데미 (kidCard) — 따뜻한 성 */
 #kidCard{--glow:rgba(255,200,100,.55);background:
   linear-gradient(100deg,rgba(8,10,14,.80),rgba(8,10,14,.32) 58%,rgba(8,10,14,.12)),url('scene-castle.png') center/cover no-repeat,
@@ -1083,6 +1095,18 @@ body{background:var(--paper); color:var(--text)}
           <span class="eng-tx"><b>라이트닝 아레나</b><i>스프린트 · 많이 말하기</i></span>
           <span class="eng-ar">›</span>
         </button>
+        <button class="eng" id="vocabCard">
+          <span class="help-q" data-tut="vocab">?</span>
+          <span class="eng-emo">💬</span>
+          <span class="eng-tx"><b>단어 강화</b><i>단어를 상황에서 써보기</i></span>
+          <span class="eng-ar">›</span>
+        </button>
+        <button class="eng" id="boosterCard">
+          <span class="help-q" data-tut="booster">?</span>
+          <span class="eng-emo">🎧</span>
+          <span class="eng-tx"><b>연음 부스터</b><i>wudja · wanna 알아듣기</i></span>
+          <span class="eng-ar">›</span>
+        </button>
         </div>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
@@ -1101,21 +1125,6 @@ body{background:var(--paper); color:var(--text)}
 
       <!-- 습득 지표 (점수 아님 — 자신감·인출속도·이해) -->
       <div id="acqStats" style="margin-bottom:11px"></div>
-
-      <!-- 추가 연습 -->
-      <div class="seclabel" style="margin-bottom:7px">⚗️ 추가 훈련</div>
-      <div style="display:flex;gap:9px;margin-bottom:11px">
-        <button id="boosterCard" class="sidequest" style="flex:1;display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;cursor:pointer">
-          <span class="help-q" data-tut="booster">?</span>
-          <div class="sq-ico" style="--sqg:rgba(91,180,255,.5);width:36px;height:36px;font-size:17px;flex:none">🎧</div>
-          <div style="min-width:0"><div class="sq-t" style="margin-top:0">연음 부스터</div><div class="sq-d">wudja·wanna</div></div>
-        </button>
-        <button id="vocabCard" class="sidequest" style="flex:1;display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;cursor:pointer">
-          <span class="help-q" data-tut="vocab">?</span>
-          <div class="sq-ico" style="--sqg:rgba(31,211,160,.5);width:36px;height:36px;font-size:17px;flex:none">💬</div>
-          <div style="min-width:0"><div class="sq-t" style="margin-top:0">단어 강화</div><div class="sq-d">상황에서 써보기</div></div>
-        </button>
-      </div>
 
       <!-- 아이 파닉스 (초등 저학년) -->
       <button id="kidCard" style="position:relative"><span class="help-q" data-tut="phonics">?</span><span class="ke">🏰</span><span class="kt"><b>사운드 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
@@ -1310,7 +1319,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.39.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.42.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2167,6 +2176,20 @@ let lsAnalysis=null;  // 오답 분석
 let lsConn=null;      // 연음 설명
 let lsCount=0;        // 진행한 문장 수
 let lsAwarded=false;
+let lsPrefetch=null;      // 미리 받아둔 다음 문장 {en,ko}
+let lsPrefetching=false;  // 중복 프리페치 방지
+
+// 백그라운드로 다음 문장 1개 미리 생성 (대기 0초 만들기)
+async function lsPrefetchNext(){
+  if(lsPrefetching || lsPrefetch) return;
+  lsPrefetching=true;
+  try{
+    const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
+    const it=parseJSON(extractText(data));
+    if(it && it.en) lsPrefetch=it;
+  }catch(e){}
+  lsPrefetching=false;
+}
 
 function startListening(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:state.topic.emo||"🎧", label:(state.topic.id==="custom"?"직접 입력 듣기":(state.topic.t||"듣기")+" 듣기")});
@@ -2177,7 +2200,7 @@ function startListening(){
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
   $("#ctxLvl").textContent = levelName()+" · 듣기";
   $("#lnext").style.display="none";
-  lsPrevReply=""; lsCount=0;
+  lsPrevReply=""; lsCount=0; lsPrefetch=null; lsPrefetching=false;
   lsGenerate();
 }
 // 실전 구어 한 문장 생성
@@ -2199,13 +2222,22 @@ levelCap(),
 }
 async function lsGenerate(){
   lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
-  $("#listenScroll").innerHTML=`<div class="lloading">다음 문장을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  // 1) 미리 받아둔 게 있으면 즉시 출제 (대기 0초)
+  if(lsPrefetch){
+    lsItem=lsPrefetch; lsPrefetch=null; lsCount++;
+    renderListenPlay();
+    lsPrefetchNext();   // 그 다음 문장 또 백그라운드 생성
+    return;
+  }
+  // 2) 첫 문장만 로딩 표시하고 생성
+  $("#listenScroll").innerHTML=`<div class="lloading">첫 문장을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   try{
     const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
     lsItem=parseJSON(extractText(data));
     if(!lsItem || !lsItem.en) throw new Error("empty");
     lsCount++;
     renderListenPlay();
+    lsPrefetchNext();   // 바로 다음 문장 미리 준비
   }catch(e){
     $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
     const r=$("#lsRetry"); if(r) r.onclick=lsGenerate;
@@ -2400,8 +2432,8 @@ async function lsContinue(){
   ].join("\n");
   let reply="", tr="";
   try{ const d=await callClaude(sys,[{role:"user",content:"Continue now."}], FAST_MODEL); const o=parseJSON(extractText(d)); reply=o.reply||""; tr=o.translation||""; }catch(e){}
-  if(!reply){ lsPrevReply=lsItem.en||""; lsGenerate(); return; }
-  lsPrevReply=reply;
+  if(!reply){ lsPrevReply=lsItem.en||""; lsPrefetch=null; lsGenerate(); return; }
+  lsPrevReply=reply; lsPrefetch=null;
   $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
     <div class="lmeta">💬 상대방의 대답 — 이것도 들어보세요</div>
     <button class="bigplay" id="lsRepPlay" style="margin:14px 0">
@@ -2421,10 +2453,14 @@ async function lsContinue(){
 }
 
 /* ===== 출력 코치 (꺼내기) — 상황만 주고 힌트·정답 없이 말하게 강제 ===== */
-let loData=null, loRound=1, loT0=0;
+let loData=null, loRound=1, loT0=0, loAnswered=false;
 async function lsOutput(){
   TTS&&TTS.cancel();
-  $("#listenScroll").innerHTML=`<div class="lloading">상황을 만드는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  loAnswered=false;
+  // 즉시 폴백으로 출제 (대기 0초) — 방금 들은 문장을 바로 target으로
+  loData={target:lsItem.en||"", sit1_ko:lsItem.ko||"방금 그 표현, 이 상황에서 영어로 말해보세요.", sit2_ko:"비슷한 다른 상황에서도 말해보세요."};
+  loRound=1; renderOutput();
+  const myItem=lsItem;
   const sys=[
 "You are an OUTPUT coach. The learner just heard and understood: \""+(lsItem.en||"")+"\".",
 "Pick ONE useful, reusable target expression a learner should be able to SAY (a chunk like \"Could you say that again?\", \"I'd like to ...\", \"Do you have ...?\"). Keep it close to the sentence's function.",
@@ -2436,9 +2472,12 @@ levelSituation(),
 'Return ONLY JSON: {"target":"natural English target expression","sit1_ko":"상황 설명 한국어","sit2_ko":"다른 상황 설명 한국어"}'
   ].join("\n");
   try{ const d=await callClaude(sys,[{role:"user",content:"Make it now."}], FAST_MODEL);
-    loData=parseJSON(extractText(d)); if(!loData||!loData.target) throw new Error("empty");
-  }catch(e){ loData={target:lsItem.en||"", sit1_ko:lsItem.ko||"이 상황에서 영어로 말해보세요.", sit2_ko:"비슷한 다른 상황에서도 말해보세요."}; }
-  loRound=1; renderOutput();
+    const better=parseJSON(extractText(d));
+    // 더 나은 상황이 오면: 같은 듣기 문맥 + 아직 1라운드 + 답하기 전이면 조용히 교체
+    if(better && better.target && lsItem===myItem && loRound===1 && !loAnswered){
+      loData=better; renderOutput();
+    }
+  }catch(e){}
 }
 function renderOutput(){
   const sitKo = loRound===1 ? (loData.sit1_ko||"") : (loData.sit2_ko||"");
@@ -2456,6 +2495,7 @@ function renderOutput(){
     <input id="loInput" type="text" autocomplete="off" placeholder="영어로 입력 후 Enter" class="mbkbd" style="display:none;margin-top:10px">
     <div id="loStat" style="text-align:center;font-size:14px;color:var(--muted);margin-top:10px;min-height:20px"></div>
     <button class="rv-stop" id="loSkip" style="margin-top:6px">안 떠올라요</button>
+    <button id="loEasy" style="width:100%;margin-top:8px;padding:10px;border-radius:13px;background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer">너무 쉬워요 — 새 표현으로 건너뛰기 →</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
   loT0=Date.now();
@@ -2465,8 +2505,10 @@ function renderOutput(){
   $("#loKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) loSubmit(v); }});
   $("#loSkip").onclick=()=>loSubmit("");
+  $("#loEasy").onclick=()=>lsGenerate();
 }
 async function loSubmit(answer){
+  loAnswered=true;
   const elapsed=Math.max(0.1,(Date.now()-loT0)/1000);
   const sitKo = loRound===1 ? (loData.sit1_ko||"") : (loData.sit2_ko||"");
   $("#loStat") && ($("#loStat").textContent="확인 중…");
@@ -2516,12 +2558,14 @@ function renderOutputResult(answer, elapsed, fb){
       <button id="loDrill">🎤 발음 진단</button>
       <button class="sh-next" id="loNext" style="margin:0">${last?"다음 문장 →":"다른 상황에서 또 말하기 →"}</button>
     </div>
+    ${last?"":`<button id="loSkip2" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">건너뛰고 새 표현으로 →</button>`}
   </div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>speakEn(fb.native),280);
   $("#loSay").onclick=()=>speakEn(fb.native);
   $("#loDrill").onclick=()=>openDrill(fb.native, "");
   $("#loNext").onclick=()=>{ if(last){ lsGenerate(); } else { loRound=2; renderOutput(); } };
+  const sk2=$("#loSkip2"); if(sk2) sk2.onclick=()=>lsGenerate();
 }
 function setPlayUI(playing, slow){
   const bp=$("#bigplay"); if(!bp) return;
