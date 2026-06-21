@@ -1381,7 +1381,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.55.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.56.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3432,12 +3432,139 @@ async function _oldGenerateVocab(){
   }catch(e){ $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요. 다시 시도해 주세요.</div>`; }
 }
 function showVocabCard(){
-  voStart(vocabWords);
+  wpStart(vocabWords);
 }
 
 /* ============================================================
-   단어 = 아웃풋 코치 (인지 아님 → 즉각 인출·사용)
-   소개→듣기→따라하기→실제 상황→사용 강제→피드백→다른 상황 재등장→인출속도
+   📝 WORD POWER — 빈칸 인출 엔진 (retrieval-first)
+   한 단어 → 여러 빈칸 문장(다른 상황) → 정답 인출 → SRS
+   ============================================================ */
+let wpQueue=[], wpPos=0, wpT0=0, wpStats={correct:0, total:0};
+// 단어의 빈칸 문장들 만들기 (examples를 빈칸으로 변환 + blank 포함, 최대 4)
+function wpBlanksFor(w){
+  const out=[]; const word=w.word||"";
+  const mkBlank=(en,ko)=>{
+    // 문장에서 타깃 단어를 ____로
+    const re=new RegExp("\\b"+word.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+    if(re.test(en)) return {en:en.replace(re,"[ ___ ]"), ko:ko||w.ko||"", answer:word};
+    return null;
+  };
+  if(w.blank && w.blank.en){ out.push({en:w.blank.en.replace(/_{2,}/,"[ ___ ]"), ko:w.blank.ko||w.ko||"", answer:w.blank.answer||word}); }
+  (w.examples||[]).forEach(e=>{ const b=mkBlank(e.en, e.ko); if(b && !out.some(x=>x.en===b.en)) out.push(b); });
+  return out.slice(0,4);
+}
+function wpStart(words){
+  const ws=(words||[]).filter(w=>w&&w.word).slice(0,5);
+  if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
+  // 큐 구성: 각 단어의 빈칸 문장들을 단어 단위로 묶어 연속 출제 (한 단어 → 여러 상황)
+  wpQueue=[]; ws.forEach(w=>{ const blanks=wpBlanksFor(w); blanks.forEach((b,i)=>{ wpQueue.push({word:w, blank:b, idxInWord:i, totalInWord:blanks.length}); }); });
+  wpPos=0; wpStats={correct:0,total:0};
+  wpNext();
+}
+function wpNext(){
+  if(wpPos>=wpQueue.length) return wpDone();
+  const q=wpQueue[wpPos];
+  const total=wpQueue.length;
+  $("#vbBarFill").style.width=Math.round(wpPos/total*100)+"%";
+  $("#vbProgTxt").textContent=`${wpPos+1} / ${total}`;
+  const card=document.createElement("div"); card.style.cssText="flex:1;display:flex;flex-direction:column";
+  card.innerHTML=`
+    <div class="mbtab">${q.idxInWord===0?"🆕 새 표현":`🔁 같은 단어 · 다른 상황 (${q.idxInWord+1}/${q.totalInWord})`}</div>
+    <div class="mbcard" style="padding:26px 22px;text-align:center">
+      <div style="font-family:var(--serif);font-size:26px;line-height:1.5;color:var(--text)">${escapeHtml(q.blank.en)}</div>
+      <div style="font-size:16px;color:var(--jade);font-weight:700;margin-top:14px">${escapeHtml(q.blank.ko)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:8px">빈칸에 들어갈 영어를 <b>말하거나 입력</b>하세요</div>
+    </div>
+    <div class="mbstatus" id="wpStatus">🎤 눌러서 말하기</div>
+    <div class="mbmicwrap">
+      <button class="mbside" id="wpHint"><span class="ic">💡</span>힌트</button>
+      <button class="mbmic" id="wpMic" aria-label="말하기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>
+      <button class="mbside" id="wpKbd"><span class="ic">⌨️</span>입력</button>
+    </div>
+    <input id="wpInput" type="text" autocomplete="off" placeholder="빈칸 단어 입력 후 Enter" class="mbkbd" style="display:none">
+    <button class="rv-stop" id="wpGiveup" style="margin-top:10px">모르겠어요 — 정답 보기</button>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  wpT0=Date.now();
+  const status=$("#wpStatus"), inp=$("#wpInput");
+  let hintN=0;
+  $("#wpHint").onclick=()=>{ hintN++; const a=q.blank.answer;
+    if(hintN===1) status.textContent="힌트: 첫 글자 '"+a[0]+"…' ("+a.length+"글자)";
+    else { status.innerHTML="정답: <b>"+escapeHtml(a)+"</b>"; } };
+  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.textContent="듣고 있어요…";
+    micFillCb((t)=>{ b.classList.remove("live"); if(t){ wpSubmit(q,t); } else { status.textContent="다시 말해보세요"; } }); };
+  $("#wpKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
+  $("#wpGiveup").onclick=()=>wpSubmit(q,"");
+}
+function wpSubmit(q, answer){
+  const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
+  const ans=normAns(answer), target=normAns(q.blank.answer);
+  // 정답 판정: 타깃 단어가 들어있으면 정답 (말하기 STT 관대화)
+  const correct = !!answer && (ans===target || ans.includes(target) || target.includes(ans) && ans.length>=Math.max(2,target.length-2));
+  wpStats.total++; if(correct) wpStats.correct++;
+  const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
+  if(correct){
+    srsPass(q.word.word, q.word.ko, ctxTag);
+    awardXP("vocab", elapsed<4?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord);
+    if(q.idxInWord===0){ bumpCount("vocab"); questBump("vocab"); }
+  } else {
+    srsFail(q.word.word, q.word.ko, ctxTag);
+    // 실패 단어는 큐 뒤쪽(3문제 후, 10문제 후)에 재삽입
+    wpRescheduleFail(q);
+  }
+  try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+  wpResult(q, answer, correct, elapsed);
+}
+function wpRescheduleFail(q){
+  // 같은 빈칸을 3문제 후, 10문제 후 다시 (간격 반복)
+  const reuse={word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _retry:true};
+  const at3=Math.min(wpQueue.length, wpPos+4), at10=Math.min(wpQueue.length, wpPos+11);
+  wpQueue.splice(at10,0,reuse); wpQueue.splice(at3,0,JSON.parse(JSON.stringify({word:{word:q.word.word,ko:q.word.ko},blank:q.blank,idxInWord:q.idxInWord,totalInWord:q.totalInWord})));
+}
+function wpResult(q, answer, correct, elapsed){
+  const a=q.blank.answer; const full=q.blank.en.replace("[ ___ ]", a);
+  const si=srsGet(q.word.word); const stage=si?si.stage:"new";
+  const card=document.createElement("div");
+  card.innerHTML=`
+    <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
+    <div class="mbcard" style="padding:24px 22px;text-align:center">
+      ${answer?`<div style="font-size:13px;color:var(--muted);margin-bottom:8px">내 답: "${escapeHtml(answer)}"${correct?"":' <span style="color:#f87171">✗</span>'}</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:8px">(건너뜀)</div>`}
+      <div style="font-size:13px;color:var(--jade);font-weight:700;margin-bottom:4px">정답</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--jade);font-weight:600">${escapeHtml(a)}</div>
+      <div style="font-family:var(--serif);font-size:18px;color:var(--text);margin-top:12px;line-height:1.5">${escapeHtml(full)}</div>
+      <div style="font-size:14px;color:var(--muted);margin-top:6px">${escapeHtml(q.blank.ko)}</div>
+      <button class="ans-replay" id="wpSay" style="margin-top:10px;color:var(--jade);font-size:13px;font-weight:700">🔊 듣기</button>
+      ${!correct?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
+      <div style="font-size:12px;color:var(--muted);margin-top:10px">🧠 기억 단계: <b style="color:var(--text)">${srsStageLabel(stage)}</b></div>
+    </div>
+    <button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
+  $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
+  setTimeout(()=>speakEn(full),260);
+  $("#wpSay").onclick=()=>speakEn(full);
+  $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
+}
+function wpDone(){
+  $("#vbBarFill").style.width="100%"; $("#vbProgTxt").textContent="완료";
+  const rate=wpStats.total?Math.round(wpStats.correct/wpStats.total*100):0;
+  const st=srsStats();
+  $("#vbBody").innerHTML=`
+    <div class="rv-done" style="max-width:460px"><div class="em">📝</div><h2>단어 인출 완료!</h2>
+    <p>같은 단어를 <b>여러 상황</b>에서 직접 꺼내봤어요.<br>"안다"가 아니라 <b>"쓸 수 있다"</b> — 이게 진짜 실력이에요.</p>
+    <div style="display:flex;gap:9px;justify-content:center;margin:8px 0 20px">
+      <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:var(--jade)">${rate}%</div><div style="font-size:11px;color:var(--muted)">인출 정답률</div></div>
+      <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:var(--text)">${wpStats.correct}/${wpStats.total}</div><div style="font-size:11px;color:var(--muted)">맞힌 횟수</div></div>
+      <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#f59e0b">${st.due}</div><div style="font-size:11px;color:var(--muted)">복습 대기</div></div>
+    </div>
+    <div class="blk-actions" style="max-width:340px">
+      <button class="blk-save" id="wpHome">나가기</button>
+      <button class="blk-next" id="wpAgain">계속 ↻</button>
+    </div></div>`;
+  $("#wpHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
+  $("#wpAgain").onclick=generateVocab;
+}
+
+/* ============================================================
+   단어 = 아웃풋 코치 (구버전 — wpStart로 대체됨)
    ============================================================ */
 let voWords=[], voOrder=[], voPos=0, voRound=1, voT0=0, voTimes={};
 function voShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
