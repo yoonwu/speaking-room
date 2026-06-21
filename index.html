@@ -1384,7 +1384,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.61.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.62.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3389,8 +3389,12 @@ async function prefetchVocab(theme){
 }
 // 주제 로테이션 (사용자 선택 없이 자동으로 골고루)
 function nextVocabTheme(){
-  let i=hGet("speakingroom:vrot",0); const t=VOCAB_THEMES[i%VOCAB_THEMES.length];
-  hSet("speakingroom:vrot",(i+1)%VOCAB_THEMES.length); return t;
+  // 랜덤 — 단, 직전과 다른 테마 (cafe 고정 방지)
+  const last=hGet("speakingroom:vlast","");
+  let pool=VOCAB_THEMES.filter(t=>t.id!==last);
+  if(!pool.length) pool=VOCAB_THEMES;
+  const t=pool[(Math.random()*pool.length)|0];
+  hSet("speakingroom:vlast", t.id); return t;
 }
 // 모든 시드를 합친 즉시 풀 — 절대 안 기다림 (소비 안 함)
 function instantSet(){
@@ -3399,22 +3403,32 @@ function instantSet(){
   return pool.slice(0,5);
 }
 function startVocab(){
-  state.vocabTheme = state.vocabTheme || nextVocabTheme();
+  state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
   markPractice({mode:"vocab", id:state.vocabTheme.id, emo:"📖", label:"단어"});
   enterStage("vocab"); $("#ctxBar").style.display="none";
-  $("#vbModeTag").textContent="📖 단어";
+  $("#vbModeTag").textContent="📖 "+(state.vocabTheme.emo||"")+" "+state.vocabTheme.t;
   generateVocab();
 }
 async function generateVocab(){
-  let theme=state.vocabTheme; if(!theme){ theme=state.vocabTheme=nextVocabTheme(); }
+  let theme=state.vocabTheme=nextVocabTheme();   // 매번 새 랜덤 테마
+  $("#vbModeTag").textContent="📖 "+(theme.emo||"")+" "+theme.t;
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
-  // 1) 프리페치된 themed 세트 있으면 그걸로, 없으면 즉시 풀 — 어느 쪽이든 0초
+  // 1) 이미 프리페치된 그 테마 세트 있으면 즉시 사용
   let set=takeFromBank(theme.id);
-  if(!set || !set.length) set=instantSet();
-  vocabWords=set; vbIdx=0; showVocabCard();
-  // 2) 다음을 위해 themed 세트 백그라운드 생성 + 다음 주제도 미리
+  if(set && set.length){ vocabWords=set; vbIdx=0; showVocabCard(); }
+  else {
+    // 2) 없으면 그 테마 단어를 AI로 생성 (로딩) — cafe/smalltalk 시드 풀로 떨어지지 않게
+    $("#vbBody").innerHTML=`<div class="lloading">${escapeHtml(theme.t)} 단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+    try{
+      const ws=await aiVocabSet(theme);
+      if(ws && ws.length){ vocabWords=ws; vbIdx=0; showVocabCard(); }
+      else throw new Error("empty");
+    }catch(e){ vocabWords=instantSet(); vbIdx=0; showVocabCard(); }   // 최후 폴백
+  }
+  // 3) 다음을 위해 여러 랜덤 테마 미리 생성
   prefetchVocab(theme);
-  prefetchVocab(VOCAB_THEMES[(hGet("speakingroom:vrot",0))%VOCAB_THEMES.length]);
+  prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
+  prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
 }
 async function _oldGenerateVocab(){
   $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
