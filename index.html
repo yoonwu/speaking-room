@@ -1319,7 +1319,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.44.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.45.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2178,15 +2178,20 @@ let lsCount=0;        // 진행한 문장 수
 let lsAwarded=false;
 let lsPrefetch=null;      // 미리 받아둔 다음 문장 {en,ko}
 let lsPrefetching=false;  // 중복 프리페치 방지
+let lsRecent=[];          // 최근 출제한 영어 문장 (반복 방지)
+function lsRecord(en){ if(!en) return; lsRecent.push(en); if(lsRecent.length>25) lsRecent=lsRecent.slice(-25); }
+function lsIsDup(en){ if(!en) return false; const n=en.toLowerCase().replace(/[^a-z ]/g,"").trim(); return lsRecent.some(x=>x.toLowerCase().replace(/[^a-z ]/g,"").trim()===n); }
 
 // 백그라운드로 다음 문장 1개 미리 생성 (대기 0초 만들기)
 async function lsPrefetchNext(){
   if(lsPrefetching || lsPrefetch) return;
   lsPrefetching=true;
   try{
-    const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
-    const it=parseJSON(extractText(data));
-    if(it && it.en) lsPrefetch=it;
+    for(let try_=0; try_<3; try_++){
+      const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
+      const it=parseJSON(extractText(data));
+      if(it && it.en && !lsIsDup(it.en)){ lsPrefetch=it; break; }
+    }
   }catch(e){}
   lsPrefetching=false;
 }
@@ -2200,7 +2205,7 @@ function startListening(){
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
   $("#ctxLvl").textContent = levelName()+" · 듣기";
   $("#lnext").style.display="none";
-  lsPrevReply=""; lsCount=0; lsPrefetch=null; lsPrefetching=false;
+  lsPrevReply=""; lsCount=0; lsPrefetch=null; lsPrefetching=false; lsRecent=[];
   lsGenerate();
 }
 // 실전 구어 한 문장 생성
@@ -2217,25 +2222,32 @@ prev,
 kidMode()? kidRules() : levelHint(),
 levelCap(),
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
+(lsRecent.length? "DO NOT repeat or closely paraphrase any of these already-used sentences (make something clearly different in meaning and words):\n- "+lsRecent.slice(-15).join("\n- ") : ""),
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻"}'
   ].join("\n");
 }
 async function lsGenerate(){
   lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
   // 1) 미리 받아둔 게 있으면 즉시 출제 (대기 0초)
-  if(lsPrefetch){
-    lsItem=lsPrefetch; lsPrefetch=null; lsCount++;
+  if(lsPrefetch && !lsIsDup(lsPrefetch.en)){
+    lsItem=lsPrefetch; lsPrefetch=null; lsCount++; lsRecord(lsItem.en);
     renderListenPlay();
     lsPrefetchNext();   // 그 다음 문장 또 백그라운드 생성
     return;
   }
+  lsPrefetch=null;   // 중복이면 버림
   // 2) 첫 문장만 로딩 표시하고 생성
   $("#listenScroll").innerHTML=`<div class="lloading">첫 문장을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   try{
-    const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
-    lsItem=parseJSON(extractText(data));
+    let it=null;
+    for(let try_=0; try_<3; try_++){
+      const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
+      it=parseJSON(extractText(data));
+      if(it && it.en && !lsIsDup(it.en)) break;
+    }
+    lsItem=it;
     if(!lsItem || !lsItem.en) throw new Error("empty");
-    lsCount++;
+    lsCount++; lsRecord(lsItem.en);
     renderListenPlay();
     lsPrefetchNext();   // 바로 다음 문장 미리 준비
   }catch(e){
