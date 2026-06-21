@@ -1381,7 +1381,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.54.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.55.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3551,6 +3551,10 @@ async function voSubmit(w, answer){
     if(addReviewItem(w.word, w.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); }
     awardXP("vocab", answer? (fb.used?10:5) : 5, "단어 "+w.word, "vc:"+w.word); bumpCount("vocab"); questBump("vocab");
   } else if(fb.used){ awardXP("vocab",15,"다른 상황에서 또 ✅","vc2:"+w.word); }
+  // 📚 SRS 기록 — 단어 + 모범 표현(청크) 둘 다, 상황 컨텍스트 태그와 함께
+  const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
+  if(answer && fb.used){ srsPass(w.word, w.ko, ctxTag); if(fb.natural) srsPass(fb.natural, sit.ko, ctxTag); }
+  else { srsFail(w.word, w.ko, ctxTag); }
   renderVoResult(w, answer, elapsed, fb);
 }
 function renderVoResult(w, answer, elapsed, fb){
@@ -3570,6 +3574,12 @@ function renderVoResult(w, answer, elapsed, fb){
       <div style="font-size:13px;color:var(--text);margin-top:10px">⏱ 인출 속도: <b style="color:${elapsed<3?"var(--jade)":elapsed<6?"var(--amber)":"var(--muted)"}">${elapsed.toFixed(1)}초</b> ${elapsed<3?"· 거의 입에 붙었어요!":elapsed<6?"· 좋아요":"· 반복하면 빨라져요"}</div>
       ${speedLine}
     </div>
+    ${(()=>{ const si=srsGet(w.word); if(!si) return ""; const si2=SRS_STAGES.indexOf(si.stage); const pct=Math.round(si2/(SRS_STAGES.length-1)*100);
+      return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(si.stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si.uses||0}회</span></div>
+        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1fd3a0,#9b98ec)"></div></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">${si.stage==="mastered"?"마스터! 30일 뒤 복습해요 ⭐":"다음 단계까지 계속 사용해보세요"}</div>
+      </div>`; })()}
     <div class="mbbig" style="margin-top:14px">
       <button id="voDrill"><span class="ic">🎤</span>발음 진단</button>
       <button id="voNextBtn" style="color:#06231b;background:linear-gradient(135deg,#1fd3a0,#13b488);border:none"><span class="ic">▶</span>${(voRound===2 && voPos===voWords.length-1)?"끝내기":"다음"}</button>
@@ -4426,6 +4436,62 @@ function weakAddMiss(it){
 function weakClear(pid){ const w=weakGet(); if(w[pid]){ delete w[pid]; weakSet(w); } }
 function weakList(max){ const w=weakGet();
   return Object.values(w).filter(x=>x&&!x.mastered&&x.miss>0).sort((a,b)=>b.miss-a.miss).slice(0, max||3); }
+
+/* ============================================================
+   📚 SRS 엔진 (Word Power 3.0) — 진짜 간격 반복 기억 시스템
+   단계: new→learning→review→strong→mastered
+   ============================================================ */
+const SRS_STAGES=["new","learning","review","strong","mastered"];
+const SRS_INTERVAL_DAYS={new:0, learning:1, review:3, strong:7, mastered:30};   // 다음 복습까지
+function EDAY(){ return Math.floor(Date.now()/86400000); }   // epoch day (간격 계산용)
+function srsAll(){ try{ return hGet("speakingroom:srs",{}); }catch(e){ return {}; } }
+function srsSave(o){ try{ hSet("speakingroom:srs",o); }catch(e){} }
+function srsKey(en){ return String(en||"").toLowerCase().replace(/[^a-z0-9 ]/g,"").trim(); }
+function srsGet(en){ const k=srsKey(en); return srsAll()[k]||null; }
+// 아이템 보장 (없으면 new로 생성)
+function srsEnsure(en, ko){
+  const o=srsAll(); const k=srsKey(en); if(!k) return null;
+  if(!o[k]){ o[k]={en, ko:ko||"", stage:"new", uses:0, miss:0, due:EDAY(), ctx:{}, lastT:0}; srsSave(o); }
+  else if(ko && !o[k].ko){ o[k].ko=ko; srsSave(o); }
+  return o[k];
+}
+// 성공 → 단계 상승, 복습 간격 늘림. ctx=상황 태그(restaurant 등)
+function srsPass(en, ko, ctx){
+  const o=srsAll(); const k=srsKey(en); if(!k) return; srsEnsure(en,ko);
+  const it=o[k]||srsAll()[k]; if(!it) return;
+  const idx=Math.min(SRS_STAGES.length-1, SRS_STAGES.indexOf(it.stage)+1);
+  it.stage=SRS_STAGES[idx]; it.uses=(it.uses||0)+1;
+  if(ctx){ it.ctx=it.ctx||{}; it.ctx[ctx]=(it.ctx[ctx]||0)+1; }
+  it.due=EDAY()+ (SRS_INTERVAL_DAYS[it.stage]||1);
+  it.lastT=Date.now(); o[k]=it; srsSave(o);
+}
+// 실패 → 단계 하락, 복습 빨리
+function srsFail(en, ko, ctx){
+  const o=srsAll(); const k=srsKey(en); if(!k) return; srsEnsure(en,ko);
+  const it=o[k]||srsAll()[k]; if(!it) return;
+  const idx=Math.max(0, SRS_STAGES.indexOf(it.stage)-1);
+  it.stage=SRS_STAGES[idx]; it.miss=(it.miss||0)+1;
+  if(ctx){ it.ctx=it.ctx||{}; }
+  it.due=EDAY();   // 바로 다시
+  it.lastT=Date.now(); o[k]=it; srsSave(o);
+}
+// 오늘 복습할 아이템 (due<=오늘, mastered 제외, 실패 많은 순)
+function srsDue(max){
+  const today=EDAY();
+  return Object.values(srsAll())
+    .filter(x=>x && x.stage!=="mastered" && (x.due||0)<=today)
+    .sort((a,b)=>(b.miss||0)-(a.miss||0) || (a.due||0)-(b.due||0))
+    .slice(0, max||50);
+}
+function srsStats(){
+  const all=Object.values(srsAll());
+  const due=srsDue(999).length;
+  const mastered=all.filter(x=>x.stage==="mastered").length;
+  const learning=all.filter(x=>x.stage==="learning"||x.stage==="review").length;
+  return {total:all.length, due, mastered, learning, retrieved:all.filter(x=>(x.uses||0)>0).length};
+}
+function srsStageLabel(s){ return {new:"새 단어",learning:"배우는 중",review:"복습",strong:"탄탄함",mastered:"마스터"}[s]||s; }
+
 function spNext(){
   if(spIdx>=spItems.length) return spDone();
   const it=spItems[spIdx];
@@ -4672,15 +4738,25 @@ function ctDone(){
 function renderWeakHome(){
   const box=$("#weakHome"); if(!box) return;
   const weak=weakList(3);
-  if(!weak.length){ box.style.display="none"; box.innerHTML=""; return; }
-  box.style.display="block";
-  box.innerHTML=`
-    <div class="seclabel" style="margin-bottom:7px">🔥 약한 청크 — 탭하면 바로 훈련</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
+  const st=srsStats();
+  let html="";
+  // 🔥 오늘 복습 (SRS due) — 재사용이 유창함을 만든다
+  if(st.due>0){
+    html+=`<button id="dueToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(31,211,160,.35);margin-bottom:9px;width:100%">
+      <span><span style="font-size:15.5px;font-weight:900;color:var(--text)">🔥 오늘 복습할 표현</span><br><span style="font-size:12.5px;color:var(--jade);font-weight:700">${st.due}개 · 잊기 전에 다시 꺼내보기</span></span>
+      <span style="font-size:20px">📚</span></button>`;
+  }
+  if(weak.length){
+    html+=`<div class="seclabel" style="margin-bottom:7px">🔥 약한 청크 — 탭하면 바로 훈련</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
       ${weak.map(w=>`<button class="weakHomeItem sidequest" data-pid="${escapeAttr(w.pid)}" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:12px 14px;cursor:pointer;border:1.5px solid rgba(248,113,113,.3)">
         <span><span style="font-family:var(--serif);font-size:15.5px;color:var(--text)">${escapeHtml(w.chunk||w.ko)}</span><br><span style="font-size:11px;color:#f87171">${w.miss}회 막힘</span></span>
         <span style="font-size:18px">⚡</span></button>`).join("")}
-    </div>`;
+      </div>`;
+  }
+  if(!html){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block"; box.innerHTML=html;
+  const dt=$("#dueToday"); if(dt) dt.onclick=()=>startVocabCoach();
   box.querySelectorAll(".weakHomeItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
 function openPhonics(){
