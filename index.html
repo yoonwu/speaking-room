@@ -1384,7 +1384,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.60.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.61.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3553,7 +3553,7 @@ function wpAsk(q){
   $("#wpHint").onclick=()=>{ hintN++; const a=q.blank.answer;
     if(hintN===1) status.textContent="힌트: 첫 글자 '"+a[0]+"…' ("+a.length+"글자)";
     else { status.innerHTML="정답: <b>"+escapeHtml(a)+"</b>"; } };
-  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.textContent="듣고 있어요…";
+  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.style.color=""; status.textContent="듣고 있어요…";
     micFillCb((t)=>{ b.classList.remove("live"); if(t){ wpSubmit(q,t); } else { status.textContent="다시 말해보세요"; } }); };
   $("#wpKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
@@ -3581,20 +3581,38 @@ function wpSubmit(q, answer){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
   const correct = !!answer && wpMatch(ans, target);
+  const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
+  // ❌ 틀렸지만 포기 안 함 → 정답 공개하지 말고 같은 화면에서 다시 (맞출 때까지)
+  if(answer && !correct){
+    srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
+    q._wrongCount=(q._wrongCount||0)+1;
+    const status=$("#wpStatus");
+    if(status){
+      // 3번 이상 틀리면 첫 글자 힌트 제공
+      const hint = q._wrongCount>=3 ? ` · 힌트: '${q.blank.answer[0]}…' (${q.blank.answer.length}글자)` : "";
+      status.innerHTML=`<span style="color:#f87171;font-weight:800">"${escapeHtml(answer)}" — 아니에요 😅 다시 말해보세요${hint}</span>`;
+      status.style.color="";
+    }
+    // 마이크 버튼 다시 활성화
+    const mic=$("#wpMic"); if(mic){ mic.disabled=false; mic.style.opacity="1"; mic.classList.remove("live"); }
+    return;   // 화면 전환 없음
+  }
   const isRetry = !!q._retryNow;
   wpStats.total++; if(correct) wpStats.correct++;
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
     srsPass(q.word.word, q.word.ko, ctxTag);
-    awardXP("vocab", elapsed<4?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
-    if(q.idxInWord===0 && !isRetry){ bumpCount("vocab"); questBump("vocab"); }
+    const fast=elapsed<4 && !q._wrongCount;
+    awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
+    if(q.idxInWord===0 && !isRetry && !q._wrongCount){ bumpCount("vocab"); questBump("vocab"); }
     q._retryNow=false;
   } else {
+    // 포기(정답 보기)
     srsFail(q.word.word, q.word.ko, ctxTag);
-    if(!isRetry) wpRescheduleFail(q);   // 첫 실패만 큐 재삽입 (재시도 실패는 중복 방지)
+    if(!isRetry) wpRescheduleFail(q);
   }
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
-  wpResult(q, answer, correct, elapsed);
+  wpResult(q, answer, correct, elapsed, gaveUp);
 }
 function wpRescheduleFail(q){
   // 실패한 빈칸을 3~4문제 후, 10~12문제 후 다시 (간격 반복), 같은 단어 연속 방지
@@ -3605,20 +3623,20 @@ function wpRescheduleFail(q){
     wpQueue.splice(Math.min(wpQueue.length,p),0,mk()); };
   ins(4); ins(11);
 }
-function wpResult(q, answer, correct, elapsed){
+function wpResult(q, answer, correct, elapsed, gaveUp){
   const a=q.blank.answer; const full=q.blank.en.replace("[ ___ ]", a);
   const si=srsGet(q.word.word); const stage=si?si.stage:"new";
   const card=document.createElement("div");
   card.innerHTML=`
     <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
     <div class="mbcard" style="padding:28px 22px;text-align:center">
-      ${answer?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}"${correct?"":' <span style="color:#f87171">✗</span>'}</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">(건너뜀)</div>`}
+      ${(answer&&correct)?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${gaveUp?"정답을 확인하세요":""}</div>`}
       <div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:6px">정답</div>
       <div style="font-family:var(--serif);font-size:38px;color:var(--jade);font-weight:700;line-height:1.2">${escapeHtml(a)}</div>
       <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${escapeHtml(full)}</div>
       <div style="font-size:16px;color:var(--muted);margin-top:10px">${escapeHtml(q.blank.ko)}</div>
       <button class="ans-replay" id="wpSay" style="margin-top:14px;color:var(--jade);font-size:15px;font-weight:700">🔊 듣기</button>
-      ${!correct?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
+      ${gaveUp?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
     <!-- 🎧 발음 3속도 -->
     <div class="mbcard" style="padding:14px 18px;margin-top:10px">
@@ -3629,24 +3647,18 @@ function wpResult(q, answer, correct, elapsed){
         <button class="wp-spd" data-r="1.3">🏃 빠르게</button>
       </div>
     </div>
-    <!-- 🧠 기억 상태 -->
     ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
       return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
         <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1fd3a0,#9b98ec)"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)">${SRS_STAGES.map((s,i)=>`<span style="color:${i<=idx?'var(--jade)':'var(--muted)'};font-weight:${i===idx?'900':'400'}">${srsStageLabel(s)}</span>`).join("")}</div>
       </div>`; })()}
-    <!-- 🔥 유사/실사용 (AI 백그라운드) -->
     <div id="wpLearnCard"></div>
-    ${(!correct && answer)
-      ? `<button class="sh-next" id="wpRetryBtn" style="margin-top:14px;background:var(--jade);color:#06231b">🎤 다시 말해보기</button>
-         <button id="wpNextBtn" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">그냥 넘어가기 →</button>`
-      : `<button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`}`;
+    <button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(full),260);
   $("#wpSay").onclick=()=>speakEn(full);
   card.querySelectorAll(".wp-spd").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
-  const retry=$("#wpRetryBtn"); if(retry) retry.onclick=()=>{ TTS&&TTS.cancel(); q._retryNow=true; wpAsk(q); };   // 같은 문제 다시
   $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
   if(correct) wpLoadLearnCard(q.word.word, q.word.ko);
 }
