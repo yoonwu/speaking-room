@@ -1384,7 +1384,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.59.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.60.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3517,7 +3517,9 @@ function wpStart(words){
 }
 function wpNext(){
   if(wpPos>=wpQueue.length) return wpDone();
-  const q=wpQueue[wpPos];
+  wpAsk(wpQueue[wpPos]);
+}
+function wpAsk(q){
   const total=wpQueue.length;
   $("#vbBarFill").style.width=Math.round(wpPos/total*100)+"%";
   $("#vbProgTxt").textContent=`${wpPos+1} / ${total}`;
@@ -3525,7 +3527,8 @@ function wpNext(){
   const ctxMap={friend:"👫 친구",family:"👨‍👩‍👧 가족",school:"🏫 학교",restaurant:"🍽 식당",shopping:"🛍 쇼핑",travel:"✈️ 여행",hospital:"🏥 병원",customer:"📞 고객센터",daily:"☕ 일상"};
   const ctxLabel = q._ctx? (ctxMap[q._ctx]||"🌎 "+q._ctx) : "";
   const firstTime = !wpSeenWord[q.word.word];
-  const tabTxt = firstTime ? "🆕 새 표현"
+  const tabTxt = q._retryNow ? "🔁 다시 — 이번엔 맞혀봐요!"
+    : firstTime ? "🆕 새 표현"
     : ctxLabel ? ctxLabel+" — 또 나왔어요!"
     : "🔁 또 나왔어요 — 기억나요?";
   card.innerHTML=`
@@ -3578,16 +3581,17 @@ function wpSubmit(q, answer){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
   const correct = !!answer && wpMatch(ans, target);
+  const isRetry = !!q._retryNow;
   wpStats.total++; if(correct) wpStats.correct++;
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
     srsPass(q.word.word, q.word.ko, ctxTag);
-    awardXP("vocab", elapsed<4?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord);
-    if(q.idxInWord===0){ bumpCount("vocab"); questBump("vocab"); }
+    awardXP("vocab", elapsed<4?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
+    if(q.idxInWord===0 && !isRetry){ bumpCount("vocab"); questBump("vocab"); }
+    q._retryNow=false;
   } else {
     srsFail(q.word.word, q.word.ko, ctxTag);
-    // 실패 단어는 큐 뒤쪽(3문제 후, 10문제 후)에 재삽입
-    wpRescheduleFail(q);
+    if(!isRetry) wpRescheduleFail(q);   // 첫 실패만 큐 재삽입 (재시도 실패는 중복 방지)
   }
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
   wpResult(q, answer, correct, elapsed);
@@ -3634,11 +3638,15 @@ function wpResult(q, answer, correct, elapsed){
       </div>`; })()}
     <!-- 🔥 유사/실사용 (AI 백그라운드) -->
     <div id="wpLearnCard"></div>
-    <button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
+    ${(!correct && answer)
+      ? `<button class="sh-next" id="wpRetryBtn" style="margin-top:14px;background:var(--jade);color:#06231b">🎤 다시 말해보기</button>
+         <button id="wpNextBtn" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">그냥 넘어가기 →</button>`
+      : `<button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`}`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(full),260);
   $("#wpSay").onclick=()=>speakEn(full);
   card.querySelectorAll(".wp-spd").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
+  const retry=$("#wpRetryBtn"); if(retry) retry.onclick=()=>{ TTS&&TTS.cancel(); q._retryNow=true; wpAsk(q); };   // 같은 문제 다시
   $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
   if(correct) wpLoadLearnCard(q.word.word, q.word.ko);
 }
