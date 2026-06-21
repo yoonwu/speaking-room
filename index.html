@@ -295,6 +295,9 @@ input,textarea{font-family:inherit}
 }
 .lcard .ltitle{font-family:var(--serif); font-size:22px; font-weight:500; letter-spacing:-.01em; margin-bottom:4px}
 .lcard .lmeta{font-size:12px; color:var(--muted); margin-bottom:22px}
+/* 듣기 시작 화면 — 스크롤 영역 꽉 채우고 세로 중앙 */
+.lcard-full{min-height:calc(100svh - 56px - 56px); display:flex; flex-direction:column; justify-content:center}
+.lcard-full .lmeta{margin-bottom:18px}
 .bigplay{
   width:100%; padding:26px; border-radius:18px; background:var(--ink); color:#fff;
   display:flex; align-items:center; justify-content:center; gap:13px; font-size:20px; font-weight:800; transition:.14s; min-height:72px;
@@ -1356,7 +1359,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.50.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.51.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2294,7 +2297,7 @@ async function lsGenerate(){
 }
 // 1) 듣기 (자막 없이)
 function renderListenPlay(){
-  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+  $("#listenScroll").innerHTML=`<div class="lcard lcard-full" style="text-align:center">
     <div class="lmeta">🎧 ${state.topic.id==="custom"?"직접 입력":state.topic.t} · ${levelName()} · ${lsCount}번째 문장</div>
     <div style="font-size:15px;color:var(--muted);margin:8px 0 22px;line-height:1.6">잘 듣고, <b style="color:var(--text)">들린 대로</b> 받아써 보세요.<br>자막은 없어요 — 귀로만!</div>
     <button class="bigplay" id="lsPlay">
@@ -2306,9 +2309,8 @@ function renderListenPlay(){
     </div>
     <button class="sh-next" id="lsToDict">🎤 정답 말하기 →</button>
     <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
-  </div>${progressFooter()}`;
+  </div>`;
   $("#listenScroll").scrollTop=0;
-  wireProgressFooter($("#listenScroll"));
   setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
   $("#lsPlay").onclick=()=>lsSpeak(false);
   $("#lsSlow").onclick=()=>lsSpeak(true);
