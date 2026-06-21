@@ -100,6 +100,19 @@
 .tut-skip{width:100%;margin-top:9px;padding:10px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer}
 .tut-kid .tut-ico{font-size:66px}
 .tut-kid .tut-title{font-size:25px}
+/* 🗣 스피킹 결과 — 결과/이유/내답/XP 구조 */
+.ro-badge{display:inline-block;font-size:15px;font-weight:900;border-radius:99px;padding:8px 16px;margin-bottom:6px}
+.ro-badge.pass{color:#06231b;background:var(--jade)}
+.ro-badge.near{color:#fff;background:linear-gradient(135deg,#7cc4ff,#5b8def)}
+.ro-badge.skip{color:var(--text);background:var(--mist);border:1px solid var(--line)}
+.ro-line{display:flex;flex-direction:column;gap:3px;margin:12px 0 0}
+.ro-k{font-size:12.5px;font-weight:700;color:var(--muted)}
+.ro-v{font-size:17px;color:var(--text);font-family:var(--serif)}
+.ro-reason{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-top:10px;font-size:14.5px;color:var(--text);line-height:1.55}
+.ro-reason b{color:var(--jade)}
+.ro-native{background:var(--card2);border:1px solid rgba(31,211,160,.25);border-radius:14px;padding:14px;margin-top:12px;text-align:center}
+.ro-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13.5px;color:var(--muted)}
+.ro-xp{font-weight:900;color:var(--jade);font-size:15px}
 /* 🧠 학습 컨텍스트 패널 */
 .learn-panel{display:flex;flex-direction:column;gap:11px;max-width:520px;margin:16px auto 0;width:100%}
 .lp-loading{text-align:center;color:var(--muted);font-size:15px;padding:16px}
@@ -1359,7 +1372,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.51.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.52.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2636,18 +2649,23 @@ function renderOutput(){
   const sitKo = loRound===1 ? (loData.sit1_ko||"") : (loData.sit2_ko||"");
   $("#listenScroll").innerHTML=`<div class="lcard">
     <div class="lmeta" style="text-align:center">🗣 ${loRound===2?"다른 상황 — 또 꺼내보기":"이 상황, 영어로 말해보기"}</div>
-    <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0">
+    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:700;color:var(--jade);background:rgba(31,211,160,.12);border:1px solid rgba(31,211,160,.3);border-radius:99px;padding:4px 11px">🇬🇧 영어로</span>
+      <span style="font-size:12px;font-weight:700;color:var(--muted);background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:4px 11px">✓ 문법 틀려도 OK</span>
+      <span style="font-size:12px;font-weight:700;color:var(--muted);background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:4px 11px">🎯 뜻만 통하면 통과</span>
+    </div>
+    <div style="background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:18px;margin:0 0 12px">
       <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">📍 상황</div>
       <div style="font-size:19px;font-weight:600;color:var(--text);line-height:1.5">${escapeHtml(sitKo)}</div>
     </div>
-    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:8px">힌트도 정답도 없어요. 떠오르는 대로 <b style="color:var(--text)">직접</b> 말해보세요.</div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:8px">위 상황을 <b style="color:var(--text)">영어로</b> 말해보세요. 정답은 정해져 있지 않아요.</div>
     <div class="lctrls" style="justify-content:center">
       <button id="loMic" class="bigplay" style="width:auto;padding:14px 22px">🎤 영어로 말하기</button>
       <button id="loKbd">⌨️ 입력</button>
     </div>
     <input id="loInput" type="text" autocomplete="off" placeholder="영어로 입력 후 Enter" class="mbkbd" style="display:none;margin-top:10px">
     <div id="loStat" style="text-align:center;font-size:14px;color:var(--muted);margin-top:10px;min-height:20px"></div>
-    <button class="rv-stop" id="loSkip" style="margin-top:6px">안 떠올라요</button>
+    <button class="rv-stop" id="loSkip" style="margin-top:6px">잘 안 떠올라요 — 정답 보기</button>
     <button id="loEasy" style="width:100%;margin-top:8px;padding:10px;border-radius:13px;background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer">너무 쉬워요 — 새 표현으로 건너뛰기 →</button>
   </div>${progressFooter()}`;
   $("#listenScroll").scrollTop=0;
@@ -2672,12 +2690,13 @@ async function loSubmit(answer){
 "You are an OUTPUT coach (not a teacher). Situation (Korean): \""+sitKo+"\". Target expression: \""+(loData.target||"")+"\".",
 "The learner SAID: \""+answer+"\". Judge ONLY whether they COMMUNICATED the intent. Accept imperfect grammar if meaning is clear — do NOT overcorrect.",
 "Then give the natural native version (use the target naturally). Keep praise warm and short in Korean.",
+"ALSO give a one-line Korean reason explaining WHY it passed or didn't (what they did well, or what meaning was missing). Be concrete and encouraging.",
 levelCap(),
 "The \"native\" version MUST obey the length lock — do NOT expand beyond the learner level. For low levels keep it the bare minimal sentence (e.g. \"I like soccer.\"), never add 'with...', 'and...', 'because...'.",
-'Return ONLY JSON: {"communicated":true or false,"native":"natural native English","praise":"짧은 한국어 칭찬","tip":"꼭 필요할 때만 아주 짧은 한국어 팁, 없으면 빈 문자열"}'
+'Return ONLY JSON: {"communicated":true or false,"native":"natural native English","reason":"통과/실패 이유 한 줄 한국어","praise":"짧은 한국어 칭찬","tip":"꼭 필요할 때만 아주 짧은 한국어 팁, 없으면 빈 문자열"}'
     ].join("\n");
       const d=await callClaude(sys,[{role:"user",content:answer}], FAST_MODEL);
-      const o=parseJSON(extractText(d)); fb={communicated:!!o.communicated, native:o.native||loData.target||"", praise:o.praise||"", tip:o.tip||""};
+      const o=parseJSON(extractText(d)); fb={communicated:!!o.communicated, native:o.native||loData.target||"", reason:o.reason||"", praise:o.praise||"", tip:o.tip||""};
     }catch(e){}
   }
   // 인출 기록 + 저장(STEP 7 미래 인출)
@@ -2698,17 +2717,29 @@ levelCap(),
 function renderOutputResult(answer, elapsed, fb){
   const last = (loRound===2);
   const ok = fb.communicated && answer;
-  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
-    <div class="lmeta">${ok?"✅ 통했어요!":(answer?"💬 좋아요, 거의 됐어요":"💡 이렇게 말하면 돼요")}</div>
-    ${fb._active?`<div style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:900;font-size:13px;border-radius:12px;padding:8px;margin:8px 0">💎 능동 어휘 달성! 3가지 상황에서 꺼냈어요</div>`:""}
-    ${answer?`<div style="font-size:13px;color:var(--muted);margin:8px 0 2px">내 말: "${escapeHtml(answer)}"</div>`:""}
-    ${fb.praise?`<div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:8px">${escapeHtml(fb.praise)}</div>`:""}
-    <div style="font-size:12px;color:var(--muted);font-weight:700;margin-top:6px">원어민은 보통 이렇게 말해요</div>
-    <div class="sh-line" style="margin:4px 0">${escapeHtml(fb.native)}</div>
-    <button class="ans-replay" id="loSay" style="color:var(--jade);font-size:13px;font-weight:700;margin-bottom:6px">🔊 듣기</button>
-    ${fb.tip?`<div style="font-size:13px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line);padding-top:8px;margin-top:6px">💡 ${escapeHtml(fb.tip)}</div>`:""}
-    <div style="font-size:13px;color:var(--text);margin-top:8px">⏱ 인출 ${elapsed.toFixed(1)}초 ${elapsed<3?"· 거의 입에 붙었어요!":elapsed<6?"· 좋아요":""}</div>
-    <div class="lctrls" style="justify-content:center;margin-top:10px">
+  const xpGain = !answer?3 : (fb.communicated?(elapsed<5?15:10):5);
+  const resultBadge = !answer
+    ? `<div class="ro-badge skip">💡 정답 보기</div>`
+    : ok ? `<div class="ro-badge pass">✅ 통했어요 · 뜻 전달 성공</div>`
+         : `<div class="ro-badge near">💬 거의 됐어요 · 조금만 더</div>`;
+  const reason = fb.reason ? `<div class="ro-reason"><b>왜?</b> ${escapeHtml(fb.reason)}</div>`
+    : (!answer ? `<div class="ro-reason"><b>왜?</b> 아직 안 떠올랐어요. 아래 표현을 듣고 따라 해보세요.</div>` : "");
+  $("#listenScroll").innerHTML=`<div class="lcard">
+    <div style="text-align:center">${resultBadge}</div>
+    ${fb._active?`<div style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;font-weight:900;font-size:13px;border-radius:12px;padding:8px;margin:10px 0;text-align:center">💎 능동 어휘 달성! 3가지 상황에서 꺼냈어요</div>`:""}
+    ${answer?`<div class="ro-line"><span class="ro-k">내가 한 말</span><span class="ro-v">"${escapeHtml(answer)}"</span></div>`:""}
+    ${reason}
+    <div class="ro-native">
+      <div class="ro-k" style="margin-bottom:5px">원어민은 보통 이렇게 말해요</div>
+      <div class="sh-line" style="margin:0">${escapeHtml(fb.native)}</div>
+      <button class="ans-replay" id="loSay" style="color:var(--jade);font-size:14px;font-weight:700;margin-top:8px">🔊 듣기</button>
+    </div>
+    ${fb.tip?`<div style="font-size:13.5px;color:var(--muted);line-height:1.6;margin-top:10px">💡 ${escapeHtml(fb.tip)}</div>`:""}
+    <div class="ro-foot">
+      <span>⏱ 인출 ${elapsed.toFixed(1)}초${elapsed<3&&answer?" · 거의 입에 붙었어요!":""}</span>
+      <span class="ro-xp">+${xpGain} XP</span>
+    </div>
+    <div class="lctrls" style="justify-content:center;margin-top:12px">
       <button id="loDrill">🎤 발음 진단</button>
       <button class="sh-next" id="loNext" style="margin:0">${last?"다음 문장 →":"다른 상황에서 또 말하기 →"}</button>
     </div>
