@@ -100,6 +100,25 @@
 .tut-skip{width:100%;margin-top:9px;padding:10px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer}
 .tut-kid .tut-ico{font-size:66px}
 .tut-kid .tut-title{font-size:25px}
+/* 📊 진척 푸터 — 빈 하단 채우기 */
+.prog-footer{display:flex;flex-direction:column;gap:9px;margin:18px auto 0;max-width:520px;width:100%}
+.pf-card{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:13px 15px}
+.pf-chunk{cursor:pointer;border-color:rgba(248,113,113,.32)}
+.pf-chunk:active{transform:scale(.99)}
+.pf-row{display:flex;align-items:center;gap:11px}
+.pf-emo{font-size:24px;flex:none}
+.pf-tx{flex:1;min-width:0}
+.pf-t{font-size:13.5px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-bar{height:7px;border-radius:99px;background:var(--mist);overflow:hidden;margin-top:6px}
+.pf-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec);transition:width .5s}
+.pf-pct{font-size:13px;font-weight:900;color:var(--jade);flex:none}
+.pf-sub{font-size:11.5px;color:var(--muted);margin-top:7px}
+.pf-h{font-size:12.5px;font-weight:800;color:var(--text);margin-bottom:9px}
+.pf-quest{display:flex;flex-direction:column;gap:7px}
+.pf-qi{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted)}
+.pf-qi b{font-size:13px;font-weight:900}
+/* 진척 푸터가 들어가면 듣기 카드 버튼 약간 축소 (정보 밀도↑) */
+.lcard .bigplay{padding:15px}
 .tut-kid .tut-step{font-size:16px;padding:13px 15px}
 /* 프로필 튜토리얼 목록 */
 .tut-list{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
@@ -1319,7 +1338,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.47.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.48.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2269,8 +2288,9 @@ function renderListenPlay(){
     </div>
     <button class="sh-next" id="lsToDict">🎤 정답 말하기 →</button>
     <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
-  </div>`;
+  </div>${progressFooter()}`;
   $("#listenScroll").scrollTop=0;
+  wireProgressFooter($("#listenScroll"));
   setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
   $("#lsPlay").onclick=()=>lsSpeak(false);
   $("#lsSlow").onclick=()=>lsSpeak(true);
@@ -2565,8 +2585,9 @@ function renderOutput(){
     <div id="loStat" style="text-align:center;font-size:14px;color:var(--muted);margin-top:10px;min-height:20px"></div>
     <button class="rv-stop" id="loSkip" style="margin-top:6px">안 떠올라요</button>
     <button id="loEasy" style="width:100%;margin-top:8px;padding:10px;border-radius:13px;background:transparent;border:none;color:var(--muted);font-size:12.5px;cursor:pointer">너무 쉬워요 — 새 표현으로 건너뛰기 →</button>
-  </div>`;
+  </div>${progressFooter()}`;
   $("#listenScroll").scrollTop=0;
+  wireProgressFooter($("#listenScroll"));
   loT0=Date.now();
   const inp=$("#loInput"), stat=$("#loStat");
   $("#loMic").onclick=function(){ const b=this; if(b.classList.contains("live"))return; b.classList.add("live"); stat.textContent="🎙️ 듣고 있어요…";
@@ -5028,6 +5049,46 @@ function applyAgeUI(){
   const dc=$("#dailyCard"); if(dc) dc.style.display=kid?"none":"";
 }
 function setAge(a){ state.age=a; hSet("speakingroom:age",a); applyAgeUI(); }
+// 📊 공용 진척 푸터 — 빈 하단을 의미있는 진척 정보로 채움
+// 우선순위: 보물상자 진행 → 오늘 퀘스트 → 현재 청크
+function progressFooter(){
+  const p=getProf(); const li=levelInfo(p.xp);
+  const nr=nextReward(li.level);
+  const remain=Math.max(0, li.need-li.inLevel);
+  const pct=Math.round(li.inLevel/li.need*100);
+  // 1) 다음 보상
+  const reward=`<div class="pf-card">
+    <div class="pf-row"><span class="pf-emo">${nr?nr.emo:"🏆"}</span>
+      <div class="pf-tx"><div class="pf-t">${nr?("다음 보상 · "+escapeHtml(nr.t)):"전부 달성!"}</div>
+      <div class="pf-bar"><i style="width:${pct}%"></i></div></div>
+      <span class="pf-pct">${nr?(pct+"%"):"MAX"}</span></div>
+    ${nr?`<div class="pf-sub">${remain} XP 남음 · Lv.${nr.lv}까지 ${nr.lv-li.level}레벨</div>`:""}
+  </div>`;
+  // 2) 오늘 퀘스트
+  const {goals,meta}=questDefs(); const q=questGet();
+  const quest=`<div class="pf-card">
+    <div class="pf-h">🎯 오늘의 모험</div>
+    <div class="pf-quest">${Object.keys(goals).map(k=>{const cur=Math.min(goals[k],q.c[k]||0),fin=cur>=goals[k];
+      return `<div class="pf-qi"><span>${meta[k].emo} ${meta[k].t}</span><b style="color:${fin?'var(--jade)':'var(--text)'}">${fin?'✓':cur+'/'+goals[k]}</b></div>`;}).join("")}</div>
+  </div>`;
+  // 3) 현재 청크 (약점 1순위)
+  const weak=weakList(1);
+  let chunk="";
+  if(weak.length){ const w=weak[0]; const need=7, got=Math.max(0,need-w.miss);
+    chunk=`<div class="pf-card pf-chunk" data-pid="${escapeAttr(w.pid)}">
+      <div class="pf-row"><span class="pf-emo">🔥</span>
+        <div class="pf-tx"><div class="pf-t">집중 청크 · ${escapeHtml(w.chunk||w.ko)}</div>
+        <div class="pf-bar"><i style="width:${Math.round(got/need*100)}%;background:linear-gradient(90deg,#f8b13c,#f87171)"></i></div></div>
+        <span class="pf-pct">${got}/${need}</span></div>
+      <div class="pf-sub">탭하면 이 청크만 집중 훈련 →</div>
+    </div>`;
+  }
+  return `<div class="prog-footer">${reward}${quest}${chunk}</div>`;
+}
+// 푸터 안의 청크 카드 클릭 연결
+function wireProgressFooter(scope){
+  (scope||document).querySelectorAll(".pf-chunk").forEach(c=>{ c.onclick=()=>{ const pid=c.dataset.pid; if(pid) startChunkTraining(pid); }; });
+}
 function renderHero(){
   const hz=$("#heroZone"); if(!hz) return;
   const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
