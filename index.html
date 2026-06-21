@@ -1310,7 +1310,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.38.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.39.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1603,6 +1603,15 @@ function levelHint(){
   return map[v]||map[1];
 }
 function levelLine(){ return levelHint(); }
+// 🎯 상황(기능) 난이도도 레벨에 묶기 — Lv1~2는 단순 진술만, 부탁/질문 등 복잡 기능 금지
+function levelSituation(){
+  const v=state.lvl||1;
+  if(v<=1) return "SITUATION DIFFICULTY LOCK (kindergarten): Only the SIMPLEST self-statements. The required English answer must be like \"I like X.\" / \"I want X.\" / \"It is X.\" / \"I am X.\" / \"This is X.\" Give situations such as: 좋아하는 것 말하기, 원하는 것 말하기, 기분 말하기, 색깔/사물 이름 말하기. FORBIDDEN situations: any request/asking a favor (부탁), questions to others, polite forms (Could you/Can you), past or future events, multi-step situations. Keep the needed answer to 2-3 words.";
+  if(v<=2) return "SITUATION DIFFICULTY LOCK (1st grade): Simple statements and very basic wants/feelings. Answer like \"I want water.\" / \"I am hungry.\" / \"I like dogs.\" Allowed: 좋아하는 것·원하는 것·기분·간단한 사실 말하기. Avoid polite requests (Could you...), questions to others, and past/future. Keep answer 3-4 words.";
+  if(v<=3) return "SITUATION DIFFICULTY (2nd grade): Simple everyday statements and ONE basic question (What is...? / Do you like...?). Simple requests with 'Can I...' ok. Keep situations to one clear idea.";
+  if(v<=4) return "SITUATION DIFFICULTY (3rd grade): Everyday situations, basic requests and questions allowed, one connector ok. Still keep it simple.";
+  return "";
+}
 // 🔒 확장 금지 — 한국 학년 기준(미국 원어민 확장 금지). Lv1~2는 짧은 핵심 문장에서 끝.
 function levelCap(){
   const v=state.lvl||1;
@@ -1634,8 +1643,9 @@ function rolePrompt(){
 "First turn: just give ONE Korean situation, nothing else.",
 levelHint(),
 levelCap(),
+levelSituation(),
 kidRules(),
-"Situations to draw from: 친구에게 같이 놀자고 말하기 / 배고프다고 말하기 / 공을 빌려달라고 말하기 / 로블록스를 좋아한다고 말하기 / 화장실 가고 싶다고 말하기 / 물 마시고 싶다고 말하기, and similar simple ones."
+"Situations to draw from at low levels: 좋아하는 것 말하기 (I like ___) / 원하는 것 말하기 (I want ___) / 기분 말하기 (I am happy/sad) / 사물 이름 말하기 (This is a ___). At higher levels you may add 부탁·질문 등."
       ].join("\n");
     }
     return [
@@ -1647,6 +1657,7 @@ kidRules(),
 "4) Immediately give the NEXT situation in Korean — sometimes REUSE the same target expression in a different setting (restaurant→hotel→phone) so they retrieve it again.",
 levelHint(),
 levelCap(),
+levelSituation(),
 "Format each of your turns as: a Korean situation line. After they answer, a short feedback line (👍 + native English) then the next Korean situation. Never reveal English before they try.",
 "TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again."
     ].join("\n");
@@ -2420,6 +2431,7 @@ async function lsOutput(){
 "Create TWO different realistic situations (in Korean) where the learner would naturally NEED to say that target. Different settings (e.g. cafe vs hotel vs phone). Describe each situation briefly in Korean — describe the NEED, do NOT reveal the English.",
 levelHint(),
 levelCap(),
+levelSituation(),
 "The TARGET expression itself MUST obey the length lock above (for low levels it must be the bare minimal sentence, e.g. \"I like soccer.\").",
 'Return ONLY JSON: {"target":"natural English target expression","sit1_ko":"상황 설명 한국어","sit2_ko":"다른 상황 설명 한국어"}'
   ].join("\n");
