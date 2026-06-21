@@ -1319,7 +1319,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.45.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.46.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2267,7 +2267,7 @@ function renderListenPlay(){
     <div class="lctrls" style="justify-content:center;margin-top:14px">
       <button id="lsSlow">🐢 천천히</button>
     </div>
-    <button class="sh-next" id="lsToDict">✏️ 받아쓰기 하기 →</button>
+    <button class="sh-next" id="lsToDict">🎤 정답 말하기 →</button>
     <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
@@ -2291,16 +2291,19 @@ function renderListenDictation(){
   lsTargets=(lsItem.en||"").split(/\s+/).filter(Boolean);
   lsFilled=lsTargets.map(()=>false);
   $("#listenScroll").innerHTML=`<div class="lcard">
-    <div class="lmeta" style="text-align:center">✏️ 받아쓰기 · ${lsCount}번째</div>
-    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 14px">들린 단어만 말해도 돼요. 들린 건 <b style="color:var(--jade)">초록색으로 채워지고</b>, 안 들린 <b>빈칸만</b> 다시 들어요!</div>
+    <div class="lmeta" style="text-align:center">🎤 들은 대로 말하기 · ${lsCount}번째</div>
+    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 14px">방금 들은 문장을 <b style="color:var(--jade)">소리 내어 말해보세요.</b> 들린 단어가 초록색으로 채워져요. 안 들린 <b>빈칸만</b> 다시 들어도 돼요!</div>
     <button class="bigplay" id="lsPlay2" style="margin-bottom:14px">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       <span>🔊 다시 듣기</span>
     </button>
     <div id="lsSlots" class="dict-slots"></div>
     <div id="lsProg" style="text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 2px"></div>
-    <button class="phrec" id="lsDictMic" style="width:100%;margin-top:8px">🎤 들리는 만큼 말하기</button>
-    <button id="lsDictType" style="width:100%;margin-top:8px;padding:12px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 직접 입력</button>
+    <button class="bigplay" id="lsDictMic" style="width:100%;margin-top:10px;background:var(--jade);color:#06231b">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
+      <span>🎤 들은 대로 말하기</span>
+    </button>
+    <button id="lsDictType" style="width:100%;margin-top:10px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
     <input id="lsTypeIn" style="display:none;width:100%;margin-top:8px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--mist);color:var(--text);font-size:16px" placeholder="들린 단어 입력 후 Enter">
     <button class="sh-next" id="lsCheck" style="margin-top:12px">채점하기 →</button>
     <button class="rv-stop" id="lsBackToPlay">← 다시 듣기로</button>
@@ -2310,9 +2313,9 @@ function renderListenDictation(){
   $("#lsPlay2").onclick=()=>lsSpeak(false);
   $("#lsBackToPlay").onclick=renderListenPlay;
   $("#lsCheck").onclick=()=>{ lsAnswer=lsTargets.filter((w,i)=>lsFilled[i]).join(" "); lsCheckAnswer(); };
-  const mic=$("#lsDictMic");
-  mic.onclick=function(){ if(qzRecording){ return; } mic.classList.add("rec"); mic.textContent="🎙️ 듣는 중…";
-    micFillCb((t)=>{ mic.classList.remove("rec"); mic.textContent="🎤 들리는 만큼 말하기";
+  const mic=$("#lsDictMic"); const micLbl=mic.querySelector("span");
+  mic.onclick=function(){ if(qzRecording){ return; } mic.classList.add("rec"); if(micLbl) micLbl.textContent="🎙️ 듣는 중…";
+    micFillCb((t)=>{ mic.classList.remove("rec"); if(micLbl) micLbl.textContent="🎤 들은 대로 말하기";
       const added=lsFillFromHeard(t);
       const done=lsFilled.every(Boolean);
       const pr=$("#lsProg");
