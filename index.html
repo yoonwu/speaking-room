@@ -1381,7 +1381,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.53.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.54.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1624,7 +1624,7 @@ function lvlBucket(){ const v=state.lvl||1; return v<=3?"초급":(v>=7?"고급":
 function syncLevel(){ state.level=lvlBucket(); }
 const LVL_NAMES={1:"유치원",2:"초1",3:"초2",4:"초3",5:"초4",6:"초5",7:"초6",8:"중1",9:"중2~3",10:"원어민"};
 function levelName(){ return "Lv."+(state.lvl||1)+" · "+(LVL_NAMES[state.lvl||1]||""); }
-function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.58, base-0.16) : base; } // 1→0.70 … 10→1.04
+function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 연령 모드 헬퍼
 function kidMode(){ return state.age==="kid"; }
 const KID_TOPICS=["school","friends","Roblox and video games","sports","animals","family","food","hobbies","the classroom","the playground","asking for help"];
@@ -2329,7 +2329,7 @@ function renderListenPlay(){
       <div class="lh-qno">${lsCount}번째 문장</div>
     </div>
     <div style="font-size:16px;color:var(--muted);margin:0 0 26px;line-height:1.6;text-align:center">잘 듣고 <b style="color:var(--text)">들린 대로</b> 말해보세요.<br>자막은 없어요 — 귀로만! 👂</div>
-    <button class="bigplay" id="lsPlay" style="padding:30px">
+    <button class="bigplay" id="lsPlay" style="padding:18px">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       <span id="lsPlayLabel">듣기 ▶</span>
     </button>
