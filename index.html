@@ -178,7 +178,7 @@ button{font-family:inherit; cursor:pointer; border:none; background:none; color:
 input,textarea{font-family:inherit}
 
 /* ---------- App shell ---------- */
-#app{display:flex; flex-direction:column; height:100dvh; max-width:1100px; margin:0 auto; position:relative}
+#app{display:flex; flex-direction:column; height:100vh; height:100dvh; max-width:1100px; margin:0 auto; position:relative}
 
 /* ---------- Top bar ---------- */
 .topbar{
@@ -544,7 +544,7 @@ input,textarea{font-family:inherit}
 .fb .chunks-added{font-size:12px; color:#8a7320; margin-top:9px; padding-top:9px; border-top:1px dashed #e8d3a8}
 
 /* ---------- Composer ---------- */
-.composer{border-top:1px solid var(--line); background:var(--surface); padding:12px 16px 14px}
+.composer{border-top:1px solid var(--line); background:var(--surface); padding:12px 16px max(18px, calc(14px + env(safe-area-inset-bottom)))}
 .composer-inner{max-width:640px; margin:0 auto}
 .quickrow{display:flex; gap:8px; margin-bottom:11px}
 .quick{
@@ -640,9 +640,9 @@ input,textarea{font-family:inherit}
   .lctrls button,.quick{min-height:42px}
 
   /* safe-area bottom for fixed bars */
-  .composer{padding:11px 14px calc(13px + env(safe-area-inset-bottom))}
-  .lnext{padding-bottom:env(safe-area-inset-bottom)}
-  .review{padding-bottom:env(safe-area-inset-bottom)}
+  .composer{padding:11px 14px max(18px, calc(13px + env(safe-area-inset-bottom)))}
+  .lnext{padding-bottom:max(12px, env(safe-area-inset-bottom))}
+  .review{padding-bottom:max(12px, env(safe-area-inset-bottom))}
 
   /* practice / card sizing */
   .sh-line{font-size:21px}
@@ -1310,7 +1310,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.36.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.37.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
