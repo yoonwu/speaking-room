@@ -83,6 +83,36 @@
 .combo-shake{animation:comboShake .42s ease}
 .combo-pop{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:30;font-size:40px;font-weight:900;color:#ffb454;text-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none;animation:comboPop .8s cubic-bezier(.18,1.5,.4,1) forwards}
 @keyframes comboPop{0%{transform:translate(-50%,10px) scale(.5);opacity:0}40%{transform:translate(-50%,-6px) scale(1.15);opacity:1}100%{transform:translate(-50%,-40px) scale(1);opacity:0}}
+/* ===== 📖 튜토리얼 오버레이 ===== */
+.tut-ov{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(6,8,7,.82);backdrop-filter:blur(4px);opacity:0;transition:opacity .18s}
+.tut-ov.show{opacity:1}
+.tut-card{width:100%;max-width:380px;background:linear-gradient(165deg,#1c2320,#14110f);border:1px solid rgba(31,211,160,.3);border-radius:24px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06);transform:scale(.94);transition:transform .2s cubic-bezier(.18,1.4,.4,1)}
+.tut-ov.show .tut-card{transform:scale(1)}
+.tut-ico{font-size:54px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 8px 20px rgba(31,211,160,.5))}
+.tut-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:5px}
+.tut-goal{font-size:15px;color:var(--jade);font-weight:700;margin-bottom:16px}
+.tut-steps{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;text-align:left}
+.tut-step{display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 13px;font-size:14.5px;color:var(--text);font-weight:600}
+.tut-num{flex:none;width:25px;height:25px;border-radius:50%;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-weight:900;font-size:13px;display:grid;place-items:center}
+.tut-succ{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13.5px;color:var(--text);background:var(--amber-soft);border:1px solid #3a3320;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-weight:600}
+.tut-msg{font-family:var(--serif);font-size:16px;font-style:italic;color:var(--ink-soft);margin-bottom:18px}
+.tut-go{width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-size:16px;font-weight:900;border:none;cursor:pointer;box-shadow:0 10px 26px -10px rgba(31,211,160,.6)}
+.tut-skip{width:100%;margin-top:9px;padding:10px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer}
+.tut-kid .tut-ico{font-size:66px}
+.tut-kid .tut-title{font-size:25px}
+.tut-kid .tut-step{font-size:16px;padding:13px 15px}
+/* 프로필 튜토리얼 목록 */
+.tut-list{display:flex;flex-direction:column;gap:7px;margin-bottom:6px}
+.tut-li{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;cursor:pointer}
+.tut-li:active{transform:scale(.99)}
+.tli-ico{font-size:22px;flex:none}
+.tli-t{flex:1;font-size:14.5px;font-weight:700;color:var(--text)}
+.tli-ar{color:var(--muted);font-size:18px}
+/* 카드 ? 도움 버튼 */
+.help-q{position:absolute;top:9px;right:9px;width:23px;height:23px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center;cursor:pointer;z-index:4;line-height:1}
+.help-q:active{transform:scale(.9)}
+.eng{position:relative}
+.sidequest{position:relative}
 /* ===== ⚡ 라이트닝 아레나 — 전투 ===== */
 #sprintScroll{background:radial-gradient(90% 60% at 50% 0%,rgba(150,80,255,.16),transparent 60%),radial-gradient(80% 50% at 50% 100%,rgba(255,150,60,.10),transparent 60%)}
 .enemy-stage{position:relative;text-align:center;padding:8px 0 4px;margin-bottom:8px;min-height:130px}
@@ -91,6 +121,9 @@
 @keyframes enemyHit{0%{transform:translateX(0) scale(1)}22%{transform:translateX(-11px) scale(1.07) rotate(-5deg)}48%{transform:translateX(9px) rotate(4deg)}100%{transform:translateX(0) scale(1)}}
 .enemy.defeated{animation:enemyDie .6s ease forwards}
 @keyframes enemyDie{0%{transform:scale(1);opacity:1}40%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(.2) rotate(40deg);opacity:0}}
+.enemy.dodge{animation:enemyDodge .5s ease}
+@keyframes enemyDodge{0%{transform:translateX(0)}30%{transform:translateX(22px) rotate(6deg)}55%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+.dmg.miss{color:#f87171;left:50%;transform:translateX(-50%);text-shadow:0 3px 8px rgba(0,0,0,.7)}
 .hpbar{height:13px;border-radius:99px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.12);overflow:hidden;margin:8px auto 0;max-width:300px;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
 .hpbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#ff5b6e,#ff9a3d);transition:width .5s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px rgba(255,90,110,.6)}
 .hplabel{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--muted);margin-top:5px}
@@ -226,12 +259,13 @@ input,textarea{font-family:inherit}
 .lcard .ltitle{font-family:var(--serif); font-size:22px; font-weight:500; letter-spacing:-.01em; margin-bottom:4px}
 .lcard .lmeta{font-size:12px; color:var(--muted); margin-bottom:22px}
 .bigplay{
-  width:100%; padding:18px; border-radius:15px; background:var(--ink); color:#fff;
-  display:flex; align-items:center; justify-content:center; gap:11px; font-size:15.5px; font-weight:700; transition:.14s;
+  width:100%; padding:26px; border-radius:18px; background:var(--ink); color:#fff;
+  display:flex; align-items:center; justify-content:center; gap:13px; font-size:20px; font-weight:800; transition:.14s; min-height:72px;
 }
 .bigplay:hover{background:var(--ink-soft)}
 .bigplay.playing{background:var(--jade)}
-.bigplay svg{width:22px; height:22px}
+.bigplay.live{background:#ef4444;animation:phpulse .8s infinite}
+.bigplay svg{width:30px; height:30px}
 .lwave{display:inline-flex; gap:3px; align-items:center; height:22px}
 .lwave i{width:3px; background:#fff; border-radius:3px; height:8px; animation:wv .9s ease-in-out infinite}
 .lwave i:nth-child(2){animation-delay:.15s} .lwave i:nth-child(3){animation-delay:.3s} .lwave i:nth-child(4){animation-delay:.45s} .lwave i:nth-child(5){animation-delay:.6s}
@@ -247,7 +281,7 @@ input,textarea{font-family:inherit}
 .lctrls button[aria-pressed="true"]{border-color:var(--jade); background:#f0faf6; color:var(--jade-deep)}
 .ltext{
   margin-top:20px; padding:18px 18px; background:var(--paper); border-radius:13px; border:1px solid var(--line);
-  font-family:var(--serif); font-size:17px; line-height:1.7; color:#1c1e30; display:none;
+  font-family:var(--serif); font-size:17px; line-height:1.7; color:var(--text); display:none;
 }
 .ltext.show{display:block}
 .dline{display:flex; gap:10px; margin-bottom:11px; align-items:baseline}
@@ -269,7 +303,7 @@ input,textarea{font-family:inherit}
   display:flex; align-items:center; gap:10px; padding:10px 13px; background:var(--amber-soft);
   border:1px solid #f1e2c4; border-radius:11px; margin-bottom:7px;
 }
-.lkey .ki .ken{font-family:var(--serif); font-size:15px; color:#1c1e30; font-weight:500}
+.lkey .ki .ken{font-family:var(--serif); font-size:15px; color:var(--text); font-weight:500}
 .lkey .ki .kko{font-size:12.5px; color:var(--muted); margin-top:1px}
 .lkey .ki button{margin-left:auto; font-size:11px; font-weight:700; color:#b3771a; background:#fff; border:1px solid #f0e3c8; padding:5px 10px; border-radius:8px; white-space:nowrap}
 .lkey .ki button:hover{background:var(--amber-soft)}
@@ -327,7 +361,7 @@ input,textarea{font-family:inherit}
   border-radius:15px;
 }
 .rv-answer.show{display:block}
-.rv-answer .ans-en{font-family:var(--serif); font-size:24px; font-weight:500; color:#1c1e30; line-height:1.4}
+.rv-answer .ans-en{font-family:var(--serif); font-size:24px; font-weight:500; color:var(--jade); line-height:1.4}
 .rv-answer .ans-replay{margin-top:11px; font-size:12.5px; font-weight:600; color:var(--jade-deep); display:inline-flex; align-items:center; gap:6px}
 .rv-answer .ans-replay:hover{color:var(--jade)}
 .rv-reveal{
@@ -406,7 +440,7 @@ input,textarea{font-family:inherit}
 .expl-block .mn{font-size:14.5px; line-height:1.6; color:var(--text); margin-bottom:8px}
 .expl-block .wh{font-size:13px; line-height:1.6; color:var(--muted); margin-bottom:12px}
 .expl-block .ex{background:var(--paper); border-radius:10px; padding:10px 13px; margin-top:6px; display:flex; gap:9px; align-items:center}
-.expl-block .ex .exen{font-family:var(--serif); font-size:15px; color:#1c1e30; flex:1}
+.expl-block .ex .exen{font-family:var(--serif); font-size:15px; color:var(--text); flex:1}
 .expl-block .ex .exsp{font-size:12px; font-weight:700; color:var(--jade-deep); cursor:pointer}
 .expl-compare{background:var(--amber-soft); border:1px solid #f1e2c4; border-radius:13px; padding:14px 16px; font-size:13.5px; line-height:1.65; color:#8a6410; margin-bottom:18px}
 .expl-compare b{color:#6b4e0a}
@@ -426,7 +460,7 @@ input,textarea{font-family:inherit}
 .vlabel{font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin-bottom:12px}
 .vex{text-align:left}
 .vex .ex{display:flex; gap:9px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:11px 13px; margin-bottom:3px}
-.vex .exen{font-family:var(--serif); font-size:16px; color:#1c1e30; flex:1; line-height:1.4}
+.vex .exen{font-family:var(--serif); font-size:16px; color:var(--text); flex:1; line-height:1.4}
 .vex .exsp{font-size:14px; cursor:pointer; flex:none}
 .vex .exko{font-size:12.5px; color:var(--muted); text-align:left; padding:2px 4px 10px}
 .vcols{display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:12px}
@@ -466,7 +500,7 @@ input,textarea{font-family:inherit}
 }
 .coach .bubble{
   background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:5px;
-  font-family:var(--serif); color:#1c1e30;
+  font-family:var(--serif); color:var(--text);
 }
 .me .bubble{
   background:var(--ink); color:#f4f5fb; border-bottom-right-radius:5px; font-weight:450;
@@ -562,7 +596,7 @@ input,textarea{font-family:inherit}
 .notes h3 .ct{margin-left:auto; font-size:11px; color:#fff; background:var(--amber); padding:2px 8px; border-radius:999px; font-weight:700}
 .notes-list{flex:1; overflow-y:auto; padding:4px 14px 14px}
 .note-item{padding:11px 13px; border:1px solid var(--line); border-radius:11px; margin-bottom:8px; background:var(--paper)}
-.note-item .en{font-family:var(--serif); font-size:15px; color:#1c1e30; font-weight:500}
+.note-item .en{font-family:var(--serif); font-size:15px; color:var(--text); font-weight:500}
 .note-item .ko{font-size:12.5px; color:var(--muted); margin-top:3px}
 .notes-empty{padding:26px 18px; text-align:center; color:#a3a7b8; font-size:13px; line-height:1.6}
 .notes-foot{padding:12px 14px; border-top:1px solid var(--line)}
@@ -848,9 +882,11 @@ body{background:var(--paper); color:var(--text)}
 .phl.pop{transform:scale(1.18);background:#fde68a;border-color:#f59e0b}
 .phstat{font-size:16px;font-weight:800;color:#64748b;margin:16px 0}
 .phbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
-.phsound{background:#e0f2fe;border:2px solid #7dd3fc;color:#0369a1;font-weight:900;font-size:16px;border-radius:16px;padding:14px 18px;cursor:pointer}
-.phrec{background:linear-gradient(135deg,#34d399,#10b981);border:none;color:#fff;font-weight:900;font-size:17px;border-radius:16px;padding:14px 22px;cursor:pointer;box-shadow:0 4px 0 #059669}
-.phrec.rec{background:#ef4444;box-shadow:0 4px 0 #b91c1c;animation:phpulse .8s infinite}
+.phbtns .phsound{flex:1;min-width:120px}
+.phbtns .phrec{flex:2;min-width:160px}
+.phsound{background:#e0f2fe;border:2px solid #7dd3fc;color:#0369a1;font-weight:900;font-size:20px;border-radius:18px;padding:24px 20px;cursor:pointer;min-height:72px}
+.phrec{background:linear-gradient(135deg,#34d399,#10b981);border:none;color:#fff;font-weight:900;font-size:22px;border-radius:18px;padding:24px 30px;cursor:pointer;box-shadow:0 6px 0 #059669;min-height:72px;width:100%}
+.phrec.rec{background:#ef4444;box-shadow:0 6px 0 #b91c1c;animation:phpulse .8s infinite}
 @keyframes phpulse{50%{transform:scale(1.05)}}
 .phnext{width:100%;background:#0f172a;color:#fff;border:none;font-weight:900;font-size:17px;border-radius:18px;padding:15px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.25)}
 /* 홈의 아이 파닉스 카드 */
@@ -962,6 +998,11 @@ body{background:var(--paper); color:var(--text)}
 .art-steps{margin:12px auto 2px;max-width:300px;display:flex;flex-direction:column;gap:7px}
 .art-step{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 12px;font-size:15px;font-weight:800;color:var(--text,#fff);line-height:1.35}
 .art-num{flex:none;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#ffb454,#ff7a45);color:#3a1a00;font-size:13px;font-weight:900;display:grid;place-items:center;box-shadow:0 2px 6px -1px rgba(255,140,60,.6)}
+.dict-slots{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;align-items:center;padding:16px 14px;background:var(--mist);border:1px solid var(--line);border-radius:14px;min-height:56px}
+.dslot{font-size:20px;font-weight:800;letter-spacing:.01em;transition:.18s}
+.dslot.filled{color:var(--jade);animation:dslotpop .35s cubic-bezier(.18,1.5,.4,1)}
+.dslot.blank{color:#9aa6b2;letter-spacing:4px;border-bottom:2.5px solid #9aa6b2;padding:0 3px 1px;opacity:.65}
+@keyframes dslotpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 .tongue-hint{font-size:13.5px;font-weight:800;color:var(--text,#fff);text-align:center;margin-top:6px;line-height:1.4}
 .tongue-legend{font-size:10.5px;color:var(--muted,#9aa);text-align:center;margin-top:4px}
 </style>
@@ -1019,21 +1060,25 @@ body{background:var(--paper); color:var(--text)}
         <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
         <div class="engrid">
         <button class="eng eng-in" id="engIn">
+          <span class="help-q" data-tut="listen">?</span>
           <span class="eng-emo">🎧</span>
           <span class="eng-tx"><b>리스닝 동굴</b><i>귀뚫기 · 듣고 따라하기</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-out" id="engOut">
+          <span class="help-q" data-tut="output">?</span>
           <span class="eng-emo">⚔️</span>
           <span class="eng-tx"><b>스피킹 훈련장</b><i>꺼내기 · 입 밖으로</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-real" id="engReal">
+          <span class="help-q" data-tut="survival">?</span>
           <span class="eng-emo">🌎</span>
           <span class="eng-tx"><b>모험 월드맵</b><i>실전 · 영어로 버티기</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng" id="engSprint">
+          <span class="help-q" data-tut="sprint">?</span>
           <span class="eng-emo">⚡</span>
           <span class="eng-tx"><b>라이트닝 아레나</b><i>스프린트 · 많이 말하기</i></span>
           <span class="eng-ar">›</span>
@@ -1051,6 +1096,9 @@ body{background:var(--paper); color:var(--text)}
       <!-- 🎯 오늘의 퀘스트 + 보상 진행률 -->
       <div id="questBox"></div>
 
+      <!-- 🔥 약점 청크 (아레나 MISS 누적) → 탭하면 즉시 집중 훈련 -->
+      <div id="weakHome" style="display:none;margin-bottom:11px"></div>
+
       <!-- 습득 지표 (점수 아님 — 자신감·인출속도·이해) -->
       <div id="acqStats" style="margin-bottom:11px"></div>
 
@@ -1058,17 +1106,19 @@ body{background:var(--paper); color:var(--text)}
       <div class="seclabel" style="margin-bottom:7px">⚗️ 추가 훈련</div>
       <div style="display:flex;gap:9px;margin-bottom:11px">
         <button id="boosterCard" class="sidequest" style="flex:1;display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;cursor:pointer">
+          <span class="help-q" data-tut="booster">?</span>
           <div class="sq-ico" style="--sqg:rgba(91,180,255,.5);width:36px;height:36px;font-size:17px;flex:none">🎧</div>
           <div style="min-width:0"><div class="sq-t" style="margin-top:0">연음 부스터</div><div class="sq-d">wudja·wanna</div></div>
         </button>
         <button id="vocabCard" class="sidequest" style="flex:1;display:flex;align-items:center;gap:10px;text-align:left;padding:11px 12px;cursor:pointer">
+          <span class="help-q" data-tut="vocab">?</span>
           <div class="sq-ico" style="--sqg:rgba(31,211,160,.5);width:36px;height:36px;font-size:17px;flex:none">💬</div>
           <div style="min-width:0"><div class="sq-t" style="margin-top:0">단어 강화</div><div class="sq-d">상황에서 써보기</div></div>
         </button>
       </div>
 
       <!-- 아이 파닉스 (초등 저학년) -->
-      <button id="kidCard"><span class="ke">🏰</span><span class="kt"><b>사운드 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
+      <button id="kidCard" style="position:relative"><span class="help-q" data-tut="phonics">?</span><span class="ke">🏰</span><span class="kt"><b>사운드 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
 
       <!-- 다시 만날 표현 (STEP 8 · 미래 인출) -->
       <div class="rvbanner" id="rvBanner" style="display:none">
@@ -1260,7 +1310,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.29.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.36.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1474,10 +1524,14 @@ async function saveNotes(){
 
 /* ============ Claude API ============ */
 async function callClaude(system, messages, model){
+  // 전역 출력 규칙: 마크다운/구분선 금지 (말풍선이 plain text라 별표가 그대로 보임)
+  const NO_MD="\n\n[FORMAT] Plain conversational text only. Do NOT use markdown: no **, no *, no ##, no ---, no bullet lists, no backticks. Write naturally as if texting.";
+  const sys = (typeof system==="string" && system.indexOf("ONLY")===-1 && system.indexOf("JSON")===-1)
+    ? system+NO_MD : system;
   const res = await fetch(PROXY_URL,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ model: model||MODEL, max_tokens:2000, system, messages })
+    body:JSON.stringify({ model: model||MODEL, max_tokens:2000, system:sys, messages })
   });
   if(!res.ok) throw new Error("API "+res.status);
   return res.json();
@@ -1549,6 +1603,15 @@ function levelHint(){
   return map[v]||map[1];
 }
 function levelLine(){ return levelHint(); }
+// 🔒 확장 금지 — 한국 학년 기준(미국 원어민 확장 금지). Lv1~2는 짧은 핵심 문장에서 끝.
+function levelCap(){
+  const v=state.lvl||1;
+  if(v<=1) return "STRICT LENGTH LOCK — Korean kindergarten (age 5-7): EVERY English sentence the learner hears or is asked to say MUST be the shortest complete form: Subject + verb + ONE word. Example: \"I like soccer.\" — then STOP. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. This is Korean beginner-school English, NOT natural native expansion. If you feel tempted to make it sound more natural by adding words, DO NOT — keep it bare. The model/native answer must ALSO obey this (never longer than the learner level).";
+  if(v<=2) return "STRICT LENGTH LOCK — 1st grade: keep EVERY English sentence to Subject + verb + 1-2 short words, ONE simple object at most. FORBIDDEN: 'with/and/because/at/every day' add-ons, stacked adjectives, any clause. Korean beginner-school level, not native expansion. The model/native answer must also stay this short.";
+  if(v<=3) return "LENGTH LOCK — 2nd grade: ONE short simple sentence, 4-5 words, one idea. No subordinate clauses, no 'because'. Keep it plain. Model/native answer stays this short.";
+  if(v<=4) return "Keep every sentence short and simple (5-6 words), everyday only, at most ONE simple connector. Do not over-elaborate.";
+  return "";
+}
 function scnDesc(){
   if(state.scn && state.scn.id==="custom") return state.custom;
   return state.scn ? state.scn.ctx : "";
@@ -1563,12 +1626,16 @@ function rolePrompt(){
     if(kidMode()){
       return [
 "You are a warm, playful OUTPUT coach for a young Korean child practicing speaking. Make it feel like a fun game, never a test.",
-"Every turn: 1) Give ONE simple everyday KID situation in KOREAN (one short line), e.g. '친구에게 같이 놀자고 말해보세요.' or '선생님께 도와달라고 말해보세요.' or '로블록스를 좋아한다고 말해보세요.' Do NOT show English first.",
-"2) Wait for the child to answer in English.",
-"3) Cheer them on with an emoji 👍🎉, accept any attempt, then show ONE very short natural English version (max 8 words).",
-"4) Give the next fun kid situation in Korean.",
+"Keep EVERY reply EXTREMELY short and clean — a small child reads it. NEVER use markdown stars or dashes.",
+"Reply format, MAX 2 short lines total:",
+"  Line 1: a tiny cheer + the natural English in quotes. Example: 👍 \"Want to play with me?\"",
+"  Line 2: the NEXT situation in Korean, one short line. Example: 🎮 배고프다고 말해보세요!",
+"Do NOT add explanations, do NOT add '선생님께 도와달라고' style filler unless that IS the situation, do NOT repeat the Korean meaning of the English.",
+"First turn: just give ONE Korean situation, nothing else.",
+levelHint(),
+levelCap(),
 kidRules(),
-"Situations to draw from: 친구에게 같이 놀자고 말하기 / 선생님께 도와달라고 말하기 / 로블록스를 좋아한다고 말하기 / 배고프다고 말하기 / 공을 빌려달라고 말하기 / 숙제를 잊었다고 말하기, and similar."
+"Situations to draw from: 친구에게 같이 놀자고 말하기 / 배고프다고 말하기 / 공을 빌려달라고 말하기 / 로블록스를 좋아한다고 말하기 / 화장실 가고 싶다고 말하기 / 물 마시고 싶다고 말하기, and similar simple ones."
       ].join("\n");
     }
     return [
@@ -1579,6 +1646,7 @@ kidRules(),
 "3) When they answer: judge if the MEANING got across. Accept imperfect grammar if it communicates. Then on ONE line show the natural native version in English (start with 👍 if they communicated). Keep it short — no grammar lecture.",
 "4) Immediately give the NEXT situation in Korean — sometimes REUSE the same target expression in a different setting (restaurant→hotel→phone) so they retrieve it again.",
 levelHint(),
+levelCap(),
 "Format each of your turns as: a Korean situation line. After they answer, a short feedback line (👍 + native English) then the next Korean situation. Never reveal English before they try.",
 "TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again."
     ].join("\n");
@@ -1615,6 +1683,7 @@ kidRules()
 "Keep each turn SHORT — 1 to 3 sentences of natural spoken English. ONE new obstacle or question per turn. Never switch to Korean. Never lecture grammar. Stay 100% in character.",
 npcLenRule(),
 levelHint(),
+levelCap(),
 "Only after the learner has pushed through the confusion and SOLVED the problem (8+ turns) may you begin to wrap up. If it fits, force a moment where they need today's key expression: \""+dailyExpr().en+"\"."
     ].join("\n");
   }
@@ -1625,6 +1694,8 @@ levelHint(),
 "- Ask ONE simple, open question at a time about their real everyday life (their day, food, weekend, work, family, opinions, plans). Start easy and build up.",
 "- After they answer (their English may be broken — that's totally fine, understand their intent), do BOTH: (1) give ONE short, natural model of what they meant, said better — start it with 👍 if they did well; (2) then ask your next question.",
 "- Keep every reply SHORT (a model line + one question). "+levelLine(),
+levelCap(),
+"Your model line MUST obey the length lock above — for low levels keep the model sentence bare and minimal (e.g. \"I like soccer.\"); never add 'with...', 'and...', 'because...'.",
 "- Be warm and low-pressure. Only ONE improvement per turn — never pile on corrections.",
 "- Reply in English. You may add a tiny Korean gloss in parentheses only for a genuinely hard word."
     ].join("\n");
@@ -1633,6 +1704,7 @@ levelHint(),
 "You are role-playing as "+scnRole()+".",
 "Situation: "+scnDesc(),
 "You are talking with a Korean person practicing spoken English (level: "+state.level+").",
+levelCap(),
 "Rules:",
 "- Speak ONLY in natural spoken English. Keep every reply SHORT — 1 to 3 sentences, like a real conversation. Never lecture.",
 "- Stay fully in character. React naturally to whatever they say, even if their English is broken — understand their intent and keep things flowing.",
@@ -1644,6 +1716,7 @@ levelHint(),
 
 /* ============ DOM refs ============ */
 const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
 const setup=$("#setup"), stage=$("#stage"), threadInner=$("#threadInner"), thread=$("#thread");
 const msg=$("#msg"), sendBtn=$("#sendBtn"), micBtn=$("#micBtn"), hint=$("#hint");
 
@@ -1804,7 +1877,20 @@ function turnEl(role){
   threadInner.appendChild(d);
   return {wrap:d, bub};
 }
+// AI 응답에서 마크다운/메타 군더더기 제거 (별표·구분선·과한 안내문)
+function cleanReply(t){
+  if(!t) return "";
+  let s=String(t);
+  s=s.replace(/\*\*(.+?)\*\*/g,"$1");      // **굵게** → 일반
+  s=s.replace(/\*(.+?)\*/g,"$1");          // *기울임*
+  s=s.replace(/^#{1,6}\s+/gm,"");          // 헤더
+  s=s.replace(/^\s*[-—–]{3,}\s*$/gm,"");   // --- 구분선
+  s=s.replace(/`([^`]+)`/g,"$1");          // 인라인 코드
+  s=s.replace(/\n{3,}/g,"\n\n");
+  return s.trim();
+}
 function addCoachTurn(text){
+  text=cleanReply(text);
   const {wrap,bub}=turnEl("assistant");
   bub.textContent=text;
   const acts=document.createElement("div"); acts.className="coach-acts";
@@ -2065,6 +2151,7 @@ listenLen(),
 let lsItem=null;      // {en, ko}
 let lsPrevReply="";   // 직전 상대 응답 (대화 연속성)
 let lsAnswer="";      // 받아쓰기 답
+let lsTargets=[], lsFilled=[];   // 단어별 누적 받아쓰기 (들린 단어 고정)
 let lsAnalysis=null;  // 오답 분석
 let lsConn=null;      // 연음 설명
 let lsCount=0;        // 진행한 문장 수
@@ -2087,13 +2174,14 @@ let lsBoosterMode=false;
 function listenSentenceSys(){
   const seed=Math.floor(Math.random()*100000);
   const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
-  const booster = lsBoosterMode ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
+  const booster = (lsBoosterMode && (state.lvl||1)>=5) ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
   return [
 "This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
 kidMode()? ("Produce ONE short, simple spoken English sentence for a young CHILD about: "+KID_TOPICS[(seed)%KID_TOPICS.length]+".") : ("Produce ONE natural spoken English sentence for a Korean learner. Topic context: "+topicDesc()+"."),
 booster,
 prev,
 kidMode()? kidRules() : levelHint(),
+levelCap(),
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻"}'
   ].join("\n");
@@ -2141,25 +2229,66 @@ function lsSpeak(slow){
   u.rate = levelRate(slow);
   TTS.speak(u);
 }
-// 2) 받아쓰기
+// 2) 받아쓰기 — 단어별 누적: 들린 단어는 채워져 고정, 안 들린 빈칸만 다시
+function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
 function renderListenDictation(){
   TTS&&TTS.cancel();
+  lsTargets=(lsItem.en||"").split(/\s+/).filter(Boolean);
+  lsFilled=lsTargets.map(()=>false);
   $("#listenScroll").innerHTML=`<div class="lcard">
     <div class="lmeta" style="text-align:center">✏️ 받아쓰기 · ${lsCount}번째</div>
-    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 16px">들린 대로 적어보세요. 정확히 몰라도 OK — 들린 단어만이라도!</div>
+    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 14px">들린 단어만 말해도 돼요. 들린 건 <b style="color:var(--jade)">초록색으로 채워지고</b>, 안 들린 <b>빈칸만</b> 다시 들어요!</div>
     <button class="bigplay" id="lsPlay2" style="margin-bottom:14px">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
       <span>🔊 다시 듣기</span>
     </button>
-    <textarea id="lsDictInput" rows="2" placeholder="여기에 들린 문장을 적거나 🎤로 말하세요" style="width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:13px;font-size:16px;line-height:1.5;resize:none;background:var(--mist);color:var(--text)"></textarea>
-    <button class="sh-next" id="lsCheck">채점하기 →</button>
+    <div id="lsSlots" class="dict-slots"></div>
+    <div id="lsProg" style="text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 2px"></div>
+    <button class="phrec" id="lsDictMic" style="width:100%;margin-top:8px">🎤 들리는 만큼 말하기</button>
+    <button id="lsDictType" style="width:100%;margin-top:8px;padding:12px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 직접 입력</button>
+    <input id="lsTypeIn" style="display:none;width:100%;margin-top:8px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--mist);color:var(--text);font-size:16px" placeholder="들린 단어 입력 후 Enter">
+    <button class="sh-next" id="lsCheck" style="margin-top:12px">채점하기 →</button>
     <button class="rv-stop" id="lsBackToPlay">← 다시 듣기로</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
-  const inp=$("#lsDictInput"); attachMic(inp); setTimeout(()=>inp.focus(),80);
+  lsRenderSlots();
   $("#lsPlay2").onclick=()=>lsSpeak(false);
-  $("#lsCheck").onclick=()=>{ lsAnswer=(inp.value||"").trim(); lsRunAnalysis(); };
   $("#lsBackToPlay").onclick=renderListenPlay;
+  $("#lsCheck").onclick=()=>{ lsAnswer=lsTargets.filter((w,i)=>lsFilled[i]).join(" "); lsRunAnalysis(); };
+  const mic=$("#lsDictMic");
+  mic.onclick=function(){ if(qzRecording){ return; } mic.classList.add("rec"); mic.textContent="🎙️ 듣는 중…";
+    micFillCb((t)=>{ mic.classList.remove("rec"); mic.textContent="🎤 들리는 만큼 말하기";
+      const added=lsFillFromHeard(t);
+      const done=lsFilled.every(Boolean);
+      const pr=$("#lsProg");
+      if(pr && added===0 && !done) pr.textContent=`못 알아들었어요 — 빈칸을 또박또박! (들린 단어 ${lsFilled.filter(Boolean).length}/${lsTargets.length})`;
+      if(done){ setTimeout(()=>{ lsAnswer=lsTargets.join(" "); lsRunAnalysis(); }, 600); }
+    });
+  };
+  $("#lsDictType").onclick=()=>{ const ti=$("#lsTypeIn"); ti.style.display="block"; ti.focus(); };
+  $("#lsTypeIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); lsFillFromHeard(e.target.value); e.target.value="";
+    if(lsFilled.every(Boolean)){ lsAnswer=lsTargets.join(" "); lsRunAnalysis(); } }});
+}
+function lsRenderSlots(){
+  const box=$("#lsSlots"); if(!box) return;
+  box.innerHTML=lsTargets.map((w,i)=> lsFilled[i]
+    ? `<span class="dslot filled">${escapeHtml(w)}</span>`
+    : `<span class="dslot blank">${"·".repeat(Math.max(2,lsWordNorm(w).length))}</span>`
+  ).join(" ");
+  const n=lsFilled.filter(Boolean).length, tot=lsTargets.length;
+  const pr=$("#lsProg"); if(pr) pr.textContent = n>=tot ? "다 들었어요! 🎉 채점할게요" : `들린 단어 ${n} / ${tot} · 빈칸만 더 들어보세요`;
+}
+// 들린 텍스트에서 일치하는 단어를 (순서대로, 가장 왼쪽 빈칸부터) 채움 — 이미 채운 건 유지
+function lsFillFromHeard(heardText){
+  const heard=String(heardText||"").split(/\s+/).map(lsWordNorm).filter(Boolean);
+  let added=0;
+  heard.forEach(hw=>{
+    for(let i=0;i<lsTargets.length;i++){
+      if(!lsFilled[i] && lsWordNorm(lsTargets[i])===hw){ lsFilled[i]=true; added++; break; }
+    }
+  });
+  lsRenderSlots();
+  return added;
 }
 // 3) 오답 분석 + 4) 연음 설명 (동시 호출)
 async function lsRunAnalysis(){
@@ -2290,6 +2419,8 @@ async function lsOutput(){
 "Pick ONE useful, reusable target expression a learner should be able to SAY (a chunk like \"Could you say that again?\", \"I'd like to ...\", \"Do you have ...?\"). Keep it close to the sentence's function.",
 "Create TWO different realistic situations (in Korean) where the learner would naturally NEED to say that target. Different settings (e.g. cafe vs hotel vs phone). Describe each situation briefly in Korean — describe the NEED, do NOT reveal the English.",
 levelHint(),
+levelCap(),
+"The TARGET expression itself MUST obey the length lock above (for low levels it must be the bare minimal sentence, e.g. \"I like soccer.\").",
 'Return ONLY JSON: {"target":"natural English target expression","sit1_ko":"상황 설명 한국어","sit2_ko":"다른 상황 설명 한국어"}'
   ].join("\n");
   try{ const d=await callClaude(sys,[{role:"user",content:"Make it now."}], FAST_MODEL);
@@ -2333,6 +2464,8 @@ async function loSubmit(answer){
 "You are an OUTPUT coach (not a teacher). Situation (Korean): \""+sitKo+"\". Target expression: \""+(loData.target||"")+"\".",
 "The learner SAID: \""+answer+"\". Judge ONLY whether they COMMUNICATED the intent. Accept imperfect grammar if meaning is clear — do NOT overcorrect.",
 "Then give the natural native version (use the target naturally). Keep praise warm and short in Korean.",
+levelCap(),
+"The \"native\" version MUST obey the length lock — do NOT expand beyond the learner level. For low levels keep it the bare minimal sentence (e.g. \"I like soccer.\"), never add 'with...', 'and...', 'because...'.",
 'Return ONLY JSON: {"communicated":true or false,"native":"natural native English","praise":"짧은 한국어 칭찬","tip":"꼭 필요할 때만 아주 짧은 한국어 팁, 없으면 빈 문자열"}'
     ].join("\n");
       const d=await callClaude(sys,[{role:"user",content:answer}], FAST_MODEL);
@@ -3275,6 +3408,21 @@ function advanceVocab(w){
 }
 // 콜백형 음성 입력 (큰 마이크용)
 // 말 끝나면(침묵) 자동 종료 — 고정 타임아웃 대기 제거. 실패 시 maxMs 폴백.
+// 🔔 녹음 시작 알림음 ("띵") + 통일된 자동 종료(침묵) 설정
+let _ac=null;
+function micBeep(){
+  try{
+    _ac = _ac || new (window.AudioContext||window.webkitAudioContext)();
+    if(_ac.state==="suspended") _ac.resume();
+    const o=_ac.createOscillator(), g=_ac.createGain(), t=_ac.currentTime;
+    o.type="sine"; o.frequency.setValueAtTime(880,t); o.frequency.setValueAtTime(1320,t+0.08);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.25,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
+    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.3);
+    if(navigator.vibrate) navigator.vibrate(30);
+  }catch(e){}
+}
+// 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
+const VAD_OPTS={maxMs:12000, silenceMs:1000, minSpeechMs:300, thresh:0.02};
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
@@ -3314,14 +3462,13 @@ async function micFillCb(cb){
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb(""); return; }
       try{
-        const wav=await recordedToWav(raw);
-        const res=await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":"audio/wav"},body:wav});
+        const res=await sttRecognize(raw, am);
         const data=await res.json();
         cb(data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):"");
       }catch(e){ cb(""); }
     };
-    qzMR.start(250); qzRecording=true;
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {maxMs:7000, silenceMs:900});
+    micBeep(); qzMR.start(250); qzRecording=true;
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, VAD_OPTS);
   }catch(e){ cb(""); }
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
@@ -3340,15 +3487,14 @@ async function micFill(inp, btn, restoreLabel){
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
       btn.textContent="🔄";
       try{
-        const wav=await recordedToWav(raw);
-        const res=await fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":"audio/wav"},body:wav});
+        const res=await sttRecognize(raw, am);
         const data=await res.json();
         if(data.DisplayText){ const t=data.DisplayText.replace(/[.?!]$/,""); inp.value=t; inp.dispatchEvent(new Event("input")); }
       }catch(e){}
       btn.textContent=lbl;
     };
-    qzMR.start(250); qzRecording=true; btn.textContent="⏹";
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {maxMs:8000, silenceMs:1000});
+    micBeep(); qzMR.start(250); qzRecording=true; btn.textContent="⏹";
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, VAD_OPTS);
   }catch(e){}
 }
 function quizRecord(inp, btn){ return micFill(inp, btn, "🎤 말하기"); }
@@ -3357,7 +3503,7 @@ function attachMic(inp){
   if(!inp || inp._micAttached) return; inp._micAttached=true;
   const b=document.createElement("button");
   b.type="button"; b.textContent="🎤"; b.dataset.lbl="🎤"; b.title="말하기";
-  b.style.cssText="flex:none;width:54px;height:50px;border-radius:13px;background:var(--mist);border:1px solid var(--line);font-size:24px;line-height:1";
+  b.style.cssText="flex:none;width:76px;height:64px;border-radius:15px;background:var(--mist);border:1.5px solid var(--line);font-size:34px;line-height:1";
   b.onclick=()=>micFill(inp, b, "🎤");
   // 입력칸을 flex 래퍼로 감싸기
   const wrap=document.createElement("div");
@@ -3506,17 +3652,54 @@ function encodeWAV(samples, rate){
   let o=44; for(let i=0;i<samples.length;i++){ let s=Math.max(-1,Math.min(1,samples[i])); v.setInt16(o,s<0?s*0x8000:s*0x7FFF,true); o+=2; }
   return buf;
 }
+// decodeAudioData를 프로미스/콜백 양쪽으로 시도 (일부 기기는 콜백만 지원)
+function decodeAudioCompat(ac, arrayBuf){
+  return new Promise((resolve,reject)=>{
+    let done=false;
+    try{
+      const p=ac.decodeAudioData(arrayBuf.slice(0),
+        (b)=>{ if(!done){done=true;resolve(b);} },
+        (e)=>{ if(!done){done=true;reject(e||new Error("decode fail"));} });
+      if(p && typeof p.then==="function"){
+        p.then(b=>{ if(!done){done=true;resolve(b);} })
+         .catch(e=>{ if(!done){done=true;reject(e);} });
+      }
+    }catch(e){ if(!done){done=true;reject(e);} }
+  });
+}
 async function recordedToWav(blob){
   const arrayBuf=await blob.arrayBuffer();
   const AC=window.AudioContext||window.webkitAudioContext;
   const tmp=new AC();
-  const decoded=await tmp.decodeAudioData(arrayBuf);
+  // 재생용으로 일시정지된 AudioContext 깨우기 (일부 안드로이드)
+  if(tmp.state==="suspended"){ try{ await tmp.resume(); }catch(_){} }
+  let decoded=null, lastErr=null;
+  // 원본 + webm 재포장 두 가지 시도
+  for(const ab of [arrayBuf, arrayBuf]){
+    try{ decoded=await decodeAudioCompat(tmp, ab); break; }
+    catch(e){ lastErr=e; }
+  }
+  if(!decoded){ tmp.close && tmp.close(); throw lastErr||new Error("decode fail"); }
   tmp.close && tmp.close();
   const rate=16000;
   const off=new OfflineAudioContext(1, Math.max(1,Math.ceil(decoded.duration*rate)), rate);
   const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start(0);
   const rendered=await off.startRendering();
   return new Blob([encodeWAV(rendered.getChannelData(0), rate)], {type:"audio/wav"});
+}
+// WAV 변환 시도 → 실패하면 원본(webm/opus 등) 그대로 STT. Azure는 webm-opus도 받음.
+async function sttRecognize(raw, actualMime){
+  let body, ctype;
+  try{ body=await recordedToWav(raw); ctype="audio/wav"; }
+  catch(_){
+    // 디코드 실패 기기 → 원본 컨테이너 그대로 전송
+    body=raw;
+    ctype = /webm/.test(actualMime) ? "audio/webm; codecs=opus"
+          : /ogg/.test(actualMime)  ? "audio/ogg; codecs=opus"
+          : /mp4|aac/.test(actualMime) ? "audio/mp4"
+          : (actualMime||"audio/webm; codecs=opus");
+  }
+  return fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":ctype},body});
 }
 async function toggleMic(){
   if(listening){ stopAzureSTT(); return; }
@@ -3537,15 +3720,10 @@ async function toggleMic(){
         setTimeout(()=>hint.textContent="",3000); return;
       }
       hint.textContent="🔄 인식 중…";
-      let wav;
-      try{ wav=await recordedToWav(raw); }
-      catch(err){ hint.textContent="오디오 변환 실패: "+String(err).slice(0,50); setTimeout(()=>hint.textContent="",4000); return; }
+      let res;
+      try{ res = await sttRecognize(raw, actualMime); }
+      catch(e){ hint.textContent="네트워크 오류: "+String(e).slice(0,50); setTimeout(()=>hint.textContent="",4000); return; }
       try{
-        const res = await fetch(PROXY_URL+"/stt",{
-          method:"POST",
-          headers:{"Content-Type": "audio/wav"},
-          body:wav
-        });
         const txt = await res.text();
         let data; try{ data=JSON.parse(txt); }catch(e){ data=null; }
         if(!res.ok){ hint.textContent="STT 오류 "+res.status+": "+txt.slice(0,70); setTimeout(()=>hint.textContent="",5000); return; }
@@ -3562,8 +3740,9 @@ async function toggleMic(){
     };
     mediaRec.start(250);
     listening=true; micBtn.classList.add("live");
-    hint.textContent="🎤 듣고 있어요… 말하고 다시 누르면 전송";
-    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:1100});
+    micBeep();
+    hint.textContent="🎤 듣는 중… 다 말하면 자동으로 끝나요";
+    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:1000, minSpeechMs:300, thresh:0.02});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
@@ -3637,8 +3816,8 @@ async function toggleDrillMic(){
       }
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
-    drillMR.start(250); drillRecording=true;
-    attachVAD(stream, ()=>{ if(drillRecording) stopDrillMic(); }, {maxMs:8000, silenceMs:1000});
+    micBeep(); drillMR.start(250); drillRecording=true;
+    attachVAD(stream, ()=>{ if(drillRecording) stopDrillMic(); }, VAD_OPTS);
     const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#e0533f"; }
   }catch(e){
     const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">마이크 권한을 허용해 주세요.</div>`;
@@ -3794,8 +3973,8 @@ function phMic(ref, btn, cb){
         cb({score:score, heard:String(heard||"").replace(/[.?!,]/g,"").trim(), status:(d&&d.RecognitionStatus)||""});
       }catch(e){ cb(null); }
     };
-    phMR.start(250);
-    attachVAD(stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, {maxMs:5000, silenceMs:850});
+    micBeep(); phMR.start(250);
+    attachVAD(stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, VAD_OPTS);
   }).catch(e=>cb(null));
 }
 
@@ -3875,7 +4054,7 @@ function pickPhrases(opts){
     const p=ranked[gi%ranked.length]; gi++;
     const exIdx=Math.floor(gi/ranked.length)%p.examples.length;
     const ex=p.examples[exIdx]||p.examples[0];
-    items.push({ko:ex.ko, en:ex.en, tag:(p.tags[0]||"daily"), pid:p.id});
+    items.push({ko:ex.ko, en:ex.en, tag:(p.tags[0]||"daily"), pid:p.id, chunk:p.phrase, chunkKo:p.ko});
     if(gi>n*3) break;
   }
   return items.slice(0,n);
@@ -3885,9 +4064,11 @@ const SPRINT_LEN={easy:10, normal:20, hard:30};
 const SPRINT_ADULT="travel, hotel, restaurant, hospital, school, daily life, customer support, work";
 const SPRINT_KID="school, friends, games, food, animals, sports, family";
 let spItems=[], spIdx=0, spCombo=0, spMaxCombo=0, spT0=0, spSpoke=0, spTimes=[];
+let spPerfect=0, spHit=0, spMiss=0;   // ⚡ ARENA 2.0 세션 집계
 const SP_ENEMIES=["👾","👹","🤖","🐉","👻","🦖","👺","🧟"];
 let spEnemy="👾";
 function openSprintPicker(){
+  if(!tutSeenAll().sprint){ showTutorial("sprint", false, ()=>openSprintPicker()); return; }
   const sc=document.createElement("div"); sc.id="spPick";
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
   sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px calc(28px + env(safe-area-inset-bottom));border-top:1px solid var(--line)">
@@ -3911,7 +4092,7 @@ function startSprint(len){
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
-  spIdx=0; spCombo=0; spMaxCombo=0; spTimes=[];
+  spIdx=0; spCombo=0; spMaxCombo=0; spTimes=[]; spPerfect=0; spHit=0; spMiss=0;
   spEnemy=SP_ENEMIES[(Math.random()*SP_ENEMIES.length)|0];
   // 로컬 Phrase DB에서 즉시 출제 — AI 호출 없음, 로딩 없음
   spItems = pickPhrases({ n:n });
@@ -3936,6 +4117,38 @@ kidMode()? "The learner is a young CHILD. Use very short, simple sentences (max 
   }catch(e){ $("#sprintScroll").innerHTML=`<div class="lloading">문장을 못 만들었어요. <button class="sh-next" id="spRetry" style="max-width:200px;margin-top:12px">다시</button></div>`; const r=$("#spRetry"); if(r) r.onclick=()=>startSprint(Object.keys(SPRINT_LEN).find(k=>SPRINT_LEN[k]===spItems.length)||"normal"); }
 }
 function spMult(){ return spCombo>=10?5:spCombo>=5?3:spCombo>=3?2:1; }
+// ===== ⚡ ARENA 2.0 채점 =====
+// 텍스트 정규화 (소문자·구두점 제거·공백 정리)
+function spNorm(s){ return String(s||"").toLowerCase().replace(/[.,!?'"]/g,"").replace(/\s+/g," ").trim(); }
+// 의미 전달 점수: 핵심어 겹침 + 청크 사용 여부로 PERFECT/HIT/MISS 판정
+function spGrade(heard, it, elapsed){
+  const h=spNorm(heard), target=spNorm(it.en);
+  if(!h) return "miss";   // STT 아무것도 못 잡음 = 시도 실패(말 안 함/딴소리)
+  const hw=h.split(" ").filter(Boolean), tw=target.split(" ").filter(Boolean);
+  const tset=new Set(tw);
+  const overlap=hw.filter(w=>tset.has(w)).length;
+  const coverage = tw.length? overlap/tw.length : 0;   // 정답 단어 중 얼마나 말했나
+  // 청크 키워드(맨 앞 1~2단어, 예: "could you", "i'm looking for")가 들어갔나
+  const chunkKey=spNorm(it.chunk||"").replace(/\.\.\.|\?/g,"").trim();
+  const chunkWords=chunkKey.split(" ").filter(Boolean).slice(0,3);
+  const chunkHit = chunkWords.length? chunkWords.every(w=>h.includes(w)) : false;
+  const exact = (h===target);
+  if(coverage<0.34 && !chunkHit) return "miss";       // 의미 실패 / 딴소리
+  if(exact || (coverage>=0.7 && chunkHit && elapsed<=4)) return "perfect";
+  if(coverage>=0.5 || chunkHit) return "hit";
+  return "miss";
+}
+// 약점 청크 저장소 (pid 기준 누적 miss 카운트)
+function weakGet(){ try{ return hGet("speakingroom:weak",{}); }catch(e){ return {}; } }
+function weakSet(o){ try{ hSet("speakingroom:weak", o); }catch(e){} }
+function weakAddMiss(it){
+  if(!it||!it.pid) return; const w=weakGet();
+  const k=it.pid; w[k]=w[k]||{pid:k, chunk:it.chunk||"", ko:it.chunkKo||"", miss:0, mastered:false};
+  w[k].miss++; w[k].mastered=false; weakSet(w);
+}
+function weakClear(pid){ const w=weakGet(); if(w[pid]){ delete w[pid]; weakSet(w); } }
+function weakList(max){ const w=weakGet();
+  return Object.values(w).filter(x=>x&&!x.mastered&&x.miss>0).sort((a,b)=>b.miss-a.miss).slice(0, max||3); }
 function spNext(){
   if(spIdx>=spItems.length) return spDone();
   const it=spItems[spIdx];
@@ -3961,7 +4174,7 @@ function spNext(){
     </div>
     <div id="spStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px">🎤 눌러서 바로 말하기</div>
     <button id="spMicBtn" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 공격!</button>
-    <button id="spPass" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">말했어요 — 다음 (STT 안 잡혀도 OK)</button>
+    <button id="spPass" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">모르겠어요 — 넘기기 (MISS)</button>
    </div>`;
   spT0=Date.now(); spSpoke=0;
   $("#spExit").onclick=spDone;
@@ -3971,62 +4184,230 @@ function spNext(){
   $("#spPass").onclick=()=>{ if(!spSpoke) spSpoke=Date.now(); spPassItem(it, ""); };
 }
 function spPassItem(it, heard){
-  // STT 관대화: 말한 시도는 무조건 통과 (인식 실패해도 막지 않음)
   const startT=spSpoke||Date.now();
-  const elapsed=Math.max(0.1,(startT-spT0)/1000);   // 말 시작까지 걸린 시간(인출 속도)
+  const elapsed=Math.max(0.1,(startT-spT0)/1000);
   spTimes.push(Math.round(elapsed*10)/10);
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
-  spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
-  if(spCombo===3||spCombo===5||spCombo===10||(spCombo>10&&spCombo%5===0)){ try{ comboFx(spCombo, spMult()); }catch(e){} }
-  const speedBonus = elapsed<=2?5 : elapsed<=4?3 : elapsed<=6?1 : 0;
-  const gained = awardXP("output", Math.max(1, speedBonus*spMult()), "스프린트 ⚡", "sprint");
-  bumpCount&&bumpCount("talk"); questBump&&questBump("talk");
-  // Active Vocabulary: 인출 기록 (서로 다른 상황 3회 → 능동 어휘)
-  try{ avSeen(it.en, it.ko); const promoted=avRetrieve(it.en, it.ko, it.tag||"sprint"); if(promoted) awardXP("output",25,"💎 능동 어휘 달성!"); }catch(e){}
-  // ⚡ 전투 타격 연출 (장면 유지 + 적 피격)
-  spCombatHit(it, heard, elapsed, gained, speedBonus);
-  setTimeout(()=>{ spIdx++; spNext(); }, 980);
-}
-function spCombatHit(it, heard, elapsed, gained, speedBonus){
-  const stage=$("#spStage"), enemy=$("#spEnemy"), hp=$("#spHp"), banner=$("#spComboBanner");
-  const last = (spIdx>=spItems.length-1);
-  const newHp = Math.round((spItems.length-(spIdx+1))/spItems.length*100);
-  if(enemy){ enemy.classList.remove("hit"); void enemy.offsetWidth; enemy.classList.add(last?"defeated":"hit"); }
-  if(hp){ hp.style.width=Math.max(0,newHp)+"%"; }
-  if(stage){
-    const bolt=document.createElement("div"); bolt.className="bolt"; bolt.textContent="⚡"; stage.appendChild(bolt); setTimeout(()=>bolt.remove(),520);
-    const dmg=document.createElement("div"); dmg.className="dmg"; dmg.textContent="-"+(speedBonus>=5?"CRIT!":Math.max(1,speedBonus*spMult())); stage.appendChild(dmg); setTimeout(()=>dmg.remove(),860);
-    if(spCombo>=3 && banner){ banner.innerHTML=`<div class="perfect-banner">${spCombo>=10?"⚡ LEGENDARY CHAIN":"🔥 PERFECT CHAIN"} ×${spMult()}!</div>`; setTimeout(()=>{ if(banner) banner.innerHTML=""; }, 950); }
+  // ⚡ 실제 채점
+  const grade = spGrade(heard, it, elapsed);   // "perfect" | "hit" | "miss"
+  let gained=0;
+  if(grade==="perfect"){
+    spPerfect++; spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
+    if(spCombo===3||spCombo===5||spCombo===10||(spCombo>10&&spCombo%5===0)){ try{ comboFx(spCombo, spMult()); }catch(e){} }
+    gained=awardXP("output", 20*spMult(), "⚡ PERFECT", "sprint");
+  } else if(grade==="hit"){
+    spHit++; spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
+    gained=awardXP("output", 10, "⚔️ HIT", "sprint");
+  } else {
+    spMiss++; spCombo=Math.max(0, spCombo-1);   // MISS = 콤보 -1, XP 0
+    weakAddMiss(it);
   }
-  // 번개 화면 플래시(빠른 인출일 때만 — 과하지 않게)
-  if(speedBonus>=5){ const f=document.createElement("div"); f.className="arena-flash"; document.body.appendChild(f); setTimeout(()=>f.remove(),260); }
-  // 하단: 원어민 표현 + 기록 (가르치지 않고 리듬 유지)
+  bumpCount&&bumpCount("talk"); questBump&&questBump("talk");
+  if(grade!=="miss"){
+    try{ avSeen(it.en, it.ko); const promoted=avRetrieve(it.en, it.ko, it.tag||"sprint"); if(promoted) awardXP("output",25,"💎 능동 어휘 달성!"); }catch(e){}
+  }
+  spCombatHit(it, heard, elapsed, gained, grade);
+  setTimeout(()=>{ spIdx++; spNext(); }, 1050);
+}
+function spCombatHit(it, heard, elapsed, gained, grade){
+  const stage=$("#spStage"), enemy=$("#spEnemy"), hp=$("#spHp"), banner=$("#spComboBanner");
+  const isMiss=(grade==="miss");
+  const last = (spIdx>=spItems.length-1) && !isMiss;
+  // MISS면 적 HP 안 깎임(공격 빗나감). PERFECT/HIT만 진행 피해.
+  const newHp = isMiss ? Math.round((spItems.length-spIdx)/spItems.length*100)
+                       : Math.round((spItems.length-(spIdx+1))/spItems.length*100);
+  if(enemy){
+    enemy.classList.remove("hit");  void enemy.offsetWidth;
+    if(isMiss){ enemy.classList.add("dodge"); }            // 적 회피/반격
+    else enemy.classList.add(last?"defeated":"hit");
+  }
+  if(hp && !isMiss){ hp.style.width=Math.max(0,newHp)+"%"; }
+  if(stage){
+    if(isMiss){
+      const x=document.createElement("div"); x.className="dmg miss"; x.textContent="MISS"; stage.appendChild(x); setTimeout(()=>x.remove(),900);
+    } else {
+      const bolt=document.createElement("div"); bolt.className="bolt"; bolt.textContent=grade==="perfect"?"⚡":"✦"; stage.appendChild(bolt); setTimeout(()=>bolt.remove(),520);
+      const dmg=document.createElement("div"); dmg.className="dmg"; dmg.textContent=grade==="perfect"?(spMult()>1?"CRIT ×"+spMult()+"!":"PERFECT!"):"HIT"; stage.appendChild(dmg); setTimeout(()=>dmg.remove(),860);
+      if(spCombo>=3 && banner){ banner.innerHTML=`<div class="perfect-banner">${spCombo>=10?"⚡ LEGENDARY CHAIN":"🔥 PERFECT CHAIN"} ×${spMult()}!</div>`; setTimeout(()=>{ if(banner) banner.innerHTML=""; }, 950); }
+    }
+  }
+  if(grade==="perfect" && spMult()>=3){ const f=document.createElement("div"); f.className="arena-flash"; document.body.appendChild(f); setTimeout(()=>f.remove(),260); }
   const stat=$("#spStat");
-  if(stat){ stat.innerHTML=`<span style="color:#1fd3a0;font-weight:900">명중! ⚡</span> <span style="font-family:var(--serif);color:var(--text);font-size:17px">${escapeHtml(it.en)}</span><br><span style="font-size:11.5px;color:var(--muted)">${elapsed.toFixed(1)}초 · +${gained} XP${heard?` · 들림 "${escapeHtml(heard)}"`:""}</span>`; }
+  if(stat){
+    const label = grade==="perfect" ? `<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
+                : grade==="hit"     ? `<span style="color:#1fd3a0;font-weight:900">⚔️ HIT</span>`
+                :                      `<span style="color:#f87171;font-weight:900">💥 MISS</span>`;
+    const xpLine = isMiss ? `<span style="font-size:11.5px;color:#f87171">+0 XP · 콤보 -1${heard?` · 들림 "${escapeHtml(heard)}"`:" · 안 들렸어요"}</span>`
+                          : `<span style="font-size:11.5px;color:var(--muted)">${elapsed.toFixed(1)}초 · +${gained} XP${heard?` · 들림 "${escapeHtml(heard)}"`:""}</span>`;
+    stat.innerHTML=`${label} <span style="font-family:var(--serif);color:var(--text);font-size:17px">${escapeHtml(it.en)}</span><br>${xpLine}`;
+  }
   const mic=$("#spMicBtn"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
   setTimeout(()=>speakEn(it.en), 120);
 }
+function spGrade5(mastery){ return mastery>=95?"S": mastery>=85?"A": mastery>=70?"B": mastery>=50?"C":"D"; }
 function spDone(){
   TTS&&TTS.cancel();
   try{ const p=getProf(); p.sprintDone=(p.sprintDone||0)+1; hSet("speakingroom:prof",p); checkBadges(); }catch(e){}
-  const said=spTimes.length;
-  const avg = said? (spTimes.reduce((s,x)=>s+x,0)/said).toFixed(1) : "—";
+  const total=spPerfect+spHit+spMiss;
+  // Mastery = (PERFECT*1.0 + HIT*0.6) / total
+  const mastery = total? Math.round((spPerfect*1 + spHit*0.6)/total*100) : 0;
+  const grade = spGrade5(mastery);
+  const weak = weakList(3);
+  const gColor = grade==="S"?"#ffd17a": grade==="A"?"#1fd3a0": grade==="B"?"#7cc4ff": grade==="C"?"#e6ad4a":"#f87171";
+  const weakHtml = weak.length ? `
+    <div style="margin:18px 0 6px;font-size:14px;font-weight:900;color:var(--text);text-align:left">🎯 오늘의 약한 청크</div>
+    <div style="font-size:12px;color:var(--muted);text-align:left;margin-bottom:10px">탭하면 그 청크만 집중 훈련해요 — 실수를 바로 실력으로</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      ${weak.map((w,i)=>`<button class="weakItem" data-pid="${escapeAttr(w.pid)}" style="text-align:left;background:var(--card2);border:1.5px solid rgba(248,113,113,.35);border-radius:13px;padding:13px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <span><span style="font-family:var(--serif);font-size:16px;color:var(--text)">${escapeHtml(w.chunk||w.ko)}</span><br><span style="font-size:11.5px;color:#f87171">${w.miss}회 막힘 · 바로 훈련 →</span></span>
+        <span style="font-size:20px">⚡</span></button>`).join("")}
+    </div>` : `<div style="margin:18px 0 20px;font-size:13.5px;color:var(--jade);font-weight:700">막힌 청크가 없어요! 전부 입에서 바로 나왔어요 💎</div>`;
   $("#sprintScroll").innerHTML=`
-   <div class="rv-done" style="max-width:460px"><div class="em">🏆</div><h2>전투 승리!</h2>
-   <p>적을 쓰러뜨렸어요! <b>${said}번</b> 영어를 외쳤어요. 완벽함보다 <b>많이 말하기</b>가 입을 트이게 해요 ⚡</p>
-   <div style="display:flex;gap:10px;justify-content:center;margin:6px 0 22px">
-     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:var(--text)">${said}</div><div style="font-size:11px;color:var(--muted)">공격 횟수</div></div>
-     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:var(--jade)">${avg}초</div><div style="font-size:11px;color:var(--muted)">평균 시전</div></div>
-     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:20px;font-weight:900;color:#f59e0b">🔥${spMaxCombo}</div><div style="font-size:11px;color:var(--muted)">최고 콤보</div></div>
+   <div class="rv-done" style="max-width:460px"><div class="em">⚡</div><h2>아레나 결과</h2>
+   <div style="display:flex;gap:9px;justify-content:center;margin:10px 0 8px">
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#ffd17a">${spPerfect}</div><div style="font-size:11px;color:var(--muted)">⚡ PERFECT</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#1fd3a0">${spHit}</div><div style="font-size:11px;color:var(--muted)">⚔️ HIT</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#f87171">${spMiss}</div><div style="font-size:11px;color:var(--muted)">💥 MISS</div></div>
    </div>
+   <div style="display:flex;gap:9px;justify-content:center;margin:0 0 6px">
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:26px;font-weight:900;color:${gColor}">${grade}</div><div style="font-size:11px;color:var(--muted)">등급</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:${gColor}">${mastery}%</div><div style="font-size:11px;color:var(--muted)">숙련도</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#f59e0b">🔥${spMaxCombo}</div><div style="font-size:11px;color:var(--muted)">최고 콤보</div></div>
+   </div>
+   ${weakHtml}
    <div class="blk-actions" style="max-width:340px">
      <button class="blk-save" id="spHome">나가기</button>
      <button class="blk-next" id="spAgain">다시 도전 ⚡</button>
    </div></div>`;
-  $("#spHome").onclick=goToSetup;
+  $("#spHome").onclick=()=>{ goToSetup(); try{ renderWeakHome&&renderWeakHome(); }catch(e){} };
   $("#spAgain").onclick=openSprintPicker;
+  $$(".weakItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
+}
+// ===== CHUNK MASTERY TRAINING — 약점 청크 집중(10문제, 7/10 → 마스터) =====
+let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0;
+function startChunkTraining(pid){
+  const p=CORE_PHRASES.find(x=>x.id===pid);
+  if(!p){ goToSetup(); return; }
+  ctPid=pid; ctChunk=p.phrase; ctIdx=0; ctPass=0;
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  // 베이스: DB 예문 전부 + 중복 제거. 10개 채울 때까지 AI로 다양한 상황 보충.
+  const base=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+  ctItems=base.slice(0,10);
+  if(ctItems.length>=10){ ctNext(); return; }
+  $("#sprintScroll").innerHTML=`<div class="lloading">"${escapeHtml(p.phrase)}" 집중 훈련 준비 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  ctGenerate(p);
+}
+async function ctGenerate(p){
+  const contexts="restaurant, hospital, school, hotel, customer support, daily life, travel, shopping, parent conversation, friend conversation";
+  const need=10-p.examples.length;
+  const sys=[
+"You generate rapid-fire speaking drills that ALL force the learner to use ONE specific English chunk.",
+"The chunk: \""+p.phrase+"\" (Korean meaning: "+p.ko+").",
+"Generate "+Math.max(need,6)+" NEW everyday situations. For EACH: a short KOREAN prompt + the natural English answer that MUST use the chunk \""+p.phrase+"\".",
+"Vary the contexts widely: "+contexts+". Keep English short (max 9 words) and natural.",
+"Do NOT repeat these existing ones: "+p.examples.map(e=>e.en).join(" / ")+".",
+'Return ONLY JSON: {"items":[{"ko":"한국어 상황","en":"English using the chunk"}]}.'
+  ].join("\n");
+  try{
+    const d=await callClaude(sys,[{role:"user",content:"Generate now."}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    const gen=(o.items||[]).filter(x=>x&&x.ko&&x.en).map(x=>({ko:x.ko,en:x.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+    ctItems=p.examples.map(e=>({ko:e.ko,en:e.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")})).concat(gen).slice(0,10);
+    if(ctItems.length<5) throw new Error("short");
+    ctNext();
+  }catch(e){
+    // AI 실패 → DB 예문만 반복으로 10개 채움
+    const base=p.examples.map(e=>({ko:e.ko,en:e.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+    ctItems=[]; let i=0; while(ctItems.length<10 && base.length){ ctItems.push(base[i%base.length]); i++; }
+    ctNext();
+  }
+}
+function ctNext(){
+  if(ctIdx>=ctItems.length) return ctDone();
+  const it=ctItems[ctIdx];
+  const prog=Math.round(ctIdx/ctItems.length*100);
+  $("#sprintScroll").innerHTML=`
+   <div class="arena" style="max-width:520px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button id="ctExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
+      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#1fd3a0,#7cc4ff)"></div></div>
+      <div style="font-size:12px;font-weight:800;color:var(--muted)">${ctIdx+1}/${ctItems.length} · ✓${ctPass}</div>
+    </div>
+    <div style="text-align:center;margin:8px 0 16px">
+      <div style="font-size:12px;color:var(--muted);font-weight:700">🎯 이 청크로만 답하기</div>
+      <div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--jade);margin-top:3px">${escapeHtml(ctChunk)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">7/10 맞히면 마스터 ⭐</div>
+    </div>
+    <div class="spell-card">
+      <div class="sc-hint">한국어 → 영어로 말해보세요</div>
+      <div class="sc-ko">${escapeHtml(it.ko)}</div>
+    </div>
+    <div id="ctStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px">🎤 눌러서 바로 말하기</div>
+    <button id="ctMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
+   </div>`;
+  ctT0=Date.now(); ctSpoke=0;
+  $("#ctExit").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
+  $("#ctMic").onclick=function(){ const b=this; if(qzRecording) return; if(!ctSpoke) ctSpoke=Date.now();
+    b.classList.add("live"); $("#ctStat").textContent="시전 중…";
+    micFillCb((t)=>{ b.classList.remove("live"); ctScore(it, t); }); };
+}
+function ctScore(it, heard){
+  const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
+  const grade=spGrade(heard, it, elapsed);
+  const ok=(grade!=="miss");
+  if(ok) ctPass++;
+  const stat=$("#ctStat");
+  if(stat){
+    const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
+             : grade==="hit"?`<span style="color:#1fd3a0;font-weight:900">⚔️ 통과</span>`
+             : `<span style="color:#f87171;font-weight:900">💥 다시</span>`;
+    stat.innerHTML=`${lbl} <span style="font-family:var(--serif);color:var(--text);font-size:17px">${escapeHtml(it.en)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`들림 "${escapeHtml(heard)}"`:"안 들렸어요"}</span>`;
+  }
+  const mic=$("#ctMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
+  if(ok){ try{ avSeen(it.en,it.ko); avRetrieve(it.en,it.ko,it.tag||"chunk"); }catch(e){} }
+  setTimeout(()=>speakEn(it.en),120);
+  setTimeout(()=>{ ctIdx++; ctNext(); }, 1100);
+}
+function ctDone(){
+  TTS&&TTS.cancel();
+  const mastered = ctPass>=7;
+  if(mastered){ weakClear(ctPid); }
+  else { const w=weakGet(); if(w[ctPid]){ w[ctPid].miss=Math.max(1, 10-ctPass); weakSet(w); } }
+  const xp = mastered? awardXP("output",60,"⭐ 청크 마스터!","chunkmaster") : awardXP("output",ctPass*5,"청크 훈련","chunk");
+  const pct=Math.round(ctPass/ctItems.length*100);
+  $("#sprintScroll").innerHTML=`
+   <div class="rv-done" style="max-width:440px"><div class="em">${mastered?"⭐":"💪"}</div>
+   <h2>${mastered?"청크 마스터!":"조금만 더!"}</h2>
+   <p style="font-family:var(--serif);font-size:20px;color:var(--jade);margin:2px 0 4px">${escapeHtml(ctChunk)}</p>
+   <p>${ctPass}/${ctItems.length} 통과 (${pct}%)${mastered?" · +60 XP ⭐":` · 7개 필요했어요`}</p>
+   ${mastered?`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">Seen → Recognized → Retrieved → <b style="color:var(--jade)">Mastered</b> ✓</div>`
+            :`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
+   <div class="blk-actions" style="max-width:340px">
+     <button class="blk-save" id="ctHome">홈으로</button>
+     <button class="blk-next" id="ctAgain">${mastered?"다른 청크":"다시 도전"}</button>
+   </div></div>`;
+  $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
+  $("#ctAgain").onclick=()=>{ if(mastered){ goToSetup(); try{ renderWeakHome(); }catch(e){} } else startChunkTraining(ctPid); };
+}
+// 🔥 홈 약점 청크 위젯 — 탭하면 즉시 재훈련
+function renderWeakHome(){
+  const box=$("#weakHome"); if(!box) return;
+  const weak=weakList(3);
+  if(!weak.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display="block";
+  box.innerHTML=`
+    <div class="seclabel" style="margin-bottom:7px">🔥 약한 청크 — 탭하면 바로 훈련</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${weak.map(w=>`<button class="weakHomeItem sidequest" data-pid="${escapeAttr(w.pid)}" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:12px 14px;cursor:pointer;border:1.5px solid rgba(248,113,113,.3)">
+        <span><span style="font-family:var(--serif);font-size:15.5px;color:var(--text)">${escapeHtml(w.chunk||w.ko)}</span><br><span style="font-size:11px;color:#f87171">${w.miss}회 막힘</span></span>
+        <span style="font-size:18px">⚡</span></button>`).join("")}
+    </div>`;
+  box.querySelectorAll(".weakHomeItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
 function openPhonics(){
+  if(!tutSeenAll().phonics){ showTutorial("phonics", false, ()=>openPhonics()); return; }
   phAttempts=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -4291,26 +4672,30 @@ function phScoreFx(res, st, target){
   const heard=String(res.heard||"").toLowerCase();
   const heardWords=heard.replace(/[^a-z ]/g,"").split(/\s+/).filter(Boolean);
   const matched = !tgt || (heardWords.some(w=> w===tgt || (tgt.length>2 && (w.includes(tgt)||tgt.includes(w)))));
-  if(tgt && heardWords.length && !matched) sc=Math.min(sc,30);   // 다른 말 → 정직하게 낮춤
-  let stars, msg, col;
-  if(sc>=80){ stars=3; msg="완벽해요!"; col="#10b981"; }
-  else if(sc>=60){ stars=2; msg="잘했어요!"; col="#10b981"; }
-  else if(sc>=40){ stars=1; msg="좋아요, 한 번 더!"; col="#f59e0b"; }
-  else { stars=0; msg=(tgt&&!matched)?"다른 소리가 났어요. 다시!":"다시 해볼까?"; col="#ef4444"; }
-  // XP (문서 표) + 보너스 + 캡/감쇠
+  // 틀린 말(다른 단어)은 통과 불가
+  if(tgt && heardWords.length && !matched) sc=0;
+  const PASS=90, BONUS=95;
+  const pass = matched && sc>=PASS;
+  let stars, msg, col, xp=0;
+  if(pass && sc>=BONUS){ stars=3; msg="완벽해요! 가산점 +"; col="#10b981"; }
+  else if(pass){ stars=2; msg="통과! 잘했어요"; col="#10b981"; }
+  else if(tgt && !matched){ stars=0; msg="다른 소리가 났어요. 다시! 🎤"; col="#ef4444"; }
+  else { stars=0; msg="조금 더! (90점 넘어야 통과) 🎤"; col="#f59e0b"; }
+  // XP는 통과(90↑)했을 때만. 95↑ 가산점. 통과 못하면 0점·XP 없음.
   bestPronToday(sc);
-  let xp=pronXP(sc);
-  awardXP("phonics", xp, "발음 "+sc+"점", "ph:"+(tgt||"x"));
-  if(sc>=90 && firstHighPronToday()) awardXP("phonics",10,"오늘 첫 90점! 🌟");
-  phAttempts++; if(phAttempts===3) awardXP("phonics",5,"3번 연습 보너스!");
-  questBump("phonics");
-  if(sc>=95){ burstStars(10); } // 특별 애니메이션
-  st.innerHTML=`<div style="font-size:22px;font-weight:900;color:${col}">${sc}점 <span style="font-size:15px">${"⭐".repeat(stars)||"🙂"}</span> <span style="font-size:13px;color:var(--muted)">+${xp}XP</span></div>
-    <div style="font-size:13px;color:#475569;font-weight:700;margin-top:2px">${msg}${sc<40?" 도전만으로도 XP 받았어요! 👏":""}</div>
-    ${res.heard?`<div style="font-size:12px;color:#94a3b8;margin-top:3px">들린 발음: "${escapeHtml(res.heard)}"</div>`:""}`;
-  if(stars>0){ burstStars(stars);
+  if(pass){
+    xp = pronXP(sc);
+    if(sc>=BONUS) xp += 8;                          // 가산점
+    awardXP("phonics", xp, "발음 "+sc+"점", "ph:"+(tgt||"x"));
+    if(firstHighPronToday()) awardXP("phonics",10,"오늘 첫 통과! 🌟");
+    questBump("phonics");
+    burstStars(sc>=BONUS?12:stars);
     const sb=$("#phonicsScroll").querySelector(".phstars"); if(sb) sb.textContent="⭐ "+phStars(stars);
   }
+  phAttempts++; if(pass && phAttempts===3) awardXP("phonics",5,"3번 통과 보너스!");
+  st.innerHTML=`<div style="font-size:24px;font-weight:900;color:${col}">${sc}점 <span style="font-size:16px">${pass?"⭐".repeat(stars):"💪"}</span>${xp?` <span style="font-size:14px;color:var(--muted)">+${xp}XP</span>`:""}</div>
+    <div style="font-size:14px;color:#475569;font-weight:800;margin-top:3px">${msg}</div>
+    ${res.heard?`<div style="font-size:12px;color:#94a3b8;margin-top:3px">들린 발음: "${escapeHtml(res.heard)}"</div>`:""}`;
 }
 function burstStars(n){
   const host=$("#phonics"); if(!host) return;
@@ -4358,20 +4743,26 @@ function autoTopic(){
   return {id:"daily", t:"실생활", emo:"💬", topic:"everyday real-life situations"};
 }
 function startMainTraining(){
-  lsBoosterMode=false; state.engine="input";
-  state.mode="listen"; state.topic=autoTopic();
-  startListening();
+  showTutorial("listen", false, ()=>{
+    lsBoosterMode=false; state.engine="input";
+    state.mode="listen"; state.topic=autoTopic();
+    startListening();
+  });
 }
 function startBooster(){
-  lsBoosterMode=true; state.engine="input";
-  state.mode="listen"; state.topic={id:"booster", t:"리스닝 부스터", emo:"🎧", topic:"casual fast everyday talk full of reductions and contractions"};
-  startListening();
+  showTutorial("booster", false, ()=>{
+    lsBoosterMode=true; state.engine="input";
+    state.mode="listen"; state.topic={id:"booster", t:"리스닝 부스터", emo:"🎧", topic:"casual fast everyday talk full of reductions and contractions"};
+    startListening();
+  });
 }
 // 🗣️ 꺼내기 Engine — 한국어 상황 먼저, 힌트 없이 영어로
 function startOutputEngine(){
-  state.engine="output"; state.mode="talk";
-  state.scn={ id:"output", t:"꺼내기", emo:"🗣️", role:"an output coach", ctx:"retrieval practice" };
-  startSession();
+  showTutorial("output", false, ()=>{
+    state.engine="output"; state.mode="talk";
+    state.scn={ id:"output", t:"꺼내기", emo:"🗣️", role:"an output coach", ctx:"retrieval practice" };
+    startSession();
+  });
 }
 // 🌎 실전상황 Engine — 생존 시뮬레이션
 const SURVIVAL=[
@@ -4387,6 +4778,7 @@ const SURVIVAL=[
  {id:"sv_net",   emo:"🌐", t:"인터넷 문제 통화", role:"an internet service provider support agent", ctx:"The learner's internet is down; they must describe the problem, do troubleshooting steps, and arrange a fix.", emotion:"reads from a troubleshooting script, slightly robotic", pressure:"makes them try steps live; connection keeps cutting"}
 ];
 function openSurvival(){
+  if(!tutSeenAll().survival){ showTutorial("survival", false, ()=>openSurvival()); return; }
   const kid=kidMode(); const LIST=kid?KID_SITUATIONS:SURVIVAL;
   const sc=document.createElement("div"); sc.id="svPick";
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
@@ -4413,9 +4805,11 @@ function startSurvival(s){
   startSession();
 }
 function startVocabCoach(){
-  lsBoosterMode=false; state.engine="input";
-  state.mode="vocab"; state.vocabTheme=nextVocabTheme();
-  startVocab();
+  showTutorial("vocab", false, ()=>{
+    lsBoosterMode=false; state.engine="input";
+    state.mode="vocab"; state.vocabTheme=nextVocabTheme();
+    startVocab();
+  });
 }
 // 습득 지표 (점수 아님): 능동 어휘 · 연속일 · 평균 인출속도
 /* ===== Active Vocabulary (4단계) + 오늘의 생존 표현 =====
@@ -4601,6 +4995,7 @@ function renderHome(){
     } else { chestBanner.style.display="none"; } }
   renderDailyCard();
   renderQuestBox();
+  try{ renderWeakHome(); }catch(e){}
   renderAcqStats();
   // continue
   const last=hGet("speakingroom:last",null); const cc=$("#continueCard");
@@ -4608,6 +5003,8 @@ function renderHome(){
   else cc.style.display="none";
   // version
   const vf=$("#verFoot"); if(vf){ vf.textContent="스피킹 룸 "+APP_VERSION+" · "+APP_BUILD+"  ·  ↻ 업데이트 확인"; vf.style.cursor="pointer"; vf.onclick=forceUpdate; }
+  // ? 도움 버튼 — 카드 클릭 막고 튜토리얼만 표시
+  $$(".help-q").forEach(q=>{ q.onclick=(e)=>{ e.stopPropagation(); e.preventDefault(); showTutorial(q.dataset.tut, true); }; });
 }
 // 연령별 일일 퀘스트
 function questDefs(){
@@ -4837,6 +5234,84 @@ function xpToast(amount,label,lvUp){
   t.innerHTML=`<span class="xv">+${amount} XP</span>${label?" · "+label:""}${lvUp?`<span class="lvup">🎉 레벨 ${lvUp} 달성!</span>`:""}`;
   t.classList.add("show"); clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove("show"), lvUp?3400:2100);
 }
+/* ===================== 📖 튜토리얼 시스템 ===================== */
+// 모드별: what(목표)·why(메시지)·how(단계)·success(성공조건)
+const TUTORIALS={
+  phonics:{icon:"🏰", title:"사운드 아카데미",
+    goal:"단어보다 '소리'를 먼저 배워요.",
+    how:["듣기","따라 말하기","별 모으기 ⭐"],
+    howKid:["귀로 듣기 👂","입으로 따라 하기 👄","별 받기 ⭐"],
+    success:"발음이 좋아질수록 별이 늘어요.",
+    msg:"영어는 소리에서 시작해요."},
+  listen:{icon:"🎧", title:"리스닝 동굴",
+    goal:"귀를 먼저 트이게 해요.",
+    how:["집중해서 듣기","들린 걸 고르기","틀려도 괜찮아요"],
+    howKid:["귀 쫑긋 듣기 👂","들린 거 고르기","틀려도 OK 😊"],
+    success:"매일 조금씩 더 들려요.",
+    msg:"입보다 귀가 먼저 배워요."},
+  output:{icon:"⚔️", title:"스피킹 훈련장",
+    goal:"생각을 영어로 꺼내요.",
+    how:["한국어 상황을 읽고","영어로 말하고","말이 되면 통과"],
+    howKid:["상황 보기","영어로 말하기","뜻만 통하면 OK 😊"],
+    success:"문법 완벽 말고 '뜻 전달'이 목표.",
+    msg:"외우기보다 말하기예요."},
+  sprint:{icon:"⚡", title:"라이트닝 아레나",
+    goal:"빠르게 바로 꺼내요.",
+    how:["한국어가 뜨면","빠르게 영어로","콤보를 이어가기 🔥"],
+    howKid:["한국어 보기","빨리 영어로! ⚡","콤보 이어가기 🔥"],
+    success:"빠른 인출 = 진짜 실력.",
+    msg:"속도가 유창함을 만들어요."},
+  survival:{icon:"🌎", title:"모험 월드맵",
+    goal:"진짜 상황을 헤쳐나가요.",
+    how:["AI 상대와 대화해요","식당·호텔·학교·병원","문제를 해결하면 성공"],
+    howKid:["친구·선생님과 대화 😊","재미있게 이야기","끝까지 해보기"],
+    success:"상황을 끝까지 해결하면 승리.",
+    msg:"진짜 상황 전에 미리 연습해요."},
+  booster:{icon:"🎤", title:"연음 부스터",
+    goal:"빠른 원어민 말을 알아들어요.",
+    how:["연결된 소리를 듣고","따라 말해보기"],
+    howKid:["뭉친 소리 듣기 👂","따라 말하기 👄"],
+    success:"영어가 덜 뭉개져 들려요.",
+    msg:"원어민은 단어를 이어 말해요."},
+  vocab:{icon:"💎", title:"단어 강화",
+    goal:"아는 단어를 '쓰는' 단어로.",
+    how:["단어를 상황 속에서","직접 써보기 (암기 X)"],
+    howKid:["단어로 말 만들기","상황에서 써보기 😊"],
+    success:"단어가 저절로 튀어나와요.",
+    msg:"아는 것과 쓰는 건 달라요."}
+};
+const TUT_ORDER=["phonics","listen","output","sprint","survival","booster","vocab"];
+function tutSeenAll(){ try{ return hGet("speakingroom:tutseen",{}); }catch(e){ return {}; } }
+function tutMarkSeen(key){ const o=tutSeenAll(); o[key]=1; try{ hSet("speakingroom:tutseen",o); }catch(e){} }
+function tutResetAll(){ try{ hSet("speakingroom:tutseen",{}); }catch(e){} }
+// force=true → ?버튼 (항상). 아니면 첫 진입에만. onClose는 닫은 뒤 콜백(보통 모드 시작).
+function showTutorial(key, force, onClose){
+  const t=TUTORIALS[key]; if(!t){ onClose&&onClose(); return; }
+  const seen=tutSeenAll()[key];
+  if(seen && !force){ onClose&&onClose(); return; }   // 이미 봤고 강제 아님 → 바로 통과
+  const kid=kidMode();
+  const steps=(kid&&t.howKid)?t.howKid:t.how;
+  const ov=document.createElement("div"); ov.className="tut-ov";
+  ov.innerHTML=`
+    <div class="tut-card ${kid?"tut-kid":""}">
+      <div class="tut-ico">${t.icon}</div>
+      <div class="tut-title">${escapeHtml(t.title)}</div>
+      <div class="tut-goal">${escapeHtml(t.goal)}</div>
+      <div class="tut-steps">
+        ${steps.map((s,i)=>`<div class="tut-step"><span class="tut-num">${i+1}</span><span>${escapeHtml(s)}</span></div>`).join("")}
+      </div>
+      <div class="tut-succ"><span>🏆</span> ${escapeHtml(t.success)}</div>
+      <div class="tut-msg">"${escapeHtml(t.msg)}"</div>
+      <button class="tut-go" id="tutGo">${force?"닫기":"시작하기 →"}</button>
+      ${force?"":`<button class="tut-skip" id="tutSkip">다시 보지 않기</button>`}
+    </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(()=>ov.classList.add("show"));
+  const done=(markSeen)=>{ if(markSeen) tutMarkSeen(key); ov.classList.remove("show"); setTimeout(()=>{ ov.remove(); onClose&&onClose(); },180); };
+  $("#tutGo").onclick=()=>done(!force? true : false);   // 시작하기 = 봤음 처리
+  const sk=$("#tutSkip"); if(sk) sk.onclick=()=>done(true);
+  ov.onclick=(e)=>{ if(e.target===ov){ if(force) done(false); } };
+}
 function openProfile(){ renderProfile(); $("#profScrim").classList.add("show"); }
 function closeProfile(){ $("#profScrim").classList.remove("show"); }
 function renderProfile(){
@@ -4871,6 +5346,8 @@ function renderProfile(){
       <div style="font-size:13px;color:var(--text);font-weight:700;letter-spacing:.02em">${qLine}</div>
     </div>
     <div class="stat-grid">${stats.map(s=>`<div class="stat"><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}</div></div></div>`).join("")}</div>
+    <div class="prof-h">📖 튜토리얼 다시보기</div>
+    <div class="tut-list">${TUT_ORDER.map(k=>{ const t=TUTORIALS[k]; return `<button class="tut-li" data-tut="${k}"><span class="tli-ico">${t.icon}</span><span class="tli-t">${escapeHtml(t.title)}</span><span class="tli-ar">›</span></button>`; }).join("")}</div>
     <div class="prof-h">🏅 배지</div>
     <div class="badge-grid">${BADGES.map(b=>{ const got=badgesGot()[b.id]; return `<div class="badge ${got?'got':'locked'}"><div class="be">${b.emo}</div><div class="bt">${escapeHtml(b.t)}</div></div>`; }).join("")}</div>
     <div class="prof-h">🎁 보상 사다리 — 부모님이 정해주세요</div>
@@ -4878,6 +5355,7 @@ function renderProfile(){
     <p style="font-size:11.5px;color:var(--muted);text-align:center;margin-top:13px;line-height:1.7">레벨이 오르면 보상이 열려요. 매일 조금씩, 습관이 목표예요 😊</p>`;
   $("#profClose").onclick=closeProfile;
   $("#profNameEdit").onclick=editName;
+  $$(".tut-li").forEach(b=>{ b.onclick=()=>showTutorial(b.dataset.tut, true); });
 }
 async function endAndEvaluate(){
   const userTurns=(state.convo||[]).filter(m=>m.role==="user").length;
