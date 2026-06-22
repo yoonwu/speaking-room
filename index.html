@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.94.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.95.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5975,7 +5975,7 @@ function blRender(){
     </div>
     <div class="ar2-ctrl">
      <button id="blMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
-     <button id="blType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기 (공공장소)</button>
+     <button id="blType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기</button>
      ${teach?'':'<button id="blHint" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">💡 힌트 보기</button>'}
     </div>
    </div>`;
