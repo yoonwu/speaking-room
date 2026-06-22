@@ -101,27 +101,27 @@
 .tut-kid .tut-ico{font-size:66px}
 .tut-kid .tut-title{font-size:25px}
 /* 📝 Word Power 문제 화면 — 풀스크린 3단 (말해보카 스타일) */
-.wp-stage{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;padding:4px 0}
-.wp-q-tab{align-self:center;font-size:13px;font-weight:800;color:var(--jade);background:rgba(31,211,160,.12);border:1px solid rgba(31,211,160,.3);border-radius:99px;padding:6px 15px;margin-bottom:16px}
-.wp-q-card{flex:0 1 auto;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:34px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.18)}
-.wp-q-ko{font-size:19px;color:var(--jade);font-weight:800;margin-bottom:22px}
-.wp-q-en{font-family:var(--serif);font-size:34px;line-height:1.5;color:var(--text);font-weight:500}
-.wp-blank{display:inline-block;min-width:80px;border-bottom:3px solid var(--jade);color:var(--jade);font-weight:800;letter-spacing:2px;margin:0 4px;vertical-align:baseline}
+.wp-stage{flex:1;display:flex;flex-direction:column;min-height:0;padding:4px 0}
+.wp-q-tab{align-self:center;font-size:13px;font-weight:800;color:var(--jade);background:rgba(31,211,160,.12);border:1px solid rgba(31,211,160,.3);border-radius:99px;padding:6px 15px;margin-bottom:14px}
+.wp-q-card{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:30px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.wp-q-ko{font-size:19px;color:var(--jade);font-weight:800;margin-bottom:24px}
+.wp-q-en{font-family:var(--serif);font-size:34px;line-height:1.6;color:var(--text);font-weight:500}
+.wp-blank{display:inline-block;min-width:90px;border-bottom:3px solid var(--jade);margin:0 4px;vertical-align:bottom}
 /* 라이브 음성 인식 영역 */
-.wp-speech{text-align:center;font-size:16px;color:var(--muted);margin-top:18px;min-height:26px;font-weight:600;padding:0 16px}
+.wp-speech{text-align:center;font-size:16px;color:var(--muted);margin-top:14px;min-height:26px;font-weight:600;padding:0 16px}
 .wp-live{color:var(--jade);font-weight:800;animation:wpPulse 1s ease-in-out infinite}
 @keyframes wpPulse{0%,100%{opacity:1}50%{opacity:.4}}
-/* 하단 액션 — 큰 마이크 + 큰 액션 카드 */
-.wp-dock{flex:none;padding:16px 0 max(14px, env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:stretch;gap:11px}
-.wp-mic{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;padding:20px;border-radius:18px;background:linear-gradient(135deg,#1fd3a0,#16a085);border:none;color:#06231b;font-size:19px;font-weight:900;cursor:pointer;box-shadow:0 6px 20px rgba(31,211,160,.35);transition:transform .1s}
-.wp-mic svg{width:26px;height:26px}
-.wp-mic:active{transform:scale(.98)}
-.wp-mic.live{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 6px 20px rgba(248,113,113,.4);animation:wpPulse 1.1s ease-in-out infinite}
-.wp-dock-row{display:flex;gap:11px}
-.wp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:16px;border-radius:15px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s}
+/* 하단 액션 — 큰 동그란 마이크 + 큰 액션 카드 */
+.wp-dock{flex:none;padding:14px 0 max(14px, env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:13px}
+.wp-mic{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1fd3a0,#16a085);border:none;color:#06231b;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 8px 26px rgba(31,211,160,.4);transition:transform .1s}
+.wp-mic svg{width:34px;height:34px}
+.wp-mic:active{transform:scale(.95)}
+.wp-mic.live{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 8px 26px rgba(248,113,113,.45);animation:wpPulse 1.1s ease-in-out infinite}
+.wp-dock-row{display:flex;gap:11px;width:100%}
+.wp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:15px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s}
 .wp-act:active{transform:scale(.98);background:var(--mist)}
 .wp-act-ic{font-size:20px}
-.wp-giveup{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:8px;margin-top:2px}
+.wp-giveup{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px}
 .wp-giveup:active{color:var(--text)}
 /* 🗣 스피킹 결과 — 결과/이유/내답/XP 구조 */
 .wp-spd{flex:1;padding:11px;border-radius:11px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:13.5px;font-weight:700;cursor:pointer}
@@ -1430,7 +1430,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.69.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.70.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3612,7 +3612,7 @@ function wpAsk(q){
     : ctxLabel ? ctxLabel+" — 또 나왔어요!"
     : "🔁 또 나왔어요 — 기억나요?";
   // 빈칸 강조 — [ ___ ]를 하이라이트 박스로
-  const enHtml = escapeHtml(q.blank.en).replace(/\[ ___ \]/g, '<span class="wp-blank">_____</span>');
+  const enHtml = escapeHtml(q.blank.en).replace(/\[ ___ \]/g, '<span class="wp-blank">&nbsp;&nbsp;&nbsp;&nbsp;</span>');
   card.innerHTML=`
     <div class="wp-stage">
       <div class="wp-q-tab">${tabTxt}</div>
