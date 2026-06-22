@@ -1263,6 +1263,12 @@ body{background:var(--paper)!important;color:var(--text)}
 .wp-giveup:active{background:var(--mist);color:var(--text)}
 .ls-skip{display:block;width:100%;margin-top:10px;padding:13px 20px;border-radius:13px;background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer}
 .ls-skip:active{background:var(--mist);color:var(--text)}
+/* ✨ 정답/오답 화면 플래시 */
+.flash-fx{position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:0;transition:opacity .12s ease}
+.flash-fx.on{animation:flashPulse .6s ease}
+.flash-ok{background:radial-gradient(ellipse at center, rgba(31,211,160,.0) 30%, rgba(31,211,160,.38) 100%);box-shadow:inset 0 0 90px 20px rgba(31,211,160,.45)}
+.flash-bad{background:radial-gradient(ellipse at center, rgba(248,80,80,.0) 30%, rgba(248,80,80,.36) 100%);box-shadow:inset 0 0 90px 20px rgba(248,80,80,.42)}
+@keyframes flashPulse{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 /* 🧱 오늘의 영어 블록 — 홈 히어로 (앱 정체성) */
 .block-hero{background:linear-gradient(135deg,var(--jade),var(--jade-deep));border-radius:20px;padding:18px 18px 16px;margin-bottom:13px;box-shadow:0 12px 28px -12px rgba(240,102,74,.5)}
 .bh-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
@@ -1664,7 +1670,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.79.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.80.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3949,9 +3955,10 @@ function wpAsk(q){
   wpT0=Date.now();
   const status=$("#wpStatus"), inp=$("#wpInput");
   let hintN=0;
-  $("#wpHint").onclick=()=>{ hintN++; const a=q.blank.answer;
-    if(hintN===1) status.textContent="힌트: 첫 글자 '"+a[0]+"…' ("+a.length+"글자)";
-    else { status.innerHTML="정답: <b>"+escapeHtml(a)+"</b>"; } };
+  $("#wpHint").onclick=()=>{ const a=q.blank.answer; const total=syllableCount(a); hintN++;
+    if(hintN>=total){ status.innerHTML="힌트: <b>"+escapeHtml(a)+"</b> (전체 공개)"; }
+    else { status.innerHTML="힌트 ("+hintN+"/"+total+" 음절): <b style=\"letter-spacing:1px\">"+escapeHtml(syllableHint(a,hintN))+"</b>"; }
+  };
   // 라이브 음성 인식 (interim results 실시간 표시)
   let liveRecog=null;
   try{ liveRecog = new(window.webkitSpeechRecognition || window.SpeechRecognition); }catch(e){}
@@ -3977,7 +3984,18 @@ function wpAsk(q){
     }
     micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
   };
-  $("#wpKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
+  $("#wpKbd").onclick=()=>{
+    // 입력 모드: 마이크/액션 숨기고, 입력칸+정답보기를 위로 (키보드에 안 가림)
+    const dock=card.querySelector(".wp-dock");
+    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), give=$("#wpGiveup");
+    if(mic) mic.style.display="none";
+    if(row) row.style.display="none";
+    inp.style.display="block";
+    // 입력칸과 정답보기를 dock 맨 위로 재배치
+    if(dock && give){ dock.insertBefore(inp, dock.firstChild); dock.insertBefore(give, inp.nextSibling); }
+    inp.focus();
+    setTimeout(()=>{ try{ inp.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} }, 320);
+  };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
   wpSeenWord[q.word.word]=true;
@@ -4006,12 +4024,13 @@ function wpSubmit(q, answer){
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
   // ❌ 틀렸지만 포기 안 함 → 정답 공개하지 말고 같은 화면에서 다시 (맞출 때까지)
   if(answer && !correct){
+    flashResult(false);
     srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
     q._wrongCount=(q._wrongCount||0)+1;
     const status=$("#wpStatus");
     if(status){
-      // 3번 이상 틀리면 첫 글자 힌트 제공
-      const hint = q._wrongCount>=3 ? ` · 힌트: '${q.blank.answer[0]}…' (${q.blank.answer.length}글자)` : "";
+      // 3번 이상 틀리면 음절 힌트 제공 (틀린 횟수만큼 누적)
+      const hint = q._wrongCount>=3 ? ` · 힌트: '${syllableHint(q.blank.answer, q._wrongCount-2)}'` : "";
       status.innerHTML=`<span style="color:#f87171;font-weight:800">"${escapeHtml(answer)}" — 아니에요 😅 다시 말해보세요${hint}</span>`;
       status.style.color="";
     }
@@ -4023,6 +4042,7 @@ function wpSubmit(q, answer){
   wpStats.total++; if(correct) wpStats.correct++;
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
+    flashResult(true);
     srsPass(q.word.word, q.word.ko, ctxTag);
     const fast=elapsed<4 && !q._wrongCount;
     awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
@@ -6233,6 +6253,42 @@ function phCelebrate(title, done){
 }
 
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+// 영어 단어/구를 대략적인 음절로 분해 (힌트 점진 공개용)
+function splitSyllables(word){
+  const w=String(word||"").toLowerCase();
+  if(!w) return [];
+  return w.split(/(\s+)/).map(tok=>{
+    if(/^\s+$/.test(tok)) return [tok];
+    const m=tok.match(/[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi);
+    if(!m || !m.length) return [tok];
+    return m;
+  }).reduce((a,b)=>a.concat(b),[]);
+}
+// 누적 음절 힌트 — n음절까지 공개, 나머지는 · 로 가림
+function syllableHint(word, n){
+  const syl=splitSyllables(word);
+  if(!syl.length) return word;
+  let shown=0, out="";
+  for(const s of syl){
+    if(/^\s+$/.test(s)){ out+=" "; continue; }
+    if(shown<n){ out+=s; shown++; }
+    else out+="·".repeat(Math.max(1,s.length));
+  }
+  return out;
+}
+// 총 음절 수
+function syllableCount(word){ return splitSyllables(word).filter(s=>!/^\s+$/.test(s)).length; }
+// ✨ 정답/오답 화면 플래시 — 맞으면 초록, 틀리면 빨강 (전역, 어느 세션에서나)
+function flashResult(ok){
+  let el=document.getElementById("flashFx");
+  if(!el){ el=document.createElement("div"); el.id="flashFx"; document.body.appendChild(el); }
+  el.className="flash-fx "+(ok?"flash-ok":"flash-bad");
+  // 재트리거를 위해 리플로우
+  void el.offsetWidth;
+  el.classList.add("on");
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.classList.remove("on"); }, 620);
+}
 function escapeAttr(s){ return escapeHtml(s).replace(/'/g,"&#39;"); }
 function autoSize(){ msg.style.height="auto"; msg.style.height=Math.min(msg.scrollHeight,120)+"px"; }
 function refreshSend(){ sendBtn.disabled = !msg.value.trim() || state.busy; }
