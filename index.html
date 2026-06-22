@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.03.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.04.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2412,6 +2412,24 @@ async function startSession(){
 function convoTrackBlocks(userText){
   const t=" "+String(userText||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ")+" ";
   if(t.trim().length<3) return;
+  let usedBle=[];
+  try{
+    const s=bleGetState();
+    getLearnedBlocks().forEach(b=>{
+      const st=s[b.id]; if(!st || !st.unlocked) return;
+      const core=bleNorm(b.block.replace(/\.\.\.|\?/g,"")).split(" ").slice(0,3).join(" ");
+      if(core.length>=3 && t.indexOf(" "+core)>=0 && usedBle.indexOf(b.id)<0){
+        st.realConversationSuccessCount=(st.realConversationSuccessCount||0)+1;
+        st.lastSeenAt=bleNow();
+        const ctx="real:"+(state.scn&&state.scn.id||"conversation");
+        st.contextsUsed=st.contextsUsed||[];
+        if(st.contextsUsed.indexOf(ctx)<0) st.contextsUsed.push(ctx);
+        st.stage=bleComputeStage(st);
+        s[b.id]=st; usedBle.push(b.id);
+      }
+    });
+    if(usedBle.length) bleSaveState(s);
+  }catch(e){}
   const all=srsAll(); let used=[];
   Object.values(all).forEach(it=>{
     if(!it || !it.en) return;
@@ -2432,7 +2450,7 @@ function convoTrackBlocks(userText){
       if(core.length>=3 && t.indexOf(" "+core)>=0 && blGetLearned().indexOf(p.id)>=0){ blMarkReal(p.id); }
     });
   }catch(e){}
-  if(used.length){ try{ refreshRvBanner&&refreshRvBanner(); }catch(e){} }
+  if(used.length||usedBle.length){ try{ refreshRvBanner&&refreshRvBanner(); }catch(e){} }
 }
 async function sendMessage(){
   const text=msg.value.trim();
@@ -2671,21 +2689,19 @@ function listenMaterials(){
   const tier = lvl<=3 ? {learned:70,weak:20,fresh:10} : lvl<=6 ? {learned:60,weak:25,fresh:15} : {learned:50,weak:30,fresh:20};
   const all=Object.values(srsAll());
   const today=EDAY();
-  const pickEn=arr=>arr.map(x=>x.en).filter(Boolean);
-  // 배운 블록 (CORE_PHRASES 중 사용된 것 + SRS 학습됨)
+  const bleBlocks=blePriorityBlocks(18, false).map(bleItemFromBlock);
+  const bleWeak=getWeakBlocks().map(bleItemFromBlock);
+  const bleRecent=getRecentlyLearnedBlocks().map(bleItemFromBlock);
+  // CORE_PHRASES는 BLE가 없을 때만 보강하는 백업
   const learnedBlocks = CORE_PHRASES.filter(p=>{ const si=srsGet(p.phrase); return si && (si.uses>0 || ["learning","review","strong","mastered"].includes(si.stage)); }).map(p=>p.phrase);
   // SRS에서 배운 표현/단어
   const learnedItems = all.filter(x=>x && x.en && (x.uses>0)).map(x=>x.en);
   const weakItems = all.filter(x=>x && x.en && ((x.miss||0)>0 || ((x.due||0)<=today && x.stage!=="mastered"))).sort((a,b)=>(b.miss||0)-(a.miss||0)).map(x=>x.en);
   const recentItems = all.filter(x=>x && x.en && x.lastT).sort((a,b)=>(b.lastT||0)-(a.lastT||0)).slice(0,10).map(x=>x.en);
-  // 배운 단어 (FREQ_DICT 중 SRS에 있는 건 위에서 잡힘; vocab 학습한 단어)
-  // BLE 신엔진에서 배운 블록도 포함 (P10)
-  let bleLines=[];
-  try{ const bm=bleMaterialsForMode("listen"); if(bm&&bm.blocks.length) bleLines=bm.blocks.map(x=>x.en); }catch(e){}
   return {
-    blocks: [...new Set([...bleLines, ...learnedBlocks, ...learnedItems])].slice(0,20),
-    weak: [...new Set(weakItems)].slice(0,12),
-    recent: [...new Set(recentItems)].slice(0,8),
+    blocks: [...new Set([...bleBlocks.map(x=>x.en), ...(bleBlocks.length?[]:learnedBlocks), ...learnedItems])].slice(0,20),
+    weak: [...new Set([...bleWeak.map(x=>x.en), ...weakItems])].slice(0,12),
+    recent: [...new Set([...bleRecent.map(x=>x.en), ...recentItems])].slice(0,8),
     tier
   };
 }
@@ -2762,11 +2778,14 @@ function listenInstantSentence(){
   try{
     const lvl=state.lvl||1;
     let cands=[];
-    // 1차: 레벨 ±2 블록 예문
+    // 1차: BLE에서 배운/due/약점/최근 블록
+    const ble=blePriorityBlocks(20, false).map(bleItemFromBlock);
+    if(ble.length) cands.push(...ble.map(x=>({en:x.en, ko:x.ko, block:x.bleId, blockText:x.block})));
+    // 2차: 레벨 ±2 CORE_PHRASES 백업
     CORE_PHRASES.forEach(p=>{
       if(Math.abs((p.level||2)-lvl)<=2 && p.examples){ p.examples.forEach(ex=>{ if(ex.en && ex.ko) cands.push({en:ex.en, ko:ex.ko, block:p.phrase}); }); }
     });
-    // 2차: 비면 레벨 무시하고 전체 블록 예문 (항상 뭐라도 나오게)
+    // 3차: 비면 레벨 무시하고 전체 블록 예문 (항상 뭐라도 나오게)
     if(!cands.length){
       CORE_PHRASES.forEach(p=>{ if(p.examples){ p.examples.forEach(ex=>{ if(ex.en && ex.ko) cands.push({en:ex.en, ko:ex.ko, block:p.phrase}); }); } });
     }
@@ -2919,10 +2938,27 @@ function lsCheckAnswer(){
 let lsSession={blocks:[], words:[], missed:[]};
 function lsTrackHeard(en, ko, block){
   if(!en) return;
+  // BLE 블록 우선, CORE_PHRASES/SRS는 백업
+  if(block && BLE_BY_ID[block]){
+    const b=BLE_BY_ID[block];
+    bleRecord(b.id, {result:"PERFECT", communicationSuccess:true, targetBlockSuccess:true, situation:"listen", listen:true});
+    if(!lsSession.blocks.includes(b.block)) lsSession.blocks.push(b.block);
+    try{ refreshRvBanner&&refreshRvBanner(); }catch(e){}
+    return;
+  }
+  const low=" "+en.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ")+" ";
+  for(const b of blePriorityBlocks(40, false)){
+    const core=bleNorm(b.block.replace(/\.\.\.|\?/g,"")).split(" ").slice(0,3).join(" ");
+    if(core.length>=3 && low.indexOf(" "+core)>=0){
+      bleRecord(b.id, {result:"PERFECT", communicationSuccess:true, targetBlockSuccess:true, situation:"listen", listen:true});
+      if(!lsSession.blocks.includes(b.block)) lsSession.blocks.push(b.block);
+      try{ refreshRvBanner&&refreshRvBanner(); }catch(e){}
+      return;
+    }
+  }
   // 명시적 block 필드 우선, 없으면 CORE_PHRASES에서 매칭
   let matched=block||"";
   if(!matched){
-    const low=" "+en.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ")+" ";
     const hit=CORE_PHRASES.find(p=>{ const core=p.phrase.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\.\.\.|\?/g,"").trim().split(" ").slice(0,3).join(" "); return core.length>=3 && low.indexOf(" "+core)>=0; });
     if(hit) matched=hit.phrase;
   }
@@ -3877,7 +3913,7 @@ function ensureSeed(themeId){
 function takeFromBank(themeId){
   const key=bankKey(themeId);
   const b=vbankGet(); const arr=b[key]||[];
-  if(arr.length){ const set=arr.shift(); b[key]=arr; vbankSave(b); return set; }
+  if(arr.length){ const i=(Math.random()*arr.length)|0; const set=arr.splice(i,1)[0]; b[key]=arr; vbankSave(b); return set; }
   return null;
 }
 function pushToBank(themeId,set){
@@ -3966,7 +4002,13 @@ function starterSet(){
   const lvl=state.lvl||1;
   const band = lvl<=3 ? STARTER_VOCAB.low : lvl<=6 ? STARTER_VOCAB.mid : STARTER_VOCAB.high;
   // 최근 본 단어 제외하고 셔플
-  const pool=band.filter(w=>!vocabSeenRecent.includes(String(w.word).toLowerCase()));
+  let pool=band.filter(w=>!vocabSeenRecent.includes(String(w.word).toLowerCase()));
+  // band가 seen으로 거의 소진되면 전체 시드 풀에서 안 본 것 추가 (다양성 확보)
+  if(pool.length<5){
+    const full=[]; Object.values(SEED_VOCAB).forEach(sets=>sets.forEach(s=>s.forEach(w=>full.push(w))));
+    const extra=full.filter(w=>!vocabSeenRecent.includes(String(w.word).toLowerCase()) && !pool.some(p=>p.word===w.word));
+    pool=pool.concat(extra);
+  }
   const use=(pool.length>=3?pool:band).slice();
   for(let i=use.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [use[i],use[j]]=[use[j],use[i]]; }
   return use.slice(0,5);
@@ -4000,9 +4042,9 @@ async function generateVocab(){
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
 }
-// 최근 본 단어 추적 (반복 방지)
-let vocabSeenRecent=[];
-function markVocabSeen(set){ try{ (set||[]).forEach(w=>{ if(w&&w.word){ vocabSeenRecent.push(String(w.word).toLowerCase()); } }); if(vocabSeenRecent.length>40) vocabSeenRecent=vocabSeenRecent.slice(-40); }catch(e){} }
+// 최근 본 단어 추적 (반복 방지) — localStorage 영속화로 앱 재시작에도 유지
+let vocabSeenRecent=(function(){ try{ return hGet("speakingroom:vseen",[])||[]; }catch(e){ return []; } })();
+function markVocabSeen(set){ try{ (set||[]).forEach(w=>{ if(w&&w.word){ vocabSeenRecent.push(String(w.word).toLowerCase()); } }); if(vocabSeenRecent.length>60) vocabSeenRecent=vocabSeenRecent.slice(-60); hSet("speakingroom:vseen", vocabSeenRecent); }catch(e){} }
 function setIsStale(set){ if(!set||!set.length) return true; const fresh=set.filter(w=>w&&w.word&&!vocabSeenRecent.includes(String(w.word).toLowerCase())); return fresh.length < Math.ceil(set.length/2); }
 // bank에서 꺼내되, 최근 본 단어 위주면 버리고 다음 것 (최대 몇 번 시도)
 function takeFromBankFresh(themeId){
@@ -5262,11 +5304,25 @@ function bleBlockState(id){
   const s=bleGetState();
   if(!s[id]){ s[id]={ stage:"new", successCount:0, failCount:0, slowCount:0, contextsUsed:[],
     mixedSuccessCount:0, fastCount:0, listeningSuccessCount:0, realConversationSuccessCount:0,
+    hiddenSuccessCount:0, speedAttemptCount:0, blockAvoidCount:0, targetMissCount:0, review7dSuccessCount:0,
     confusedWith:{}, deepPracticeCount:0, consecFails:0, unlocked:false,
     lastSeenAt:null, nextReviewAt:null, avgMs:null, samples:0 }; bleSaveState(s); }
   // 구버전 상태 마이그레이션
   const st=s[id];
-  if(st.confusedWith===undefined){ st.confusedWith={}; st.deepPracticeCount=st.deepPracticeCount||0; st.consecFails=st.consecFails||0; st.unlocked=st.unlocked||false; bleSaveState(s); }
+  let dirty=false;
+  const ensure=(k,v)=>{ if(st[k]===undefined){ st[k]=v; dirty=true; } };
+  ensure("confusedWith",{});
+  ensure("deepPracticeCount",0);
+  ensure("consecFails",0);
+  ensure("unlocked",false);
+  ensure("hiddenSuccessCount",0);
+  ensure("speedAttemptCount",0);
+  ensure("blockAvoidCount",0);
+  ensure("targetMissCount",0);
+  ensure("review7dSuccessCount",0);
+  ensure("listeningSuccessCount",0);
+  ensure("realConversationSuccessCount",0);
+  if(dirty) bleSaveState(s);
   return s[id];
 }
 // 망각곡선 간격(분): 10분 → 1일 → 3일 → 7일 → 14일 → 30일
@@ -5292,32 +5348,52 @@ function bleRecord(id, opts){
   const stt=s[id];
   // result: "PERFECT" | "HIT" | "WEAK_HIT" | "MISS"
   const result=opts.result||(opts.correct?"PERFECT":"MISS");
-  const fast=!!opts.fast, situation=opts.situation||"", ms=opts.ms;
+  const fast=!!opts.fast, situation=opts.situation||"", contextKey=opts.contextKey||situation, ms=opts.ms;
   stt.communicationSuccessCount=stt.communicationSuccessCount||0;
+  stt.blockAvoidCount=stt.blockAvoidCount||0;
+  stt.targetMissCount=stt.targetMissCount||0;
+  stt.hiddenSuccessCount=stt.hiddenSuccessCount||0;
+  stt.speedAttemptCount=stt.speedAttemptCount||0;
+  const communicationSuccess = opts.communicationSuccess!=null ? !!opts.communicationSuccess : (result==="PERFECT"||result==="HIT");
+  const targetBlockSuccess = opts.targetBlockSuccess!=null ? !!opts.targetBlockSuccess : result==="PERFECT";
+  if(opts.speedAttempt) stt.speedAttemptCount++;
+  if(opts.review7d || (targetBlockSuccess && stt.lastSeenAt && (bleNow()-stt.lastSeenAt)>=6*86400000)){
+    stt.review7dSuccessCount=(stt.review7dSuccessCount||0)+1;
+  }
   if(result==="PERFECT"){
     // 의미 맞고 + 타겟 블록 사용 + 충분히 빠름
     stt.successCount++; stt.communicationSuccessCount++; stt.consecFails=0;
-    if(situation && stt.contextsUsed.indexOf(situation)<0) stt.contextsUsed.push(situation);
+    if(contextKey && stt.contextsUsed.indexOf(contextKey)<0) stt.contextsUsed.push(contextKey);
     if(fast) stt.fastCount++; else stt.slowCount++;
     if(opts.mixed) stt.mixedSuccessCount++;
+    if(opts.hidden) stt.hiddenSuccessCount++;
   } else if(result==="HIT"){
     // 의미는 통했지만 타겟 블록 안 씀 → 마스터리 안 올림
     stt.communicationSuccessCount++; stt.consecFails=0;
+    stt.blockAvoidCount++;
+    stt.targetMissCount++;
   } else if(result==="WEAK_HIT"){
     // 어설픔 → 약점 표시, 마스터리 보류
     stt.slowCount++;
+    if(!targetBlockSuccess) stt.targetMissCount++;
   } else { // MISS
     stt.failCount++; stt.consecFails=(stt.consecFails||0)+1;
+    if(!targetBlockSuccess) stt.targetMissCount++;
+  }
+  if(communicationSuccess && !targetBlockSuccess && result!=="HIT"){
+    stt.blockAvoidCount++;
   }
   if(opts.deep) stt.deepPracticeCount=(stt.deepPracticeCount||0)+1;
+  if(opts.listen) stt.listeningSuccessCount=(stt.listeningSuccessCount||0)+1;
+  if(opts.real) stt.realConversationSuccessCount=(stt.realConversationSuccessCount||0)+1;
   // 헷갈린 블록 기록
   if(opts.confusedWith){ stt.confusedWith=stt.confusedWith||{}; stt.confusedWith[opts.confusedWith]=(stt.confusedWith[opts.confusedWith]||0)+1; }
-  if(typeof ms==="number" && ms>0 && (result==="PERFECT"||result==="HIT")){ stt.avgMs = stt.avgMs==null? ms : Math.round((stt.avgMs*stt.samples+ms)/(stt.samples+1)); stt.samples++; }
+  if(typeof ms==="number" && ms>0 && targetBlockSuccess){ stt.avgMs = stt.avgMs==null? ms : Math.round((stt.avgMs*stt.samples+ms)/(stt.samples+1)); stt.samples++; }
   // 단계 갱신
   stt.stage=bleComputeStage(stt);
   s[id]=stt; bleSaveState(s);
-  // 복습 스케줄: PERFECT/HIT는 정답, WEAK_HIT/MISS는 곧 다시
-  bleScheduleNext(id, (result==="PERFECT"||result==="HIT"), fast && result==="PERFECT");
+  // 복습 스케줄: 타겟 블록 성공만 간격을 늘린다. 의미만 통하면 곧 다시.
+  bleScheduleNext(id, targetBlockSuccess, fast && targetBlockSuccess);
 }
 // 단계 계산 (P9 엄격 게이트)
 function bleComputeStage(st){
@@ -5325,14 +5401,15 @@ function bleComputeStage(st){
   const succ=st.successCount||0;       // PERFECT(타겟블록 인출 성공) 횟수
   const mixed=st.mixedSuccessCount||0;
   const fast=st.fastCount||0;
-  // READY_FOR_REAL: active+ & 혼합 2회 & 빠른 1회
-  if(succ>=3 && ctx>=3 && mixed>=2 && fast>=1) return "ready_for_real";
-  // FAST: 5초 이내 인출 3회
-  if(fast>=3 && succ>=3) return "fast";
-  // STRONG: 인출 5회 + 5상황 + 혼합 2회
-  if(succ>=5 && ctx>=5 && mixed>=2) return "strong";
+  const hidden=st.hiddenSuccessCount||0;
+  const review7=st.review7dSuccessCount||0;
+  // READY/STRONG은 즉석 반복이 아니라 다른 상황, 혼합, 속도, 장기복습까지 통과해야 한다.
+  if(succ>=8 && ctx>=6 && mixed>=3 && fast>=2 && review7>=1) return "ready_for_real";
+  if(succ>=6 && ctx>=5 && mixed>=3 && fast>=2 && review7>=1) return "strong";
+  // FAST: 힌트 없는 상황에서 5초 이내 인출 3회
+  if(fast>=3 && hidden>=2 && succ>=3) return "fast";
   // ACTIVE: 인출 3회 + 3상황
-  if(succ>=3 && ctx>=3) return "active";
+  if(succ>=3 && ctx>=3 && mixed>=1) return "active";
   // RETRIEVED: 숨김 인출 1회 성공
   if(succ>=1) return "retrieved";
   if(succ===0 && (st.failCount||0)===0) return "learning";
@@ -5352,25 +5429,43 @@ function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b
 function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
 function getReadyForRealBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].stage==="ready_for_real").map(b=>({...b,state:s[b.id]})); }
 function getRecentlyLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).sort((a,b)=>(s[b.id].lastSeenAt||0)-(s[a.id].lastSeenAt||0)).slice(0,3).map(b=>({...b,state:s[b.id]})); }
+function bleUniqueBlocks(lists, limit){
+  const out=[], seen=new Set();
+  lists.flat().forEach(b=>{ if(b && b.id && !seen.has(b.id)){ seen.add(b.id); out.push(b); } });
+  return out.slice(0, limit||999);
+}
+function blePriorityBlocks(limit, includeLocked){
+  const unlocked=bleUnlockedBlocks();
+  const fallback=includeLocked ? getLearnedBlocks() : unlocked;
+  return bleUniqueBlocks([
+    getSlowBlocks(),
+    getDueReviewBlocks(),
+    getWeakBlocks(),
+    getRecentlyLearnedBlocks(),
+    getReadyForRealBlocks(),
+    fallback
+  ], limit||20);
+}
+function bleItemFromBlock(b){
+  const src=BLE_BY_ID[b.id]||b;
+  const ex=bleFreshContextEx2(src);
+  return {ko:ex.ko, en:ex.en, tag:ex.situation||"ble", pid:"ble:"+src.id, chunk:src.block, chunkKo:src.meaningKo, block:src.block, bleId:src.id};
+}
 // ===== P10: 타 모드(듣기/스피킹/라이트닝)용 블록 재료 =====
 // 70% 배운/due/약한 블록 / 20% 혼합 / 10% 새 상황
 function bleMaterialsForMode(mode){
-  const unlocked=bleUnlockedBlocks();
-  if(!unlocked.length) return null;
-  const s=bleGetState(); const now=bleNow();
-  const due=unlocked.filter(b=>s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now);
-  const weak=unlocked.filter(b=>(s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount)||(s[b.id].consecFails||0)>=1);
-  const slow=unlocked.filter(b=>s[b.id].avgMs&&s[b.id].avgMs>5000);
-  // 우선순위 풀 구성
-  const prim=[...new Set([...due,...weak])];
-  const pickBlocks = (prim.length?prim:unlocked);
-  const lines=pickBlocks.map(b=>{ const ex=bleFreshContextEx2(b); return {id:b.id, block:b.block, ko:ex.ko, en:ex.en, meaningKo:b.meaningKo}; });
+  const blocks=blePriorityBlocks(16, false);
+  if(!blocks.length) return null;
+  const due=getDueReviewBlocks(), weak=getWeakBlocks(), slow=getSlowBlocks(), ready=getReadyForRealBlocks(), recent=getRecentlyLearnedBlocks();
+  const lines=blocks.map(b=>{ const ex=bleFreshContextEx2(BLE_BY_ID[b.id]||b); return {id:b.id, block:b.block, ko:ex.ko, en:ex.en, meaningKo:b.meaningKo}; });
   return {
     blocks: lines,
     weak: weak.map(b=>b.block),
     slow: slow.map(b=>b.block),
     due: due.map(b=>b.block),
-    count: unlocked.length
+    ready: ready.map(b=>b.block),
+    recent: recent.map(b=>b.block),
+    count: bleUnlockedBlocks().length
   };
 }
 // 스피킹 훈련용: 배운 블록의 한국어 상황을 프롬프트에 주입
@@ -5381,38 +5476,190 @@ function bleSpeakingHint(){
 }
 // 라이트닝용: 느린/최근 블록 우선 빠른 인출 문항
 function bleLightningItems(n){
-  const m=bleMaterialsForMode("lightning"); if(!m||!m.blocks.length) return [];
-  // 느린 블록 우선
-  const ranked=[...m.blocks].sort((a,b)=>{ const sa=m.slow.includes(a.block)?1:0, sb=m.slow.includes(b.block)?1:0; return sb-sa; });
-  return ranked.slice(0,n||10).map(x=>({ko:x.ko, en:x.en, block:x.block}));
+  const ranked=blePriorityBlocks(40, false);
+  if(!ranked.length) return [];
+  const out=[]; let i=0;
+  while(out.length<(n||10) && i<(n||10)*4){
+    out.push(bleItemFromBlock(ranked[i%ranked.length]));
+    i++;
+  }
+  return out.slice(0,n||10);
 }
-function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id])||null; }
+function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id] || !s[b.id].unlocked)||null; }
 function bleLearnedIds(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>b.id); }
 // 잠금해제된(7단계 코스 클리어) 블록만
 function bleUnlockedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].unlocked); }
 function getSlowBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].avgMs&&s[b.id].avgMs>5000).map(b=>({...b,state:s[b.id]})); }
 function getLimitedContextBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&(s[b.id].contextsUsed||[]).length<=1&&s[b.id].successCount>0).map(b=>({...b,state:s[b.id]})); }
-// 블록이 아직 안 쓴 상황의 예문 하나 (context variation)
-function bleFreshContextEx(b){
-  const st=bleGetState()[b.id]; const used=(st&&st.contextsUsed)||[];
-  const fresh=b.examples.filter(e=>used.indexOf(e.situation)<0);
-  const pool=fresh.length?fresh:b.examples;
-  return pool[(Math.random()*pool.length)|0];
-}
 // ===== P5: Context Variation 생성기 (같은 문장 반복 방지) =====
 const BLE_PLACES=["카페","식당","호텔","병원","학교","쇼핑","고객센터","공항","택시","사무실","약국","은행","편의점","미용실"];
 let BLE_CTX_CACHE={};   // {blockId: [{situation,ko,en,object},...]} AI로 생성한 새 상황 누적
 function bleCtxCacheLoad(){ try{ BLE_CTX_CACHE=hGet("speakingroom:ble_ctx",{})||{}; }catch(e){ BLE_CTX_CACHE={}; } }
 function bleCtxCacheSave(){ try{ hSet("speakingroom:ble_ctx", BLE_CTX_CACHE); }catch(e){} }
-// 블록의 전체 예문 풀 (원본 + 생성캐시)
-function bleAllEx(b){ return [...(b.examples||[]), ...((BLE_CTX_CACHE[b.id])||[])]; }
-// 안 써본 상황 우선 예문 하나 (캐시 포함)
-function bleFreshContextEx2(b){
+const BLE_RECENT_CTX_KEY="speakingroom:ble_recent_ctx_v2";
+const BLE_RECENT_BLOCK_KEY="speakingroom:ble_recent_blocks_v2";
+const BLE_BLOCK_GAP=3;
+const BLE_LOCAL_CONTEXTS={
+  can_i_get:[
+    {situation:"카페", ko:"아이스 아메리카노 한 잔 받을 수 있을까요?", en:"Can I get an iced Americano?", object:"an iced Americano"},
+    {situation:"카페", ko:"빨대 하나 받을 수 있을까요?", en:"Can I get a straw?", object:"a straw"},
+    {situation:"식당", ko:"계산서 받을 수 있을까요?", en:"Can I get the check?", object:"the check"},
+    {situation:"식당", ko:"포장 용기 받을 수 있을까요?", en:"Can I get a to-go box?", object:"a to-go box"},
+    {situation:"호텔", ko:"늦은 체크아웃 받을 수 있을까요?", en:"Can I get a late checkout?", object:"a late checkout"},
+    {situation:"호텔", ko:"여분 베개 받을 수 있을까요?", en:"Can I get an extra pillow?", object:"an extra pillow"},
+    {situation:"병원", ko:"예약 잡을 수 있을까요?", en:"Can I get an appointment?", object:"an appointment"},
+    {situation:"병원", ko:"진료 확인서 받을 수 있을까요?", en:"Can I get a doctor's note?", object:"a doctor's note"},
+    {situation:"약국", ko:"진통제 받을 수 있을까요?", en:"Can I get a pain reliever?", object:"a pain reliever"},
+    {situation:"쇼핑", ko:"환불 받을 수 있을까요?", en:"Can I get a refund?", object:"a refund"},
+    {situation:"쇼핑", ko:"봉투 하나 받을 수 있을까요?", en:"Can I get a bag?", object:"a bag"},
+    {situation:"공항", ko:"탑승권 다시 받을 수 있을까요?", en:"Can I get another boarding pass?", object:"another boarding pass"},
+    {situation:"공항", ko:"창가 자리 받을 수 있을까요?", en:"Can I get a window seat?", object:"a window seat"},
+    {situation:"택시", ko:"영수증 받을 수 있을까요?", en:"Can I get a receipt?", object:"a receipt"},
+    {situation:"고객센터", ko:"도움 좀 받을 수 있을까요?", en:"Can I get some help?", object:"some help"},
+    {situation:"고객센터", ko:"담당자 연결 받을 수 있을까요?", en:"Can I get a supervisor?", object:"a supervisor"},
+    {situation:"학교", ko:"상담 시간 잡을 수 있을까요?", en:"Can I get a counseling appointment?", object:"a counseling appointment"},
+    {situation:"은행", ko:"신청서 받을 수 있을까요?", en:"Can I get an application form?", object:"an application form"},
+    {situation:"사무실", ko:"서명 받을 수 있을까요?", en:"Can I get your signature?", object:"your signature"},
+    {situation:"미용실", ko:"오늘 예약 받을 수 있을까요?", en:"Can I get an appointment today?", object:"an appointment today"}
+  ],
+  do_you_have:[
+    {situation:"쇼핑", ko:"이거 검은색 있어요?", en:"Do you have this in black?", object:"this in black"},
+    {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size"},
+    {situation:"카페", ko:"디카페인 있어요?", en:"Do you have decaf?", object:"decaf"},
+    {situation:"식당", ko:"채식 메뉴 있어요?", en:"Do you have vegetarian options?", object:"vegetarian options"},
+    {situation:"식당", ko:"영어 메뉴 있어요?", en:"Do you have an English menu?", object:"an English menu"},
+    {situation:"호텔", ko:"오늘 빈 방 있어요?", en:"Do you have a room available tonight?", object:"a room available tonight"},
+    {situation:"호텔", ko:"공항 셔틀 있어요?", en:"Do you have an airport shuttle?", object:"an airport shuttle"},
+    {situation:"병원", ko:"오늘 가능한 예약 있어요?", en:"Do you have any appointments today?", object:"any appointments today"},
+    {situation:"약국", ko:"이 약 일반의약품으로 있어요?", en:"Do you have this over the counter?", object:"this over the counter"},
+    {situation:"공항", ko:"창가 자리 남아 있어요?", en:"Do you have any window seats?", object:"any window seats"},
+    {situation:"공항", ko:"직항편 있어요?", en:"Do you have a direct flight?", object:"a direct flight"},
+    {situation:"택시", ko:"카드 결제 돼요?", en:"Do you have card payment?", object:"card payment"},
+    {situation:"고객센터", ko:"한국어 상담원 있어요?", en:"Do you have a Korean-speaking agent?", object:"a Korean-speaking agent"},
+    {situation:"학교", ko:"온라인 수업 있어요?", en:"Do you have online classes?", object:"online classes"},
+    {situation:"은행", ko:"수수료 없는 계좌 있어요?", en:"Do you have a no-fee account?", object:"a no-fee account"},
+    {situation:"편의점", ko:"휴대폰 충전기 있어요?", en:"Do you have a phone charger?", object:"a phone charger"},
+    {situation:"사무실", ko:"회의실 비어 있어요?", en:"Do you have a meeting room available?", object:"a meeting room available"},
+    {situation:"미용실", ko:"오늘 가능한 시간 있어요?", en:"Do you have any openings today?", object:"any openings today"}
+  ],
+  i_need:[
+    {situation:"식당", ko:"알레르기 없는 메뉴가 필요해요.", en:"I need an allergy-free option.", object:"an allergy-free option"},
+    {situation:"카페", ko:"조용한 자리가 필요해요.", en:"I need a quiet seat.", object:"a quiet seat"},
+    {situation:"호텔", ko:"방 키가 필요해요.", en:"I need a room key.", object:"a room key"},
+    {situation:"호텔", ko:"와이파이 비밀번호가 필요해요.", en:"I need the Wi-Fi password.", object:"the Wi-Fi password"},
+    {situation:"병원", ko:"지금 의사가 필요해요.", en:"I need a doctor now.", object:"a doctor now"},
+    {situation:"병원", ko:"검사 결과 사본이 필요해요.", en:"I need a copy of my test results.", object:"a copy of my test results"},
+    {situation:"약국", ko:"이 약을 다시 받아야 해요.", en:"I need a refill for this medicine.", object:"a refill for this medicine"},
+    {situation:"쇼핑", ko:"이걸 교환해야 해요.", en:"I need to exchange this.", object:"to exchange this"},
+    {situation:"공항", ko:"좌석을 바꿔야 해요.", en:"I need to change my seat.", object:"to change my seat"},
+    {situation:"공항", ko:"수하물 도움이 필요해요.", en:"I need help with my luggage.", object:"help with my luggage"},
+    {situation:"택시", ko:"공항까지 가야 해요.", en:"I need to get to the airport.", object:"to get to the airport"},
+    {situation:"고객센터", ko:"비밀번호를 재설정해야 해요.", en:"I need to reset my password.", object:"to reset my password"},
+    {situation:"학교", ko:"수업 일정을 바꿔야 해요.", en:"I need to change my class schedule.", object:"to change my class schedule"},
+    {situation:"은행", ko:"새 카드를 발급받아야 해요.", en:"I need a new card.", object:"a new card"},
+    {situation:"사무실", ko:"오늘 안에 승인이 필요해요.", en:"I need approval by today.", object:"approval by today"},
+    {situation:"편의점", ko:"현금 인출기가 필요해요.", en:"I need an ATM.", object:"an ATM"}
+  ],
+  could_you:[
+    {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the check?", object:"bring the check"},
+    {situation:"식당", ko:"양파 빼주시겠어요?", en:"Could you leave out the onions?", object:"leave out the onions"},
+    {situation:"카페", ko:"덜 달게 해주시겠어요?", en:"Could you make it less sweet?", object:"make it less sweet"},
+    {situation:"호텔", ko:"택시 불러주시겠어요?", en:"Could you call a taxi?", object:"call a taxi"},
+    {situation:"호텔", ko:"짐 좀 맡아주시겠어요?", en:"Could you hold my luggage?", object:"hold my luggage"},
+    {situation:"병원", ko:"이거 설명해주시겠어요?", en:"Could you explain this?", object:"explain this"},
+    {situation:"약국", ko:"복용법을 적어주시겠어요?", en:"Could you write down the dosage?", object:"write down the dosage"},
+    {situation:"쇼핑", ko:"이거 포장해주시겠어요?", en:"Could you wrap this?", object:"wrap this"},
+    {situation:"공항", ko:"게이트 확인해주시겠어요?", en:"Could you check the gate?", object:"check the gate"},
+    {situation:"택시", ko:"여기서 세워주시겠어요?", en:"Could you stop here?", object:"stop here"},
+    {situation:"고객센터", ko:"다시 말씀해주시겠어요?", en:"Could you say that again?", object:"say that again"},
+    {situation:"고객센터", ko:"천천히 말씀해주시겠어요?", en:"Could you speak more slowly?", object:"speak more slowly"},
+    {situation:"학교", ko:"과제 마감일을 알려주시겠어요?", en:"Could you tell me the deadline?", object:"tell me the deadline"},
+    {situation:"은행", ko:"계좌를 확인해주시겠어요?", en:"Could you check my account?", object:"check my account"},
+    {situation:"사무실", ko:"파일 보내주시겠어요?", en:"Could you send me the file?", object:"send me the file"},
+    {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter"}
+  ],
+  i_think:[
+    {situation:"쇼핑", ko:"이건 너무 비싼 것 같아요.", en:"I think it's too expensive.", object:"it's too expensive"},
+    {situation:"쇼핑", ko:"이 색이 더 나은 것 같아요.", en:"I think this color is better.", object:"this color is better"},
+    {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty"},
+    {situation:"카페", ko:"여기가 너무 시끄러운 것 같아요.", en:"I think it's too noisy here.", object:"it's too noisy here"},
+    {situation:"호텔", ko:"방이 너무 추운 것 같아요.", en:"I think the room is too cold.", object:"the room is too cold"},
+    {situation:"병원", ko:"이제 좀 나아진 것 같아요.", en:"I think I feel better now.", object:"I feel better now"},
+    {situation:"약국", ko:"이 약이 저한테 안 맞는 것 같아요.", en:"I think this medicine isn't working for me.", object:"this medicine isn't working for me"},
+    {situation:"공항", ko:"비행기가 지연된 것 같아요.", en:"I think the flight is delayed.", object:"the flight is delayed"},
+    {situation:"택시", ko:"길을 잘못 든 것 같아요.", en:"I think we're going the wrong way.", object:"we're going the wrong way"},
+    {situation:"고객센터", ko:"제 계정에 문제가 있는 것 같아요.", en:"I think there's a problem with my account.", object:"there's a problem with my account"},
+    {situation:"학교", ko:"이 수업이 저한테 맞는 것 같아요.", en:"I think this class is right for me.", object:"this class is right for me"},
+    {situation:"은행", ko:"수수료가 잘못 청구된 것 같아요.", en:"I think I was charged the wrong fee.", object:"I was charged the wrong fee"},
+    {situation:"사무실", ko:"회의를 미뤄야 할 것 같아요.", en:"I think we need to move the meeting.", object:"we need to move the meeting"},
+    {situation:"편의점", ko:"이 가격이 잘못된 것 같아요.", en:"I think this price is wrong.", object:"this price is wrong"}
+  ]
+};
+function bleExKey(e){ return bleNorm((e&&e.en)||""); }
+function bleContextKey(e){ return String((e&&e.situation)||"상황")+"|"+bleExKey(e); }
+function bleContextLabel(e){ return (e&&e.situation)||"상황"; }
+function bleRecentCtx(){ try{ return hGet(BLE_RECENT_CTX_KEY,{})||{}; }catch(e){ return {}; } }
+function bleRememberContext(id, ex){
+  if(!id||!ex) return;
+  const recent=bleRecentCtx(); const key=bleExKey(ex); if(!key) return;
+  const arr=(recent[id]||[]).filter(x=>x!==key);
+  arr.unshift(key); recent[id]=arr.slice(0,14);
+  try{ hSet(BLE_RECENT_CTX_KEY,recent); }catch(e){}
+}
+function bleRecentBlocks(){ try{ return hGet(BLE_RECENT_BLOCK_KEY,[])||[]; }catch(e){ return []; } }
+function bleRememberBlock(id){
+  if(!id) return;
+  const arr=bleRecentBlocks().filter(x=>x!==id);
+  arr.unshift(id);
+  try{ hSet(BLE_RECENT_BLOCK_KEY,arr.slice(0,12)); }catch(e){}
+}
+function bleShuffle(arr){
+  arr=arr.slice();
+  for(let i=arr.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+// 블록의 전체 예문 풀 (로컬 실전 상황 + 원본 + 생성캐시)
+function bleAllEx(b){
+  const out=[], seen=new Set();
+  [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[], (BLE_CTX_CACHE[b.id])||[]].forEach(list=>{
+    list.forEach(e=>{
+      if(!e||!e.ko||!e.en) return;
+      const clean={situation:String(e.situation||"상황"), ko:String(e.ko), en:String(e.en), object:String(e.object||""), emoji:e.emoji};
+      const key=bleExKey(clean); if(!key||seen.has(key)) return;
+      seen.add(key); out.push(clean);
+    });
+  });
+  return out;
+}
+function bleSampleExamples(b,n){
+  const out=[], seen=new Set();
+  bleShuffle(bleAllEx(b)).forEach(e=>{ const k=bleExKey(e); if(!seen.has(k)&&out.length<(n||3)){ seen.add(k); out.push(e); } });
+  return out;
+}
+// 최근 문장과 이미 성공한 맥락을 피해서 하나 고른다.
+function bleFreshContextEx2(b, opts){
+  opts=opts||{};
   const st=bleGetState()[b.id]; const used=(st&&st.contextsUsed)||[];
   const all=bleAllEx(b);
-  const fresh=all.filter(e=>used.indexOf(e.situation)<0);
-  const pool=fresh.length?fresh:all;
-  return pool[(Math.random()*pool.length)|0];
+  if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
+  const recent=bleRecentCtx()[b.id]||[];
+  const fresh=all.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
+  const notRecent=all.filter(e=>recent.indexOf(bleExKey(e))<0);
+  const pool=fresh.length?fresh:(notRecent.length?notRecent:all);
+  const pick=pool[(Math.random()*pool.length)|0];
+  if(opts.remember!==false) bleRememberContext(b.id,pick);
+  return pick;
+}
+function bleFreshContextEx(b){ return bleFreshContextEx2(b); }
+function bleSituationHint(b){
+  const map={
+    request:"받기/주문/요청 상황입니다. 먼저 무엇을 받고 싶은지 떠올리세요.",
+    availability:"있는지 확인하는 상황입니다. 물건이나 가능 여부를 묻는 방향이에요.",
+    need:"필요한 것 또는 해야 할 일을 직접 말하는 상황입니다.",
+    "polite-request":"상대에게 어떤 행동을 정중히 부탁하는 상황입니다.",
+    opinion:"내 생각이나 판단을 말하는 상황입니다."
+  };
+  return map[b.func]||"상황의 목적을 먼저 고르고 영어로 말해보세요.";
 }
 // AI로 새 상황 예문 N개 생성 (비차단 — 백그라운드 캐시 적재)
 async function bleGenContexts(b, n){
@@ -5471,10 +5718,18 @@ Return ONLY JSON, no markdown:
     const d=await callClaude(sys, [{role:"user", content:"Learner said: "+heard}], FAST_MODEL);
     const o=parseJSON(extractText(d));
     if(o && o.result){
+      let result=String(o.result||"MISS").toUpperCase();
+      if(!["PERFECT","HIT","WEAK_HIT","MISS"].includes(result)) result="MISS";
+      const communicationSuccess=!!o.communicationSuccess;
+      const targetBlockSuccess=!!o.targetBlockSuccess;
+      if(result==="PERFECT" && (!communicationSuccess || !targetBlockSuccess)){
+        result=communicationSuccess ? "HIT" : "WEAK_HIT";
+      }
+      if(result==="HIT" && targetBlockSuccess && !communicationSuccess) result="WEAK_HIT";
       return {
-        result:o.result,
-        communicationSuccess:!!o.communicationSuccess,
-        targetBlockSuccess:!!o.targetBlockSuccess,
+        result,
+        communicationSuccess,
+        targetBlockSuccess,
         usedBlockId:o.usedBlockId&&o.usedBlockId!=="null"?o.usedBlockId:null,
         confusedWith:o.confusedWith&&o.confusedWith!=="null"?o.confusedWith:null,
         naturalAnswer:o.naturalAnswer||ex.en,
@@ -5489,7 +5744,7 @@ Return ONLY JSON, no markdown:
 function bleGradeLocal(targetBlock, expectedEn, heard){
   const g=bleGrade(targetBlock, expectedEn, heard);
   const map={perfect:"PERFECT",hit:"HIT",weak_hit:"WEAK_HIT",miss:"MISS"};
-  const result = g.blockUsed&&g.grade==="perfect"?"PERFECT" : g.blockUsed?"PERFECT" : map[g.grade]||"MISS";
+  const result = map[g.grade]||"MISS";
   return {
     result,
     communicationSuccess: result==="PERFECT"||result==="HIT",
@@ -5504,65 +5759,146 @@ function bleGradeLocal(targetBlock, expectedEn, heard){
 
 // ===== 답 채점 (4단계, 여러 표현 허용) =====
 function bleNorm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim(); }
+const BLE_STOPWORDS=new Set("i you he she we they it a an the some any to for of in on at with my your me us this that is are am be do does did can could would should may might get got have has had please just now".split(" "));
+function bleWords(t){ return bleNorm(t).split(" ").filter(Boolean); }
+function bleContentWords(t){ return bleWords(t).filter(w=>!BLE_STOPWORDS.has(w)); }
+function bleCoreWords(targetBlock){
+  return bleWords(String(targetBlock.block||"").replace(/\.\.\.|\?/g,"")).filter(w=>!BLE_STOPWORDS.has(w));
+}
+function bleMeaningScore(targetBlock, expectedEn, heard){
+  const core=new Set(bleCoreWords(targetBlock));
+  let exp=bleContentWords(expectedEn).filter(w=>!core.has(w));
+  const hw=new Set(bleContentWords(heard));
+  if(!exp.length) exp=bleContentWords(expectedEn);
+  const hit=exp.filter(w=>hw.has(w)).length;
+  const ratio=hit/Math.max(1, exp.length);
+  return {ratio, hit, need:exp.length, strong:hit>=Math.max(1, Math.ceil(exp.length*0.67)), weak:hit>=1 || ratio>=0.34};
+}
 function bleGrade(targetBlock, expectedEn, heard){
   const h=bleNorm(heard), exp=bleNorm(expectedEn);
   if(!h) return {grade:"miss", blockUsed:false};
   // 타겟 블록의 핵심부 (Can I get, Do you have...)
   const core=bleNorm(targetBlock.block.replace(/\.\.\.|\?/g,""));
   const blockUsed = core.length>=3 && (" "+h+" ").indexOf(" "+core)>=0;
-  // 의미 일치도 (단어 겹침)
-  const ew=exp.split(" ").filter(Boolean), hw=new Set(h.split(" ").filter(Boolean));
-  const overlap=ew.filter(w=>hw.has(w)).length / Math.max(1,ew.length);
-  if(blockUsed && overlap>=0.6) return {grade:"perfect", blockUsed:true};
-  if(blockUsed) return {grade:"hit", blockUsed:true};        // 블록은 맞게 썼고 목적어가 좀 다름
-  if(overlap>=0.6) return {grade:"hit", blockUsed:false};    // 다른 표현이지만 의미 통함
-  if(overlap>=0.3) return {grade:"weak_hit", blockUsed:false};
+  const meaning=bleMeaningScore(targetBlock, exp, h);
+  if(blockUsed && meaning.strong) return {grade:"perfect", blockUsed:true};
+  if(blockUsed) return {grade:"weak_hit", blockUsed:true};   // 블록은 썼지만 목적어/의도가 약함
+  if(meaning.strong) return {grade:"hit", blockUsed:false};  // 의미는 통하지만 목표 블록 회피
+  if(meaning.weak) return {grade:"weak_hit", blockUsed:false};
   return {grade:"miss", blockUsed:false};
 }
 
 // ===== 세션 빌더 (문서 비율) =====
-// 20% 새블록 / 30% 복습 / 30% 혼합인출 / 10% 구별 / 10% 속도
+// 가르치기 이후에는 상황만 보여주고, 누적 블록 경쟁으로 출제한다.
 let bleSession=null;
+function bleRecentItemIds(items,gap){
+  return items.filter(x=>x&&x.block&&x.block.id).slice(-(gap||BLE_BLOCK_GAP)).map(x=>x.block.id);
+}
+function bleEffectiveGap(pool){ return pool.length>=5?BLE_BLOCK_GAP:Math.max(1, pool.length-1); }
+function bleFilterByGap(pool, items){
+  if(pool.length<=1) return pool;
+  const recent=new Set(bleRecentItemIds(items, bleEffectiveGap(pool)).concat(bleRecentBlocks().slice(0, Math.min(BLE_BLOCK_GAP,pool.length-1))));
+  const filtered=pool.filter(b=>!recent.has(b.id));
+  return filtered.length?filtered:pool;
+}
+function bleIsWeakPracticeBlock(b){
+  const st=bleGetState()[b.id]||{}, now=bleNow();
+  return !!(st.nextReviewAt&&st.nextReviewAt<=now) ||
+    ((st.failCount||0)>0 && (st.failCount||0)>=(st.successCount||0)) ||
+    !!(st.avgMs&&st.avgMs>5000) ||
+    !!((st.targetMissCount||0)>0) ||
+    !!((st.contextsUsed||[]).length<=1 && (st.successCount||0)>0);
+}
+function bleIsStrongPracticeBlock(b){
+  const st=bleGetState()[b.id]||{};
+  return ["strong","fast","ready_for_real"].includes(st.stage) && !bleIsWeakPracticeBlock(b);
+}
+function bleIsRecentPracticeBlock(b,newId){
+  const st=bleGetState()[b.id]||{};
+  return b.id===newId || !!(st.lastSeenAt && (bleNow()-st.lastSeenAt)<30*60*1000);
+}
+function bleWeightedPick(blocks, newId){
+  if(!blocks.length) return null;
+  const s=bleGetState(), now=bleNow();
+  const scored=blocks.map(b=>{
+    const st=s[b.id]||{}; let w=1;
+    if(st.nextReviewAt&&st.nextReviewAt<=now) w+=5;
+    if((st.failCount||0)>0 && (st.failCount||0)>=(st.successCount||0)) w+=4;
+    if(st.avgMs&&st.avgMs>5000) w+=2;
+    if((st.targetMissCount||0)>0) w+=2;
+    if((st.contextsUsed||[]).length<=1 && (st.successCount||0)>0) w+=1.5;
+    if(b.id===newId) w+=2;
+    if(bleIsStrongPracticeBlock(b)) w=Math.max(0.4,w-2);
+    return {b,w:Math.max(0.2,w)};
+  });
+  const total=scored.reduce((a,x)=>a+x.w,0); let r=Math.random()*total;
+  for(const x of scored){ r-=x.w; if(r<=0) return x.b; }
+  return scored[0].b;
+}
+function blePickPracticeBlock(pool, items, newId){
+  const eligible=bleFilterByGap(pool, items);
+  const weak=eligible.filter(bleIsWeakPracticeBlock);
+  const recent=eligible.filter(b=>bleIsRecentPracticeBlock(b,newId)&&!weak.some(x=>x.id===b.id));
+  const strong=eligible.filter(bleIsStrongPracticeBlock);
+  const r=Math.random();
+  let bucket = r<0.70 ? weak : (r<0.90 ? recent : strong);
+  if(!bucket.length) bucket=eligible;
+  return bleWeightedPick(bucket, newId);
+}
+function bleAddSessionPractice(items, pool, type, preferred, extra){
+  if(!pool.length && !preferred) return null;
+  let b=preferred||blePickPracticeBlock(pool, items, preferred&&preferred.id);
+  let guard=0;
+  while(preferred && pool.length>1 && bleRecentItemIds(items, bleEffectiveGap(pool)).includes(preferred.id) && guard<bleEffectiveGap(pool)){
+    const filler=blePickPracticeBlock(pool.filter(x=>x.id!==preferred.id), items, preferred.id);
+    if(!filler) break;
+    const fx=bleFreshContextEx2(filler);
+    items.push({type:"mixed", block:filler, ex:fx});
+    bleRememberBlock(filler.id);
+    guard++;
+  }
+  b=b||preferred;
+  if(!b) return null;
+  bleEnsureContexts(b);
+  const ex=bleFreshContextEx2(b);
+  const item=Object.assign({type, block:b, ex}, extra||{});
+  items.push(item);
+  bleRememberBlock(b.id);
+  return item;
+}
 function bleBuildSession(forcedNewId){
   const learnedIds=bleLearnedIds();
   const newB = forcedNewId? BLE_BY_ID[forcedNewId] : bleNextNewBlock();
+  const newState = newB ? bleGetState()[newB.id] : null;
+  const needsUnlockCourse = !!newB && (!newState || !newState.unlocked);
   const items=[];
-  // 1) 새 블록이 있으면: PHASE 1~4 (이해→패턴→빈칸→상황인출)
-  if(newB && learnedIds.indexOf(newB.id)<0){
+  // 1) 새 블록이 있으면: 처음에만 블록명/뜻/예문을 가르친다.
+  if(needsUnlockCourse){
     items.push({type:"understand", block:newB});
     items.push({type:"pattern", block:newB});
-    const ex0=newB.examples[0], ex1=newB.examples[1]||newB.examples[0];
-    items.push({type:"pattern_fill", block:newB, ex:ex0});     // Can I get [____]?
-    items.push({type:"block_fill", block:newB, ex:ex1});       // [____] some water?
-    const ex2=newB.examples[2]||newB.examples[0];
-    items.push({type:"situation", block:newB, ex:ex2});        // 상황만 보고 인출
   }
-  // 학습 풀 (새 블록 포함)
-  const poolIds = newB? [...new Set([...learnedIds, newB.id])] : learnedIds.slice();
+  // 학습 풀: 잠금해제된 누적 블록 + 현재 새 블록
+  const unlockedIds=bleUnlockedBlocks().map(b=>b.id);
+  const poolIds = newB? [...new Set([...unlockedIds, ...learnedIds.filter(id=>BLE_BY_ID[id]&&bleGetState()[id]&&bleGetState()[id].unlocked), newB.id])] : unlockedIds.slice();
   const pool = poolIds.map(id=>BLE_BY_ID[id]).filter(Boolean);
-  // 2) 복습(due) 블록 — 상황 인출
-  getDueReviewBlocks().slice(0,2).forEach(b=>{
-    const ex=b.examples[(Math.random()*b.examples.length)|0];
-    items.push({type:"situation", block:BLE_BY_ID[b.id], ex});
-  });
-  // 3) 블록 구별 (2개 이상 배웠을 때)
-  if(pool.length>=2){
-    const tgt=pool[(Math.random()*pool.length)|0];
-    const ex=tgt.examples[(Math.random()*tgt.examples.length)|0];
-    items.push({type:"discriminate", block:tgt, ex});
+  // 2) 설명이 끝난 뒤부터는 블록명을 숨기고 상황만 제시한다.
+  if(needsUnlockCourse) bleAddSessionPractice(items, pool, "situation", newB, {introHidden:true});
+  // 3) 누적 복습: 약한 블록 70%, 최근/새 블록 20%, 강한 블록 10% 기준으로 섞는다.
+  getDueReviewBlocks().slice(0,2).forEach(b=>bleAddSessionPractice(items, pool, "situation", BLE_BY_ID[b.id]));
+  const practiceTarget=pool.length>=2?8:1;
+  if(pool.length>=2) bleAddSessionPractice(items, pool, "discriminate");
+  while(items.filter(x=>x.block).length<practiceTarget && pool.length){
+    const type=pool.length>=2 && Math.random()<0.28 ? "discriminate" : "mixed";
+    bleAddSessionPractice(items, pool, type);
   }
-  // 4) 혼합 인출 (배운 블록 전체에서)
-  const mixN = pool.length>=2? 3 : 1;
-  for(let i=0;i<mixN && pool.length;i++){
-    const b=pool[(Math.random()*pool.length)|0];
-    const ex=b.examples[(Math.random()*b.examples.length)|0];
-    items.push({type:"mixed", block:b, ex});
-  }
-  // 5) 속도 인출 (1개)
-  if(pool.length){
-    const b=pool[(Math.random()*pool.length)|0];
-    const ex=b.examples[(Math.random()*b.examples.length)|0];
-    items.push({type:"speed", block:b, ex, limit: 8});
+  if(pool.length) bleAddSessionPractice(items, pool, "speed", blePickPracticeBlock(pool, items, newB&&newB.id), {limit:8});
+  if(needsUnlockCourse){
+    if(pool.length>=2 && !items.some(x=>x.block&&x.block.id===newB.id&&x.type==="mixed")){
+      bleAddSessionPractice(items, pool, "mixed", newB);
+    }
+    if(!items.some(x=>x.block&&x.block.id===newB.id&&x.type==="speed")){
+      bleAddSessionPractice(items, pool, "speed", newB, {limit:8});
+    }
   }
   bleSession={ items, idx:0, newBlock:newB, results:[], startedIds:poolIds };
   // 새 블록 상태 생성 (배움 시작)
@@ -5615,13 +5951,14 @@ function blePhaseTag(t){ return `<div style="text-align:center;margin-bottom:12p
 // PHASE 1: 이해
 function bleViewUnderstand(it){
   const b=it.block;
+  const places=bleAllEx(b).map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,7).join(" · ");
   return `${blePhaseTag("understand")}
    <div class="ar2-scene">
     <div style="text-align:center">
       <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">오늘의 블록</div>
       <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div>
       <div style="font-size:16px;color:var(--text);margin-top:10px">${escapeHtml(b.meaningKo)}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:14px;background:var(--mist);border-radius:12px;padding:10px 14px;display:inline-block">📍 언제? ${b.examples.map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,5).join(" · ")}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:14px;background:var(--mist);border-radius:12px;padding:10px 14px;display:inline-block">📍 언제? ${escapeHtml(places)}</div>
     </div>
    </div>
    <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">알겠어요 →</button></div>`;
@@ -5630,7 +5967,7 @@ function bleWireUnderstand(it){ $("#bleNext").onclick=()=>{ bleSession.idx++; bl
 
 // PHASE 2: 패턴 (예문 3개, 들어보기)
 function bleViewPattern(it){
-  const b=it.block; const exs=b.examples.slice(0,3);
+  const b=it.block; const exs=bleSampleExamples(b,3);
   return `${blePhaseTag("pattern")}
    <div class="ar2-scene">
     <div style="text-align:center;margin-bottom:8px"><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">이렇게 써요 (눌러서 듣기)</div></div>
@@ -5688,8 +6025,12 @@ function bleWireFill(it){
 // PHASE 5: 블록 구별 (한국어 상황 → 맞는 블록 고르기)
 function bleViewDiscriminate(it){
   const b=it.block, ex=it.ex;
-  // 보기: 정답 + contrast 2개
-  const opts=[b.id, ...(b.contrast||[]).slice(0,2)];
+  // 보기: 정답 + 누적 학습 블록 우선 + 필요한 경우 contrast 보강
+  const baseIds=(!it.deep&&bleSession&&bleSession.startedIds&&bleSession.startedIds.length)?bleSession.startedIds:bleUnlockedBlocks().map(x=>x.id);
+  const knownIds=baseIds.filter(id=>id!==b.id&&BLE_BY_ID[id]);
+  const distractors=[];
+  knownIds.concat(b.contrast||[]).forEach(id=>{ if(id!==b.id&&BLE_BY_ID[id]&&distractors.indexOf(id)<0) distractors.push(id); });
+  const opts=[b.id, ...distractors.slice(0,2)];
   for(let i=opts.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [opts[i],opts[j]]=[opts[j],opts[i]]; }
   it._opts=opts; it._ans=b.id;
   if(typeof bleSession!=="undefined" && bleSession){ bleSession._discOpts=opts; bleSession._discAns=b.id; }
@@ -5714,8 +6055,8 @@ function bleWireDiscriminate(it){
       if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
       const fb=$("#bleFb"); fb.innerHTML= ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(BLE_BY_ID[ans].block)} 가 맞아요</span>`;
       speakEn(ex.en);
-      bleRecord(ans, {correct:ok, fast, situation:ex.situation, ms, mixed:true});
-      bleSession.results.push({id:ans, type:"discriminate", ok, fast});
+      bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true});
+      bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex)});
       setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1200);
     };
   });
@@ -5726,7 +6067,7 @@ function bleViewRetrieve(it){
   const ex=it.ex;
   const isSpeed=it.type==="speed";
   const emo = ex.emoji || ({restaurant:"🍽",cafe:"☕",hotel:"🏨",hospital:"🏥",school:"🏫",shopping:"🛍",airport:"✈️",taxi:"🚕",office:"🏢",bank:"🏦"})[ex.situation] || "💬";
-  const coachMsg = it.type==="mixed"?"이 상황, 영어로 말해볼까요?" : it.type==="speed"?"빠르게! 바로 말해보세요 ⚡" : "이 상황을 영어로 말해볼까요?";
+  const coachMsg = it.type==="mixed"?"상황을 보고 맞는 블록을 골라 말해볼까요?" : it.type==="speed"?"빠르게! 상황만 보고 바로 말해보세요 ⚡" : "상황만 보고 영어로 말해볼까요?";
   return `<div class="blpz">
     ${isSpeed?`<div class="blpz-timer" id="bleTimer">⏱ ${it.limit}초</div>`:""}
     <div class="blpz-coach">
@@ -5734,7 +6075,7 @@ function bleViewRetrieve(it){
       <div class="blpz-bubble">${coachMsg}</div>
     </div>
     <div class="blpz-card">
-      <div class="blpz-tip">${it.type==="mixed"?"힌트 없이 영어로":"상황에 맞는 블록으로"}</div>
+      <div class="blpz-tip">${it.type==="mixed"?"블록명 없이 선택하기":"상황 → 블록 선택 → 말하기"}</div>
       <div class="blpz-emo">${emo}</div>
       <div class="blpz-ko">${escapeHtml(ex.ko)}</div>
     </div>
@@ -5765,30 +6106,81 @@ function bleWireRetrieve(it){
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 '+escapeHtml(bleSituationHint(b)); };
 }
-function bleFinishRetrieve(it, heard){
+async function bleFinishRetrieve(it, heard){
+  if(it._finished) return;
+  it._finished=true;
   const ex=it.ex, b=it.block;
   const ms=Math.max(100,(bleSpoke||Date.now())-bleT0); const fast=ms<=5000;
-  const res=bleGrade(b, ex.en, heard);
-  const correct = res.grade==="perfect"||res.grade==="hit";
   const stat=$("#bleStat");
+  if(stat) stat.innerHTML='<span style="color:#8A6F62">채점 중…</span>';
+  const j=await bleJudge(b, ex, heard);
+  const correct = j.result==="PERFECT";
   if(stat){
-    const lbl = res.grade==="perfect"?'<span style="color:#19a06b;font-weight:900">⚡ PERFECT</span>'
-      : res.grade==="hit"?'<span style="color:#E2674A;font-weight:900">✓ 통과</span>'
-      : res.grade==="weak_hit"?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
+    const lbl = j.result==="PERFECT"?'<span style="color:#19a06b;font-weight:900">⚡ PERFECT</span>'
+      : j.result==="HIT"?'<span style="color:#E2674A;font-weight:900">✓ 의미는 통했어요</span>'
+      : j.result==="WEAK_HIT"?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
       : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:2px">${res.blockUsed?"블록 사용 ✓":"의미는 통했어요"}</div>`;
+    const sub = j.result==="PERFECT" ? "목표 블록 사용 ✓"
+      : j.result==="HIT" ? `다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로 말해봐요`
+      : (j.shortFeedbackKo||"한 번 더 연습해볼게요");
+    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:2px">${sub}</div>`;
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
   const lbl2=$("#bleMicLbl"); if(lbl2) lbl2.textContent="";
-  speakEn(ex.en);
+  speakEn(j.naturalAnswer||ex.en);
   const mixed = it.type==="mixed"||it.type==="speed";
-  bleRecord(b.id, {correct, fast, situation:ex.situation, ms, mixed});
-  bleSession.results.push({id:b.id, type:it.type, ok:correct, fast, blockUsed:res.blockUsed});
-  // 오답이면 같은 세션 뒤쪽에 다시 (retrieval again soon)
-  if(!correct && it.type!=="speed"){ bleSession.items.push({type:"situation", block:b, ex}); }
-  setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1500);
+  bleRecord(b.id, {
+    result:j.result,
+    communicationSuccess:j.communicationSuccess,
+    targetBlockSuccess:j.targetBlockSuccess,
+    fast,
+    situation:bleContextLabel(ex),
+    contextKey:bleContextKey(ex),
+    ms,
+    mixed,
+    hidden:it.type==="situation",
+    speedAttempt:it.type==="speed",
+    confusedWith:j.confusedWith
+  });
+  bleSession.results.push({id:b.id, type:it.type, result:j.result, ok:correct, comm:j.communicationSuccess, target:j.targetBlockSuccess, fast, ms, blockUsed:j.targetBlockSuccess, heard, naturalAnswer:j.naturalAnswer||ex.en, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith:j.confusedWith});
+  // 오답이면 다시 나오되, 가능한 경우 다른 블록을 사이에 끼워 명사 바꿔끼우기 반복을 막는다.
+  if(j.result!=="PERFECT" && it.type!=="speed"){
+    const pool=(bleSession.startedIds||[]).map(id=>BLE_BY_ID[id]).filter(Boolean);
+    const fillers=pool.filter(x=>x.id!==b.id);
+    for(let i=0;i<bleEffectiveGap(pool)&&fillers.length;i++){
+      const filler=blePickPracticeBlock(fillers, bleSession.items, null);
+      if(!filler) break;
+      bleSession.items.push({type:"mixed", block:filler, ex:bleFreshContextEx2(filler)});
+    }
+    bleSession.items.push({type:"situation", block:b, ex:bleFreshContextEx2(b)});
+  }
+  setTimeout(()=>{ bleSession.idx++; bleRender(); }, correct?1500:2200);
+}
+
+function bleUnlockGate(block, results){
+  const mine=(results||[]).filter(r=>r.id===block.id && ["situation","mixed","speed","discriminate"].includes(r.type));
+  const targetOk=r=>r.result==="PERFECT" || r.target===true;
+  const hiddenOk=mine.some(r=>r.type==="situation" && targetOk(r));
+  const mixedOrDiscOk=mine.some(r=>(r.type==="mixed"||r.type==="discriminate") && targetOk(r));
+  const competitionAvailable=!!(bleSession&&bleSession.startedIds&&bleSession.startedIds.filter(id=>id!==block.id).length);
+  const speedAttempt=mine.some(r=>r.type==="speed");
+  const speedFastOk=mine.some(r=>r.type==="speed" && targetOk(r) && r.fast);
+  const contextN=new Set(mine.filter(targetOk).map(r=>r.contextKey||r.situation).filter(Boolean)).size;
+  const okN=mine.filter(targetOk).length;
+  const rate=mine.length ? okN/mine.length : 0;
+  return {pass:hiddenOk && (!competitionAvailable||mixedOrDiscOk) && speedAttempt && contextN>=2 && rate>=0.60, hiddenOk, mixedOrDiscOk, competitionAvailable, speedAttempt, speedFastOk, contextN, rate, okN, total:mine.length};
+}
+function bleStartUnlockRepair(block){
+  const poolIds=[...new Set([...bleUnlockedBlocks().map(b=>b.id), block.id])];
+  const pool=poolIds.map(id=>BLE_BY_ID[id]).filter(Boolean);
+  const items=[{type:"repair", block, ex:bleFreshContextEx2(block)}];
+  bleAddSessionPractice(items, pool, "situation", block);
+  if(pool.length>=2) bleAddSessionPractice(items, pool, "mixed", block);
+  bleAddSessionPractice(items, pool, "speed", block, {limit:8});
+  bleSession={items, idx:0, newBlock:block, results:[], startedIds:poolIds, repairUnlock:true};
+  bleRender();
 }
 
 // ===== 세션 요약 =====
@@ -5797,8 +6189,42 @@ function bleSummary(){
   { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleSession.results;
   const newB=bleSession.newBlock;
-  // 🔓 새 블록 코스를 마쳤으면 잠금해제 표시
-  if(newB){ const s=bleGetState(); if(s[newB.id]){ s[newB.id].unlocked=true; bleSaveState(s); } }
+  let unlockGate=null;
+  if(newB){
+    unlockGate=bleUnlockGate(newB, res);
+    bleBlockState(newB.id);
+    const s=bleGetState();
+    if(s[newB.id]){
+      s[newB.id].unlocked=!!unlockGate.pass;
+      if(!unlockGate.pass) s[newB.id].unlockRetryCount=(s[newB.id].unlockRetryCount||0)+1;
+      bleSaveState(s);
+    }
+    if(!unlockGate.pass){
+      const miss=[
+        unlockGate.hiddenOk?"":"숨김 상황 인출 1회",
+        (!unlockGate.competitionAvailable||unlockGate.mixedOrDiscOk)?"":"혼합/구별 성공 1회",
+        unlockGate.speedAttempt?"":"속도 인출 시도 1회",
+        unlockGate.contextN>=2?"":"서로 다른 상황 2개 성공",
+        unlockGate.rate>=0.60?"":"성공률 60%"
+      ].filter(Boolean).join(" · ");
+      $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
+        <div class="em">🔒</div><h2>아직 잠금해제 전이에요.</h2>
+        <p style="font-family:var(--serif);font-size:21px;color:var(--jade);margin:2px 0 2px">${escapeHtml(newB.block)}</p>
+        <p style="font-size:14px;color:var(--muted);margin:6px 0 12px">아직 잠금해제 전이에요. 한 번 더 연습해볼게요.</p>
+        <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
+          <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span style="color:var(--muted);font-size:13px">성공률</span><b style="color:#E2674A">${Math.round(unlockGate.rate*100)}%</b></div>
+          <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:9px">보강할 것: ${escapeHtml(miss||"한 번 더 안정화")}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
+          <button class="sh-next" id="bleRetryUnlock" style="margin:0">짧게 다시 연습하기 →</button>
+          <button class="rv-stop" id="bleRetryHome">홈으로</button>
+        </div>
+      </div>`;
+      $("#bleRetryUnlock").onclick=()=>bleStartUnlockRepair(newB);
+      $("#bleRetryHome").onclick=()=>goToSetup();
+      return;
+    }
+  }
   const byId={}; res.forEach(r=>{ (byId[r.id]=byId[r.id]||{ok:0,no:0}); r.ok?byId[r.id].ok++:byId[r.id].no++; });
   const good=Object.keys(byId).filter(id=>byId[id].ok>byId[id].no).map(id=>BLE_BY_ID[id].block);
   const weak=Object.keys(byId).filter(id=>byId[id].no>=byId[id].ok && byId[id].no>0).map(id=>BLE_BY_ID[id].block);
@@ -5813,7 +6239,7 @@ function bleSummary(){
   try{ awardXP("output", res.filter(r=>r.ok).length*8, "블록영어 세션", "ble"); }catch(e){}
   const row=(label,val,color)=> val? `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px;color:var(--muted)">${label}</span><span style="font-size:14px;font-weight:700;color:${color||'var(--text)'}">${val}</span></div>`:"";
   $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
-    <div class="em">🔓</div><h2>${newB?"블록 잠금 해제!":"세션 완료"}</h2>
+    <div class="em">${newB?"🔓":"✅"}</div><h2>${newB?"블록 잠금 해제!":"세션 완료"}</h2>
     ${newB?`<p style="font-family:var(--serif);font-size:21px;color:var(--jade);margin:2px 0 2px">${escapeHtml(newB.block)}</p><p style="font-size:13px;color:var(--muted);margin:0 0 4px">이제 본격 학습으로 진짜 내 것으로 만들어요</p>`:""}
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("오늘 배운 블록", newB?escapeHtml(newB.block):"—", "var(--jade)")}
@@ -5846,22 +6272,25 @@ let bleLastReason="mixed_test";
 function bleDeepPickBlock(){
   const unlocked=bleUnlockedBlocks(); if(!unlocked.length) return null;
   const s=bleGetState(); const now=bleNow();
-  const scored=unlocked.map(b=>{
-    const st=s[b.id]; let w=1; let reason="maintenance";
-    if(st.nextReviewAt && st.nextReviewAt<=now){ w+=6; reason="due_review"; }       // due 복습
-    if(st.failCount>=2 && st.failCount>st.successCount){ w+=5; reason="weak_block"; } // 약점
-    if(Object.keys(st.confusedWith||{}).length){ w+=4; reason="confusion"; }          // 혼동
-    if((st.consecFails||0)>=1){ w+=3; reason="weak_block"; }
-    if(st.avgMs && st.avgMs>5000){ w+=2; if(reason==="maintenance")reason="slow_block"; } // 느림
-    if((st.contextsUsed||[]).length<=1){ w+=2; if(reason==="maintenance")reason="context_gap"; } // 단일 맥락
-    if(st.lastSeenAt && (now-st.lastSeenAt)<5*60*1000) w-=2;   // 방금 본 건 덜
-    if(st.stage==="strong"||st.stage==="fast"||st.stage==="ready_for_real") w=Math.max(0.5,w-3);
-    return {b, w:Math.max(0.2,w), reason};
-  });
-  const total=scored.reduce((a,x)=>a+x.w,0);
-  let r=Math.random()*total;
-  for(const x of scored){ r-=x.w; if(r<=0){ bleLastReason=x.reason; return x.b; } }
-  bleLastReason=scored[0].reason; return scored[0].b;
+  const recent=new Set((bleDeep&&bleDeep.history?bleDeep.history.slice(-bleEffectiveGap(unlocked)):[]).concat(bleRecentBlocks().slice(0, Math.min(BLE_BLOCK_GAP, Math.max(1,unlocked.length-1)))));
+  let candidates=unlocked.length>1?unlocked.filter(b=>!recent.has(b.id)):unlocked.slice();
+  if(!candidates.length) candidates=unlocked.slice();
+  const weak=candidates.filter(bleIsWeakPracticeBlock);
+  const recentBucket=candidates.filter(b=>bleIsRecentPracticeBlock(b,null)&&!weak.some(x=>x.id===b.id));
+  const strong=candidates.filter(bleIsStrongPracticeBlock);
+  const r=Math.random();
+  let bucket = r<0.70 ? weak : (r<0.90 ? recentBucket : strong);
+  if(!bucket.length) bucket=candidates;
+  const picked=bleWeightedPick(bucket, null)||candidates[0];
+  const st=s[picked.id]||{};
+  if(st.nextReviewAt&&st.nextReviewAt<=now) bleLastReason="due_review";
+  else if(Object.keys(st.confusedWith||{}).length) bleLastReason="confusion";
+  else if((st.failCount||0)>0 || (st.consecFails||0)>0 || (st.targetMissCount||0)>0) bleLastReason="weak_block";
+  else if(st.avgMs&&st.avgMs>5000) bleLastReason="slow_block";
+  else if((st.contextsUsed||[]).length<=1) bleLastReason="context_gap";
+  else if(bleIsStrongPracticeBlock(picked)) bleLastReason="maintenance";
+  else bleLastReason="mixed_test";
+  return picked;
 }
 // 블록 하나에 대해 약점에 맞는 문제 유형 선택
 function bleDeepPickType(b){
@@ -5884,17 +6313,17 @@ function bleDeepNextItem(){
   const reason=bleLastReason;
   const type=bleDeepPickType(b);
   bleEnsureContexts(b);   // 캐시 부족하면 백그라운드 생성
-  if(type==="discriminate"){ const ex=bleAllEx(b)[(Math.random()*bleAllEx(b).length)|0]; return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
+  if(type==="discriminate"){ const ex=bleFreshContextEx2(b); return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
   if(type==="speed"){ const ex=bleFreshContextEx2(b); return {type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}; }
   if(type==="repair"){ const ex=bleFreshContextEx2(b); return {type:"repair", block:b, ex, deep:true, reason:"weak_block"}; }
-  if(type==="mixed"){ const all=bleAllEx(b); const ex=all[(Math.random()*all.length)|0]; return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
+  if(type==="mixed"){ const ex=bleFreshContextEx2(b); return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
   // situation (context variation — 캐시에서 새 상황 우선)
   const ex=bleFreshContextEx2(b); return {type:"situation", block:b, ex, deep:true, reason};
 }
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
 const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepStart(){
-  bleDeep={ queue:[], results:[], count:0, requeue:[] };
+  bleDeep={ queue:[], results:[], count:0, requeue:[], history:[] };
   bleCtxCacheLoad();
   bleUnlockedBlocks().forEach(b=>bleEnsureContexts(b));   // 잠금해제 블록들 상황 미리 생성
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -5906,9 +6335,11 @@ function bleDeepStart(){
 function bleDeepRender(){
   if(!bleDeep) return goToSetup();
   // 다시 풀어야 할 게 있으면 우선, 없으면 새 문제
-  let it = bleDeep.requeue.shift() || bleDeepNextItem();
+  const retryIdx=bleDeep.requeue.findIndex(x=>(x.delayUntil||0)<=bleDeep.count && (bleUnlockedBlocks().length<=1 || !bleDeep.history.slice(-bleEffectiveGap(bleUnlockedBlocks())).includes(x.block.id)));
+  let it = retryIdx>=0 ? bleDeep.requeue.splice(retryIdx,1)[0] : bleDeepNextItem();
   if(!it){ return bleDeepSummary(); }
   bleDeep.current=it; bleDeep.count++;
+  if(it.block&&it.block.id){ bleDeep.history.push(it.block.id); bleRememberBlock(it.block.id); }
   const doneN=bleDeep.results.length;
   const rk=BLE_REASON_KO[it.reason]||"", rc=BLE_REASON_COLOR[it.reason]||"#8A6F62";
   let body;
@@ -5952,12 +6383,13 @@ async function bleFinishRetrieveDeep(it, heard){
     stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:3px">${sub}</div>`;
   }
   speakEn(j.naturalAnswer||ex.en);
-  bleRecord(b.id, {result:j.result, fast, situation:ex.situation, ms, mixed:(it.type==="mixed"||it.type==="speed"), deep:true, confusedWith:j.confusedWith});
-  bleDeep.results.push({id:b.id, type:it.type, result:j.result, comm:j.communicationSuccess, target:j.targetBlockSuccess, usedBlockId:j.usedBlockId, confusedWith:j.confusedWith, fast, ms, situation:ex.situation, naturalAnswer:j.naturalAnswer, reason:it.reason});
+  bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, confusedWith:j.confusedWith});
+  bleDeep.results.push({id:b.id, type:it.type, result:j.result, comm:j.communicationSuccess, target:j.targetBlockSuccess, usedBlockId:j.usedBlockId, confusedWith:j.confusedWith, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), heard, naturalAnswer:j.naturalAnswer, reason:it.reason});
   // MISS/WEAK → 곧 다시 (situation) / HIT(통했지만 블록 못씀) → 같은 블록 한번 더 / 느린 PERFECT → 속도로
-  if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"weak_block"}); }
-  else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"context_gap"}); }
-  else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}); }
+  const retryDelay=bleUnlockedBlocks().length>1 ? bleDeep.count+bleEffectiveGap(bleUnlockedBlocks()) : bleDeep.count;
+  if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"weak_block", delayUntil:retryDelay}); }
+  else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"context_gap", delayUntil:retryDelay}); }
+  else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block", delayUntil:retryDelay}); }
   setTimeout(()=>bleDeepRender(), isPerfect?1500:2300);
 }
 function bleWireRetrieveDeep(it){
@@ -5976,7 +6408,7 @@ function bleWireRetrieveDeep(it){
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieveDeep(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(!s) return; if(it.type==="repair_fill"){ s.innerHTML='💡 <b style="color:#F0664A;font-family:var(--serif)">'+escapeHtml(ex.en)+'</b>'; speakEn(ex.en); } else { s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; } };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(!s) return; if(it.type==="repair_fill"){ s.innerHTML='💡 <b style="color:#F0664A;font-family:var(--serif)">'+escapeHtml(ex.en)+'</b>'; speakEn(ex.en); } else { s.innerHTML='💡 '+escapeHtml(bleSituationHint(b)); } };
 }
 // Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
@@ -5994,9 +6426,9 @@ function bleWireDiscriminateDeep(it){
       if(!ok && wrong){ contrast=`<div style="font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5"><b style="color:var(--jade)">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
       fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
-      bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:it.ex.situation, ms, mixed:true, deep:true, confusedWith: ok?null:picked});
-      bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:it.ex.situation, reason:"confusion"});
-      if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion"});
+      bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, confusedWith: ok?null:picked});
+      bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), reason:"confusion"});
+      if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion", delayUntil:bleDeep.count+bleEffectiveGap(bleUnlockedBlocks())});
       setTimeout(()=>bleDeepRender(), ok?1200:2600);
     };
   });
@@ -6082,14 +6514,14 @@ function bleDeepSummary(){
     if(r.result==="PERFECT")o.perfect++; else if(r.result==="HIT")o.hit++; else o.miss++;
     if(r.result==="PERFECT"&&!r.fast)o.slow++;
     if(r.result==="PERFECT"&&r.situation&&o.newCtx.indexOf(r.situation)<0)o.newCtx.push(r.situation);
-    if(r.result==="HIT"&&r.naturalAnswer)o.commNotBlock.push(r.naturalAnswer);
+    if(r.result==="HIT"){ const fallback=bleAllEx(BLE_BY_ID[r.id])[0]; o.commNotBlock.push({heard:r.heard||"(다른 표현)", next:r.naturalAnswer||(fallback&&fallback.en)||""}); }
   });
   const practiced=Object.keys(byId).filter(id=>byId[id].perfect>0).map(id=>BLE_BY_ID[id].block);
   const weak=Object.keys(byId).filter(id=>byId[id].miss>=byId[id].perfect&&byId[id].miss>0).map(id=>BLE_BY_ID[id].block);
   const slow=Object.keys(byId).filter(id=>byId[id].slow>0).map(id=>BLE_BY_ID[id].block);
   // 의미는 통했지만 타겟 블록 못 쓴 케이스
   const commLines=[];
-  Object.keys(byId).forEach(id=>{ if(byId[id].commNotBlock.length) commLines.push(`"${byId[id].commNotBlock[0]}" → ${BLE_BY_ID[id].block}`); });
+  Object.keys(byId).forEach(id=>{ if(byId[id].commNotBlock.length){ const x=byId[id].commNotBlock[0]; commLines.push(`${x.heard} → next time try "${x.next}"`); } });
   // 헷갈린 블록 (이번 세션 confusedWith 기록)
   const confusedPairs=[];
   res.forEach(r=>{ if(r.confusedWith && BLE_BY_ID[r.confusedWith]) confusedPairs.push(`${BLE_BY_ID[r.id].block} vs ${BLE_BY_ID[r.confusedWith].block}`); });
@@ -6564,8 +6996,9 @@ function startSprint(len){
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   spIdx=0; spCombo=0; spMaxCombo=0; spTimes=[]; spPerfect=0; spHit=0; spMiss=0;
   spEnemy=SP_ENEMIES[(Math.random()*SP_ENEMIES.length)|0];
-  // 로컬 Phrase DB에서 즉시 출제 — AI 호출 없음, 로딩 없음
-  spItems = pickPhrases({ n:n });
+  // BLE 블록 우선: 느린 → 복습 예정 → 약점 → 최근 학습. 없을 때만 CORE_PHRASES 백업.
+  spItems = bleLightningItems(n);
+  if(!spItems || !spItems.length) spItems = pickPhrases({ n:n });
   if(spItems && spItems.length){ spIdx=0; spNext(); }
   else { $("#sprintScroll").innerHTML=`<div class="lloading">문장 준비 중…<div class="typing"><i></i><i></i><i></i></div></div>`; spGenerate(n); }
 }
@@ -6593,6 +7026,14 @@ function spMult(){ return spCombo>=10?5:spCombo>=5?3:spCombo>=3?2:1; }
 function spNorm(s){ return String(s||"").toLowerCase().replace(/[.,!?'"]/g,"").replace(/\s+/g," ").trim(); }
 // 의미 전달 점수: 핵심어 겹침 + 청크 사용 여부로 PERFECT/HIT/MISS 판정
 function spGrade(heard, it, elapsed){
+  if(it && it.bleId && BLE_BY_ID[it.bleId]){
+    const j=bleGradeLocal(BLE_BY_ID[it.bleId], it.en, heard);
+    it._bleJudge=j;
+    if(j.result==="PERFECT" && elapsed<=4) return "perfect";
+    if(j.result==="PERFECT") return "hit";
+    if(j.result==="HIT") return "hit";
+    return "miss";
+  }
   const h=spNorm(heard), target=spNorm(it.en);
   if(!h) return "miss";   // STT 아무것도 못 잡음 = 시도 실패(말 안 함/딴소리)
   const hw=h.split(" ").filter(Boolean), tw=target.split(" ").filter(Boolean);
@@ -6681,6 +7122,16 @@ function srsStageLabel(s){ return {new:"새 단어",learning:"배우는 중",rev
    문서: 강요하지 말고 자연스럽게 쓰게 유도. 우선순위 due>weak>recent>studied>mastered
    ============================================================ */
 function convoBlocks(){
+  try{
+    const mk=(b,stage)=>({id:b.id, en:b.block, ko:b.meaningKo||"", stage:stage||(b.state&&b.state.stage)||"ble", uses:(b.state&&b.state.successCount)||0, miss:(b.state&&b.state.failCount)||0});
+    const due=getDueReviewBlocks().slice(0,8).map(b=>mk(b,"due"));
+    const weak=getWeakBlocks().slice(0,8).map(b=>mk(b,"weak"));
+    const ready=getReadyForRealBlocks().slice(0,8).map(b=>mk(b,"ready"));
+    const recent=getRecentlyLearnedBlocks().slice(0,8).map(b=>mk(b,"recent"));
+    const studied=getLearnedBlocks().filter(b=>b.state&&b.state.unlocked).slice(0,12).map(b=>mk(b,"studied"));
+    if(due.length||weak.length||ready.length||recent.length||studied.length) return {due, weak, ready, recent, studied, mastered:[]};
+  }catch(e){}
+  // 구 SRS는 BLE 데이터가 아직 없을 때만 백업으로 쓴다.
   const all=Object.values(srsAll());
   const today=EDAY();
   const lab=x=>({en:x.en, ko:x.ko||"", stage:x.stage, uses:x.uses||0, miss:x.miss||0});
@@ -6693,7 +7144,7 @@ function convoBlocks(){
   const mastered = all.filter(x=>x && x.stage==="mastered" && x.en).slice(0,5).map(lab);
   // weak chunks (블록영어 약점)도 합침
   try{ weakList(6).forEach(w=>{ if(w&&w.chunk) weak.push({en:w.chunk, ko:w.ko||"", stage:"weak", uses:0, miss:w.miss||1}); }); }catch(e){}
-  return {due, weak, recent, studied, mastered};
+  return {due, weak, ready:[], recent, studied, mastered};
 }
 // 프롬프트에 넣을 블록 우선순위 문자열 (자연 유도용)
 function convoBlockHint(){
@@ -6701,8 +7152,7 @@ function convoBlockHint(){
   const pick=[];
   const seen=new Set();
   const add=(arr,tag)=>arr.forEach(x=>{ const k=srsKey(x.en); if(k&&!seen.has(k)){ seen.add(k); pick.push(x.en+(x.ko?(" ("+x.ko+")"):"")+" ["+tag+"]"); } });
-  add(b.due,"due-review"); add(b.weak,"weak"); add(b.recent,"recent"); add(b.studied,"studied");
-  if(pick.length<3) add(b.mastered,"mastered");
+  add(b.due,"due-review"); add(b.weak,"weak"); add(b.ready,"ready-for-real"); add(b.recent,"recent"); add(b.studied,"studied");
   if(!pick.length) return "";   // 아직 학습한 블록 없음 → 일반 대화
   return pick.slice(0,14).join("; ");
 }
@@ -6764,6 +7214,19 @@ function spPassItem(it, heard){
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
   // ⚡ 실제 채점
   const grade = spGrade(heard, it, elapsed);   // "perfect" | "hit" | "miss"
+  if(it.bleId && BLE_BY_ID[it.bleId]){
+    const j=it._bleJudge || bleGradeLocal(BLE_BY_ID[it.bleId], it.en, heard);
+    bleRecord(it.bleId, {
+      result:j.result,
+      communicationSuccess:j.communicationSuccess,
+      targetBlockSuccess:j.targetBlockSuccess,
+      fast:grade==="perfect",
+      situation:"lightning",
+      ms:Math.round(elapsed*1000),
+      mixed:true,
+      speedAttempt:true
+    });
+  }
   let gained=0;
   if(grade==="perfect"){
     spPerfect++; spCombo++; if(spCombo>spMaxCombo) spMaxCombo=spCombo;
@@ -6774,7 +7237,7 @@ function spPassItem(it, heard){
     gained=awardXP("output", 10, "⚔️ HIT", "sprint");
   } else {
     spMiss++; spCombo=Math.max(0, spCombo-1);   // MISS = 콤보 -1, XP 0
-    weakAddMiss(it);
+    if(!it.bleId) weakAddMiss(it);
   }
   bumpCount&&bumpCount("talk");
   if(grade!=="miss"){
@@ -6883,7 +7346,7 @@ function openSpeakHub(){
   ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="out") startOutputEngine(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
-function openChunkHub(){
+function openLegacyChunkHubBasic(){
   const list=CORE_PHRASES.slice().sort((a,b)=>(a.level||0)-(b.level||0));
   const rows=list.map(p=>`<button class="chk-row" data-pid="${p.id}">
      <span class="chk-en">${escapeHtml(p.phrase)}</span>
@@ -6941,7 +7404,7 @@ function blStars(pid){
 function blMarkReal(pid){
   if(!pid) return; const m=blGetMastery(); const e=m[pid]||{ctx:[],mix:0,fast:0}; e.real=(e.real||0)+1; m[pid]=e; blSetMastery(m);
 }
-function openChunkHub(){
+function openLegacyChunkHub(){
   const learned=blGetLearned(); const mastery=blGetMastery(); const next=blPickNew();
   const rows=CORE_PHRASES.map(p=>{ const isL=learned.indexOf(p.id)>=0; const lv=blLevel(p.id);
     return `<button class="chk-row" data-pid="${p.id}">
@@ -7698,9 +8161,9 @@ function renderDailyCard(){
   const box=$("#dailyCard"); if(!box) return;
   const d=dailyExpr(); const p=avProgressOf(d.en);
   const si=srsGet(d.en);
-  // 마스터까지 남은 횟수 (SRS 단계 기준)
+  // 지금 버전의 최고 목표는 MASTERED가 아니라 READY_FOR_REAL이다.
   const stageIdx = si ? SRS_STAGES.indexOf(si.stage) : 0;
-  const toMaster = Math.max(0, (SRS_STAGES.length-1) - stageIdx);
+  const toReady = Math.max(0, (SRS_STAGES.length-1) - stageIdx);
   // 상황 진행 (3상황 인출)
   const ctxDone = Math.min(5, p.ctx||0);
   const dueTxt = si ? ((si.due||0)<=EDAY()?"오늘":"준비됨") : "오늘";
@@ -7715,22 +8178,20 @@ function renderDailyCard(){
     <div class="bh-stats">
       <span>상황 연습 <b>${ctxDone}/5</b></span>
       <span class="bh-dot">·</span>
-      <span>마스터까지 <b>${toMaster}번</b></span>
+      <span>실전 준비까지 <b>${toReady}번</b></span>
     </div>
     <button class="bh-go" id="bhGo">블록 배우러 가기 →</button>
   </div>`;
-  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ openChunkHub(); }catch(e){} };
+  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ bleOpenHub(); }catch(e){} };
 }
 function renderAcqStats(){
   const box=$("#acqStats"); if(!box) return;
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
-  // 🧱 블록 통계 (SRS 기반)
-  const all=Object.values(srsAll());
-  const mastered=all.filter(x=>x.stage==="mastered").length;
-  const due=srsDue(999).length;
-  const used=all.reduce((s,x)=>s+(x.uses||0),0);
+  // 🧱 블록 통계는 BLE를 기준으로 보여준다.
+  const ready=getReadyForRealBlocks().length;
+  const due=getDueReviewBlocks().length;
   const tiles=[
-    {ic:"🧱", v:mastered, l:"마스터 블록"},
+    {ic:"🧱", v:ready, l:"실전 준비"},
     {ic:"🔄", v:due, l:"복습할 블록"},
     {ic:"🔥", v:streak+"일", l:"연속"}
   ];
