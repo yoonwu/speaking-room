@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.96.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.97.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1949,12 +1949,24 @@ function updateLevelBadges(){
 function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 연령 모드 헬퍼
 function kidMode(){ return state.age==="kid"; }
+// 🛡️ 모든 영어 생성에 적용 — 문법 완전성 강제 (단어 나열식 비문 방지: "dad open bag" 같은 것)
+function grammarRule(){
+  return [
+"GRAMMAR — ABSOLUTE REQUIREMENT (this overrides brevity):",
+"- Every English sentence MUST be fully grammatical and complete: correct articles (a/an/the), correct verb forms and agreement, correct word order.",
+"- NEVER output telegraphic word-piles like 'dad open bag'. Write 'Dad, open the bag.' or 'Dad opens the bag.' — a real, natural sentence.",
+"- Use a vocative comma when speaking TO someone (e.g. 'Mom, look!').",
+"- It must read exactly like something a native speaker would actually say or write. If unsure, prefer a simple but 100% correct sentence.",
+"- Contractions and casual speech (wanna, gonna, I'll, you're) are fine, but the sentence must still be grammatically well-formed."
+  ].join("\n");
+}
 const KID_TOPICS=["school","friends","Roblox and video games","sports","animals","family","food","hobbies","the classroom","the playground","asking for help"];
 function kidRules(){
   return [
 "IMPORTANT — KID MODE (the learner is a young child, around 7-9 years old):",
 "- Use VERY simple, common words a child knows.",
 "- Maximum English sentence length: 8 words. One idea per sentence.",
+"- CRITICAL: even though sentences are short, they MUST be fully grammatical — keep articles and correct verb forms. Write 'Open the bag, Dad!' NOT 'dad open bag'. Short does NOT mean dropping grammar.",
 "- Topics ONLY from a child's world: "+KID_TOPICS.join(", ")+".",
 "- ABSOLUTELY NO adult situations: no banking, billing, immigration, customer support, payments, business, contracts, insurance, or medical admin.",
 "- Keep it FUN and low-pressure. Be warm, playful, and patient. Use friendly emojis.",
@@ -2028,6 +2040,7 @@ function rolePrompt(){
     if(kidMode()){
       return [
 "You are a warm, playful OUTPUT coach for a young Korean child practicing speaking. Make it feel like a fun game, never a test.",
+grammarRule(),
 "Keep EVERY reply EXTREMELY short and clean — a small child reads it. NEVER use markdown stars or dashes.",
 "Reply format, MAX 2 short lines total:",
 "  Line 1: a tiny cheer + the natural English in quotes. Example: 👍 \"Want to play with me?\"",
@@ -2043,6 +2056,7 @@ kidRules(),
     }
     return [
 "You are an OUTPUT coach for a Korean adult learner. Their problem is NOT knowledge — it's RETRIEVAL. Make them pull English out of memory under mild pressure.",
+grammarRule(),
 "Every turn works EXACTLY like this:",
 "1) Give ONE realistic everyday SITUATION described IN KOREAN (one short line), e.g. '카페에서 아메리카노 라지 한 잔을 주문하세요.' Do NOT show any English example. Do NOT give hints.",
 "2) Wait for the learner to answer in English.",
@@ -2060,6 +2074,7 @@ levelSituation(),
     if(kidMode()){
       return [
 "You are a kind, friendly character in a young Korean child's everyday life (a classmate, a patient teacher, a friend at the playground). This is gentle 'Kid Daily Life' speaking practice — NOT a stressful simulation.",
+grammarRule(),
 "Situation: "+scnDesc(),
 "You play "+scnRole()+". Be warm, cheerful, patient, and encouraging at all times. Use friendly emojis.",
 "Talk like a real but kind friend: ask ONE simple question, wait, react happily, ask another. Keep a relaxed back-and-forth.",
@@ -2073,6 +2088,7 @@ kidRules()
     const blocks=convoBlockHint();
     return [
 "You are a friendly, realistic conversation partner for a Korean learner practicing spoken English. This is 실전회화 (real conversation practice). The learner has been studying reusable English 'blocks' (chunks like 'Can I get...', 'Could you...', 'Do you have...'). Your job: create natural situations where those blocks are USEFUL, so the learner naturally reaches for them — WITHOUT turning this into a quiz.",
+grammarRule(),
 "Situation: "+scnDesc(),
 "You play "+scnRole()+". Be natural, warm, and realistic — like a real café worker, clerk, receptionist, or friend. One thing at a time.",
 blocks ? ("The learner has studied these blocks (priority order — earlier = more important to surface). Gently create openings where these fit naturally:\n"+blocks) : "The learner is new — keep it very simple and encouraging.",
@@ -2564,9 +2580,10 @@ function passageSys(){
   const seed=Math.floor(Math.random()*100000);
   return [
 "You are creating a fresh English LISTENING practice DIALOGUE between two speakers for a Korean learner (level: "+state.level+").",
+grammarRule(),
 "Topic: "+topicDesc()+".",
 listenLen(),
-"It must sound like a real, natural spoken conversation — two people talking, with questions, reactions, and natural turn-taking. Use everyday spoken English (contractions, fillers ok at higher levels), not textbook lines. Pick a specific concrete scene so it feels new (variety seed "+seed+"). Don't reuse a generic opening.",
+"It must sound like a real, natural spoken conversation — two people talking, with questions, reactions, and natural turn-taking. Use everyday spoken English (contractions, fillers ok at higher levels). Every line must still be a grammatically complete, correct sentence — natural speech is NOT broken grammar. Pick a specific concrete scene so it feels new (variety seed "+seed+"). Don't reuse a generic opening.",
 "Use exactly \"A\" and \"B\" as the two speaker IDs, alternating naturally.",
 "Return ONLY a JSON object, no markdown:",
 '{"title":"short English title (3-5 words)","speakers":{"A":"short role or name","B":"short role or name"},"lines":[{"speaker":"A","en":"line in English","ko":"한국어 번역"},{"speaker":"B","en":"...","ko":"..."}],"key":[{"en":"useful expression or chunk","ko":"한국어 뜻"}]}',
@@ -2660,7 +2677,8 @@ function listenSentenceSys(){
     ].filter(Boolean).join("\n");
   }
   return [
-"This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
+"This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm. Casual and natural, but ALWAYS a grammatically complete, correct sentence (natural spoken English is still grammatical — it is NOT broken word-by-word English).",
+grammarRule(),
 materialRule,
 kidMode()? ("Produce ONE short, simple spoken English sentence for a young CHILD about: "+KID_TOPICS[(seed)%KID_TOPICS.length]+".") : ("Produce ONE natural spoken English sentence for a Korean learner. Topic context: "+topicDesc()+"."),
 booster,
@@ -3855,6 +3873,7 @@ function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
   return [
 "Create a vocabulary set for a Korean learner. Loose theme context: "+theme.topic+".",
+grammarRule(),
 vocabWordLevelRule(),
 "CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher levels pick genuinely harder, less obvious words even within the theme. Lv.1 and Lv.10 on the SAME theme MUST produce clearly different difficulty words.",
 levelHint(),
@@ -4005,6 +4024,7 @@ async function wpExpandWord(w){
   const key=srsKey(w.word); if(wpCtxCache[key]) return wpCtxCache[key];
   const sys=[
 "You create RETRIEVAL fill-in-the-blank drills for ONE English word/chunk, across MANY real-life situations.",
+grammarRule(),
 "Target: \""+w.word+"\" (Korean: "+(w.ko||"")+").",
 "Make 6 short natural English sentences that each USE the target, in DIFFERENT contexts: friend, family, school, restaurant/shopping, travel/hospital, daily life. Replace the target with '[ ___ ]' in each.",
 levelHint(),
@@ -5999,6 +6019,7 @@ async function spGenerate(n){
   const seed=Math.floor(Math.random()*100000);
   const sys=[
 "Generate "+n+" EXTREMELY common, short, everyday Korean sentences with their natural English versions, for rapid speaking practice.",
+grammarRule(),
 kidMode()? "The learner is a young CHILD. Use very short, simple sentences (max 6 English words). Topics: "+topics+"."
          : "Adult everyday survival English. Keep each English version short and natural (max 8 words). Topics: "+topics+".",
 "These must be things people say constantly (배고파요 / 도와주세요 / 얼마예요? / 다시 말해 주세요 / 같이 가고 싶어요 ...). Mix topics. Variety seed "+seed+".",
@@ -6527,6 +6548,7 @@ async function ctGenerate(p){
   const need=10-p.examples.length;
   const sys=[
 "You generate rapid-fire speaking drills that ALL force the learner to use ONE specific English chunk.",
+grammarRule(),
 "The chunk: \""+p.phrase+"\" (Korean meaning: "+p.ko+").",
 "Generate "+Math.max(need,6)+" NEW everyday situations. For EACH: a short KOREAN prompt + the natural English answer that MUST use the chunk \""+p.phrase+"\".",
 "Vary the contexts widely: "+contexts+". Keep English short (max 9 words) and natural.",
