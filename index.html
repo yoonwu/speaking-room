@@ -1384,7 +1384,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.62.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.63.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3368,9 +3368,12 @@ function pushToBank(themeId,set){
 function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
   return [
-"Create a vocabulary set for a Korean learner (level: "+state.level+"). Theme: "+theme.topic+".",
-"Pick 5 genuinely useful everyday words or short expressions. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way). This teaches the word across varied contexts. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
-"CRITICAL: 'word' MUST be the ENGLISH word/phrase (e.g. 'to clean'), and 'ko' MUST be its KOREAN meaning (e.g. '청소하다'). NEVER swap them. All 'en' fields are English, all 'ko' fields are Korean. Also include a 'blank' field: ONE example sentence as fill-in-the-blank with the target word replaced by '____', plus the 'answer'.",
+"Create a vocabulary set for a Korean learner. Theme: "+theme.topic+".",
+levelHint(),
+levelCap(),
+"Choose words/expressions whose DIFFICULTY matches the level above: low levels = very common basic words (short, high-frequency); high levels = richer, more advanced or nuanced vocabulary. The example sentences and blanks must also obey the level's length/grammar limits.",
+"Pick 5 genuinely useful words or short expressions AT THIS LEVEL. For EACH word give 3 example sentences that use the word — each MUST use a DIFFERENT sentence frame. Also give 2 common collocations. Variety seed "+seed+".",
+"CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'.",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
   ].join("\n");
 }
@@ -3477,7 +3480,8 @@ async function wpExpandWord(w){
   const sys=[
 "You create RETRIEVAL fill-in-the-blank drills for ONE English word/chunk, across MANY real-life situations.",
 "Target: \""+w.word+"\" (Korean: "+(w.ko||"")+").",
-"Make 6 short natural English sentences that each USE the target, in DIFFERENT contexts: friend, family, school, restaurant/shopping, travel/hospital, daily life. Replace the target with '[ ___ ]' in each. Keep them simple and level-appropriate.",
+"Make 6 short natural English sentences that each USE the target, in DIFFERENT contexts: friend, family, school, restaurant/shopping, travel/hospital, daily life. Replace the target with '[ ___ ]' in each.",
+levelHint(),
 levelCap(),
 'Return ONLY JSON: {"items":[{"en":"I like [ ___ ].","ko":"나는 축구를 좋아해.","answer":"'+w.word+'","ctx":"friend"}]} — answer is always the target, ctx is the situation tag.'
   ].join("\n");
