@@ -116,6 +116,23 @@
 .ro-native{background:var(--card2);border:1px solid rgba(31,211,160,.25);border-radius:14px;padding:14px;margin-top:12px;text-align:center}
 .ro-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13.5px;color:var(--muted)}
 .ro-xp{font-weight:900;color:var(--jade);font-size:15px}
+/* 📖 사전 팝업 + 탭 가능 단어 */
+.tapw{cursor:pointer;border-radius:4px;transition:background .12s}
+.tapw:active{background:rgba(31,211,160,.25)}
+.dict-pop{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
+.dict-bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.dict-card{position:relative;z-index:1;width:100%;max-width:480px;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;padding:22px 20px calc(28px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:dictUp .22s ease}
+@keyframes dictUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.dict-x{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:var(--mist);border:none;color:var(--muted);font-size:15px;cursor:pointer}
+.dict-term{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--jade)}
+.dict-tag{font-family:var(--font);font-size:12px;font-weight:700;color:var(--muted);background:var(--mist);border-radius:99px;padding:3px 10px;vertical-align:middle;margin-left:6px}
+.dict-ko{font-size:19px;font-weight:700;color:var(--text);margin-top:6px}
+.dict-kid{font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5;background:var(--mist);border-radius:12px;padding:11px 13px}
+.dict-sec{font-size:12px;font-weight:800;color:var(--muted);margin-top:16px;margin-bottom:7px}
+.dict-ex{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:6px;font-family:var(--serif);font-size:16px;color:var(--text);cursor:pointer}
+.dict-rel{display:flex;flex-wrap:wrap;gap:7px}
+.dict-relchip{font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--jade);cursor:pointer}
+.dict-src{font-size:11px;color:var(--muted);text-align:right;margin-top:14px}
 /* 🧠 학습 컨텍스트 패널 */
 .learn-panel{display:flex;flex-direction:column;gap:11px;max-width:520px;margin:16px auto 0;width:100%}
 .lp-loading{text-align:center;color:var(--muted);font-size:15px;padding:16px}
@@ -1384,7 +1401,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.63.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.64.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3651,7 +3668,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
       ${(answer&&correct)?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${gaveUp?"정답을 확인하세요":""}</div>`}
       <div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:6px">정답</div>
       <div style="font-family:var(--serif);font-size:38px;color:var(--jade);font-weight:700;line-height:1.2">${escapeHtml(a)}</div>
-      <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${escapeHtml(full)}</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${tappableEn(full)}</div>
       <div style="font-size:16px;color:var(--muted);margin-top:10px">${escapeHtml(q.blank.ko)}</div>
       <button class="ans-replay" id="wpSay" style="margin-top:14px;color:var(--jade);font-size:15px;font-weight:700">🔊 듣기</button>
       ${gaveUp?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
@@ -4608,6 +4625,127 @@ const CORE_PHRASES=[
  {id:"not_what_049",phrase:"That's not what I ordered.",ko:"제가 주문/요청한 게 아니에요",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"제가 주문한 게 아니에요.",en:"That's not what I ordered."},{ko:"제가 요청한 게 아니에요.",en:"That's not what I asked for."},{ko:"우리가 얘기한 게 아니에요.",en:"That's not what we discussed."},{ko:"제가 예약한 방이 아니에요.",en:"That's not the room I booked."},{ko:"제가 신청한 게 아니에요.",en:"That's not what I signed up for."}]},
  {id:"wait_second_050",phrase:"Could you wait a second?",ko:"잠시 기다려 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"잠시 기다려 주시겠어요?",en:"Could you wait a second?"},{ko:"확인하는 동안 기다려 주시겠어요?",en:"Could you wait while I check?"},{ko:"잠깐 기다려 주시겠어요?",en:"Could you wait a moment?"},{ko:"기다려 주시겠어요?",en:"Could you wait, please?"},{ko:"잠시만 기다려 주시겠어요?",en:"Could you hold for a second?"}]}
 ];
+
+/* ===================== 📖 로컬 사전/청크 조회 시스템 =====================
+   탭하면 100ms 내 로컬 표시. 없으면 AI 백그라운드 + 영구 캐시.
+   절대 전체 DB를 AI에 보내지 않음. */
+// 코어 단어 DB — 생존 필수 + 최빈출 (수동 큐레이션, 품질 우선)
+// 구조: word: {ko, kid(아이용 쉬운 설명), ex:[영어 예문], rel:[관련 청크/단어]}
+const WORD_DB={
+ // 인사·기본
+ hi:{ko:"안녕",kid:"만났을 때 하는 인사예요",ex:["Hi, I'm Sam."],rel:["hello","hey"]},
+ hello:{ko:"안녕하세요",kid:"인사할 때 써요",ex:["Hello! How are you?"],rel:["hi"]},
+ bye:{ko:"잘 가",kid:"헤어질 때 하는 인사예요",ex:["Bye! See you tomorrow."],rel:["goodbye","see you"]},
+ please:{ko:"부탁해요/제발",kid:"공손하게 부탁할 때 붙여요",ex:["Water, please.","Help me, please."],rel:["thank you"]},
+ thanks:{ko:"고마워",kid:"고마울 때 하는 말이에요",ex:["Thanks a lot!"],rel:["thank you"]},
+ sorry:{ko:"미안해요",kid:"잘못했을 때 하는 말이에요",ex:["Sorry, I'm late."],rel:["excuse me"]},
+ yes:{ko:"응/네",kid:"맞다고 할 때 써요",ex:["Yes, please."],rel:["no"]},
+ no:{ko:"아니",kid:"아니라고 할 때 써요",ex:["No, thanks."],rel:["yes"]},
+ // 사람·가족
+ mom:{ko:"엄마",kid:"나를 낳아준 여자 어른이에요",ex:["My mom is kind."],rel:["dad","family"]},
+ dad:{ko:"아빠",kid:"우리 집 남자 어른이에요",ex:["My dad is tall."],rel:["mom","family"]},
+ friend:{ko:"친구",kid:"같이 노는 사람이에요",ex:["He is my friend."],rel:["family"]},
+ // 동작
+ go:{ko:"가다",kid:"어디로 움직이는 거예요",ex:["Let's go!","I go to school."],rel:["come","run"]},
+ come:{ko:"오다",kid:"이쪽으로 움직이는 거예요",ex:["Come here.","Come with me."],rel:["go"]},
+ eat:{ko:"먹다",kid:"음식을 입에 넣는 거예요",ex:["I eat an apple."],rel:["drink","food"]},
+ drink:{ko:"마시다",kid:"물 같은 걸 마시는 거예요",ex:["I drink water."],rel:["eat","water"]},
+ want:{ko:"원하다",kid:"갖고 싶을 때 써요",ex:["I want juice."],rel:["like","need"]},
+ like:{ko:"좋아하다",kid:"좋아할 때 써요",ex:["I like dogs."],rel:["want","love"]},
+ love:{ko:"사랑하다/아주 좋아하다",kid:"엄청 좋아할 때 써요",ex:["I love you."],rel:["like"]},
+ need:{ko:"필요하다",kid:"꼭 있어야 할 때 써요",ex:["I need help."],rel:["want"]},
+ help:{ko:"돕다/도움",kid:"도와줄 때 써요",ex:["Help me, please."],rel:["need"]},
+ // 음식·사물
+ water:{ko:"물",kid:"마시는 맑은 거예요",ex:["I want water."],rel:["drink","juice"]},
+ apple:{ko:"사과",kid:"빨간 동그란 과일이에요",ex:["I eat an apple."],rel:["food","fruit"]},
+ food:{ko:"음식",kid:"먹는 거예요",ex:["I like this food."],rel:["eat"]},
+ // 형용사
+ big:{ko:"큰",kid:"크기가 큰 거예요",ex:["A big dog."],rel:["small","hot"]},
+ small:{ko:"작은",kid:"크기가 작은 거예요",ex:["A small cat."],rel:["big"]},
+ hot:{ko:"뜨거운/더운",kid:"뜨거울 때 써요",ex:["It is hot."],rel:["cold"]},
+ cold:{ko:"차가운/추운",kid:"차가울 때 써요",ex:["It is cold."],rel:["hot"]},
+ good:{ko:"좋은",kid:"좋을 때 써요",ex:["Good job!"],rel:["bad","nice"]},
+ // 자주 쓰는 동사(성인)
+ get:{ko:"받다/얻다/사다",kid:"무언가를 가지게 되는 거예요",ex:["Can I get a refill?","I'll get the bill."],rel:["Can I get...?","take"]},
+ take:{ko:"가져가다/타다/(시간)걸리다",kid:"무언가를 가져가는 거예요",ex:["I'll take it.","Take the bus."],rel:["get"]},
+ make:{ko:"만들다",kid:"새로 만드는 거예요",ex:["I'll make coffee."],rel:["do"]},
+ order:{ko:"주문하다",kid:"식당에서 음식을 시키는 거예요",ex:["I'd like to order.","Can I order now?"],rel:["I'd like to...","menu"]},
+ refill:{ko:"리필(다시 채움)",kid:"음료를 더 채워 받는 거예요",ex:["Can I get a refill?"],rel:["Can I get...?"]},
+ bill:{ko:"계산서",kid:"식당에서 내는 돈 적힌 종이예요",ex:["Could you bring the bill?"],rel:["Could you...?","pay"]},
+ book:{ko:"예약하다/책",kid:"미리 자리를 잡는 거예요(또는 읽는 책)",ex:["I'd like to book a table."],rel:["reserve"]},
+ cancel:{ko:"취소하다",kid:"하기로 한 걸 안 하는 거예요",ex:["I need to cancel my order."],rel:["change"]},
+ change:{ko:"바꾸다/잔돈",kid:"다른 걸로 바꾸는 거예요",ex:["I'd like to change my plan."],rel:["cancel"]},
+ check:{ko:"확인하다/계산서",kid:"맞는지 살펴보는 거예요",ex:["Could you check this?"],rel:["bill"]},
+ try:{ko:"해보다/입어보다",kid:"한번 시도해보는 거예요",ex:["Can I try it on?"],rel:["test"]},
+ pay:{ko:"지불하다/내다",kid:"돈을 내는 거예요",ex:["I'll pay by card."],rel:["bill","card"]},
+ card:{ko:"카드",kid:"돈 대신 내는 카드예요",ex:["I'll pay by card."],rel:["pay","cash"]},
+};
+// 조회 정규화
+function dictKey(s){ return String(s||"").toLowerCase().replace(/[^a-z' ]/g,"").trim(); }
+// 영구 캐시 (AI 결과 저장 → 다음엔 로컬 속도)
+function dictCacheGet(k){ try{ return (hGet("speakingroom:dictcache",{})||{})[k]||null; }catch(e){ return null; } }
+function dictCacheSet(k,v){ try{ const c=hGet("speakingroom:dictcache",{})||{}; c[k]=v; const keys=Object.keys(c); if(keys.length>800){ delete c[keys[0]]; } hSet("speakingroom:dictcache",c); }catch(e){} }
+// 청크 DB에서 찾기 (CORE_PHRASES 재활용)
+function lookupChunk(text){
+  const t=dictKey(text);
+  const hit=CORE_PHRASES.find(p=>dictKey(p.phrase).replace(/\.\.\.|\?/g,"").trim()===t || dictKey(p.phrase).includes(t)&&t.length>4);
+  if(hit) return {type:"chunk", term:hit.phrase, ko:hit.ko, kid:"여러 상황에서 쓰는 표현이에요", ex:(hit.examples||[]).slice(0,3).map(e=>e.en), rel:[], src:"local"};
+  return null;
+}
+// 통합 조회: 로컬 단어 → 청크 → 캐시 → (없으면 null, AI는 호출부에서)
+function lookupLocal(text){
+  const k=dictKey(text);
+  if(!k) return null;
+  if(WORD_DB[k]){ const w=WORD_DB[k]; return {type:"word", term:k, ko:w.ko, kid:w.kid, ex:w.ex||[], rel:w.rel||[], src:"local"}; }
+  const ch=lookupChunk(text); if(ch) return ch;
+  const cached=dictCacheGet(k); if(cached) return Object.assign({src:"cache"}, cached);
+  return null;
+}
+// 영어 문장을 탭 가능한 단어들로 감싸기
+function tappableEn(text){
+  if(!text) return "";
+  const safe=escapeHtml(text);
+  return safe.replace(/([A-Za-z][A-Za-z']*)/g, '<span class="tapw" onclick="dictShow(this,\'$1\')">$1</span>');
+}
+function dictShow(el, word){
+  const local=lookupLocal(word);
+  if(local){ dictRenderPopup(local); }
+  else { dictRenderPopup({type:"word", term:dictKey(word), ko:"…", kid:"뜻을 찾는 중이에요…", ex:[], rel:[], src:"loading"}); dictAILookup(word); }
+}
+async function dictAILookup(word){
+  const k=dictKey(word);
+  try{
+    const sys=[
+"Explain ONE English word/expression for a Korean learner, kid-friendly and very short.",
+"Word: \""+word+"\".",
+'Return ONLY JSON: {"ko":"한국어 뜻(짧게)","kid":"아이도 이해할 쉬운 한 줄 설명(한국어)","ex":["1-2 short example sentences in English"],"rel":["0-2 related words/chunks"]}'
+    ].join("\n");
+    const d=await callClaude(sys,[{role:"user",content:"Now."}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(o && o.ko){ const rec={type:"word",term:k,ko:o.ko,kid:o.kid||"",ex:o.ex||[],rel:o.rel||[]}; dictCacheSet(k, rec);
+      const open=document.getElementById("dictPop"); if(open && open.dataset.term===k){ dictRenderPopup(Object.assign({src:"ai"},rec)); }
+    } else { const open=document.getElementById("dictPop"); if(open && open.dataset.term===k){ const c=open.querySelector(".dict-ko"); if(c) c.textContent="뜻을 찾지 못했어요"; } }
+  }catch(e){}
+}
+function dictRenderPopup(d){
+  let pop=document.getElementById("dictPop");
+  if(!pop){ pop=document.createElement("div"); pop.id="dictPop"; document.body.appendChild(pop); }
+  pop.dataset.term=d.term; pop.className="dict-pop";
+  pop.innerHTML=`
+    <div class="dict-bg" onclick="document.getElementById('dictPop').remove()"></div>
+    <div class="dict-card">
+      <button class="dict-x" onclick="document.getElementById('dictPop').remove()">✕</button>
+      <div class="dict-term">${escapeHtml(d.term)} ${d.type==="chunk"?'<span class="dict-tag">표현</span>':""}</div>
+      <div class="dict-ko">${escapeHtml(d.ko)}</div>
+      ${d.kid?`<div class="dict-kid">💡 ${escapeHtml(d.kid)}</div>`:""}
+      ${(d.ex&&d.ex.length)?`<div class="dict-sec">예문</div>${d.ex.slice(0,3).map(e=>`<button class="dict-ex" data-say="${escapeAttr(e)}">${escapeHtml(e)} 🔊</button>`).join("")}`:""}
+      ${(d.rel&&d.rel.length)?`<div class="dict-sec">관련 표현</div><div class="dict-rel">${d.rel.map(r=>`<span class="dict-relchip" data-rel="${escapeAttr(r)}">${escapeHtml(r)}</span>`).join("")}</div>`:""}
+      <div class="dict-src">${d.src==="local"?"📖 사전":d.src==="cache"?"📖 저장됨":d.src==="loading"?"⏳ 찾는 중…":"✨ AI"}</div>
+    </div>`;
+  pop.querySelectorAll(".dict-ex").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
+  pop.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>dictShow(null,b.dataset.rel); });
+  if(d.src!=="loading"){ try{ speakEn(d.term); }catch(e){} }
+}
 // 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
 function pickPhrases(opts){
   opts=opts||{}; const age=opts.age||(typeof kidMode==="function"&&kidMode()?"kid":"adult");
