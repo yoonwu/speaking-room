@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.07.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.08.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -4031,13 +4031,24 @@ async function generateVocab(){
   let theme=state.vocabTheme; if(!theme){ theme=state.vocabTheme=nextVocabTheme(); }
   $("#vbModeTag").textContent="📖 "+(theme.emo||"")+" "+theme.t;
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
+  // 0) 모르는 단어(블록에서 한글로 말한 것 등 SRS 복습 대상) 우선 — 단어 카드 구조로 변환
+  const dueUnknown=srsDue(3).filter(x=>x.en && /[a-zA-Z]/.test(x.en) && x.ko).map(x=>{
+    const w=String(x.en).trim(), ko=String(x.ko).trim();
+    return { word:w, ko, diff:1, _fromSrs:true,
+      examples:[{en:w, ko}],
+      blank:{en:"____", ko, answer:w},
+      colloc:[] };
+  });
   // 1) 프리페치된 세트 있으면 즉시 사용
   let set=takeFromBankFresh(theme.id);
-  if(set && set.length){ vocabWords=set; vbIdx=0; markVocabSeen(set); showVocabCard(); }
-  else {
-    // 2) 캐시 없음 → 기다리지 말고 레벨맞춤 스타터를 0초에 띄움 (앱 끄지 않게)
-    vocabWords=starterSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard();
+  let base = (set && set.length) ? set : starterSet();
+  // 모르는 단어를 앞쪽에 섞되 중복 제거 (최대 2개 + 일반 단어)
+  if(dueUnknown.length){
+    const seen=new Set(base.map(w=>String(w.word).toLowerCase()));
+    const inject=dueUnknown.filter(w=>!seen.has(String(w.word).toLowerCase())).slice(0,2);
+    base=[...inject, ...base].slice(0,5);
   }
+  vocabWords=base; vbIdx=0; markVocabSeen(vocabWords); showVocabCard();
   // 3) 백그라운드로 다음 세트들 미리 생성 (다음 진입은 즉시 AI 단어)
   prefetchVocab(theme);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
@@ -4718,7 +4729,7 @@ function micBeep(){
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
-const VAD_OPTS={maxMs:12000, silenceMs:1000, minSpeechMs:300, thresh:0.02};
+const VAD_OPTS={maxMs:12000, silenceMs:600, minSpeechMs:280, thresh:0.02};
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
@@ -5038,7 +5049,7 @@ async function toggleMic(){
     listening=true; micBtn.classList.add("live");
     micBeep();
     hint.textContent="🎤 듣는 중… 다 말하면 자동으로 끝나요";
-    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:1000, minSpeechMs:300, thresh:0.02});
+    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:600, minSpeechMs:280, thresh:0.02});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
@@ -5753,7 +5764,25 @@ function bleEnsureContexts(b){
   if(cache.length<3){ bleGenContexts(b, 5); }   // 비동기, 기다리지 않음
 }
 // ===== P4: AI 채점 (의사소통 성공 ≠ 블록 성공 분리) =====
-// 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded}
+// 들은 답에 한글이 섞여 있으면(영어 단어를 몰라 한글로 말함) 대략 감지 — 로컬 폴백용
+function bleDetectKoreanWords(heard, expectedEn){
+  if(!heard) return [];
+  const koChunks=(heard.match(/[가-힣]+/g)||[]);
+  if(!koChunks.length) return [];
+  // 로컬에선 영어 매칭이 어려우니 한글만 기록(en은 비움) → AI 채점이 주 경로
+  return koChunks.slice(0,3).map(k=>({en:"", ko:k}));
+}
+// 모르는 단어를 단어공부 DB(SRS)에 "틀린 것"과 동일하게 등록 → 단어 학습에 등장
+function bleRegisterUnknownWords(list){
+  if(!Array.isArray(list)||!list.length) return;
+  list.forEach(w=>{
+    if(!w) return;
+    const en=String(w.en||"").trim(), ko=String(w.ko||"").trim();
+    if(!en || !/[a-zA-Z]/.test(en)) return;   // 영어 단어가 있어야 SRS 등록 가능
+    try{ srsFail(en, ko, "block"); }catch(e){}   // srsFail = 틀린 단어 취급(바로 복습 대상)
+  });
+}
+// 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded, unknownWords}
 async function bleJudge(targetBlock, ex, heard){
   const local=bleGradeLocal(targetBlock, ex.en, heard);   // 즉시 폴백값
   if(!heard || !heard.trim()) return local;
@@ -5774,8 +5803,9 @@ Judge the learner's spoken answer. Rules:
 - If the learner used a different known block, set confusedWith to that block id.
 - result: PERFECT (meaning right + target block used), HIT (meaning right, different expression), WEAK_HIT (partial/awkward/incomplete), MISS (wrong/unrelated/empty).
 - Keep shortFeedbackKo to ONE short Korean sentence.
+- "unknownWords": if the learner spoke some content words in KOREAN (instead of English) because they didn't know the English word, list those English words (the ones they should have used) as {en, ko} pairs. Use the natural target answer to find the right English word. Example: learner said "Can I get 물?" (said 물 in Korean) → unknownWords:[{"en":"water","ko":"물"}]. If they said everything in English, return [].
 Return ONLY JSON, no markdown:
-{"result":"PERFECT|HIT|WEAK_HIT|MISS","communicationSuccess":true,"targetBlockSuccess":true,"usedBlockId":"id_or_null","confusedWith":"id_or_null","naturalAnswer":"...","shortFeedbackKo":"...","repairNeeded":false}`;
+{"result":"PERFECT|HIT|WEAK_HIT|MISS","communicationSuccess":true,"targetBlockSuccess":true,"usedBlockId":"id_or_null","confusedWith":"id_or_null","naturalAnswer":"...","shortFeedbackKo":"...","repairNeeded":false,"unknownWords":[{"en":"water","ko":"물"}]}`;
     const d=await callClaude(sys, [{role:"user", content:"Learner said: "+heard}], FAST_MODEL);
     const o=parseJSON(extractText(d));
     if(o && o.result){
@@ -5795,7 +5825,8 @@ Return ONLY JSON, no markdown:
         confusedWith:o.confusedWith&&o.confusedWith!=="null"?o.confusedWith:null,
         naturalAnswer:o.naturalAnswer||ex.en,
         shortFeedbackKo:o.shortFeedbackKo||"",
-        repairNeeded:!!o.repairNeeded
+        repairNeeded:!!o.repairNeeded,
+        unknownWords: Array.isArray(o.unknownWords)? o.unknownWords.filter(w=>w&&w.en&&w.ko).slice(0,5) : []
       };
     }
   }catch(e){}
@@ -5814,7 +5845,8 @@ function bleGradeLocal(targetBlock, expectedEn, heard){
     confusedWith:null,
     naturalAnswer:expectedEn,
     shortFeedbackKo: result==="PERFECT"?"블록 잘 썼어요.":result==="HIT"?"의미는 통했어요. 다음엔 블록으로!":result==="WEAK_HIT"?"거의! 조금 더 다듬어봐요.":"다시 해볼까요?",
-    repairNeeded: result==="MISS"||result==="WEAK_HIT"
+    repairNeeded: result==="MISS"||result==="WEAK_HIT",
+    unknownWords: bleDetectKoreanWords(heard, expectedEn)
   };
 }
 
@@ -6250,6 +6282,12 @@ async function bleFinishRetrieve(it, heard){
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
   const lbl2=$("#bleMicLbl"); if(lbl2) lbl2.textContent="";
+  // 한글로 말한 단어(=모르는 단어) → 단어공부 DB로
+  if(j.unknownWords && j.unknownWords.length){
+    bleRegisterUnknownWords(j.unknownWords);
+    const named=j.unknownWords.filter(w=>w.en&&/[a-zA-Z]/.test(w.en));
+    if(named.length && stat){ stat.innerHTML+=`<div style="font-size:12px;color:#C08763;margin-top:6px">📝 모르는 단어로 저장: ${named.map(w=>escapeHtml(w.ko)+"="+escapeHtml(w.en)).join(", ")} — 단어 학습에 나와요</div>`; }
+  }
   speakEn(j.naturalAnswer||ex.en);
   const mixed = it.type==="mixed"||it.type==="speed";
   bleRecord(b.id, {
@@ -6579,6 +6617,12 @@ async function bleFinishRetrieveDeep(it, heard){
       : isHit?`의미는 통했어요. 다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로!`
       : (j.shortFeedbackKo||"");
     stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:3px">${sub}</div>`;
+  }
+  // 한글로 말한 단어(=모르는 단어) → 단어공부 DB로
+  if(j.unknownWords && j.unknownWords.length){
+    bleRegisterUnknownWords(j.unknownWords);
+    const named=j.unknownWords.filter(w=>w.en&&/[a-zA-Z]/.test(w.en));
+    if(named.length && stat){ stat.innerHTML+=`<div style="font-size:12px;color:#C08763;margin-top:6px">📝 모르는 단어로 저장: ${named.map(w=>escapeHtml(w.ko)+"="+escapeHtml(w.en)).join(", ")} — 단어 학습에 나와요</div>`; }
   }
   speakEn(j.naturalAnswer||ex.en);
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, confusedWith:j.confusedWith});
