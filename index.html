@@ -1356,12 +1356,19 @@ body{background:var(--paper)!important;color:var(--text)}
 .hub-tx b{display:block;font-size:17px;font-weight:900;color:var(--text)}
 .hub-tx i{font-size:12.5px;color:var(--muted);font-style:normal;font-weight:600;margin-top:3px;display:block}
 .hub-ar{font-size:20px;color:#E2674A;font-weight:900}
-.hub-sheet-tall .chk-list{max-height:58vh;overflow-y:auto;margin:0 -2px;padding:0 2px 2px}
-.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:transform .1s}
+.hub-sheet-tall .chk-list{max-height:52vh;overflow-y:auto;margin:0 -2px;padding:0 2px 2px}
+.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:transform .1s}
 .chk-row:active{transform:scale(.98);background:var(--mist)}
-.chk-en{font-family:var(--serif);font-size:16px;font-weight:700;color:#E2674A;flex:none}
-.chk-ko{font-size:13px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chk-ar{font-size:17px;color:var(--muted);font-weight:900;flex:none}
+.chk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.chk-en{font-family:var(--serif);font-size:16px;font-weight:700;color:#E2674A}
+.chk-ko{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chk-stars{font-size:12px;color:#F0A05A;letter-spacing:1px;margin-top:1px}
+.chk-stars i{font-size:10.5px;color:var(--muted);font-style:normal;margin-left:5px;letter-spacing:0}
+.chk-ar{font-size:18px;color:var(--muted);font-weight:900;flex:none}
+.bl-summary{display:flex;gap:8px;margin:4px 0 14px}
+.bl-sumcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center}
+.bl-sumcell b{display:block;font-size:21px;font-weight:900;color:var(--jade)}
+.bl-sumcell i{font-size:10.5px;color:var(--muted);font-style:normal}
 </style>
 </head>
 <body>
@@ -1676,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.92.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.93.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2374,6 +2381,13 @@ function convoTrackBlocks(userText){
   [...new Set(used)].slice(0,3).forEach(en=>{
     const it=srsGet(en); srsPass(en, (it&&it.ko)||"", (state.scn&&state.scn.id)||"convo");
   });
+  // 🧱 실전회화에서 학습 블록(CORE_PHRASES) 사용 → REAL WORLD 레벨 승급
+  try{
+    CORE_PHRASES.forEach(p=>{
+      const core=p.phrase.toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\.\.\.|\?/g,"").trim().split(" ").slice(0,3).join(" ");
+      if(core.length>=3 && t.indexOf(" "+core)>=0 && blGetLearned().indexOf(p.id)>=0){ blMarkReal(p.id); }
+    });
+  }catch(e){}
   if(used.length){ try{ refreshRvBanner&&refreshRvBanner(); }catch(e){} }
 }
 async function sendMessage(){
@@ -5850,26 +5864,60 @@ function blRecordMastery(pid, ctxKo, elapsed){
   if(e.ctx.length>=5 && e.mix>=3) e.mastered=true;
   m[pid]=e; blSetMastery(m);
 }
+// 🧱 블록 레벨 (문서 7단계): NEW→LEARNING→RETRIEVED→ACTIVE→STRONG→FAST→REAL WORLD
+// 데이터: learned 여부, mix(인출횟수), ctx(상황수), fast(5초내), real(실전회화 사용)
+function blLevel(pid){
+  const learned=blGetLearned().indexOf(pid)>=0;
+  if(!learned) return 1;                       // NEW
+  const m=blGetMastery()[pid]||{ctx:[],mix:0,fast:0,real:0};
+  const ctx=(m.ctx||[]).length, mix=m.mix||0, fast=m.fast||0, real=m.real||0;
+  if(real>=1) return 7;                         // REAL WORLD (실전회화 사용)
+  if(fast>=1 && mix>=10) return 6;              // FAST (5초내 인출 + 10회+)
+  if(ctx>=5) return 5;                          // STRONG (5+ 상황)
+  if(ctx>=3) return 4;                          // ACTIVE (3 상황)
+  if(mix>=1) return 3;                          // RETRIEVED (정답 인출)
+  return 2;                                      // LEARNING (배움)
+}
+const BL_LEVEL_NAMES={1:"새 블록",2:"배우는 중",3:"인출 성공",4:"여러 상황",5:"탄탄함",6:"빠른 인출",7:"실전 완성"};
+function blStars(pid){
+  const lv=blLevel(pid); const max=7;
+  return "★".repeat(lv)+"☆".repeat(max-lv);
+}
+// 실전회화에서 블록 사용 성공 → REAL WORLD 승급
+function blMarkReal(pid){
+  if(!pid) return; const m=blGetMastery(); const e=m[pid]||{ctx:[],mix:0,fast:0}; e.real=(e.real||0)+1; m[pid]=e; blSetMastery(m);
+}
 function openChunkHub(){
   const learned=blGetLearned(); const mastery=blGetMastery(); const next=blPickNew();
-  const rows=CORE_PHRASES.map(p=>{ const isL=learned.indexOf(p.id)>=0; const isM=mastery[p.id]&&mastery[p.id].mastered;
+  const rows=CORE_PHRASES.map(p=>{ const isL=learned.indexOf(p.id)>=0; const lv=blLevel(p.id);
     return `<button class="chk-row" data-pid="${p.id}">
-     <span class="chk-en">${escapeHtml(p.phrase)}</span>
-     <span class="chk-ko">${escapeHtml(p.ko||"")}</span>
-     <span class="chk-ar">${isM?'⭐':isL?'✓':'›'}</span>
+     <span class="chk-main">
+       <span class="chk-en">${escapeHtml(p.phrase)}</span>
+       <span class="chk-ko">${escapeHtml(p.ko||"")}</span>
+       <span class="chk-stars">${blStars(p.id)} <i>${isL?BL_LEVEL_NAMES[lv]:"잠김"}</i></span>
+     </span>
+     <span class="chk-ar">${lv>=7?'🏆':lv>=5?'⭐':isL?'›':'＋'}</span>
    </button>`; }).join("");
+  // 전체 진행 요약
+  const total=CORE_PHRASES.length, learnedN=learned.length;
+  const strongN=CORE_PHRASES.filter(p=>blLevel(p.id)>=5).length;
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="chunkHub";
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet hub-sheet-tall">
      <div class="hub-grab"></div>
      <div class="hub-title">🧱 블록 영어</div>
-     <div class="hub-sub">새 블록을 배우고 → 이전 블록과 섞어서 테스트해요</div>
+     <div class="hub-sub">블록은 무기예요 — 레벨업해서 입에서 바로 나오게!</div>
+     <div class="bl-summary">
+       <div class="bl-sumcell"><b>${learnedN}</b><i>배운 블록</i></div>
+       <div class="bl-sumcell"><b>${strongN}</b><i>탄탄한 블록 ⭐</i></div>
+       <div class="bl-sumcell"><b>${total}</b><i>전체</i></div>
+     </div>
      <button class="hub-opt" id="blStartNext" style="margin-bottom:13px">
        <span class="hub-emo" style="background:#FFE0D2">📘</span>
        <span class="hub-tx"><b>다음 블록 배우기</b><i>${next?escapeHtml(next.phrase):'배운 블록 섞어 복습하기'}</i></span>
        <span class="hub-ar">›</span>
      </button>
-     <div style="font-size:12px;font-weight:800;color:var(--muted);margin:2px 2px 8px">또는 직접 고르기 (✓ 배움 · ⭐ 마스터)</div>
+     <div style="font-size:12px;font-weight:800;color:var(--muted);margin:2px 2px 8px">블록 목록 — 눌러서 레벨업 (★ = 성장 단계)</div>
      <div class="chk-list">${rows}</div>
    </div>`;
   document.body.appendChild(ov);
