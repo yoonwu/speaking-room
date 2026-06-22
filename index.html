@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.06.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.07.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -6131,26 +6131,38 @@ function bleViewDiscriminate(it){
   it._opts=opts; it._ans=b.id;
   if(typeof bleSession!=="undefined" && bleSession){ bleSession._discOpts=opts; bleSession._discAns=b.id; }
   const headLine = it.miniTest ? "🎯 혼합 테스트 — 어떤 블록?" : "이 상황엔 어떤 블록?";
-  return `${blePhaseTag("discriminate")}
-   <div class="ar2-scene">
-    <div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${headLine}</div>
-      <div style="font-size:19px;color:var(--text);font-weight:700;margin-top:8px">${escapeHtml(ex.ko)}</div></div>
-    <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
-      ${opts.map(id=>`<button class="ble-opt" data-id="${id}" style="padding:14px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--serif);font-size:18px;color:var(--text);cursor:pointer">${escapeHtml(BLE_BY_ID[id].block)}</button>`).join("")}
+  return `<div class="blpz">
+    <div class="blpz-coach">
+      <div class="blpz-fox">🦊</div>
+      <div class="blpz-bubble">${headLine}</div>
     </div>
-    <div id="bleFb" style="text-align:center;min-height:26px;margin-top:12px;font-weight:700"></div>
+    <div class="blpz-card">
+      <div class="blpz-tip">상황을 보고 알맞은 블록을 고르세요</div>
+      <div class="blpz-ko">${escapeHtml(ex.ko)}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:11px;margin-top:18px">
+      ${opts.map(id=>`<button class="ble-opt" data-id="${id}" style="padding:17px 18px;border-radius:16px;background:#fff;border:2px solid #FBE0D2;font-family:var(--serif);font-size:21px;color:#3A2D27;cursor:pointer;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)">${escapeHtml(BLE_BY_ID[id].block)}</button>`).join("")}
+    </div>
+    <div id="bleFb" style="text-align:center;min-height:26px;margin-top:14px;font-weight:800;font-size:15px"></div>
+    <div id="bleDiscNextWrap"></div>
    </div>`;
 }
 function bleWireDiscriminate(it){
-  const ans=bleSession._discAns; const ex=it.ex; const elapsed0=Date.now();
+  const ans=bleSession._discAns; const ex=it.ex;
+  const goNext=()=>{ bleSession.idx++; bleRender(); };
   document.querySelectorAll(".ble-opt").forEach(btn=>{
     btn.onclick=()=>{
+      if(it._answered) return; it._answered=true;
       const picked=btn.dataset.id; const ok=picked===ans;
       const ms=Date.now()-bleT0; const fast=ms<=5000;
       document.querySelectorAll(".ble-opt").forEach(b=>b.style.pointerEvents="none");
       btn.style.borderColor= ok?"#19a06b":"#e0533f";
       if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
-      const fb=$("#bleFb"); fb.innerHTML= ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(BLE_BY_ID[ans].block)} 가 맞아요</span>`;
+      const fb=$("#bleFb");
+      const rightB=BLE_BY_ID[ans];
+      // 영어 답(예문) 표시
+      const ansLine=`<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:8px">${escapeHtml(ex.en)}</div>`;
+      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(rightB.block)} 가 맞아요</span>`)+ansLine;
       speakEn(ex.en);
       bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true, confusedWith: ok?null:picked});
       bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith: ok?null:picked});
@@ -6159,7 +6171,10 @@ function bleWireDiscriminate(it){
         const s=bleGetState(); if(s[ans]){ s[ans].introAttemptCount=(s[ans].introAttemptCount||0)+1; if(!ok) s[ans].quickCheckFailed=true; bleSaveState(s); }
         if(bleSession.setId) bleCheckSetIntro(BLE_SETS.find(x=>x.id===bleSession.setId)||bleActiveSet());
       }
-      setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1200);
+      // 수동 다음 버튼 (자동 넘김 X)
+      const w=$("#bleDiscNextWrap");
+      if(w){ w.innerHTML=`<button id="bleDiscNext" style="width:100%;margin-top:16px;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:16px;padding:15px">다음 →</button>`;
+        $("#bleDiscNext").onclick=goNext; }
     };
   });
 }
@@ -6197,9 +6212,13 @@ function bleWireRetrieve(it){
   let timer=null;
   if(it.type==="speed" && it.limit){
     let left=it.limit;
-    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초"; if(left<=0){ clearInterval(timer); bleFinishRetrieve(it, ""); } }, 1000);
+    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초";
+      if(left<=0){ clearInterval(timer); timer=null;
+        if(qzRecording && qzMR && qzMR.state!=="inactive"){ try{ qzMR.stop(); }catch(e){} }
+        else if(!it._finished){ bleFinishRetrieve(it, ""); }
+      } }, 1000);
   }
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieve(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieve(it, t); }); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
@@ -6318,10 +6337,12 @@ function bleSummary(){
       </div>
       <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
         <button class="sh-next" id="bleToDeep" style="margin:0">🔁 본격적으로 학습하기 →</button>
+        <button class="rv-stop" id="bleReintro" style="margin:0">🧱 생존 블록 5개 다시 익히기</button>
         <button class="rv-stop" id="bleIntroHome">홈으로</button>
       </div>
     </div>`;
     $("#bleToDeep").onclick=()=>bleDeepStart();
+    $("#bleReintro").onclick=()=>bleStartSetIntro(set.id);
     $("#bleIntroHome").onclick=()=>goToSetup();
     return;
   }
@@ -6540,6 +6561,8 @@ function bleDeepRender(){
 }
 // Deep용 인출 마무리 (AI 채점 · 의사소통/블록 성공 분리)
 async function bleFinishRetrieveDeep(it, heard){
+  if(it._finished) return;
+  it._finished=true;
   const ex=it.ex, b=it.block;
   const ms=Math.max(100,(bleSpoke||Date.now())-bleT0); const fast=ms<=(it.type==="speed"?(it.limit*1000):5000);
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
@@ -6572,16 +6595,21 @@ function bleWireRetrieveDeep(it){
   let timer=null;
   if(it.type==="speed" && it.limit){
     let left=it.limit;
-    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초"; if(left<=0){ clearInterval(timer); bleFinishRetrieveDeep(it, ""); } }, 1000);
+    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초";
+      if(left<=0){ clearInterval(timer); timer=null;
+        // 녹음 중이면 멈춰서 마이크 콜백이 마무리하게 함 (마이크 켜진 채 넘어가는 버그 방지)
+        if(qzRecording && qzMR && qzMR.state!=="inactive"){ try{ qzMR.stop(); }catch(e){} }
+        else if(!it._finished){ bleFinishRetrieveDeep(it, ""); }
+      } }, 1000);
   }
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieveDeep(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieveDeep(it, t); }); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
     const w=document.createElement("div");
     w.innerHTML=`<input id="bleTypeIn" class="blpz-in" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
-    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieveDeep(it, v); } });
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer){clearInterval(timer);timer=null;} bleFinishRetrieveDeep(it, v); } });
   };
   $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(!s) return; if(it.type==="repair_fill"){ s.innerHTML='💡 <b style="color:#F0664A;font-family:var(--serif)">'+escapeHtml(ex.en)+'</b>'; speakEn(ex.en); } else { s.innerHTML='💡 '+escapeHtml(bleSituationHint(b)); } };
 }
@@ -6590,21 +6618,24 @@ function bleWireDiscriminateDeep(it){
   const ans=bleSession_discSetup(it);
   document.querySelectorAll(".ble-opt").forEach(btn=>{
     btn.onclick=()=>{
+      if(it._answered) return; it._answered=true;
       const picked=btn.dataset.id; const ok=picked===ans; const ms=Date.now()-bleT0; const fast=ms<=5000;
       document.querySelectorAll(".ble-opt").forEach(b=>b.style.pointerEvents="none");
       btn.style.borderColor= ok?"#19a06b":"#e0533f";
       if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
       const fb=$("#bleFb");
       const right=BLE_BY_ID[ans], wrong=picked!==ans?BLE_BY_ID[picked]:null;
-      // 대조 피드백
-      let contrast="";
-      if(!ok && wrong){ contrast=`<div style="font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5"><b style="color:var(--jade)">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
+      // 영어 답 + 대조 피드백
+      let contrast=`<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:8px">${escapeHtml(it.ex.en)}</div>`;
+      if(!ok && wrong){ contrast+=`<div style="font-size:12.5px;color:#8A6F62;margin-top:6px;line-height:1.5"><b style="color:#F0664A">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
       fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
       bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, confusedWith: ok?null:picked});
       bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), reason:"confusion"});
       if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion", delayUntil:bleDeep.count+bleEffectiveGap(bleUnlockedBlocks())});
-      setTimeout(()=>bleDeepRender(), ok?1200:2600);
+      const w=$("#bleDiscNextWrap");
+      if(w){ w.innerHTML=`<button id="bleDiscNext" style="width:100%;margin-top:16px;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:16px;padding:15px">다음 →</button>`;
+        $("#bleDiscNext").onclick=()=>bleDeepRender(); }
     };
   });
 }
@@ -6795,7 +6826,7 @@ function bleOpenHub(){
          <div style="font-size:26px;color:#fff">${introDone?"✓":"🧱"}</div>
        </div>
        <div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:11px">${introDone?"5개 블록 소개 완료 — 다시 보기":"5개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요"}</div>
-       <div style="display:inline-block;margin-top:11px;background:rgba(255,255,255,.22);color:#fff;font-size:13px;font-weight:800;border-radius:99px;padding:8px 18px">${introDone?"다시 익히기":"5개 블록 빠르게 배우기 →"}</div>
+       <div style="display:block;width:100%;text-align:center;margin-top:14px;background:rgba(255,255,255,.95);color:#F0664A;font-size:16px;font-weight:900;border-radius:14px;padding:14px">${introDone?"다시 익히기 →":"5개 블록 빠르게 배우기 →"}</div>
      </button>
 
      <!-- 영역 2: 본격 학습 (메인) -->
@@ -6808,7 +6839,7 @@ function bleOpenHub(){
          </div>
          <div style="font-size:30px">${canDeep?"💪":"🔒"}</div>
        </div>
-       ${canDeep?`<div style="display:inline-block;margin-top:12px;background:#F0664A;color:#fff;font-size:13px;font-weight:800;border-radius:99px;padding:8px 18px">지금 시작 →</div>`:""}
+       ${canDeep?`<div style="display:block;width:100%;text-align:center;margin-top:14px;background:#F0664A;color:#fff;font-size:16px;font-weight:900;border-radius:14px;padding:15px">지금 시작 →</div>`:""}
      </button>
 
      <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${setBlocks.length}개 · 상태</div>
