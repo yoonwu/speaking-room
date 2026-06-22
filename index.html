@@ -1261,6 +1261,8 @@ body{background:var(--paper)!important;color:var(--text)}
 .wp-act-ic{font-size:20px}
 .wp-giveup{background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;padding:13px 20px;border-radius:13px;width:100%}
 .wp-giveup:active{background:var(--mist);color:var(--text)}
+.wp-back-voice{width:100%;padding:13px 20px;border-radius:13px;background:var(--mist);border:1px solid var(--line);color:var(--jade);font-size:14px;font-weight:800;cursor:pointer}
+.wp-back-voice:active{background:var(--line)}
 .ls-skip{display:block;width:100%;margin-top:10px;padding:13px 20px;border-radius:13px;background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer}
 .ls-skip:active{background:var(--mist);color:var(--text)}
 /* ✨ 정답/오답 화면 플래시 */
@@ -1670,7 +1672,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.80.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.81.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3949,6 +3951,7 @@ function wpAsk(q){
         <button class="wp-act" id="wpKbd"><span class="wp-act-ic">⌨️</span><span class="wp-act-tx">입력</span></button>
       </div>
       <input id="wpInput" type="text" autocomplete="off" placeholder="빈칸 단어 입력 후 Enter" class="mbkbd" style="display:none">
+      <button class="wp-back-voice" id="wpBackVoice" style="display:none">← 말하기로 돌아가기</button>
       <button class="wp-giveup" id="wpGiveup">모르겠어요 — 정답 보기</button>
     </div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
@@ -3985,16 +3988,27 @@ function wpAsk(q){
     micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
   };
   $("#wpKbd").onclick=()=>{
-    // 입력 모드: 마이크/액션 숨기고, 입력칸+정답보기를 위로 (키보드에 안 가림)
+    // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
     const dock=card.querySelector(".wp-dock");
-    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), give=$("#wpGiveup");
+    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), give=$("#wpGiveup"), back=$("#wpBackVoice");
     if(mic) mic.style.display="none";
     if(row) row.style.display="none";
     inp.style.display="block";
-    // 입력칸과 정답보기를 dock 맨 위로 재배치
-    if(dock && give){ dock.insertBefore(inp, dock.firstChild); dock.insertBefore(give, inp.nextSibling); }
+    if(back) back.style.display="block";
+    // 입력칸+돌아가기+정답보기를 dock 맨 위로
+    if(dock && give && back){ dock.insertBefore(inp, dock.firstChild); dock.insertBefore(back, inp.nextSibling); dock.insertBefore(give, back.nextSibling); }
     inp.focus();
     setTimeout(()=>{ try{ inp.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} }, 320);
+  };
+  // ← 말하기/힌트 화면으로 복귀
+  $("#wpBackVoice").onclick=()=>{
+    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), back=$("#wpBackVoice");
+    try{ inp.blur(); }catch(e){}
+    inp.style.display="none"; inp.value="";
+    if(back) back.style.display="none";
+    if(mic) mic.style.display="";
+    if(row) row.style.display="";
+    status.style.color=""; status.textContent="🎤 아래 버튼을 눌러 말해보세요";
   };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
