@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.08.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.09.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -6278,7 +6278,11 @@ async function bleFinishRetrieve(it, heard){
     const sub = j.result==="PERFECT" ? "목표 블록 사용 ✓"
       : j.result==="HIT" ? `다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로 말해봐요`
       : (j.shortFeedbackKo||"한 번 더 연습해볼게요");
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:2px">${sub}</div>`;
+    // 내가 말한 내용(STT) 표시 — 발음 문제인지 단어 문제인지 확인용
+    const heardBlock = heard && heard.trim()
+      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div></div>`
+      : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(j.naturalAnswer||ex.en)}</div>${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
   const lbl2=$("#bleMicLbl"); if(lbl2) lbl2.textContent="";
@@ -6308,8 +6312,10 @@ async function bleFinishRetrieve(it, heard){
   if(it.quickCheck){
     const s=bleGetState(); if(s[b.id]){ s[b.id].introAttemptCount=(s[b.id].introAttemptCount||0)+1; if(j.result==="MISS"||j.result==="WEAK_HIT") s[b.id].quickCheckFailed=true; bleSaveState(s); }
     if(bleSession.setId) bleCheckSetIntro(BLE_SETS.find(x=>x.id===bleSession.setId)||bleActiveSet());
-    // 퀵체크는 재출제 안 하고 바로 다음 블록 소개로
-    setTimeout(()=>{ bleSession.idx++; bleRender(); }, j.result==="PERFECT"?1400:2200);
+    const foot=document.querySelector(".blpz-foot");
+    if(foot){ foot.innerHTML=`<button id="bleRetNext" style="flex:1;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:99px;padding:13px">다음 →</button>`;
+      $("#bleRetNext").onclick=()=>{ bleSession.idx++; bleRender(); }; }
+    else { setTimeout(()=>{ bleSession.idx++; bleRender(); }, j.result==="PERFECT"?1400:2200); }
     return;
   }
   // 오답이면 다시 나오되, 가능한 경우 다른 블록을 사이에 끼워 명사 바꿔끼우기 반복을 막는다.
@@ -6323,7 +6329,13 @@ async function bleFinishRetrieve(it, heard){
     }
     bleSession.items.push({type:"situation", block:b, ex:bleFreshContextEx2(b)});
   }
-  setTimeout(()=>{ bleSession.idx++; bleRender(); }, correct?1500:2200);
+  // 자동 넘김 대신 "다음" 버튼 — 내가 뭘 틀렸는지 확인 후 직접 넘김
+  const foot=document.querySelector(".blpz-foot");
+  if(foot){ foot.innerHTML=`<button id="bleRetNext" style="flex:1;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:99px;padding:13px">다음 →</button>`;
+    $("#bleRetNext").onclick=()=>{ bleSession.idx++; bleRender(); };
+  } else {
+    setTimeout(()=>{ bleSession.idx++; bleRender(); }, correct?1500:2200);
+  }
 }
 
 function bleUnlockGate(block, results){
@@ -6616,7 +6628,10 @@ async function bleFinishRetrieveDeep(it, heard){
     const sub = isPerfect?`${b.block} 블록 사용 ✓ · ${(ms/1000).toFixed(1)}초`
       : isHit?`의미는 통했어요. 다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로!`
       : (j.shortFeedbackKo||"");
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:3px">${sub}</div>`;
+    const heardBlock = heard && heard.trim()
+      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div></div>`
+      : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(j.naturalAnswer||ex.en)}</div>${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
   }
   // 한글로 말한 단어(=모르는 단어) → 단어공부 DB로
   if(j.unknownWords && j.unknownWords.length){
@@ -6632,7 +6647,13 @@ async function bleFinishRetrieveDeep(it, heard){
   if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"weak_block", delayUntil:retryDelay}); }
   else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"context_gap", delayUntil:retryDelay}); }
   else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block", delayUntil:retryDelay}); }
-  setTimeout(()=>bleDeepRender(), isPerfect?1500:2300);
+  // 자동 넘김 대신 "다음" 버튼 — 확인 후 직접 넘김
+  const foot=document.querySelector(".blpz-foot");
+  if(foot){ foot.innerHTML=`<button id="bleRetNext" style="flex:1;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:99px;padding:13px">다음 →</button>`;
+    $("#bleRetNext").onclick=()=>bleDeepRender();
+  } else {
+    setTimeout(()=>bleDeepRender(), isPerfect?1500:2300);
+  }
 }
 function bleWireRetrieveDeep(it){
   const ex=it.ex, b=it.block;
