@@ -1263,6 +1263,19 @@ body{background:var(--paper)!important;color:var(--text)}
 .wp-giveup:active{background:var(--mist);color:var(--text)}
 .ls-skip{display:block;width:100%;margin-top:10px;padding:13px 20px;border-radius:13px;background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer}
 .ls-skip:active{background:var(--mist);color:var(--text)}
+/* 🧱 오늘의 영어 블록 — 홈 히어로 (앱 정체성) */
+.block-hero{background:linear-gradient(135deg,var(--jade),var(--jade-deep));border-radius:20px;padding:18px 18px 16px;margin-bottom:13px;box-shadow:0 12px 28px -12px rgba(240,102,74,.5)}
+.bh-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.bh-badge{font-size:12px;font-weight:900;color:#fff;letter-spacing:.02em}
+.bh-due{font-size:11px;font-weight:700;color:rgba(255,255,255,.92);background:rgba(255,255,255,.18);border-radius:99px;padding:3px 10px}
+.bh-block{font-family:var(--serif);font-size:30px;font-weight:700;color:#fff;line-height:1.15}
+.bh-ko{font-size:14px;color:rgba(255,255,255,.95);font-weight:600;margin-top:4px}
+.bh-flow{font-size:11.5px;color:rgba(255,255,255,.85);margin-top:11px;font-weight:700}
+.bh-stats{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:12.5px;color:rgba(255,255,255,.95)}
+.bh-stats b{font-weight:900;color:#fff}
+.bh-dot{opacity:.6}
+.bh-go{width:100%;margin-top:13px;padding:13px;border-radius:13px;background:rgba(255,255,255,.95);border:none;color:var(--jade-deep);font-size:15px;font-weight:900;cursor:pointer;transition:transform .1s}
+.bh-go:active{transform:scale(.98)}
 
 /* ===== 🎧 듣기 화면 리디자인 (따뜻한 카드 + 밸런스) ===== */
 .lcard-full.lp2{min-height:calc(100svh - 56px - 56px);display:flex;flex-direction:column;justify-content:flex-start;gap:0;background:linear-gradient(180deg,#FFF6F0,#FFEAE0)!important;border:1px solid #FBD6C4!important;box-shadow:0 16px 40px -24px rgba(214,120,70,.4)!important;padding:20px 18px 22px!important;border-radius:26px!important}
@@ -1396,7 +1409,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <button class="eng" id="vocabCard">
           <span class="help-q" data-tut="vocab">?</span>
           <span class="eng-emo">💬</span>
-          <span class="eng-tx"><b>단어</b><i>단어 하나씩 인출·복습</i></span>
+          <span class="eng-tx"><b>단어</b><i>블록을 더 잘 쓰기 위한 단어</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng" id="chunkCard">
@@ -1651,7 +1664,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.75.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.76.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -6253,28 +6266,42 @@ function dailyExpr(){
 function renderDailyCard(){
   const box=$("#dailyCard"); if(!box) return;
   const d=dailyExpr(); const p=avProgressOf(d.en);
-  const dots=[1,2,3].map(i=>`<span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:${p.ctx>=i?'#fff':'rgba(255,255,255,.35)'}"></span>`).join("");
-  box.innerHTML=`<div style="background:linear-gradient(135deg,#f97316,#ea580c);border-radius:18px;padding:12px 15px;margin-bottom:11px">
-    <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.03em">🔥 오늘의 생존 표현</div>
-    <div style="font-size:21px;font-weight:900;color:#fff;margin:4px 0 2px">${escapeHtml(d.en)}</div>
-    <div style="font-size:12.5px;color:rgba(255,255,255,.92)">${escapeHtml(d.ko)} · 오늘 이 표현을 여러 상황에서 써먹어요</div>
-    <div style="display:flex;align-items:center;gap:7px;margin-top:9px">
-      <span style="font-size:10.5px;color:rgba(255,255,255,.9)">3상황 인출</span>${dots}
-      <span style="font-size:10.5px;color:rgba(255,255,255,.9);margin-left:auto;font-weight:800">${p.state>=4?"✅ 능동 어휘 달성!":""}</span>
+  const si=srsGet(d.en);
+  // 마스터까지 남은 횟수 (SRS 단계 기준)
+  const stageIdx = si ? SRS_STAGES.indexOf(si.stage) : 0;
+  const toMaster = Math.max(0, (SRS_STAGES.length-1) - stageIdx);
+  // 상황 진행 (3상황 인출)
+  const ctxDone = Math.min(5, p.ctx||0);
+  const dueTxt = si ? ((si.due||0)<=EDAY()?"오늘":"준비됨") : "오늘";
+  box.innerHTML=`<div class="block-hero" id="blockHero">
+    <div class="bh-row">
+      <span class="bh-badge">🧱 오늘의 영어 블록</span>
+      <span class="bh-due">다음 복습: ${dueTxt}</span>
     </div>
+    <div class="bh-block">${escapeHtml(d.en)}</div>
+    <div class="bh-ko">${escapeHtml(d.ko)}</div>
+    <div class="bh-flow">배우고 → 꺼내고 → 빠르게 → 실전에서 써먹기</div>
+    <div class="bh-stats">
+      <span>상황 연습 <b>${ctxDone}/5</b></span>
+      <span class="bh-dot">·</span>
+      <span>마스터까지 <b>${toMaster}번</b></span>
+    </div>
+    <button class="bh-go" id="bhGo">블록 배우러 가기 →</button>
   </div>`;
+  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ openChunkHub(); }catch(e){} };
 }
 function renderAcqStats(){
   const box=$("#acqStats"); if(!box) return;
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
-  const active=avActiveCount();
-  // 평균 인출속도 (인출 성공 시 누적)
-  let avgTxt="—";
-  try{ const arr=hGet("speakingroom:recall",[]); if(arr&&arr.length){ const last=arr.slice(-12); const a=last.reduce((s,x)=>s+x,0)/last.length; avgTxt=a.toFixed(1)+"초"; } }catch(e){}
+  // 🧱 블록 통계 (SRS 기반)
+  const all=Object.values(srsAll());
+  const mastered=all.filter(x=>x.stage==="mastered").length;
+  const due=srsDue(999).length;
+  const used=all.reduce((s,x)=>s+(x.uses||0),0);
   const tiles=[
-    {ic:"💎", v:active, l:"능동"},
-    {ic:"🔥", v:streak+"일", l:"연속"},
-    {ic:"⚡", v:avgTxt, l:"인출속도"}
+    {ic:"🧱", v:mastered, l:"마스터 블록"},
+    {ic:"🔄", v:due, l:"복습할 블록"},
+    {ic:"🔥", v:streak+"일", l:"연속"}
   ];
   box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;background:#FFF7F0;border:1px solid #F6D8C8;border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px -12px rgba(214,120,70,.25)">
     ${tiles.map((t,i)=>`${i?'<span style="width:1px;height:18px;background:#F6D8C8"></span>':''}<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
@@ -6297,9 +6324,9 @@ function applyAgeUI(){
     setTit("#engReal","어린이 마을"); setSub("#engReal","교실·놀이터·친구");
     if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="사운드 아카데미 (여기부터!)"; }
   } else {
-    setTit("#engIn","리스닝 동굴");   setSub("#engIn","귀뚫기 · 듣고 따라하기");
-    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","꺼내기 · 실전회화");
-    setTit("#engReal","모험 월드맵"); setSub("#engReal","실전 · 영어로 버티기");
+    setTit("#engIn","리스닝 동굴");   setSub("#engIn","연음 부스터 · 블록이 어떻게 들리는지");
+    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","배운 블록을 한국어 상황에서 꺼내기");
+    setTit("#engReal","모험 월드맵"); setSub("#engReal","배운 블록을 실전 대화에서 써먹기");
     if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="발음 교정 아카데미"; }
   }
   const dc=$("#dailyCard"); if(dc) dc.style.display=kid?"none":"";
