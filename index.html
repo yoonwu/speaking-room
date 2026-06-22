@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.04.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.05.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -4018,7 +4018,8 @@ function instantSet(){
   for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
   return pool.slice(0,5);
 }
-function startVocab(){
+function startVocab(noResume){
+  if(!noResume && wpResumeData()){ return wpResume(); }   // 미완료 세트 있으면 이어하기
   state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
   markPractice({mode:"vocab", id:state.vocabTheme.id, emo:"📖", label:"단어"});
   enterStage("vocab"); $("#ctxBar").style.display="none";
@@ -4127,6 +4128,38 @@ function wpInterleave(items){
   }
   return out;
 }
+// ===== 단어 학습 이어하기 (중간에 꺼져도 복원) =====
+const WP_PROG_KEY="speakingroom:wp_progress";
+function wpSaveProgress(){
+  try{
+    if(!wpQueue || !wpQueue.length || wpPos>=wpQueue.length){ wpClearProgress(); return; }
+    // 큐를 직렬화 (word 전체 + blank)
+    const slim=wpQueue.map(q=>({word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _ctx:q._ctx||null}));
+    hSet(WP_PROG_KEY, {queue:slim, pos:wpPos, stats:wpStats, theme:state.vocabTheme||null, lvl:(state.lvl||1), savedAt:Date.now()});
+  }catch(e){}
+}
+function wpClearProgress(){ try{ hSet(WP_PROG_KEY, null); }catch(e){} }
+function wpResumeData(){
+  try{ const d=hGet(WP_PROG_KEY,null); if(!d||!d.queue||!d.queue.length) return null;
+    if(d.pos>=d.queue.length) return null;
+    if((d.lvl||1)!==(state.lvl||1)) return null;   // 레벨 바뀌면 무효
+    // 24시간 지나면 무효
+    if(Date.now()-(d.savedAt||0) > 86400000) return null;
+    return d;
+  }catch(e){ return null; }
+}
+function wpResume(){
+  const d=wpResumeData(); if(!d){ startVocab(true); return; }
+  state.vocabTheme=d.theme||state.vocabTheme||nextVocabTheme();
+  markPractice({mode:"vocab", id:(state.vocabTheme&&state.vocabTheme.id)||"resume", emo:"📖", label:"단어"});
+  enterStage("vocab"); $("#ctxBar").style.display="none";
+  $("#vbModeTag").textContent="📖 이어서 학습";
+  wpQueue=d.queue.map(q=>({word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _ctx:q._ctx}));
+  wpPos=d.pos||0; wpStats=d.stats||{correct:0,total:0}; wpSeenWord={};
+  // 이미 지나온 단어는 본 것으로 표시
+  wpQueue.slice(0,wpPos).forEach(q=>{ if(q.word&&q.word.word) wpSeenWord[q.word.word]=true; });
+  wpNext();
+}
 function wpStart(words){
   const ws=(words||[]).filter(w=>w&&w.word).slice(0,5);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
@@ -4135,6 +4168,7 @@ function wpStart(words){
   wpQueue=wpInterleave(all);
   wpSeenWord={};   // 단어별 첫 등장 여부 (새 표현 vs 다른 상황 라벨용)
   wpPos=0; wpStats={correct:0,total:0};
+  wpSaveProgress();
   wpNext();
   // 백그라운드: AI 6상황 확장 → 큐 뒷부분에 분산 삽입
   ws.forEach(async w=>{
@@ -4154,6 +4188,7 @@ function wpStart(words){
 }
 function wpNext(){
   if(wpPos>=wpQueue.length) return wpDone();
+  wpSaveProgress();
   wpAsk(wpQueue[wpPos]);
 }
 function wpAsk(q){
@@ -4390,6 +4425,7 @@ function wpLoadLearnCard(word, ko, wordObj){
   }
 }
 function wpDone(){
+  wpClearProgress();
   $("#vbBarFill").style.width="100%"; $("#vbProgTxt").textContent="완료";
   const rate=wpStats.total?Math.round(wpStats.correct/wpStats.total*100):0;
   const st=srsStats();
@@ -5295,6 +5331,31 @@ const BLE_BLOCKS=[
     ]},
 ];
 const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
+// ===== 세트 기반 학습 (5블록 1세트) =====
+const BLE_SETS=[
+  { id:"survival_basic_1", title:"생존 기본 블록", emo:"🧱",
+    blocks:["can_i_get","do_you_have","i_need","could_you","i_think"] }
+];
+const BLE_SET_STATE_KEY="speakingroom:ble_sets";
+function bleSetStateAll(){ try{ return hGet(BLE_SET_STATE_KEY,{})||{}; }catch(e){ return {}; } }
+function bleSetState(setId){
+  const all=bleSetStateAll();
+  if(!all[setId]){ all[setId]={ introCompleted:false, deepPracticeUnlocked:false, introducedBlockIds:[], lastPracticedAt:null }; hSet(BLE_SET_STATE_KEY, all); }
+  return all[setId];
+}
+function bleSetStateSave(setId, st){ const all=bleSetStateAll(); all[setId]=st; hSet(BLE_SET_STATE_KEY, all); }
+function bleActiveSet(){ return BLE_SETS[0]; }
+function bleSetBlocks(set){ return (set.blocks||[]).map(id=>BLE_BY_ID[id]).filter(Boolean); }
+// 블록이 소개됐는지 (introducedAt 존재)
+function bleBlockIntroduced(id){ const s=bleGetState()[id]; return !!(s && s.introducedAt); }
+// 세트 인트로 완료 판정: 모든 블록이 1회 이상 소개 + 퀵체크 시도
+function bleCheckSetIntro(set){
+  const st=bleSetState(set.id);
+  const allIntro=set.blocks.every(id=>{ const s=bleGetState()[id]; return s && s.introducedAt && (s.introAttemptCount||0)>=1; });
+  if(allIntro && !st.introCompleted){ st.introCompleted=true; st.deepPracticeUnlocked=true; bleSetStateSave(set.id, st); }
+  return st;
+}
+function bleSetDeepUnlocked(set){ return bleSetState(set.id).deepPracticeUnlocked; }
 function bleEday(){ return Math.floor(Date.now()/86400000); }
 function bleNow(){ return Date.now(); }
 // 상태 저장 (localStorage)
@@ -5488,7 +5549,7 @@ function bleLightningItems(n){
 function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id] || !s[b.id].unlocked)||null; }
 function bleLearnedIds(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>b.id); }
 // 잠금해제된(7단계 코스 클리어) 블록만
-function bleUnlockedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].unlocked); }
+function bleUnlockedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&(s[b.id].unlocked||s[b.id].introducedAt)); }
 function getSlowBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].avgMs&&s[b.id].avgMs>5000).map(b=>({...b,state:s[b.id]})); }
 function getLimitedContextBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&(s[b.id].contextsUsed||[]).length<=1&&s[b.id].successCount>0).map(b=>({...b,state:s[b.id]})); }
 // ===== P5: Context Variation 생성기 (같은 문장 반복 방지) =====
@@ -5908,6 +5969,30 @@ function bleBuildSession(forcedNewId){
 
 /* ============ 🧱 블록영어 V2 — 화면 ============ */
 let bleT0=0, bleSpoke=0;
+// ===== 세트 인트로 코스: 5블록을 짧게 소개 + 퀵체크 (한 블록 잠금 없음) =====
+function bleBuildSetIntro(set){
+  const blocks=bleSetBlocks(set);
+  const items=[];
+  // 아직 소개 안 된 블록만 (이어하기 시 이미 소개된 건 건너뜀)
+  const todo=blocks.filter(b=>!bleBlockIntroduced(b.id));
+  const introList = todo.length? todo : blocks;   // 다 소개됐으면 전체 복습
+  introList.forEach(b=>{
+    items.push({type:"understand", block:b, setIntro:true});
+    bleEnsureContexts(b);
+    items.push({type:"situation", block:b, ex:bleFreshContextEx2(b), introHidden:true, quickCheck:true, setIntro:true});
+  });
+  bleSession={ items, idx:0, newBlock:null, results:[], startedIds:blocks.map(b=>b.id), setId:set.id, isSetIntro:true };
+  return bleSession;
+}
+function bleStartSetIntro(setId){
+  const set=setId?BLE_SETS.find(s=>s.id===setId):bleActiveSet();
+  bleBuildSetIntro(set);
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  bleRender();
+}
 function bleStart(forcedNewId){
   bleBuildSession(forcedNewId);
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -5963,7 +6048,11 @@ function bleViewUnderstand(it){
    </div>
    <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">알겠어요 →</button></div>`;
 }
-function bleWireUnderstand(it){ $("#bleNext").onclick=()=>{ bleSession.idx++; bleRender(); }; }
+function bleWireUnderstand(it){ $("#bleNext").onclick=()=>{
+    // 세트 인트로: 블록 소개 기록
+    if(it.block){ bleBlockState(it.block.id); const s=bleGetState(); if(s[it.block.id]){ if(!s[it.block.id].introducedAt) s[it.block.id].introducedAt=Date.now(); bleSaveState(s); } }
+    bleSession.idx++; bleRender();
+  }; }
 
 // PHASE 2: 패턴 (예문 3개, 들어보기)
 function bleViewPattern(it){
@@ -6145,6 +6234,14 @@ async function bleFinishRetrieve(it, heard){
     confusedWith:j.confusedWith
   });
   bleSession.results.push({id:b.id, type:it.type, result:j.result, ok:correct, comm:j.communicationSuccess, target:j.targetBlockSuccess, fast, ms, blockUsed:j.targetBlockSuccess, heard, naturalAnswer:j.naturalAnswer||ex.en, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith:j.confusedWith});
+  // 세트 인트로 퀵체크: 시도 기록 + 약점 표시
+  if(it.quickCheck){
+    const s=bleGetState(); if(s[b.id]){ s[b.id].introAttemptCount=(s[b.id].introAttemptCount||0)+1; if(j.result==="MISS"||j.result==="WEAK_HIT") s[b.id].quickCheckFailed=true; bleSaveState(s); }
+    if(bleSession.setId) bleCheckSetIntro(BLE_SETS.find(x=>x.id===bleSession.setId)||bleActiveSet());
+    // 퀵체크는 재출제 안 하고 바로 다음 블록 소개로
+    setTimeout(()=>{ bleSession.idx++; bleRender(); }, j.result==="PERFECT"?1400:2200);
+    return;
+  }
   // 오답이면 다시 나오되, 가능한 경우 다른 블록을 사이에 끼워 명사 바꿔끼우기 반복을 막는다.
   if(j.result!=="PERFECT" && it.type!=="speed"){
     const pool=(bleSession.startedIds||[]).map(id=>BLE_BY_ID[id]).filter(Boolean);
@@ -6188,6 +6285,33 @@ function bleSummary(){
   TTS&&TTS.cancel();
   { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleSession.results;
+  // 세트 인트로 완료 → 본격 학습 안내
+  if(bleSession.isSetIntro){
+    const set=BLE_SETS.find(x=>x.id===bleSession.setId)||bleActiveSet();
+    bleCheckSetIntro(set);
+    const blocks=bleSetBlocks(set);
+    const s=bleGetState();
+    const weakBlocks=blocks.filter(b=>s[b.id]&&s[b.id].quickCheckFailed).map(b=>b.block);
+    $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
+      <div class="em">🎉</div><h2>${escapeHtml(set.title)} 5개 소개 완료!</h2>
+      <p style="font-size:13px;color:var(--muted)">이제 섞어서 상황에 맞게 꺼내는 진짜 훈련이에요</p>
+      <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
+        ${blocks.map(b=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span style="font-family:var(--serif);color:var(--text);font-size:15px">${escapeHtml(b.block)}</span><span style="font-size:12px;color:#8A6F62">${escapeHtml(b.meaningKo)}</span></div>`).join("")}
+        ${weakBlocks.length?`<div style="font-size:12.5px;color:#e0533f;margin-top:9px">약했던 블록: ${weakBlocks.map(escapeHtml).join(", ")} — 본격 학습에서 더 자주 나와요</div>`:""}
+      </div>
+      <div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:14px;padding:13px 16px;margin-bottom:12px;text-align:left">
+        <div style="font-size:14px;font-weight:900;color:#4A372F">🔁 본격적으로 학습하기</div>
+        <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:3px">5개 블록을 섞어서 상황에 맞게 꺼내는 훈련입니다. 틀린 블록은 다시 나오고, 느린 블록은 더 빠르게 연습해요.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
+        <button class="sh-next" id="bleToDeep" style="margin:0">🔁 본격적으로 학습하기 →</button>
+        <button class="rv-stop" id="bleIntroHome">홈으로</button>
+      </div>
+    </div>`;
+    $("#bleToDeep").onclick=()=>bleDeepStart();
+    $("#bleIntroHome").onclick=()=>goToSetup();
+    return;
+  }
   const newB=bleSession.newBlock;
   let unlockGate=null;
   if(newB){
@@ -6275,6 +6399,18 @@ function bleDeepPickBlock(){
   const recent=new Set((bleDeep&&bleDeep.history?bleDeep.history.slice(-bleEffectiveGap(unlocked)):[]).concat(bleRecentBlocks().slice(0, Math.min(BLE_BLOCK_GAP, Math.max(1,unlocked.length-1)))));
   let candidates=unlocked.length>1?unlocked.filter(b=>!recent.has(b.id)):unlocked.slice();
   if(!candidates.length) candidates=unlocked.slice();
+  // 연속 2회 제한: 직전 2개가 같은 블록이면 그 블록 제외
+  if(bleDeep && bleDeep.history && bleDeep.history.length>=2 && unlocked.length>1){
+    const h=bleDeep.history; const lastId=h[h.length-1];
+    if(lastId===h[h.length-2]){ const f=candidates.filter(b=>b.id!==lastId); if(f.length) candidates=f; }
+  }
+  // 35% 상한: 한 블록이 세션의 35% 초과하면 제외 (충분히 진행됐을 때만)
+  if(bleDeep && bleDeep.history && bleDeep.history.length>=6 && unlocked.length>1){
+    const counts={}; bleDeep.history.forEach(id=>counts[id]=(counts[id]||0)+1);
+    const cap=Math.ceil(bleDeep.history.length*0.35);
+    const under=candidates.filter(b=>(counts[b.id]||0)<cap);
+    if(under.length) candidates=under;
+  }
   const weak=candidates.filter(bleIsWeakPracticeBlock);
   const recentBucket=candidates.filter(b=>bleIsRecentPracticeBlock(b,null)&&!weak.some(x=>x.id===b.id));
   const strong=candidates.filter(bleIsStrongPracticeBlock);
@@ -6323,6 +6459,11 @@ function bleDeepNextItem(){
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
 const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepStart(){
+  // 세트 인트로 완료 전엔 진입 불가 (1블록 마스터가 아니라 5개 소개 완료가 조건)
+  const set=bleActiveSet();
+  if(!bleSetDeepUnlocked(set) && bleUnlockedBlocks().length<1){
+    bleStartSetIntro(set.id); return;
+  }
   bleDeep={ queue:[], results:[], count:0, requeue:[], history:[] };
   bleCtxCacheLoad();
   bleUnlockedBlocks().forEach(b=>bleEnsureContexts(b));   // 잠금해제 블록들 상황 미리 생성
@@ -6570,67 +6711,81 @@ function bleDeepSummary(){
 
 function bleOpenHub(){
   const s=bleGetState();
-  const rows=BLE_BLOCKS.map(b=>{ const st=s[b.id]; const learned=!!st; const unlocked=st&&st.unlocked;
+  const set=bleActiveSet();
+  const setSt=bleCheckSetIntro(set);   // 진입 시 인트로 완료 재판정
+  const setBlocks=bleSetBlocks(set);
+  // 블록 상태 라벨 (잠김 대신 소개 전/완료/연습 중/약함/실전 준비)
+  const statusOf=(b)=>{ const st=s[b.id];
+    if(!st||!st.introducedAt) return {t:"소개 전", c:"#B0958A"};
+    if(st.stage==="ready_for_real") return {t:"실전 준비", c:"#19a06b"};
+    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함", c:"#e0533f"};
+    if((st.successCount||0)>0) return {t:"연습 중", c:"#F0664A"};
+    return {t:"소개 완료", c:"#C08763"};
+  };
+  const rows=setBlocks.map(b=>{ const st=statusOf(b);
     return `<button class="chk-row" data-id="${b.id}">
       <span class="chk-main">
         <span class="chk-en">${escapeHtml(b.block)}</span>
         <span class="chk-ko">${escapeHtml(b.meaningKo)}</span>
-        <span class="chk-stars">${bleStars(b.id)} <i>${learned?(unlocked?(BLE_STAGE_KO[st.stage]||st.stage):"배우는 중"):"잠김"}</i></span>
+        <span class="chk-stars">${bleStars(b.id)} <i style="color:${st.c}">${st.t}</i></span>
       </span>
-      <span class="chk-ar">${learned&&st.stage==="ready_for_real"?'🏆':unlocked?'🔓':learned?'›':'＋'}</span>
+      <span class="chk-ar" style="color:${st.c}">${st.t==="실전 준비"?'🏆':st.t==="소개 전"?'·':'›'}</span>
     </button>`; }).join("");
-  const learnedN=bleLearnedIds().length, unlockedN=bleUnlockedBlocks().length, dueN=getDueReviewBlocks().length, next=bleNextNewBlock();
-  const canDeep = unlockedN>=1;
+  const introN=setBlocks.filter(b=>bleBlockIntroduced(b.id)).length;
+  const introDone=setSt.introCompleted;
+  const dueN=getDueReviewBlocks().length;
+  const canDeep = introDone || bleUnlockedBlocks().length>=setBlocks.length;
+  const blockNames=set.blocks.map(id=>BLE_BY_ID[id].block.replace(/\.\.\.$/,"")).join(" · ");
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleHub";
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
      <div class="hub-grab"></div>
      <div style="display:flex;align-items:flex-end;gap:9px;margin-bottom:3px">
        <div style="width:42px;height:42px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:22px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)">🦊</div>
-       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:10px 14px;font-size:13.5px;color:#5A463C;font-weight:600;line-height:1.45">블록을 먼저 풀고, 본격 학습으로 내 것으로 만들어요!</div>
+       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:10px 14px;font-size:13.5px;color:#5A463C;font-weight:600;line-height:1.45">${introDone?"5개 블록을 섞어서 상황에 맞게 꺼내볼까요?":"먼저 5개 블록을 짧게 익혀요. 그다음 섞어서 연습!"}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:14px 0 16px">
-       <div class="bl-sumcell"><b style="color:#F0664A">${unlockedN}</b><i style="color:#8A6F62">잠금해제</i></div>
+       <div class="bl-sumcell"><b style="color:#F0664A">${introN}/${setBlocks.length}</b><i style="color:#8A6F62">소개됨</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
-       <div class="bl-sumcell"><b style="color:#F0664A">${BLE_BLOCKS.length}</b><i style="color:#8A6F62">전체</i></div>
+       <div class="bl-sumcell"><b style="color:#F0664A">${introDone?"열림":"잠김"}</b><i style="color:#8A6F62">본격 학습</i></div>
      </div>
 
-     <!-- 영역 1: 새 블록 배우기 (벽돌) -->
-     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">1 · 새 블록 배우기</div>
+     <!-- 영역 1: 세트 인트로 -->
+     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">Set 1 · ${escapeHtml(set.title)}</div>
      <button id="bleStartNext" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:22px;padding:18px 20px;margin-bottom:18px;box-shadow:0 14px 26px -12px rgba(240,102,74,.6),inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 0 rgba(176,60,35,.4)">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
-           <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.04em">${next?"다음 블록 잠금 해제":"모든 블록 잠금 해제됨"}</div>
-           <div style="font-family:var(--serif);font-size:25px;font-weight:600;color:#fff;line-height:1.1;margin-top:3px">${next?escapeHtml(next.block):"🎉 완료!"}</div>
-           ${next?`<div style="font-size:12.5px;color:rgba(255,255,255,.9);margin-top:2px">${escapeHtml(next.meaningKo)}</div>`:""}
+           <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.04em">${introDone?"세트 다시 훑어보기":"생존 기본 블록 "+setBlocks.length+"개"}</div>
+           <div style="font-family:var(--serif);font-size:19px;font-weight:600;color:#fff;line-height:1.25;margin-top:4px">${escapeHtml(blockNames)}</div>
          </div>
-         <div style="font-size:26px;color:#fff">${next?"🧱":"✓"}</div>
+         <div style="font-size:26px;color:#fff">${introDone?"✓":"🧱"}</div>
        </div>
-       <div style="font-size:11.5px;color:rgba(255,255,255,.85);margin-top:11px">7단계 코스 · 이해 → 패턴 → 빈칸 → 상황 → 구별 → 혼합 → 속도</div>
+       <div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:11px">${introDone?"5개 블록 소개 완료 — 다시 보기":"5개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요"}</div>
+       <div style="display:inline-block;margin-top:11px;background:rgba(255,255,255,.22);color:#fff;font-size:13px;font-weight:800;border-radius:99px;padding:8px 18px">${introDone?"다시 익히기":"5개 블록 빠르게 배우기 →"}</div>
      </button>
 
-     <!-- 영역 2: 본격적으로 학습하기 (메인) -->
-     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">2 · 본격적으로 학습하기 <span style="color:#19a06b">★ 메인</span></div>
+     <!-- 영역 2: 본격 학습 (메인) -->
+     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">본격적으로 학습하기 <span style="color:#19a06b">★ 메인</span></div>
      <button id="bleDeepHubBtn" ${canDeep?"":"disabled"} style="display:block;width:100%;text-align:left;border:2px solid ${canDeep?'#FF8568':'#E8D5C8'};cursor:${canDeep?'pointer':'default'};background:${canDeep?'linear-gradient(180deg,#FFF2EA,#FFE5D8)':'#F1E8E0'};border-radius:22px;padding:18px 20px;margin-bottom:20px;opacity:${canDeep?1:.6};box-shadow:${canDeep?'0 16px 30px -14px rgba(214,120,70,.5)':'none'}">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
-           <div style="font-size:19px;font-weight:900;color:#4A372F">🔁 반복 인출 훈련</div>
-           <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:4px;max-width:230px">${canDeep?"배운 블록을 섞어서 계속 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 빠르게.":"블록을 먼저 1개 이상 잠금 해제하세요."}</div>
+           <div style="font-size:19px;font-weight:900;color:#4A372F">🔁 상황 → 블록 선택 → 말하기</div>
+           <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:4px;max-width:235px">${canDeep?"5개 블록을 섞어서 상황에 맞게 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 빠르게.":"먼저 5개 블록 세트를 소개받으세요."}</div>
          </div>
          <div style="font-size:30px">${canDeep?"💪":"🔒"}</div>
        </div>
        ${canDeep?`<div style="display:inline-block;margin-top:12px;background:#F0664A;color:#fff;font-size:13px;font-weight:800;border-radius:99px;padding:8px 18px">지금 시작 →</div>`:""}
      </button>
 
-     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 목록 (★ 성장 단계)</div>
+     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${setBlocks.length}개 · 상태</div>
      <div class="chk-list">${rows}</div>
    </div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  if(next) $("#bleStartNext").onclick=()=>{ close(); bleStart(); };
+  $("#bleStartNext").onclick=()=>{ close(); bleStartSetIntro(set.id); };
   if(canDeep) $("#bleDeepHubBtn").onclick=()=>{ close(); bleDeepStart(); };
-  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); bleStart(b.dataset.id); }; });
+  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); bleStartSetIntro(set.id); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 
