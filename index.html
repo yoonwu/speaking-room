@@ -1257,8 +1257,10 @@ body{background:var(--paper)!important;color:var(--text)}
 .wp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:15px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s}
 .wp-act:active{transform:scale(.98);background:var(--mist)}
 .wp-act-ic{font-size:20px}
-.wp-giveup{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px}
-.wp-giveup:active{color:var(--text)}
+.wp-giveup{background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;padding:13px 20px;border-radius:13px;width:100%}
+.wp-giveup:active{background:var(--mist);color:var(--text)}
+.ls-skip{display:block;width:100%;margin-top:10px;padding:13px 20px;border-radius:13px;background:var(--card2);border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer}
+.ls-skip:active{background:var(--mist);color:var(--text)}
 </style>
 </head>
 <body>
@@ -1575,7 +1577,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.73.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.74.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2544,13 +2546,13 @@ function renderListenPlay(){
     <div style="font-size:16px;color:var(--muted);margin:0 0 26px;line-height:1.6;text-align:center">잘 듣고 <b style="color:var(--text)">들린 대로</b> 말해보세요.<br>자막은 없어요 — 귀로만! 👂</div>
     <button class="bigplay" id="lsPlay" style="padding:18px">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      <span id="lsPlayLabel">듣기 ▶</span>
+      <span id="lsPlayLabel">듣기</span>
     </button>
     <div class="lctrls" style="justify-content:center;margin-top:14px">
       <button id="lsSlow">🐢 천천히</button>
     </div>
     <button class="sh-next" id="lsToDict" style="margin-top:18px">🎤 정답 말하기 →</button>
-    <button class="rv-stop" id="lsSkip">잘 모르겠어요 — 답 보기</button>
+    <button class="ls-skip" id="lsSkip">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
