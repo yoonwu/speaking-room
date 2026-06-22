@@ -1673,7 +1673,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.84.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.85.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3740,27 +3740,48 @@ const SEED_VOCAB = {
   ]]
 };
 function vbankGet(){ return hGet("speakingroom:vbank",{}); }
+// 레벨별로 캐시 분리 — 레벨 바꾸면 다른 난이도 단어가 나오게
+function bankKey(themeId){ return themeId+"@"+(state.lvl||1); }
 function vbankSave(b){ hSet("speakingroom:vbank",b); }
 function ensureSeed(themeId){
   const b=vbankGet();
   if(b[themeId]===undefined && SEED_VOCAB[themeId]){ b[themeId]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
 }
 function takeFromBank(themeId){
-  const b=vbankGet(); const arr=b[themeId]||[];
-  if(arr.length){ const set=arr.shift(); b[themeId]=arr; vbankSave(b); return set; }
+  const key=bankKey(themeId);
+  const b=vbankGet(); const arr=b[key]||[];
+  if(arr.length){ const set=arr.shift(); b[key]=arr; vbankSave(b); return set; }
   return null;
 }
 function pushToBank(themeId,set){
-  const b=vbankGet(); const arr=b[themeId]||[]; arr.push(set); while(arr.length>6) arr.shift(); b[themeId]=arr; vbankSave(b);
+  const key=bankKey(themeId);
+  const b=vbankGet(); const arr=b[key]||[]; arr.push(set); while(arr.length>6) arr.shift(); b[key]=arr; vbankSave(b);
+}
+function vocabWordLevelRule(){
+  const v=state.lvl||1;
+  const map={
+1:"WORD DIFFICULTY: absolute beginner. Pick the ~300 most basic English words only (cat, dog, run, eat, big, happy, water). Single common words. NO phrasal verbs, NO idioms, NO abstract nouns.",
+2:"WORD DIFFICULTY: beginner (1st grade). Very common concrete everyday words (kitchen, friend, hungry, jump, clean). Simple and frequent only.",
+3:"WORD DIFFICULTY: elementary (2nd grade). Common daily words plus a few simple 2-word expressions (pick up, look for). Still high-frequency.",
+4:"WORD DIFFICULTY: upper-elementary (CEFR A2). Everyday words + common phrasal verbs (turn on, give up) + simple feelings/opinions words.",
+5:"WORD DIFFICULTY: pre-intermediate (CEFR A2-B1). Useful everyday vocabulary, common collocations, basic idioms (run out of, make sure).",
+6:"WORD DIFFICULTY: intermediate (CEFR B1). Less common everyday words, more phrasal verbs and collocations, mild abstract nouns (decision, advice, schedule).",
+7:"WORD DIFFICULTY: upper-intermediate (CEFR B1-B2). Richer vocabulary, common idioms, nuanced verbs (manage, handle, deal with, figure out).",
+8:"WORD DIFFICULTY: advanced (CEFR B2). Sophisticated everyday + work vocabulary, idiomatic expressions, precise synonyms (reluctant, efficient, overwhelmed).",
+9:"WORD DIFFICULTY: very advanced (CEFR C1). Nuanced, lower-frequency words, natural idioms and slang, fine shades of meaning (subtle, tedious, knack, hassle).",
+10:"WORD DIFFICULTY: native adult. Use genuinely advanced, idiomatic, lower-frequency vocabulary a native uses (meticulous, ambivalent, off the cuff). NO simplification."
+  };
+  return map[v]||map[1];
 }
 function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
   return [
-"Create a vocabulary set for a Korean learner. Theme: "+theme.topic+".",
+"Create a vocabulary set for a Korean learner. Loose theme context: "+theme.topic+".",
+vocabWordLevelRule(),
+"CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher levels pick genuinely harder, less obvious words even within the theme. Lv.1 and Lv.10 on the SAME theme MUST produce clearly different difficulty words.",
 levelHint(),
 levelCap(),
-"Choose words/expressions whose DIFFICULTY matches the level above: low levels = very common basic words (short, high-frequency); high levels = richer, more advanced or nuanced vocabulary. The example sentences and blanks must also obey the level's length/grammar limits.",
-"Pick 5 genuinely useful words or short expressions AT THIS LEVEL. For EACH word give 3 example sentences that use the word — each MUST use a DIFFERENT sentence frame. Also give 2 common collocations. Variety seed "+seed+".",
+"Pick 5 genuinely useful words/expressions AT THIS DIFFICULTY. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit. Also 2 collocations. Variety seed "+seed+".",
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'.",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
   ].join("\n");
@@ -3773,8 +3794,9 @@ async function aiVocabSet(theme){
 let prefetchingTheme=null;
 async function prefetchVocab(theme){
   if(!theme) return;
-  const b=vbankGet(); if((b[theme.id]||[]).length>=3) return;
-  if(prefetchingTheme===theme.id) return; prefetchingTheme=theme.id;
+  const b=vbankGet(); if((b[bankKey(theme.id)]||[]).length>=3) return;
+  const tk=bankKey(theme.id);
+  if(prefetchingTheme===tk) return; prefetchingTheme=tk;
   try{ const set=await aiVocabSet(theme); if(set&&set.length) pushToBank(theme.id,set); }catch(e){}
   prefetchingTheme=null;
 }
