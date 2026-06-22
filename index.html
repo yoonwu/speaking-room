@@ -1672,7 +1672,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.81.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.82.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3958,9 +3958,15 @@ function wpAsk(q){
   wpT0=Date.now();
   const status=$("#wpStatus"), inp=$("#wpInput");
   let hintN=0;
-  $("#wpHint").onclick=()=>{ const a=q.blank.answer; const total=syllableCount(a); hintN++;
-    if(hintN>=total){ status.innerHTML="힌트: <b>"+escapeHtml(a)+"</b> (전체 공개)"; }
-    else { status.innerHTML="힌트 ("+hintN+"/"+total+" 음절): <b style=\"letter-spacing:1px\">"+escapeHtml(syllableHint(a,hintN))+"</b>"; }
+  $("#wpHint").onclick=()=>{ const a=q.blank.answer; const total=a.replace(/\s/g,"").length; hintN++;
+    q._hintUsed=true;   // 힌트 사용 표시 (정답 처리 방지용)
+    if(hintN>=total){ status.innerHTML="힌트: <b>"+escapeHtml(a)+"</b> (전체 공개)"; q._answerShown=true; }
+    else {
+      // 스펠링 1개씩 공개, 나머지는 _
+      let shown=0, out="";
+      for(const ch of a){ if(/\s/.test(ch)){ out+=" "; continue; } if(shown<hintN){ out+=ch; shown++; } else out+="_"; }
+      status.innerHTML="힌트 ("+hintN+"/"+total+"): <b style=\"letter-spacing:3px\">"+escapeHtml(out)+"</b>";
+    }
   };
   // 라이브 음성 인식 (interim results 실시간 표시)
   let liveRecog=null;
@@ -4043,8 +4049,9 @@ function wpSubmit(q, answer){
     q._wrongCount=(q._wrongCount||0)+1;
     const status=$("#wpStatus");
     if(status){
-      // 3번 이상 틀리면 음절 힌트 제공 (틀린 횟수만큼 누적)
-      const hint = q._wrongCount>=3 ? ` · 힌트: '${syllableHint(q.blank.answer, q._wrongCount-2)}'` : "";
+      // 3번 이상 틀리면 스펠링 1글자씩 누적 공개
+      let hint="";
+      if(q._wrongCount>=3){ const a=q.blank.answer; const n=q._wrongCount-2; let shown=0,out=""; for(const ch of a){ if(/\s/.test(ch)){out+=" ";continue;} if(shown<n){out+=ch;shown++;}else out+="_"; } hint=` · 힌트: '${out}'`; q._hintUsed=true; }
       status.innerHTML=`<span style="color:#f87171;font-weight:800">"${escapeHtml(answer)}" — 아니에요 😅 다시 말해보세요${hint}</span>`;
       status.style.color="";
     }
@@ -4052,15 +4059,22 @@ function wpSubmit(q, answer){
     const mic=$("#wpMic"); if(mic){ mic.disabled=false; mic.style.opacity="1"; mic.classList.remove("live"); }
     return;   // 화면 전환 없음
   }
+  // 💡 정답을 다 보고(전체 공개) 맞힌 경우 → 정답 처리 X, 복습 대기로
+  if(answer && correct && q._answerShown){
+    srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
+    if(!q._retryNow) wpRescheduleFail(q);
+    wpResult(q, answer, false, Math.max(0.1,(Date.now()-wpT0)/1000), true);   // 정답 공개 화면(포기 취급)
+    return;
+  }
   const isRetry = !!q._retryNow;
   wpStats.total++; if(correct) wpStats.correct++;
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
     flashResult(true);
     srsPass(q.word.word, q.word.ko, ctxTag);
-    const fast=elapsed<4 && !q._wrongCount;
+    const fast=elapsed<4 && !q._wrongCount && !q._hintUsed;
     awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
-    if(q.idxInWord===0 && !isRetry && !q._wrongCount){ bumpCount("vocab"); questBump("vocab"); }
+    if(q.idxInWord===0 && !isRetry && !q._wrongCount && !q._hintUsed){ bumpCount("vocab"); questBump("vocab"); }
     q._retryNow=false;
   } else {
     // 포기(정답 보기)
