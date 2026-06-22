@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.97.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.98.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1994,8 +1994,8 @@ const KID_SITUATIONS=[
 function levelHint(){
   const v=state.lvl||1;
   const map={
-1:"LEARNER AGE: 5-6 (kindergarten). HARDEST CAP. English: 2-3 words MAX per line. Use ONLY the ~50 most basic picture-book words (hi, cat, dog, ball, mom, dad, go, run, yes, no, water, apple, big, hot). Present tense only. NO contractions, NO idioms, NO slang, NO past/future. Speak VERY slowly with clear pauses. One tiny idea at a time.",
-2:"LEARNER AGE: 7 (1st grade). English: 3-4 short words per line. Very common everyday words a 1st grader knows. Simple present tense. Greetings, feelings, colors, numbers, family, food. Almost no contractions. Speak slowly and clearly.",
+1:"LEARNER AGE: 5-6 (kindergarten). HARDEST CAP. Keep each line a SHORT but COMPLETE, grammatical sentence (about 2-4 words) — a real sentence, never a word-pile. 'I see a cat.' / 'It is hot.' / 'Open the door.' are good; 'apple is happy' or 'dad open bag' are WRONG (broken grammar). Keep articles (a/an/the) and correct verbs. Use ONLY the most basic picture-book words (cat, dog, ball, mom, dad, go, run, water, apple, big, hot). Present tense only. NO contractions, NO idioms, NO past/future. One tiny idea at a time. Grammar completeness ALWAYS beats shortness.",
+2:"LEARNER AGE: 7 (1st grade). Each line a SHORT but COMPLETE, grammatical sentence (about 3-5 words). Real sentences only — keep articles and correct verb forms, never a telegraphic word-pile. Very common everyday words a 1st grader knows. Simple present tense. Greetings, feelings, colors, numbers, family, food. Almost no contractions. Grammar completeness beats shortness.",
 3:"LEARNER AGE: 8 (2nd grade). English: 4-5 words per line, one simple idea. Common daily words. Basic contractions (I'm, it's) ok. Simple yes/no and what/where questions. Speak slowly.",
 4:"LEARNER AGE: 9 (3rd grade). English: 5-6 words. Familiar daily situations. Simple connectors (and, but, because). Present and simple past. Clear, slightly slow pace.",
 5:"LEARNER AGE: 10 (4th grade). English: 6-8 words at a comfortable everyday pace. Natural contractions. Past and future basics. Short two-part sentences ok.",
@@ -2020,8 +2020,8 @@ function levelSituation(){
 // 🔒 확장 금지 — 한국 학년 기준(미국 원어민 확장 금지). Lv1~2는 짧은 핵심 문장에서 끝.
 function levelCap(){
   const v=state.lvl||1;
-  if(v<=1) return "STRICT LENGTH LOCK — Korean kindergarten (age 5-7): EVERY English sentence the learner hears or is asked to say MUST be the shortest complete form: Subject + verb + ONE word. Example: \"I like soccer.\" — then STOP. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. This is Korean beginner-school English, NOT natural native expansion. If you feel tempted to make it sound more natural by adding words, DO NOT — keep it bare. The model/native answer must ALSO obey this (never longer than the learner level).";
-  if(v<=2) return "STRICT LENGTH LOCK — 1st grade: keep EVERY English sentence to Subject + verb + 1-2 short words, ONE simple object at most. FORBIDDEN: 'with/and/because/at/every day' add-ons, stacked adjectives, any clause. Korean beginner-school level, not native expansion. The model/native answer must also stay this short.";
+  if(v<=1) return "STRICT LENGTH LOCK — Korean kindergarten (age 5-7): EVERY English sentence the learner hears or is asked to say MUST be the shortest COMPLETE, GRAMMATICAL form: Subject + verb + ONE word, with correct articles. Example: \"I like soccer.\" / \"I see a cat.\" — then STOP. It MUST be a real sentence, never a word-pile like 'apple is happy' or 'dad open bag'. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. But NEVER drop grammar to hit the word count — completeness beats brevity. The model/native answer must ALSO obey this (never longer than the learner level).";
+  if(v<=2) return "STRICT LENGTH LOCK — 1st grade: keep EVERY English sentence to a COMPLETE, GRAMMATICAL Subject + verb + 1-2 short words, ONE simple object at most, with correct articles/verbs. It must be a real sentence, never a telegraphic word-pile. FORBIDDEN: 'with/and/because/at/every day' add-ons, stacked adjectives, any clause. Never sacrifice grammar for shortness. The model/native answer must also stay this short.";
   if(v<=3) return "LENGTH LOCK — 2nd grade: ONE short simple sentence, 4-5 words, one idea. No subordinate clauses, no 'because'. Keep it plain. Model/native answer stays this short.";
   if(v<=4) return "Keep every sentence short and simple (5-6 words), everyday only, at most ONE simple connector. Do not over-elaborate.";
   return "";
@@ -3878,7 +3878,7 @@ vocabWordLevelRule(),
 "CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher levels pick genuinely harder, less obvious words even within the theme. Lv.1 and Lv.10 on the SAME theme MUST produce clearly different difficulty words.",
 levelHint(),
 levelCap(),
-"Pick 5 genuinely useful words/expressions AT THIS DIFFICULTY. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit. Also 2 collocations. Variety seed "+seed+".",
+"Pick 5 genuinely useful words/expressions AT THIS DIFFICULTY. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit, and EACH a complete grammatical sentence (real sentence with correct articles/verbs, never a word-pile). Also 2 collocations. Variety seed "+seed+".",
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'.",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
   ].join("\n");
