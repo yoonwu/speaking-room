@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.02.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.03.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2093,7 +2093,8 @@ levelHint(),
 levelCap(),
 levelSituation(),
 "Format each of your turns as: a Korean situation line. After they answer, a short feedback line (👍 + native English) then the next Korean situation. Never reveal English before they try.",
-"TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again."
+"TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again.",
+bleSpeakingHint()
     ].join("\n");
   }
   // 🌎 실전상황 Engine — 생존 시뮬레이션 (상대가 영어로, 사용자가 영어로 대응)
@@ -2678,8 +2679,11 @@ function listenMaterials(){
   const weakItems = all.filter(x=>x && x.en && ((x.miss||0)>0 || ((x.due||0)<=today && x.stage!=="mastered"))).sort((a,b)=>(b.miss||0)-(a.miss||0)).map(x=>x.en);
   const recentItems = all.filter(x=>x && x.en && x.lastT).sort((a,b)=>(b.lastT||0)-(a.lastT||0)).slice(0,10).map(x=>x.en);
   // 배운 단어 (FREQ_DICT 중 SRS에 있는 건 위에서 잡힘; vocab 학습한 단어)
+  // BLE 신엔진에서 배운 블록도 포함 (P10)
+  let bleLines=[];
+  try{ const bm=bleMaterialsForMode("listen"); if(bm&&bm.blocks.length) bleLines=bm.blocks.map(x=>x.en); }catch(e){}
   return {
-    blocks: [...new Set([...learnedBlocks, ...learnedItems])].slice(0,20),
+    blocks: [...new Set([...bleLines, ...learnedBlocks, ...learnedItems])].slice(0,20),
     weak: [...new Set(weakItems)].slice(0,12),
     recent: [...new Set(recentItems)].slice(0,8),
     tier
@@ -5348,6 +5352,40 @@ function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b
 function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
 function getReadyForRealBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].stage==="ready_for_real").map(b=>({...b,state:s[b.id]})); }
 function getRecentlyLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).sort((a,b)=>(s[b.id].lastSeenAt||0)-(s[a.id].lastSeenAt||0)).slice(0,3).map(b=>({...b,state:s[b.id]})); }
+// ===== P10: 타 모드(듣기/스피킹/라이트닝)용 블록 재료 =====
+// 70% 배운/due/약한 블록 / 20% 혼합 / 10% 새 상황
+function bleMaterialsForMode(mode){
+  const unlocked=bleUnlockedBlocks();
+  if(!unlocked.length) return null;
+  const s=bleGetState(); const now=bleNow();
+  const due=unlocked.filter(b=>s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now);
+  const weak=unlocked.filter(b=>(s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount)||(s[b.id].consecFails||0)>=1);
+  const slow=unlocked.filter(b=>s[b.id].avgMs&&s[b.id].avgMs>5000);
+  // 우선순위 풀 구성
+  const prim=[...new Set([...due,...weak])];
+  const pickBlocks = (prim.length?prim:unlocked);
+  const lines=pickBlocks.map(b=>{ const ex=bleFreshContextEx2(b); return {id:b.id, block:b.block, ko:ex.ko, en:ex.en, meaningKo:b.meaningKo}; });
+  return {
+    blocks: lines,
+    weak: weak.map(b=>b.block),
+    slow: slow.map(b=>b.block),
+    due: due.map(b=>b.block),
+    count: unlocked.length
+  };
+}
+// 스피킹 훈련용: 배운 블록의 한국어 상황을 프롬프트에 주입
+function bleSpeakingHint(){
+  const m=bleMaterialsForMode("speaking"); if(!m||!m.blocks.length) return "";
+  const ex=m.blocks.slice(0,8).map(x=>`- ${x.ko} (목표 블록: ${x.block})`).join("\n");
+  return `\nLEARNED-BLOCK FOCUS — The learner has studied these speaking blocks. About 70% of the time, create Korean situations where ONE of these blocks is the natural answer. 20% mix freely, 10% fresh.\n${ex}\n`;
+}
+// 라이트닝용: 느린/최근 블록 우선 빠른 인출 문항
+function bleLightningItems(n){
+  const m=bleMaterialsForMode("lightning"); if(!m||!m.blocks.length) return [];
+  // 느린 블록 우선
+  const ranked=[...m.blocks].sort((a,b)=>{ const sa=m.slow.includes(a.block)?1:0, sb=m.slow.includes(b.block)?1:0; return sb-sa; });
+  return ranked.slice(0,n||10).map(x=>({ko:x.ko, en:x.en, block:x.block}));
+}
 function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id])||null; }
 function bleLearnedIds(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>b.id); }
 // 잠금해제된(7단계 코스 클리어) 블록만
@@ -5360,6 +5398,51 @@ function bleFreshContextEx(b){
   const fresh=b.examples.filter(e=>used.indexOf(e.situation)<0);
   const pool=fresh.length?fresh:b.examples;
   return pool[(Math.random()*pool.length)|0];
+}
+// ===== P5: Context Variation 생성기 (같은 문장 반복 방지) =====
+const BLE_PLACES=["카페","식당","호텔","병원","학교","쇼핑","고객센터","공항","택시","사무실","약국","은행","편의점","미용실"];
+let BLE_CTX_CACHE={};   // {blockId: [{situation,ko,en,object},...]} AI로 생성한 새 상황 누적
+function bleCtxCacheLoad(){ try{ BLE_CTX_CACHE=hGet("speakingroom:ble_ctx",{})||{}; }catch(e){ BLE_CTX_CACHE={}; } }
+function bleCtxCacheSave(){ try{ hSet("speakingroom:ble_ctx", BLE_CTX_CACHE); }catch(e){} }
+// 블록의 전체 예문 풀 (원본 + 생성캐시)
+function bleAllEx(b){ return [...(b.examples||[]), ...((BLE_CTX_CACHE[b.id])||[])]; }
+// 안 써본 상황 우선 예문 하나 (캐시 포함)
+function bleFreshContextEx2(b){
+  const st=bleGetState()[b.id]; const used=(st&&st.contextsUsed)||[];
+  const all=bleAllEx(b);
+  const fresh=all.filter(e=>used.indexOf(e.situation)<0);
+  const pool=fresh.length?fresh:all;
+  return pool[(Math.random()*pool.length)|0];
+}
+// AI로 새 상황 예문 N개 생성 (비차단 — 백그라운드 캐시 적재)
+async function bleGenContexts(b, n){
+  n=n||4;
+  try{
+    const have=bleAllEx(b).map(e=>e.situation+":"+e.en).join(" / ");
+    const places=BLE_PLACES.slice().sort(()=>Math.random()-0.5).slice(0,6).join(", ");
+    const sys=`You generate fresh real-life situations for practicing ONE English speaking block.
+BLOCK: "${b.block}" (${b.meaningKo}) — function: ${b.func}
+The block must be naturally usable in each situation.
+Vary: place (${places}), the object/need, the relationship, and urgency.
+Avoid repeating these existing ones: ${have}
+Return ONLY a JSON array of ${n} items, no markdown:
+[{"situation":"카페","ko":"한국어 상황 한 문장","en":"natural English using the block","object":"the object/need part"}]
+Rules: ko is a natural Korean request/statement a learner would want to say. en MUST naturally use "${b.block}". Keep en short and real. situation is a short Korean place label.`;
+    const d=await callClaude(sys, [{role:"user", content:"Generate now."}], FAST_MODEL);
+    const arr=parseJSON(extractText(d));
+    if(Array.isArray(arr) && arr.length){
+      const clean=arr.filter(x=>x&&x.ko&&x.en).map(x=>({situation:String(x.situation||"새 상황"), ko:String(x.ko), en:String(x.en), object:String(x.object||"")}));
+      BLE_CTX_CACHE[b.id]=[...((BLE_CTX_CACHE[b.id])||[]), ...clean].slice(-30);   // 블록당 최대 30개 캐시
+      bleCtxCacheSave();
+      return clean;
+    }
+  }catch(e){}
+  return [];
+}
+// 캐시가 부족하면 백그라운드로 채워둠
+function bleEnsureContexts(b){
+  const cache=(BLE_CTX_CACHE[b.id])||[];
+  if(cache.length<3){ bleGenContexts(b, 5); }   // 비동기, 기다리지 않음
 }
 // ===== P4: AI 채점 (의사소통 성공 ≠ 블록 성공 분리) =====
 // 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded}
@@ -5800,17 +5883,20 @@ function bleDeepNextItem(){
   const b=bleDeepPickBlock(); if(!b) return null;
   const reason=bleLastReason;
   const type=bleDeepPickType(b);
-  if(type==="discriminate"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
-  if(type==="speed"){ const ex=bleFreshContextEx(b); return {type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}; }
-  if(type==="repair"){ const ex=bleFreshContextEx(b); return {type:"repair", block:b, ex, deep:true, reason:"weak_block"}; }
-  if(type==="mixed"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
-  // situation (context variation)
-  const ex=bleFreshContextEx(b); return {type:"situation", block:b, ex, deep:true, reason};
+  bleEnsureContexts(b);   // 캐시 부족하면 백그라운드 생성
+  if(type==="discriminate"){ const ex=bleAllEx(b)[(Math.random()*bleAllEx(b).length)|0]; return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
+  if(type==="speed"){ const ex=bleFreshContextEx2(b); return {type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}; }
+  if(type==="repair"){ const ex=bleFreshContextEx2(b); return {type:"repair", block:b, ex, deep:true, reason:"weak_block"}; }
+  if(type==="mixed"){ const all=bleAllEx(b); const ex=all[(Math.random()*all.length)|0]; return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
+  // situation (context variation — 캐시에서 새 상황 우선)
+  const ex=bleFreshContextEx2(b); return {type:"situation", block:b, ex, deep:true, reason};
 }
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
 const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepStart(){
   bleDeep={ queue:[], results:[], count:0, requeue:[] };
+  bleCtxCacheLoad();
+  bleUnlockedBlocks().forEach(b=>bleEnsureContexts(b));   // 잠금해제 블록들 상황 미리 생성
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
   if($("#phonics")) $("#phonics").style.display="none";
@@ -5829,6 +5915,7 @@ function bleDeepRender(){
   let isPeach=false;
   if(it.type==="discriminate") body=bleViewDiscriminate(it);
   else if(it.type==="repair") { body=bleViewRepair(it); isPeach=true; }
+  else if(it.type==="repair_fill") { body=bleViewRepairFill(it); isPeach=true; }
   else { body=bleViewRetrieve(it); isPeach=true; }
   const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
   const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
@@ -5868,8 +5955,8 @@ async function bleFinishRetrieveDeep(it, heard){
   bleRecord(b.id, {result:j.result, fast, situation:ex.situation, ms, mixed:(it.type==="mixed"||it.type==="speed"), deep:true, confusedWith:j.confusedWith});
   bleDeep.results.push({id:b.id, type:it.type, result:j.result, comm:j.communicationSuccess, target:j.targetBlockSuccess, usedBlockId:j.usedBlockId, confusedWith:j.confusedWith, fast, ms, situation:ex.situation, naturalAnswer:j.naturalAnswer, reason:it.reason});
   // MISS/WEAK → 곧 다시 (situation) / HIT(통했지만 블록 못씀) → 같은 블록 한번 더 / 느린 PERFECT → 속도로
-  if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx(b), deep:true, reason:"weak_block"}); }
-  else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx(b), deep:true, reason:"context_gap"}); }
+  if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"weak_block"}); }
+  else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx2(b), deep:true, reason:"context_gap"}); }
   else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}); }
   setTimeout(()=>bleDeepRender(), isPerfect?1500:2300);
 }
@@ -5889,7 +5976,7 @@ function bleWireRetrieveDeep(it){
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieveDeep(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(!s) return; if(it.type==="repair_fill"){ s.innerHTML='💡 <b style="color:#F0664A;font-family:var(--serif)">'+escapeHtml(ex.en)+'</b>'; speakEn(ex.en); } else { s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; } };
 }
 // Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
@@ -5921,31 +6008,68 @@ function bleSession_discSetup(it){
 // ===== Repair Drill (반복 실패 보정) =====
 function bleViewRepair(it){
   const b=it.block, ex=it.ex;
-  return `<div style="text-align:center;margin-bottom:12px"><span style="font-size:11.5px;font-weight:800;color:#E0A300;background:rgba(224,163,0,.14);border-radius:99px;padding:4px 12px">🔧 약점 보정</span></div>
-   <div class="ar2-scene">
-    <div style="text-align:center">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:6px">이 블록을 다시 정리해요</div>
-      <div style="font-family:var(--serif);font-size:30px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div>
-      <div style="font-size:15px;color:var(--text);margin-top:8px">${escapeHtml(b.meaningKo)}</div>
-      <div style="background:var(--mist);border-radius:13px;padding:13px 15px;margin-top:16px;text-align:left">
-        <div style="font-size:12px;font-weight:800;color:var(--jade);margin-bottom:7px">예시</div>
-        ${b.examples.slice(0,2).map(e=>`<button class="ble-exline" data-say="${escapeAttr(e.en)}" style="margin-bottom:6px"><span style="font-family:var(--serif);font-size:16px;color:var(--text)">${escapeHtml(e.en)}</span><span style="display:block;font-size:12.5px;color:var(--muted)">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
+  // 가장 많이 헷갈린 블록 찾기 (대조용)
+  const st=bleGetState()[b.id]||{}; const cw=st.confusedWith||{};
+  let contrastId=null, max=0; Object.keys(cw).forEach(k=>{ if(cw[k]>max){max=cw[k]; contrastId=k;} });
+  if(!contrastId && b.contrast && b.contrast.length) contrastId=b.contrast[0];
+  const cb=contrastId?BLE_BY_ID[contrastId]:null;
+  const exs=bleAllEx(b);
+  return `<div class="blpz">
+    <div class="blpz-stepbadge"><span style="background:#E0A300">🔧 약점 보정</span></div>
+    <div class="blpz-coach">
+      <div class="blpz-fox">🦊</div>
+      <div class="blpz-bubble">이 블록을 같이 다시 정리해봐요!</div>
+    </div>
+    <div class="blpz-card" style="text-align:left">
+      <div style="text-align:center"><div style="font-family:var(--serif);font-size:28px;font-weight:700;color:#F0664A">${escapeHtml(b.block)}</div>
+      <div style="font-size:14px;color:#5A463C;margin-top:5px">${escapeHtml(b.meaningKo)}</div></div>
+      ${cb?`<div style="display:flex;gap:8px;margin-top:14px">
+        <div style="flex:1;background:#FFF1E6;border:1px solid #FBD6C4;border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:var(--serif);font-size:16px;color:#F0664A;font-weight:700">${escapeHtml(b.block)}</div>
+          <div style="font-size:11.5px;color:#8A6F62;margin-top:3px">${escapeHtml(b.meaningKo)}</div></div>
+        <div style="display:grid;place-items:center;font-size:13px;color:#B0958A;font-weight:800">vs</div>
+        <div style="flex:1;background:#fff;border:1px solid #EDD;border-radius:12px;padding:10px;text-align:center">
+          <div style="font-family:var(--serif);font-size:16px;color:#8A6F62;font-weight:700">${escapeHtml(cb.block)}</div>
+          <div style="font-size:11.5px;color:#B0958A;margin-top:3px">${escapeHtml(cb.meaningKo)}</div></div>
+      </div>`:""}
+      <div style="margin-top:14px">
+        ${exs.slice(0,2).map(e=>`<button class="ble-exline" data-say="${escapeAttr(e.en)}" style="display:block;width:100%;text-align:left;background:#FFF1E6;border:1px solid #FBE0D2;border-radius:11px;padding:10px 13px;margin-bottom:6px;cursor:pointer"><span style="font-family:var(--serif);font-size:16px;color:#3A2D27">${escapeHtml(e.en)}</span><span style="display:block;font-size:12.5px;color:#8A6F62">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
       </div>
     </div>
-   </div>
-   <div class="ar2-ctrl"><button id="bleRepairGo" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:16px">이제 말해볼게요 →</button></div>`;
+    <button id="bleRepairGo" style="width:100%;margin-top:16px;border:none;cursor:pointer;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:800;border-radius:16px;padding:15px">이제 직접 말해볼게요 →</button>
+  </div>`;
 }
 function bleWireRepair(it){
   document.querySelectorAll(".ble-exline").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
-  // 자동으로 첫 예시 들려주기
-  setTimeout(()=>speakEn(it.block.examples[0].en),300);
+  setTimeout(()=>speakEn(bleAllEx(it.block)[0].en),300);
   $("#bleRepairGo").onclick=()=>{
-    // 보정 후 → 같은 블록 숨김 인출로
-    bleDeep.requeue.unshift({type:"situation", block:it.block, ex:bleFreshContextEx(it.block), deep:true});
+    const b=it.block;
+    // P8 풀 시퀀스: 통제 빈칸 1문제 → 숨김 인출 1문제 순서로 큐에 넣기
+    const ex1=bleFreshContextEx2(b), ex2=bleFreshContextEx2(b);
+    bleDeep.requeue.unshift({type:"situation", block:b, ex:ex2, deep:true, reason:"weak_block"});       // ④ 숨김 인출
+    bleDeep.requeue.unshift({type:"repair_fill", block:b, ex:ex1, deep:true, reason:"weak_block"});      // ③ 통제 빈칸
     // consecFails 리셋 (보정 받았으니)
-    const s=bleGetState(); if(s[it.block.id]){ s[it.block.id].consecFails=0; bleSaveState(s); }
+    const s=bleGetState(); if(s[b.id]){ s[b.id].consecFails=0; bleSaveState(s); }
     bleDeepRender();
   };
+}
+// ③ 통제 빈칸 문제 (블록 부분을 빈칸으로 — 부담 적은 인출)
+function bleViewRepairFill(it){
+  const b=it.block, ex=it.ex;
+  const blanked=ex.en.replace(new RegExp(b.block.replace(/[.*+?^${}()|[\]\\]/g,'\\$&').replace(/\\\.\\\.\\\./,'.*?'),'i'), "____");
+  const showBlank = blanked!==ex.en ? blanked : ("____ "+(ex.object||""));
+  return `<div class="blpz">
+    <div class="blpz-stepbadge"><span style="background:#E0A300">🔧 보정 · 빈칸 채우기</span></div>
+    <div class="blpz-coach"><div class="blpz-fox">🦊</div><div class="blpz-bubble">먼저 가볍게! 빈칸을 ${escapeHtml(b.block)} 로 채워 말해봐요.</div></div>
+    <div class="blpz-card">
+      <div class="blpz-tip">${escapeHtml(ex.ko)}</div>
+      <div style="font-family:var(--serif);font-size:21px;color:#3A2D27;font-weight:700;margin-top:6px">${escapeHtml(showBlank)}</div>
+    </div>
+    <div class="blpz-micwrap"><div class="blpz-micring"><button id="bleMic" class="blpz-mic">🎤</button></div></div>
+    <div class="blpz-miclbl" id="bleMicLbl">눌러서 말하기</div>
+    <div class="blpz-stat" id="bleStat"></div>
+    <div class="blpz-foot"><button id="bleHint">💡 정답 보기</button><button id="bleType">⌨️ 글로 쓰기</button></div>
+  </div>`;
 }
 // ===== Deep Practice 세션 요약 =====
 function bleDeepSummary(){
