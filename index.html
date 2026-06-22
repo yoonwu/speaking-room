@@ -1672,7 +1672,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.82.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.83.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3794,25 +3794,35 @@ function startVocab(){
   generateVocab();
 }
 async function generateVocab(){
-  let theme=state.vocabTheme=nextVocabTheme();   // 매번 새 랜덤 테마
+  // startVocab에서 이미 테마를 정했으면 그걸 쓰고, 없을 때만 새로 뽑음 (이중 호출 방지)
+  let theme=state.vocabTheme; if(!theme){ theme=state.vocabTheme=nextVocabTheme(); }
   $("#vbModeTag").textContent="📖 "+(theme.emo||"")+" "+theme.t;
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
-  // 1) 이미 프리페치된 그 테마 세트 있으면 즉시 사용
-  let set=takeFromBank(theme.id);
-  if(set && set.length){ vocabWords=set; vbIdx=0; showVocabCard(); }
+  // 1) 이미 프리페치된 그 테마 세트 있으면 즉시 사용 (단, 최근 본 단어와 안 겹치게)
+  let set=takeFromBankFresh(theme.id);
+  if(set && set.length){ vocabWords=set; vbIdx=0; markVocabSeen(set); showVocabCard(); }
   else {
-    // 2) 없으면 그 테마 단어를 AI로 생성 (로딩) — cafe/smalltalk 시드 풀로 떨어지지 않게
+    // 2) 없으면 그 테마 단어를 AI로 생성 (로딩)
     $("#vbBody").innerHTML=`<div class="lloading">${escapeHtml(theme.t)} 단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
     try{
       const ws=await aiVocabSet(theme);
-      if(ws && ws.length){ vocabWords=ws; vbIdx=0; showVocabCard(); }
+      if(ws && ws.length){ vocabWords=ws; vbIdx=0; markVocabSeen(ws); showVocabCard(); }
       else throw new Error("empty");
-    }catch(e){ vocabWords=instantSet(); vbIdx=0; showVocabCard(); }   // 최후 폴백
+    }catch(e){ vocabWords=instantSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard(); }
   }
   // 3) 다음을 위해 여러 랜덤 테마 미리 생성
   prefetchVocab(theme);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
+}
+// 최근 본 단어 추적 (반복 방지)
+let vocabSeenRecent=[];
+function markVocabSeen(set){ try{ (set||[]).forEach(w=>{ if(w&&w.word){ vocabSeenRecent.push(String(w.word).toLowerCase()); } }); if(vocabSeenRecent.length>40) vocabSeenRecent=vocabSeenRecent.slice(-40); }catch(e){} }
+function setIsStale(set){ if(!set||!set.length) return true; const fresh=set.filter(w=>w&&w.word&&!vocabSeenRecent.includes(String(w.word).toLowerCase())); return fresh.length < Math.ceil(set.length/2); }
+// bank에서 꺼내되, 최근 본 단어 위주면 버리고 다음 것 (최대 몇 번 시도)
+function takeFromBankFresh(themeId){
+  for(let i=0;i<4;i++){ const set=takeFromBank(themeId); if(!set) return null; if(!setIsStale(set)) return set; }
+  return null;   // 다 stale이면 AI 생성으로
 }
 async function _oldGenerateVocab(){
   $("#vbBody").innerHTML=`<div class="lloading">단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
