@@ -1673,7 +1673,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.88.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.89.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2866,7 +2866,33 @@ function lsTrackHeard(en, ko, block){
 // 정답 화면 — 자동 분석 없이 사용자가 선택
 // 🧠 학습 컨텍스트 패널 — 방금 배운 문장을 패턴으로 확장 (암기X, 패턴 학습)
 let patternCache={};   // en -> {similar:[], realA, realB, upgrade:[]}
+// 방금 들은 문장이 블록에서 온 거면 그 블록의 예문으로 즉시 패널 채움 (AI 없음)
+function patternFromBlocks(en){
+  try{
+    const low=(en||"").toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ").trim();
+    // 같은 블록(phrase) 찾기
+    let hit=null;
+    for(const p of CORE_PHRASES){
+      if(!p.examples) continue;
+      const inThis=p.examples.some(ex=>ex.en && ex.en.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ").trim()===low);
+      if(inThis){ hit=p; break; }
+    }
+    if(!hit) return null;
+    const sims=hit.examples.map(ex=>ex.en).filter(e=>e && e.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ").trim()!==low).slice(0,3);
+    if(!sims.length) return null;
+    return { similar:sims, q_en:"", q_ko:"", upgrade:[] };
+  }catch(e){ return null; }
+}
 async function loadPatternPanel(en, ko){
+  const host=$("#learnPanel"); if(!host) return;
+  if(patternCache[en]){ renderPatternPanel(patternCache[en], en); return; }
+  // 🚀 블록 예문으로 즉시 표시 (대기 0초). AI는 안 부름.
+  const fromBlock=patternFromBlocks(en);
+  if(fromBlock){ patternCache[en]=fromBlock; renderPatternPanel(fromBlock, en); return; }
+  // 블록이 아니면 패널을 조용히 숨김 (답 진행을 막지 않음 — AI 대기 제거)
+  host.innerHTML="";
+}
+async function _oldLoadPatternPanel(en, ko){
   const host=$("#learnPanel"); if(!host) return;
   if(patternCache[en]){ renderPatternPanel(patternCache[en], en); return; }
   const sys=[
@@ -2930,7 +2956,13 @@ function renderListenCorrect(){
 // 3) 오답 분석 + 4) 연음 설명 (동시 호출)
 async function lsRunAnalysis(){
   TTS&&TTS.cancel();
-  $("#listenScroll").innerHTML=`<div class="lloading">받아쓰기를 분석하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
+  const orig=lsItem.en||"";
+  // 🚀 먼저 로컬 정보로 즉시 화면 표시 (빨강 하이라이트는 AI 없이 가능) — 대기 0초
+  lsAnalysis={correct_sentence:orig,missed_words:[],mistakes:[],listening_reason:"",pronunciation_tip:"",native_pattern:""};
+  lsConn=null;
+  renderListenAnalysis();
+  // AI 분석은 백그라운드로 받아서 채움 (화면 진행을 막지 않음)
   const analyzeSys=[
 "You are an expert listening coach for Korean learners. Compare the original spoken sentence with the user's dictation and find exactly what they missed.",
 "Explain simply (in Korean for the reason/tip fields): 1) missing words 2) wrong words 3) why it was hard to HEAR 4) connected speech 5) reductions 6) native pronunciation patterns. Keep it simple. This is listening training, not grammar.",
@@ -2941,17 +2973,16 @@ async function lsRunAnalysis(){
 "For the sentence, explain how native speakers actually pronounce it: reductions, contractions, connected speech. Give the spoken/reduced form (e.g. 'Would you'->'Wudja', 'want to'->'wanna', 'going to'->'gonna'). Keep it simple. Do NOT teach grammar.",
 'Return ONLY JSON: {"spoken_version":"how it really sounds","explanation":"무엇이 어떻게 연음/축약되는지 한국어 설명","korean_tip":"짧은 한국어 듣기 팁"}'
   ].join("\n");
-  const orig=lsItem.en||"";
   try{
     const [aD,cD]=await Promise.all([
       callClaude(analyzeSys,[{role:"user",content:`Original: ${orig}\nUser answer: ${lsAnswer||"(빈 답)"}`}], FAST_MODEL),
       callClaude(connSys,[{role:"user",content:`Sentence: ${orig}`}], FAST_MODEL)
     ]);
-    lsAnalysis=parseJSON(extractText(aD));
-    lsConn=parseJSON(extractText(cD));
-  }catch(e){ lsAnalysis={correct_sentence:orig,missed_words:[],mistakes:[],listening_reason:"",pronunciation_tip:"",native_pattern:""}; lsConn=null; }
-  if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
-  renderListenAnalysis();
+    const a=parseJSON(extractText(aD)); const c=parseJSON(extractText(cD));
+    if(a) lsAnalysis=a; if(c) lsConn=c;
+    // 같은 문제 화면이 아직 떠 있으면 갱신
+    if($("#listenScroll") && $("#listenScroll").querySelector(".lcard")) renderListenAnalysis();
+  }catch(e){}
 }
 function diffHighlight(correct, answer){
   const ans=new Set(normAns(answer).split(/\s+/).filter(Boolean));
@@ -4226,12 +4257,11 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
   const askB=$("#wpAsk"); if(askB) askB.onclick=()=>openAskAI(q.word.word, full);
   card.querySelectorAll(".wp-spd").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
   $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
-  if(correct) wpLoadLearnCard(q.word.word, q.word.ko);
+  if(correct) wpLoadLearnCard(q.word.word, q.word.ko, q.word);
 }
 let wpLearnCache={};
-async function wpLoadLearnCard(word, ko){
+function wpLoadLearnCard(word, ko, wordObj){
   const host=$("#wpLearnCard"); if(!host) return;
-  const key=srsKey(word);
   const render=(o)=>{
     const host2=$("#wpLearnCard"); if(!host2||!o) return;
     host2.innerHTML=`
@@ -4239,17 +4269,12 @@ async function wpLoadLearnCard(word, ko){
       ${(o.similar&&o.similar.length)?`<div class="mbcard" style="padding:14px 18px;margin-top:10px"><div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🔥 비슷한 표현</div><div style="display:flex;flex-wrap:wrap;gap:7px">${o.similar.slice(0,4).map(s=>`<span style="font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--text)">${escapeHtml(s)}</span>`).join("")}</div></div>`:""}`;
     host2.querySelectorAll(".wp-line").forEach(b=>{ b.onclick=()=>{ const t=b.dataset.say; if(t&&TTS&&SSU){ TTS.cancel(); const u=new SSU(t); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=levelRate(false); TTS.speak(u); } }; });
   };
-  if(wpLearnCache[key]){ render(wpLearnCache[key]); return; }
-  try{
-    const sys=[
-"For the English word/chunk \""+word+"\" (Korean: "+(ko||"")+"), give learning extras for a Korean learner.",
-levelCap(),
-'Return ONLY JSON: {"usage":["3 short natural example sentences using it"],"similar":["3-4 similar/alternative expressions (single words or short)"]}'
-    ].join("\n");
-    const d=await callClaude(sys,[{role:"user",content:"Now."}], FAST_MODEL);
-    const o=parseJSON(extractText(d));
-    if(o){ wpLearnCache[key]=o; render(o); }
-  }catch(e){}
+  // 🚀 이미 단어에 있는 데이터로 즉시 표시 (AI 호출 없음 = 0초)
+  if(wordObj){
+    const usage=(wordObj.examples||[]).map(e=>e.en).filter(Boolean).slice(0,3);
+    const similar=(wordObj.colloc||[]).filter(Boolean).slice(0,4);
+    if(usage.length || similar.length){ render({usage, similar}); return; }
+  }
 }
 function wpDone(){
   $("#vbBarFill").style.width="100%"; $("#vbProgTxt").textContent="완료";
