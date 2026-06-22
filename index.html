@@ -1676,7 +1676,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.91.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.92.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -4271,13 +4271,13 @@ function wpLoadLearnCard(word, ko, wordObj){
   const render=(o)=>{
     const host2=$("#wpLearnCard"); if(!host2||!o) return;
     host2.innerHTML=`
-      ${(o.usage&&o.usage.length)?`<div class="mbcard" style="padding:14px 18px;margin-top:10px"><div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🌎 이렇게도 써요</div>${o.usage.slice(0,3).map(u=>`<button class="wp-line" data-say="${escapeAttr(u)}">${escapeHtml(u)}</button>`).join("")}</div>`:""}
+      ${(o.usage&&o.usage.length)?`<div class="mbcard" style="padding:14px 18px;margin-top:10px"><div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🌎 이렇게도 써요</div>${o.usage.slice(0,3).map(u=>`<button class="wp-line" data-say="${escapeAttr(u.en)}"><span style="display:block">${escapeHtml(u.en)}</span>${u.ko?`<span style="display:block;font-size:13px;color:var(--muted);margin-top:3px;font-family:var(--sans)">${escapeHtml(u.ko)}</span>`:""}</button>`).join("")}</div>`:""}
       ${(o.similar&&o.similar.length)?`<div class="mbcard" style="padding:14px 18px;margin-top:10px"><div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🔥 비슷한 표현</div><div style="display:flex;flex-wrap:wrap;gap:7px">${o.similar.slice(0,4).map(s=>`<span style="font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--text)">${escapeHtml(s)}</span>`).join("")}</div></div>`:""}`;
     host2.querySelectorAll(".wp-line").forEach(b=>{ b.onclick=()=>{ const t=b.dataset.say; if(t&&TTS&&SSU){ TTS.cancel(); const u=new SSU(t); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=levelRate(false); TTS.speak(u); } }; });
   };
   // 🚀 이미 단어에 있는 데이터로 즉시 표시 (AI 호출 없음 = 0초)
   if(wordObj){
-    const usage=(wordObj.examples||[]).map(e=>e.en).filter(Boolean).slice(0,3);
+    const usage=(wordObj.examples||[]).filter(e=>e&&e.en).map(e=>({en:e.en, ko:e.ko||""})).slice(0,3);
     const similar=(wordObj.colloc||[]).filter(Boolean).slice(0,4);
     if(usage.length || similar.length){ render({usage, similar}); return; }
   }
