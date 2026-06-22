@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.98.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.99.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1948,7 +1948,7 @@ function updateLevelBadges(){
 }
 function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 연령 모드 헬퍼
-function kidMode(){ return state.age==="kid"; }
+function kidMode(){ return false; }   // 아이 모드 제거됨 — 항상 어른 경로
 // 🛡️ 모든 영어 생성에 적용 — 문법 완전성 강제 (단어 나열식 비문 방지: "dad open bag" 같은 것)
 function grammarRule(){
   return [
@@ -1994,16 +1994,16 @@ const KID_SITUATIONS=[
 function levelHint(){
   const v=state.lvl||1;
   const map={
-1:"LEARNER AGE: 5-6 (kindergarten). HARDEST CAP. Keep each line a SHORT but COMPLETE, grammatical sentence (about 2-4 words) — a real sentence, never a word-pile. 'I see a cat.' / 'It is hot.' / 'Open the door.' are good; 'apple is happy' or 'dad open bag' are WRONG (broken grammar). Keep articles (a/an/the) and correct verbs. Use ONLY the most basic picture-book words (cat, dog, ball, mom, dad, go, run, water, apple, big, hot). Present tense only. NO contractions, NO idioms, NO past/future. One tiny idea at a time. Grammar completeness ALWAYS beats shortness.",
-2:"LEARNER AGE: 7 (1st grade). Each line a SHORT but COMPLETE, grammatical sentence (about 3-5 words). Real sentences only — keep articles and correct verb forms, never a telegraphic word-pile. Very common everyday words a 1st grader knows. Simple present tense. Greetings, feelings, colors, numbers, family, food. Almost no contractions. Grammar completeness beats shortness.",
-3:"LEARNER AGE: 8 (2nd grade). English: 4-5 words per line, one simple idea. Common daily words. Basic contractions (I'm, it's) ok. Simple yes/no and what/where questions. Speak slowly.",
-4:"LEARNER AGE: 9 (3rd grade). English: 5-6 words. Familiar daily situations. Simple connectors (and, but, because). Present and simple past. Clear, slightly slow pace.",
-5:"LEARNER AGE: 10 (4th grade). English: 6-8 words at a comfortable everyday pace. Natural contractions. Past and future basics. Short two-part sentences ok.",
-6:"LEARNER AGE: 11 (5th grade). English: 7-9 words, normal everyday speech, light reductions (gonna, wanna). More tenses, simple opinions and reasons.",
-7:"LEARNER AGE: 12 (6th grade). English: 8-11 words, natural rhythm, common idioms and connected speech. Can handle short explanations.",
-8:"LEARNER AGE: 13 (middle school). English: 9-13 words, near-native pace, varied grammar, common idioms.",
-9:"LEARNER AGE: 14-15 (older teen). English: fully natural, fast casual speech, reductions and everyday slang.",
-10:"LEARNER LEVEL: native adult. No simplification at all. Fast, idiomatic, reduced, exactly as natives talk to each other."
+1:"LEVEL 1 — absolute beginner. Each line a SHORT but COMPLETE, grammatical sentence (about 2-5 words) — a real sentence, never a word-pile. 'I see a cat.' / 'It is hot.' / 'Open the door.' / 'I like coffee.' are good; 'apple is happy' or 'dad open bag' are WRONG (broken grammar). Keep articles (a/an/the) and correct verbs. Use the most basic everyday words. Present tense, simple statements and basic requests. NO idioms. Grammar completeness ALWAYS beats shortness.",
+2:"LEVEL 2 — beginner. Each line a SHORT but COMPLETE, grammatical sentence (about 3-6 words). Real sentences only — keep articles and correct verb forms, never a telegraphic word-pile. Very common everyday words. Simple present tense. Greetings, feelings, food, daily needs. Grammar completeness beats shortness.",
+3:"LEVEL 3 — high beginner (CEFR A1+). 4-6 words per line, one simple idea, complete sentences. Common daily words. Basic contractions (I'm, it's) ok. Simple yes/no and what/where questions.",
+4:"LEVEL 4 — elementary (A2). 5-7 words. Familiar daily situations. Simple connectors (and, but, because). Present and simple past.",
+5:"LEVEL 5 — pre-intermediate (A2+). 6-9 words at a comfortable everyday pace. Natural contractions. Past and future basics. Short two-part sentences ok.",
+6:"LEVEL 6 — intermediate (B1). 7-11 words, normal everyday speech, light reductions (gonna, wanna). More tenses, simple opinions and reasons.",
+7:"LEVEL 7 — intermediate+ (B1+). 8-13 words, natural rhythm, common idioms and connected speech. Can handle short explanations.",
+8:"LEVEL 8 — upper-intermediate (B2). 9-15 words, near-native pace, varied grammar, common idioms.",
+9:"LEVEL 9 — advanced (C1). Fully natural, fast casual speech, reductions and everyday slang.",
+10:"LEVEL 10 — native adult. No simplification at all. Fast, idiomatic, reduced, exactly as natives talk to each other."
   };
   return map[v]||map[1];
 }
@@ -2011,7 +2011,7 @@ function levelLine(){ return levelHint(); }
 // 🎯 상황(기능) 난이도도 레벨에 묶기 — Lv1~2는 단순 진술만, 부탁/질문 등 복잡 기능 금지
 function levelSituation(){
   const v=state.lvl||1;
-  if(v<=1) return "SITUATION DIFFICULTY LOCK (kindergarten): Only the SIMPLEST self-statements. The required English answer must be like \"I like X.\" / \"I want X.\" / \"It is X.\" / \"I am X.\" / \"This is X.\" Give situations such as: 좋아하는 것 말하기, 원하는 것 말하기, 기분 말하기, 색깔/사물 이름 말하기. FORBIDDEN situations: any request/asking a favor (부탁), questions to others, polite forms (Could you/Can you), past or future events, multi-step situations. Keep the needed answer to 2-3 words.";
+  if(v<=1) return "SITUATION DIFFICULTY LOCK (level 1 beginner): Only the SIMPLEST self-statements. The required English answer must be like \"I like X.\" / \"I want X.\" / \"It is X.\" / \"I am X.\" / \"This is X.\" Give situations such as: 좋아하는 것 말하기, 원하는 것 말하기, 기분 말하기, 색깔/사물 이름 말하기. FORBIDDEN situations: any request/asking a favor (부탁), questions to others, polite forms (Could you/Can you), past or future events, multi-step situations. Keep the needed answer short but a complete sentence.";
   if(v<=2) return "SITUATION DIFFICULTY LOCK (1st grade): Simple statements and very basic wants/feelings. Answer like \"I want water.\" / \"I am hungry.\" / \"I like dogs.\" Allowed: 좋아하는 것·원하는 것·기분·간단한 사실 말하기. Avoid polite requests (Could you...), questions to others, and past/future. Keep answer 3-4 words.";
   if(v<=3) return "SITUATION DIFFICULTY (2nd grade): Simple everyday statements and ONE basic question (What is...? / Do you like...?). Simple requests with 'Can I...' ok. Keep situations to one clear idea.";
   if(v<=4) return "SITUATION DIFFICULTY (3rd grade): Everyday situations, basic requests and questions allowed, one connector ok. Still keep it simple.";
@@ -2020,7 +2020,7 @@ function levelSituation(){
 // 🔒 확장 금지 — 한국 학년 기준(미국 원어민 확장 금지). Lv1~2는 짧은 핵심 문장에서 끝.
 function levelCap(){
   const v=state.lvl||1;
-  if(v<=1) return "STRICT LENGTH LOCK — Korean kindergarten (age 5-7): EVERY English sentence the learner hears or is asked to say MUST be the shortest COMPLETE, GRAMMATICAL form: Subject + verb + ONE word, with correct articles. Example: \"I like soccer.\" / \"I see a cat.\" — then STOP. It MUST be a real sentence, never a word-pile like 'apple is happy' or 'dad open bag'. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. But NEVER drop grammar to hit the word count — completeness beats brevity. The model/native answer must ALSO obey this (never longer than the learner level).";
+  if(v<=1) return "STRICT LENGTH LOCK — level 1 beginner: EVERY English sentence the learner hears or is asked to say MUST be the shortest COMPLETE, GRAMMATICAL form: Subject + verb + ONE word/object, with correct articles. Example: \"I like soccer.\" / \"I see a cat.\" — then STOP. It MUST be a real sentence, never a word-pile like 'apple is happy' or 'dad open bag'. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. But NEVER drop grammar to hit the word count — completeness beats brevity. The model/native answer must ALSO obey this.";
   if(v<=2) return "STRICT LENGTH LOCK — 1st grade: keep EVERY English sentence to a COMPLETE, GRAMMATICAL Subject + verb + 1-2 short words, ONE simple object at most, with correct articles/verbs. It must be a real sentence, never a telegraphic word-pile. FORBIDDEN: 'with/and/because/at/every day' add-ons, stacked adjectives, any clause. Never sacrifice grammar for shortness. The model/native answer must also stay this short.";
   if(v<=3) return "LENGTH LOCK — 2nd grade: ONE short simple sentence, 4-5 words, one idea. No subordinate clauses, no 'because'. Keep it plain. Model/native answer stays this short.";
   if(v<=4) return "Keep every sentence short and simple (5-6 words), everyday only, at most ONE simple connector. Do not over-elaborate.";
