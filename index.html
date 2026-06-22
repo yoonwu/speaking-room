@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.95.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.96.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5149,6 +5149,484 @@ function phMic(ref, btn, cb){
    한국어만 보여주고 즉시 말하기 → STT 막힘 없이 빠른 통과 → 콤보·속도 보너스 */
 // ===== Core Phrase DB (1차: 48 핵심 청크) — AI 호출 없이 로컬 출제 =====
 // 구조: {id, phrase, ko, level, tags, kid, adult, examples:[{en,ko}], activeState}
+/* ============================================================
+   🧱 블록영어 학습 엔진 V2 (문서 스펙)
+   - 5개 테스트 블록 / 망각곡선 복습 / 인출연습 / 상황변형 / 블록구별 / 혼합·속도인출
+   - 게임화 X, 진짜 학습 엔진. 상태는 localStorage.
+   ============================================================ */
+const BLE_BLOCKS=[
+  { id:"can_i_get", block:"Can I get...", meaningKo:"~을 받을 수 있을까요? / ~주세요", func:"request",
+    contrast:["do_you_have","i_need","could_you"],
+    examples:[
+      {situation:"카페", ko:"물 좀 받을 수 있을까요?", en:"Can I get some water?", object:"some water"},
+      {situation:"쇼핑", ko:"영수증 받을 수 있을까요?", en:"Can I get a receipt?", object:"a receipt"},
+      {situation:"호텔", ko:"수건 하나 더 받을 수 있을까요?", en:"Can I get another towel?", object:"another towel"},
+      {situation:"식당", ko:"포크 하나 받을 수 있을까요?", en:"Can I get a fork?", object:"a fork"},
+      {situation:"병원", ko:"처방전 받을 수 있을까요?", en:"Can I get a prescription?", object:"a prescription"},
+    ]},
+  { id:"do_you_have", block:"Do you have...", meaningKo:"~ 있어요? (있는지 묻기)", func:"availability",
+    contrast:["can_i_get","is_there","i_need"],
+    examples:[
+      {situation:"쇼핑", ko:"더 큰 사이즈 있어요?", en:"Do you have a bigger size?", object:"a bigger size"},
+      {situation:"카페", ko:"디카페인 있어요?", en:"Do you have decaf?", object:"decaf"},
+      {situation:"식당", ko:"영어 메뉴 있어요?", en:"Do you have an English menu?", object:"an English menu"},
+      {situation:"호텔", ko:"빈 방 있어요?", en:"Do you have a room available?", object:"a room available"},
+      {situation:"병원", ko:"영어 하는 의사 있어요?", en:"Do you have an English-speaking doctor?", object:"an English-speaking doctor"},
+    ]},
+  { id:"i_need", block:"I need...", meaningKo:"~이 필요해요 (필요 말하기)", func:"need",
+    contrast:["can_i_get","could_you","do_you_have"],
+    examples:[
+      {situation:"식당", ko:"포크가 필요해요.", en:"I need a fork.", object:"a fork"},
+      {situation:"병원", ko:"지금 의사가 필요해요.", en:"I need a doctor now.", object:"a doctor now"},
+      {situation:"호텔", ko:"방 열쇠가 필요해요.", en:"I need a room key.", object:"a room key"},
+      {situation:"쇼핑", ko:"이거 도움이 필요해요.", en:"I need help with this.", object:"help with this"},
+      {situation:"공항", ko:"택시가 필요해요.", en:"I need a taxi.", object:"a taxi"},
+    ]},
+  { id:"could_you", block:"Could you...", meaningKo:"~해 주시겠어요? (정중한 부탁)", func:"polite-request",
+    contrast:["can_i_get","i_need","do_you_have"],
+    examples:[
+      {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the bill?", object:"bring the bill"},
+      {situation:"병원", ko:"이거 설명해 주시겠어요?", en:"Could you explain this?", object:"explain this"},
+      {situation:"호텔", ko:"택시 좀 불러 주시겠어요?", en:"Could you call a taxi?", object:"call a taxi"},
+      {situation:"학교", ko:"다시 말씀해 주시겠어요?", en:"Could you say that again?", object:"say that again"},
+      {situation:"은행", ko:"제 계정 확인해 주시겠어요?", en:"Could you check my account?", object:"check my account"},
+    ]},
+  { id:"i_think", block:"I think...", meaningKo:"제 생각엔 ~ (의견 말하기)", func:"opinion",
+    contrast:["i_need","could_you","do_you_have"],
+    examples:[
+      {situation:"쇼핑", ko:"제 생각엔 너무 비싸요.", en:"I think it's too expensive.", object:"it's too expensive"},
+      {situation:"식당", ko:"제 생각엔 이게 더 나아요.", en:"I think this one is better.", object:"this one is better"},
+      {situation:"호텔", ko:"제 생각엔 방이 너무 추워요.", en:"I think the room is too cold.", object:"the room is too cold"},
+      {situation:"일상", ko:"제 생각엔 맞는 것 같아요.", en:"I think that's right.", object:"that's right"},
+      {situation:"병원", ko:"제 생각엔 좀 나아졌어요.", en:"I think I feel better.", object:"I feel better"},
+    ]},
+];
+const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
+function bleEday(){ return Math.floor(Date.now()/86400000); }
+function bleNow(){ return Date.now(); }
+// 상태 저장 (localStorage)
+function bleGetState(){ return hGet("speakingroom:ble", {}); }
+function bleSaveState(s){ hSet("speakingroom:ble", s); }
+function bleBlockState(id){
+  const s=bleGetState();
+  if(!s[id]){ s[id]={ stage:"new", successCount:0, failCount:0, slowCount:0, contextsUsed:[],
+    mixedSuccessCount:0, fastCount:0, listeningSuccessCount:0, realConversationSuccessCount:0,
+    lastSeenAt:null, nextReviewAt:null, avgMs:null, samples:0 }; bleSaveState(s); }
+  return s[id];
+}
+// 망각곡선 간격(일): 학습직후 같은세션 → 1 → 3 → 7 → 14 → 30
+const BLE_INTERVALS=[1,3,7,14,30];
+function bleScheduleNext(id, correct, fast){
+  const s=bleGetState(); const st=s[id]; if(!st) return;
+  st.lastSeenAt=bleNow();
+  if(!correct){
+    st.nextReviewAt=bleNow()+10*60*1000;   // 10분 뒤 (오답)
+  } else {
+    // 정답: 성공 횟수에 따라 간격 증가. 느리면 짧게 유지.
+    let idx=Math.min(st.successCount, BLE_INTERVALS.length-1);
+    if(!fast && idx>0) idx=Math.max(0, idx-1);   // 느린 정답은 간격 한 단계 낮춤
+    st.nextReviewAt=bleNow()+BLE_INTERVALS[idx]*86400000;
+  }
+  s[id]=st; bleSaveState(s);
+}
+// 답 결과 기록 (블록 사용 성공 / 상황 / 속도)
+function bleRecord(id, opts){
+  opts=opts||{};
+  const s=bleGetState(); const st=s[id]||bleBlockState(id) && bleGetState()[id];
+  const stt=s[id];
+  const correct=!!opts.correct, fast=!!opts.fast, situation=opts.situation||"", ms=opts.ms;
+  if(correct){ stt.successCount++; if(situation && stt.contextsUsed.indexOf(situation)<0) stt.contextsUsed.push(situation); }
+  else stt.failCount++;
+  if(correct && !fast) stt.slowCount++;
+  if(correct && fast) stt.fastCount++;
+  if(opts.mixed && correct) stt.mixedSuccessCount++;
+  if(typeof ms==="number" && ms>0){ stt.avgMs = stt.avgMs==null? ms : Math.round((stt.avgMs*stt.samples+ms)/(stt.samples+1)); stt.samples++; }
+  // 단계 갱신
+  stt.stage=bleComputeStage(stt);
+  s[id]=stt; bleSaveState(s);
+  bleScheduleNext(id, correct, fast);
+}
+// 단계 계산 (문서 정의)
+function bleComputeStage(st){
+  const ctx=(st.contextsUsed||[]).length;
+  if(st.realConversationSuccessCount>=1) return "ready_for_real";
+  if(st.mixedSuccessCount>=1 && st.fastCount>=3) return "ready_for_real";
+  if(st.fastCount>=3) return "fast";
+  if(ctx>=5) return "strong";
+  if(ctx>=3) return "active";
+  if(st.successCount>=1) return "retrieved";
+  if(st.successCount===0 && st.failCount===0) return "learning";
+  return "learning";
+}
+const BLE_STAGE_KO={new:"새 블록",learning:"배우는 중",controlled:"빈칸 연습",retrieved:"인출 성공",discriminated:"블록 구별",active:"여러 상황",strong:"탄탄함",fast:"빠른 인출",ready_for_real:"실전 준비"};
+// 블록 마스터 별 (7칸)
+function bleStars(id){
+  const order=["new","learning","retrieved","active","strong","fast","ready_for_real"];
+  const st=bleGetState()[id]; const stage=st?st.stage:"new";
+  let lv=order.indexOf(stage); if(lv<0) lv=0; lv=lv+1;
+  return "★".repeat(lv)+"☆".repeat(7-lv);
+}
+// ===== 헬퍼 함수 (다른 모드용 데이터 훅) =====
+function getLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>({...b, state:s[b.id]})); }
+function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount).map(b=>({...b,state:s[b.id]})); }
+function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
+function getReadyForRealBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].stage==="ready_for_real").map(b=>({...b,state:s[b.id]})); }
+function getRecentlyLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).sort((a,b)=>(s[b.id].lastSeenAt||0)-(s[a.id].lastSeenAt||0)).slice(0,3).map(b=>({...b,state:s[b.id]})); }
+function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id])||null; }
+function bleLearnedIds(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>b.id); }
+
+// ===== 답 채점 (4단계, 여러 표현 허용) =====
+function bleNorm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim(); }
+function bleGrade(targetBlock, expectedEn, heard){
+  const h=bleNorm(heard), exp=bleNorm(expectedEn);
+  if(!h) return {grade:"miss", blockUsed:false};
+  // 타겟 블록의 핵심부 (Can I get, Do you have...)
+  const core=bleNorm(targetBlock.block.replace(/\.\.\.|\?/g,""));
+  const blockUsed = core.length>=3 && (" "+h+" ").indexOf(" "+core)>=0;
+  // 의미 일치도 (단어 겹침)
+  const ew=exp.split(" ").filter(Boolean), hw=new Set(h.split(" ").filter(Boolean));
+  const overlap=ew.filter(w=>hw.has(w)).length / Math.max(1,ew.length);
+  if(blockUsed && overlap>=0.6) return {grade:"perfect", blockUsed:true};
+  if(blockUsed) return {grade:"hit", blockUsed:true};        // 블록은 맞게 썼고 목적어가 좀 다름
+  if(overlap>=0.6) return {grade:"hit", blockUsed:false};    // 다른 표현이지만 의미 통함
+  if(overlap>=0.3) return {grade:"weak_hit", blockUsed:false};
+  return {grade:"miss", blockUsed:false};
+}
+
+// ===== 세션 빌더 (문서 비율) =====
+// 20% 새블록 / 30% 복습 / 30% 혼합인출 / 10% 구별 / 10% 속도
+let bleSession=null;
+function bleBuildSession(forcedNewId){
+  const learnedIds=bleLearnedIds();
+  const newB = forcedNewId? BLE_BY_ID[forcedNewId] : bleNextNewBlock();
+  const items=[];
+  // 1) 새 블록이 있으면: PHASE 1~4 (이해→패턴→빈칸→상황인출)
+  if(newB && learnedIds.indexOf(newB.id)<0){
+    items.push({type:"understand", block:newB});
+    items.push({type:"pattern", block:newB});
+    const ex0=newB.examples[0], ex1=newB.examples[1]||newB.examples[0];
+    items.push({type:"pattern_fill", block:newB, ex:ex0});     // Can I get [____]?
+    items.push({type:"block_fill", block:newB, ex:ex1});       // [____] some water?
+    const ex2=newB.examples[2]||newB.examples[0];
+    items.push({type:"situation", block:newB, ex:ex2});        // 상황만 보고 인출
+  }
+  // 학습 풀 (새 블록 포함)
+  const poolIds = newB? [...new Set([...learnedIds, newB.id])] : learnedIds.slice();
+  const pool = poolIds.map(id=>BLE_BY_ID[id]).filter(Boolean);
+  // 2) 복습(due) 블록 — 상황 인출
+  getDueReviewBlocks().slice(0,2).forEach(b=>{
+    const ex=b.examples[(Math.random()*b.examples.length)|0];
+    items.push({type:"situation", block:BLE_BY_ID[b.id], ex});
+  });
+  // 3) 블록 구별 (2개 이상 배웠을 때)
+  if(pool.length>=2){
+    const tgt=pool[(Math.random()*pool.length)|0];
+    const ex=tgt.examples[(Math.random()*tgt.examples.length)|0];
+    items.push({type:"discriminate", block:tgt, ex});
+  }
+  // 4) 혼합 인출 (배운 블록 전체에서)
+  const mixN = pool.length>=2? 3 : 1;
+  for(let i=0;i<mixN && pool.length;i++){
+    const b=pool[(Math.random()*pool.length)|0];
+    const ex=b.examples[(Math.random()*b.examples.length)|0];
+    items.push({type:"mixed", block:b, ex});
+  }
+  // 5) 속도 인출 (1개)
+  if(pool.length){
+    const b=pool[(Math.random()*pool.length)|0];
+    const ex=b.examples[(Math.random()*b.examples.length)|0];
+    items.push({type:"speed", block:b, ex, limit: 8});
+  }
+  bleSession={ items, idx:0, newBlock:newB, results:[], startedIds:poolIds };
+  // 새 블록 상태 생성 (배움 시작)
+  if(newB) bleBlockState(newB.id);
+  return bleSession;
+}
+
+/* ============ 🧱 블록영어 V2 — 화면 ============ */
+let bleT0=0, bleSpoke=0;
+function bleStart(forcedNewId){
+  bleBuildSession(forcedNewId);
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  bleRender();
+}
+function bleRender(){
+  if(!bleSession || bleSession.idx>=bleSession.items.length) return bleSummary();
+  const it=bleSession.items[bleSession.idx];
+  const prog=Math.round(bleSession.idx/bleSession.items.length*100);
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button id="bleExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
+      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+      <div style="font-size:12px;font-weight:800;color:var(--muted)">${bleSession.idx+1}/${bleSession.items.length}</div>
+    </div>`;
+  let body="";
+  if(it.type==="understand") body=bleViewUnderstand(it);
+  else if(it.type==="pattern") body=bleViewPattern(it);
+  else if(it.type==="pattern_fill") body=bleViewFill(it,"pattern");
+  else if(it.type==="block_fill") body=bleViewFill(it,"block");
+  else if(it.type==="discriminate") body=bleViewDiscriminate(it);
+  else body=bleViewRetrieve(it);   // situation / mixed / speed
+  $("#sprintScroll").innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
+  $("#sprintScroll").scrollTop=0;
+  $("#bleExit").onclick=()=>goToSetup();
+  bleT0=Date.now(); bleSpoke=0;
+  if(it.type==="understand") bleWireUnderstand(it);
+  else if(it.type==="pattern") bleWirePattern(it);
+  else if(it.type==="pattern_fill"||it.type==="block_fill") bleWireFill(it);
+  else if(it.type==="discriminate") bleWireDiscriminate(it);
+  else bleWireRetrieve(it);
+}
+const BLE_PHASE_LABEL={understand:"1. 이해하기",pattern:"2. 패턴 익히기",pattern_fill:"3. 빈칸 — 목적어",block_fill:"3. 빈칸 — 블록",situation:"4. 상황 인출",discriminate:"5. 블록 구별",mixed:"6. 혼합 인출",speed:"7. 속도 인출"};
+function blePhaseTag(t){ return `<div style="text-align:center;margin-bottom:12px"><span style="font-size:11.5px;font-weight:800;color:var(--jade);background:rgba(255,133,104,.14);border-radius:99px;padding:4px 12px">${BLE_PHASE_LABEL[t]||""}</span></div>`; }
+
+// PHASE 1: 이해
+function bleViewUnderstand(it){
+  const b=it.block;
+  return `${blePhaseTag("understand")}
+   <div class="ar2-scene">
+    <div style="text-align:center">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">오늘의 블록</div>
+      <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div>
+      <div style="font-size:16px;color:var(--text);margin-top:10px">${escapeHtml(b.meaningKo)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:14px;background:var(--mist);border-radius:12px;padding:10px 14px;display:inline-block">📍 언제? ${b.examples.map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,5).join(" · ")}</div>
+    </div>
+   </div>
+   <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">알겠어요 →</button></div>`;
+}
+function bleWireUnderstand(it){ $("#bleNext").onclick=()=>{ bleSession.idx++; bleRender(); }; }
+
+// PHASE 2: 패턴 (예문 3개, 들어보기)
+function bleViewPattern(it){
+  const b=it.block; const exs=b.examples.slice(0,3);
+  return `${blePhaseTag("pattern")}
+   <div class="ar2-scene">
+    <div style="text-align:center;margin-bottom:8px"><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">이렇게 써요 (눌러서 듣기)</div></div>
+    ${exs.map(e=>`<button class="ble-exline" data-say="${escapeAttr(e.en)}"><span style="font-family:var(--serif);font-size:18px;color:var(--text)">${escapeHtml(e.en)}</span><span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
+   </div>
+   <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">연습하기 →</button></div>`;
+}
+function bleWirePattern(it){
+  document.querySelectorAll(".ble-exline").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
+  $("#bleNext").onclick=()=>{ bleSession.idx++; bleRender(); };
+}
+
+// PHASE 3: 빈칸 (pattern=목적어 빈칸 / block=블록 빈칸)
+function bleViewFill(it, kind){
+  const b=it.block, ex=it.ex;
+  let shown, answer, hint;
+  if(kind==="pattern"){
+    // Can I get [____]?  → 목적어 맞히기
+    const obj=ex.object||"";
+    shown=ex.en.replace(obj, "[ ____ ]"); answer=obj; hint="목적어를 채우세요";
+  } else {
+    // [____] some water? → 블록 맞히기
+    const obj=ex.object||""; const blockPart=ex.en.replace(obj,"").trim();
+    shown=ex.en.replace(blockPart, "[ ____ ]").trim(); answer=blockPart; hint="앞의 블록을 채우세요";
+  }
+  return `${blePhaseTag(it.type)}
+   <div class="ar2-scene">
+    <div style="text-align:center">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${hint}</div>
+      <div style="font-family:var(--serif);font-size:24px;color:var(--text);line-height:1.4">${escapeHtml(shown)}</div>
+      <div style="font-size:15px;color:var(--jade);margin-top:12px">${escapeHtml(ex.ko)}</div>
+    </div>
+    <input id="bleFillIn" style="width:100%;margin-top:18px;padding:14px;border:1.5px solid var(--jade);border-radius:14px;background:var(--surface);color:var(--text);font-size:18px;text-align:center" placeholder="빈칸 입력" autocomplete="off">
+    <div id="bleFb" style="text-align:center;min-height:26px;margin-top:10px;font-weight:700"></div>
+   </div>
+   <div class="ar2-ctrl"><button id="bleSubmit" class="bigplay" style="width:100%;justify-content:center;padding:15px;font-size:16px">확인</button></div>`;
+}
+function bleWireFill(it){
+  const kind=it.type==="pattern_fill"?"pattern":"block";
+  const ex=it.ex; const obj=ex.object||"";
+  const answer = kind==="pattern"? obj : ex.en.replace(obj,"").trim();
+  const inp=$("#bleFillIn"); inp.focus();
+  const submit=()=>{
+    const v=bleNorm(inp.value); if(!v) return;
+    const ok = v===bleNorm(answer) || bleNorm(answer).indexOf(v)>=0 && v.length>=bleNorm(answer).length-2;
+    const fb=$("#bleFb");
+    if(ok){ fb.innerHTML='<span style="color:#19a06b">✓ 정답!</span>'; speakEn(ex.en); }
+    else { fb.innerHTML=`<span style="color:#e0533f">정답: ${escapeHtml(answer)}</span>`; speakEn(ex.en); }
+    inp.disabled=true; $("#bleSubmit").textContent="다음 →"; $("#bleSubmit").onclick=()=>{ bleSession.idx++; bleRender(); };
+  };
+  $("#bleSubmit").onclick=submit;
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
+}
+
+// PHASE 5: 블록 구별 (한국어 상황 → 맞는 블록 고르기)
+function bleViewDiscriminate(it){
+  const b=it.block, ex=it.ex;
+  // 보기: 정답 + contrast 2개
+  const opts=[b.id, ...(b.contrast||[]).slice(0,2)];
+  for(let i=opts.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [opts[i],opts[j]]=[opts[j],opts[i]]; }
+  bleSession._discOpts=opts; bleSession._discAns=b.id;
+  return `${blePhaseTag("discriminate")}
+   <div class="ar2-scene">
+    <div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">이 상황엔 어떤 블록?</div>
+      <div style="font-size:19px;color:var(--text);font-weight:700;margin-top:8px">${escapeHtml(ex.ko)}</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+      ${opts.map(id=>`<button class="ble-opt" data-id="${id}" style="padding:15px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--serif);font-size:19px;color:var(--text);cursor:pointer">${escapeHtml(BLE_BY_ID[id].block)}</button>`).join("")}
+    </div>
+    <div id="bleFb" style="text-align:center;min-height:26px;margin-top:12px;font-weight:700"></div>
+   </div>`;
+}
+function bleWireDiscriminate(it){
+  const ans=bleSession._discAns; const ex=it.ex; const elapsed0=Date.now();
+  document.querySelectorAll(".ble-opt").forEach(btn=>{
+    btn.onclick=()=>{
+      const picked=btn.dataset.id; const ok=picked===ans;
+      const ms=Date.now()-bleT0; const fast=ms<=5000;
+      document.querySelectorAll(".ble-opt").forEach(b=>b.style.pointerEvents="none");
+      btn.style.borderColor= ok?"#19a06b":"#e0533f";
+      if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
+      const fb=$("#bleFb"); fb.innerHTML= ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(BLE_BY_ID[ans].block)} 가 맞아요</span>`;
+      speakEn(ex.en);
+      bleRecord(ans, {correct:ok, fast, situation:ex.situation, ms, mixed:true});
+      bleSession.results.push({id:ans, type:"discriminate", ok, fast});
+      setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1200);
+    };
+  });
+}
+
+// PHASE 4/6/7: 인출 (상황만 보고 말하기/쓰기)
+function bleViewRetrieve(it){
+  const ex=it.ex;
+  const isSpeed=it.type==="speed";
+  return `${blePhaseTag(it.type)}
+   <div class="ar2-scene">
+    ${isSpeed?`<div id="bleTimer" style="text-align:center;font-size:13px;font-weight:800;color:#e0533f;margin-bottom:6px">⏱ ${it.limit}초</div>`:""}
+    <div style="text-align:center">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${it.type==="mixed"?"이 상황을 영어로 (힌트 없이)":"상황에 맞게 영어로"}</div>
+      <div style="font-size:21px;color:var(--text);font-weight:700">${escapeHtml(ex.ko)}</div>
+    </div>
+    <div id="bleStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:24px;margin-top:16px">🎤 눌러서 말하기</div>
+   </div>
+   <div class="ar2-ctrl">
+    <button id="bleMic" class="bigplay" style="width:100%;justify-content:center;padding:17px;font-size:17px">🎤 말하기</button>
+    <button id="bleType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기</button>
+    <button id="bleHint" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">💡 힌트</button>
+   </div>`;
+}
+function bleWireRetrieve(it){
+  const ex=it.ex, b=it.block;
+  let timer=null;
+  if(it.type==="speed" && it.limit){
+    let left=it.limit;
+    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초"; if(left<=0){ clearInterval(timer); bleFinishRetrieve(it, ""); } }, 1000);
+  }
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleStat").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieve(it, t); }); };
+  $("#bleType").onclick=()=>{
+    const ctrl=document.querySelector(".ar2-ctrl"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
+    if(!bleSpoke) bleSpoke=Date.now();
+    const w=document.createElement("div"); w.style.cssText="margin-top:8px";
+    w.innerHTML=`<input id="bleTypeIn" style="width:100%;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
+    ctrl.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
+  };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(b.block)+'</b> 로 시작'; };
+}
+function bleFinishRetrieve(it, heard){
+  const ex=it.ex, b=it.block;
+  const ms=Math.max(100,(bleSpoke||Date.now())-bleT0); const fast=ms<=5000;
+  const res=bleGrade(b, ex.en, heard);
+  const correct = res.grade==="perfect"||res.grade==="hit";
+  const stat=$("#bleStat");
+  if(stat){
+    const lbl = res.grade==="perfect"?'<span style="color:#19a06b;font-weight:900">⚡ PERFECT</span>'
+      : res.grade==="hit"?'<span style="color:#E2674A;font-weight:900">✓ 통과</span>'
+      : res.grade==="weak_hit"?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
+      : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
+    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:var(--text);font-size:18px;margin-top:6px">${escapeHtml(ex.en)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${res.blockUsed?"블록 사용 ✓":"의미는 통했어요"}</div>`;
+  }
+  const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
+  speakEn(ex.en);
+  const mixed = it.type==="mixed"||it.type==="speed";
+  bleRecord(b.id, {correct, fast, situation:ex.situation, ms, mixed});
+  bleSession.results.push({id:b.id, type:it.type, ok:correct, fast, blockUsed:res.blockUsed});
+  // 오답이면 같은 세션 뒤쪽에 다시 (retrieval again soon)
+  if(!correct && it.type!=="speed"){ bleSession.items.push({type:"situation", block:b, ex}); }
+  setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1500);
+}
+
+// ===== 세션 요약 =====
+function bleSummary(){
+  TTS&&TTS.cancel();
+  const res=bleSession.results;
+  const newB=bleSession.newBlock;
+  const byId={}; res.forEach(r=>{ (byId[r.id]=byId[r.id]||{ok:0,no:0}); r.ok?byId[r.id].ok++:byId[r.id].no++; });
+  const good=Object.keys(byId).filter(id=>byId[id].ok>byId[id].no).map(id=>BLE_BY_ID[id].block);
+  const weak=Object.keys(byId).filter(id=>byId[id].no>=byId[id].ok && byId[id].no>0).map(id=>BLE_BY_ID[id].block);
+  const reviewed=[...new Set(res.filter(r=>r.id!==(newB&&newB.id)).map(r=>BLE_BY_ID[r.id].block))];
+  // 다음 복습 시점
+  const s=bleGetState(); const now=bleNow();
+  const nextList=BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt).map(b=>{
+    const dt=s[b.id].nextReviewAt-now; let when;
+    if(dt<=0) when="지금"; else if(dt<3600000) when=Math.round(dt/60000)+"분 뒤"; else if(dt<86400000) when=Math.round(dt/3600000)+"시간 뒤"; else when=Math.round(dt/86400000)+"일 뒤";
+    return {block:b.block, when, t:s[b.id].nextReviewAt};
+  }).sort((a,b)=>a.t-b.t).slice(0,4);
+  try{ awardXP("output", res.filter(r=>r.ok).length*8, "블록영어 세션", "ble"); }catch(e){}
+  const row=(label,val,color)=> val? `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px;color:var(--muted)">${label}</span><span style="font-size:14px;font-weight:700;color:${color||'var(--text)'}">${val}</span></div>`:"";
+  $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
+    <div class="em">🧱</div><h2>블록 세션 완료</h2>
+    <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
+      ${row("오늘 배운 블록", newB?escapeHtml(newB.block):"—", "var(--jade)")}
+      ${row("복습한 블록", reviewed.map(escapeHtml).join(", ")||"—")}
+      ${row("잘한 블록", good.map(escapeHtml).join(", ")||"—", "#19a06b")}
+      ${row("약한 블록", weak.map(escapeHtml).join(", ")||"—", "#e0533f")}
+      ${nextList.length?`<div style="padding-top:10px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">다음 복습 예정</div>${nextList.map(n=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="font-family:var(--serif);color:var(--text)">${escapeHtml(n.block)}</span><span style="color:var(--jade);font-weight:700">${n.when}</span></div>`).join("")}</div>`:""}
+    </div>
+    ${weak.length?`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">💡 추천: <b style="color:var(--text)">${escapeHtml(weak[0])}</b> 를 한 번 더 연습하세요.</div>`:""}
+    <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
+      <button class="sh-next" id="bleAgain" style="margin:0">${bleNextNewBlock()?"다음 블록 배우기 →":"복습 한 세트 더 →"}</button>
+      <button class="rv-stop" id="bleHome">홈으로</button>
+    </div>
+  </div>`;
+  $("#bleAgain").onclick=()=>bleStart();
+  $("#bleHome").onclick=()=>goToSetup();
+}
+
+// ===== 허브 (블록 목록 + 진행) =====
+function bleOpenHub(){
+  const s=bleGetState();
+  const rows=BLE_BLOCKS.map(b=>{ const st=s[b.id]; const learned=!!st;
+    return `<button class="chk-row" data-id="${b.id}">
+      <span class="chk-main">
+        <span class="chk-en">${escapeHtml(b.block)}</span>
+        <span class="chk-ko">${escapeHtml(b.meaningKo)}</span>
+        <span class="chk-stars">${bleStars(b.id)} <i>${learned?(BLE_STAGE_KO[st.stage]||st.stage):"잠김"}</i></span>
+      </span>
+      <span class="chk-ar">${learned&&st.stage==="ready_for_real"?'🏆':learned?'›':'＋'}</span>
+    </button>`; }).join("");
+  const learnedN=bleLearnedIds().length, dueN=getDueReviewBlocks().length, next=bleNextNewBlock();
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleHub";
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall">
+     <div class="hub-grab"></div>
+     <div class="hub-title">🧱 블록 영어</div>
+     <div class="hub-sub">배우고 → 인출하고 → 구별하고 → 섞어서 → 복습 — 입에서 바로 나올 때까지</div>
+     <div class="bl-summary">
+       <div class="bl-sumcell"><b>${learnedN}</b><i>배운 블록</i></div>
+       <div class="bl-sumcell"><b>${dueN}</b><i>복습 예정</i></div>
+       <div class="bl-sumcell"><b>${BLE_BLOCKS.length}</b><i>전체</i></div>
+     </div>
+     <button class="hub-opt" id="bleStartNext" style="margin-bottom:13px">
+       <span class="hub-emo" style="background:#FFE0D2">📘</span>
+       <span class="hub-tx"><b>${next?"다음 블록 배우기":"복습 세션 시작"}</b><i>${next?escapeHtml(next.block):"배운 블록 섞어서"}</i></span>
+       <span class="hub-ar">›</span>
+     </button>
+     <div style="font-size:12px;font-weight:800;color:var(--muted);margin:2px 2px 8px">블록 목록 (★ 성장 단계)</div>
+     <div class="chk-list">${rows}</div>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  $("#bleStartNext").onclick=()=>{ close(); bleStart(); };
+  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); bleStart(b.dataset.id); }; });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+
 const CORE_PHRASES=[
  {id:"id_like_to_001",phrase:"I'd like to...",ko:"~하고 싶어요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"주문하고 싶어요.",en:"I'd like to order."},{ko:"진료받고 싶어요.",en:"I'd like to see a doctor."},{ko:"선생님과 얘기하고 싶어요.",en:"I'd like to speak with the teacher."},{ko:"체크인하고 싶어요.",en:"I'd like to check in."},{ko:"요금제를 바꾸고 싶어요.",en:"I'd like to change my plan."}]},
  {id:"can_i_get_002",phrase:"Can I get...?",ko:"~ 주실 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"물 좀 주실 수 있어요?",en:"Can I get some water?"},{ko:"처방전 받을 수 있어요?",en:"Can I get a prescription?"},{ko:"복사본 받을 수 있어요?",en:"Can I get a copy?"},{ko:"수건 더 받을 수 있어요?",en:"Can I get extra towels?"},{ko:"환불받을 수 있어요?",en:"Can I get a refund?"}]},
@@ -7352,7 +7830,7 @@ async function checkForUpdate(){
 { const e1=$("#engOut"); if(e1) e1.onclick=openSpeakHub; }
 { const e2=$("#engIn"); if(e2) e2.onclick=startMainTraining; }
 { const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
-{ const ck=$("#chunkCard"); if(ck) ck.onclick=openChunkHub; }
+{ const ck=$("#chunkCard"); if(ck) ck.onclick=bleOpenHub; }
 { const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
 { const sp=$("#engSprint"); if(sp) sp.onclick=openSprintPicker; }
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
