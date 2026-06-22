@@ -129,7 +129,9 @@
 .dict-ko{font-size:19px;font-weight:700;color:var(--text);margin-top:6px}
 .dict-kid{font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5;background:var(--mist);border-radius:12px;padding:11px 13px}
 .dict-sec{font-size:12px;font-weight:800;color:var(--muted);margin-top:16px;margin-bottom:7px}
-.dict-sayword{display:inline-flex;align-items:center;gap:5px;margin-top:9px;background:var(--jade);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:13.5px;font-weight:700;cursor:pointer}
+.dict-wordbtns{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.dict-sayword{display:inline-flex;align-items:center;gap:5px;background:var(--mist);color:var(--text);border:1px solid var(--line);border-radius:99px;padding:8px 15px;font-size:13.5px;font-weight:700;cursor:pointer}
+.dict-speakword{display:inline-flex;align-items:center;gap:5px;background:var(--jade);color:#fff;border:none;border-radius:99px;padding:8px 15px;font-size:13.5px;font-weight:700;cursor:pointer}
 .dict-ex{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:6px;font-family:var(--serif);font-size:16px;color:var(--text);cursor:pointer}
 .dict-rel{display:flex;flex-wrap:wrap;gap:7px}
 .dict-relchip{font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--jade);cursor:pointer}
@@ -1674,7 +1676,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.90.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.91.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5396,7 +5398,10 @@ function dictRenderPopup(d){
     <div class="dict-card">
       <button class="dict-x" onclick="document.getElementById('dictPop').remove()">✕</button>
       <div class="dict-term">${escapeHtml(d.term)} ${d.type==="chunk"?'<span class="dict-tag">표현</span>':""}</div>
-      <button class="dict-sayword" data-sayword="${escapeAttr(d.term)}">🔊 이 단어만 다시 듣기</button>
+      <div class="dict-wordbtns">
+        <button class="dict-sayword" data-sayword="${escapeAttr(d.term)}">🔊 다시 듣기</button>
+        <button class="dict-speakword" data-speakword="${escapeAttr(d.term)}" data-speakko="${escapeAttr(d.ko||"")}">🎤 말해보기 (채점)</button>
+      </div>
       <div class="dict-ko">${escapeHtml(d.ko)}</div>
       ${d.kid?`<div class="dict-kid">💡 ${escapeHtml(d.kid)}</div>`:""}
       ${(d.ex&&d.ex.length)?`<div class="dict-sec">예문</div>${d.ex.slice(0,3).map(e=>`<button class="dict-ex" data-say="${escapeAttr(e)}">${escapeHtml(e)} 🔊</button>`).join("")}`:""}
@@ -5407,6 +5412,7 @@ function dictRenderPopup(d){
     </div>`;
   pop.querySelectorAll(".dict-ex").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
   const sw=pop.querySelector(".dict-sayword"); if(sw) sw.onclick=()=>speakEn(sw.dataset.sayword);
+  const spw=pop.querySelector(".dict-speakword"); if(spw) spw.onclick=()=>{ const w=spw.dataset.speakword, ko=spw.dataset.speakko; const dp=document.getElementById("dictPop"); if(dp) dp.remove(); openDrill(w, ko); };
   pop.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>dictShow(null,b.dataset.rel); });
   const more=pop.querySelector(".dict-more"); if(more) more.onclick=()=>{ more.textContent="찾는 중…"; more.disabled=true; dictAILookup(more.dataset.more); };
   const ask=pop.querySelector(".dict-ask"); if(ask) ask.onclick=()=>{ openAskAI(ask.dataset.ask, (d.ex&&d.ex[0])||""); };
