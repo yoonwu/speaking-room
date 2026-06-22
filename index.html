@@ -1710,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.05.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.06.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5981,6 +5981,11 @@ function bleBuildSetIntro(set){
     bleEnsureContexts(b);
     items.push({type:"situation", block:b, ex:bleFreshContextEx2(b), introHidden:true, quickCheck:true, setIntro:true});
   });
+  // 🎯 미니 혼합 테스트: 5개 블록을 섞어서 "상황만 보고 알맞은 블록 고르기" (블록명 숨김, 5지선다)
+  // 소개 직후 모든 블록을 한 번씩 + 약했던 블록은 한 번 더 (총 5~7문제)
+  const testBlocks=blocks.slice();
+  for(let i=testBlocks.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [testBlocks[i],testBlocks[j]]=[testBlocks[j],testBlocks[i]]; }
+  testBlocks.forEach(b=>{ bleEnsureContexts(b); items.push({type:"discriminate", block:b, ex:bleFreshContextEx2(b), setIntro:true, miniTest:true, allOptions:true}); });
   bleSession={ items, idx:0, newBlock:null, results:[], startedIds:blocks.map(b=>b.id), setId:set.id, isSetIntro:true };
   return bleSession;
 }
@@ -6119,16 +6124,19 @@ function bleViewDiscriminate(it){
   const knownIds=baseIds.filter(id=>id!==b.id&&BLE_BY_ID[id]);
   const distractors=[];
   knownIds.concat(b.contrast||[]).forEach(id=>{ if(id!==b.id&&BLE_BY_ID[id]&&distractors.indexOf(id)<0) distractors.push(id); });
-  const opts=[b.id, ...distractors.slice(0,2)];
+  // 미니 혼합 테스트(allOptions): 세트 5개 전부 보기 / 일반: 정답+2
+  const optCount = it.allOptions ? distractors.length : 2;
+  const opts=[b.id, ...distractors.slice(0,optCount)];
   for(let i=opts.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [opts[i],opts[j]]=[opts[j],opts[i]]; }
   it._opts=opts; it._ans=b.id;
   if(typeof bleSession!=="undefined" && bleSession){ bleSession._discOpts=opts; bleSession._discAns=b.id; }
+  const headLine = it.miniTest ? "🎯 혼합 테스트 — 어떤 블록?" : "이 상황엔 어떤 블록?";
   return `${blePhaseTag("discriminate")}
    <div class="ar2-scene">
-    <div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">이 상황엔 어떤 블록?</div>
+    <div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${headLine}</div>
       <div style="font-size:19px;color:var(--text);font-weight:700;margin-top:8px">${escapeHtml(ex.ko)}</div></div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-      ${opts.map(id=>`<button class="ble-opt" data-id="${id}" style="padding:15px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--serif);font-size:19px;color:var(--text);cursor:pointer">${escapeHtml(BLE_BY_ID[id].block)}</button>`).join("")}
+    <div style="display:flex;flex-direction:column;gap:9px;margin-top:16px">
+      ${opts.map(id=>`<button class="ble-opt" data-id="${id}" style="padding:14px;border-radius:14px;background:var(--surface);border:1.5px solid var(--line);font-family:var(--serif);font-size:18px;color:var(--text);cursor:pointer">${escapeHtml(BLE_BY_ID[id].block)}</button>`).join("")}
     </div>
     <div id="bleFb" style="text-align:center;min-height:26px;margin-top:12px;font-weight:700"></div>
    </div>`;
@@ -6144,8 +6152,13 @@ function bleWireDiscriminate(it){
       if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
       const fb=$("#bleFb"); fb.innerHTML= ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(BLE_BY_ID[ans].block)} 가 맞아요</span>`;
       speakEn(ex.en);
-      bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true});
-      bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex)});
+      bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true, confusedWith: ok?null:picked});
+      bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith: ok?null:picked});
+      // 미니 혼합 테스트: 소개 시도 기록 + 약점 표시
+      if(it.miniTest){
+        const s=bleGetState(); if(s[ans]){ s[ans].introAttemptCount=(s[ans].introAttemptCount||0)+1; if(!ok) s[ans].quickCheckFailed=true; bleSaveState(s); }
+        if(bleSession.setId) bleCheckSetIntro(BLE_SETS.find(x=>x.id===bleSession.setId)||bleActiveSet());
+      }
       setTimeout(()=>{ bleSession.idx++; bleRender(); }, 1200);
     };
   });
@@ -6428,20 +6441,30 @@ function bleDeepPickBlock(){
   else bleLastReason="mixed_test";
   return picked;
 }
-// 블록 하나에 대해 약점에 맞는 문제 유형 선택
+// 블록 하나에 대해 약점에 맞는 문제 유형 선택 — 같은 블록 반복 시 유형을 매번 바꿈
 function bleDeepPickType(b){
   const st=bleGetState()[b.id]; const unlocked=bleUnlockedBlocks();
-  // 반복 실패 → 보정 드릴
-  if((st.consecFails||0)>=2) return "repair";
-  // 헷갈린 적 있고 2블록↑ → 구별
-  if(Object.keys(st.confusedWith||{}).length && unlocked.length>=2 && Math.random()<0.5) return "discriminate";
+  const lastType = (bleDeep && bleDeep.lastTypeByBlock) ? bleDeep.lastTypeByBlock[b.id] : null;
+  // 가능한 유형 후보를 약점 기반 가중치로 모으기
+  const cand=[];
+  const add=(t,w)=>{ for(let i=0;i<w;i++) cand.push(t); };
+  // 반복 실패 → 보정 우선 (단 직전이 repair였으면 비중 낮춤)
+  if((st.consecFails||0)>=2) add("repair", lastType==="repair"?1:4);
+  // 헷갈림 → 구별 (2블록↑)
+  if(Object.keys(st.confusedWith||{}).length && unlocked.length>=2) add("discriminate", 3);
   // 느림 → 속도
-  if(st.avgMs && st.avgMs>5000 && Math.random()<0.5) return "speed";
-  // 단일 맥락 → 새 상황 (context variation = situation, 새 예문)
-  if((st.contextsUsed||[]).length<=1 && Math.random()<0.6) return "situation";
-  // 2블록↑이면 가끔 혼합
-  if(unlocked.length>=2 && Math.random()<0.35) return "mixed";
-  return "situation";   // 기본: 숨김 상황 인출
+  if(st.avgMs && st.avgMs>5000) add("speed", 3);
+  // 단일/적은 맥락 → 새 상황
+  if((st.contextsUsed||[]).length<=2) add("situation", 3);
+  // 2블록↑ 혼합/구별
+  if(unlocked.length>=2){ add("mixed", 2); add("discriminate", 2); }
+  // 기본 풀 (항상 다양성 확보)
+  add("situation", 2); add("speed", 1);
+  if(unlocked.length>=2){ add("mixed", 1); }
+  // 직전과 같은 유형 제거 (가능하면) → 매번 다른 방식
+  let pool=cand.filter(t=>t!==lastType);
+  if(!pool.length) pool=cand.length?cand:["situation"];
+  return pool[(Math.random()*pool.length)|0];
 }
 // 다음 문제 한 개 생성
 function bleDeepNextItem(){
@@ -6449,7 +6472,9 @@ function bleDeepNextItem(){
   const reason=bleLastReason;
   const type=bleDeepPickType(b);
   bleEnsureContexts(b);   // 캐시 부족하면 백그라운드 생성
-  if(type==="discriminate"){ const ex=bleFreshContextEx2(b); return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
+  // 블록별 직전 유형 기록 (다음에 다른 유형 나오게)
+  if(bleDeep){ bleDeep.lastTypeByBlock=bleDeep.lastTypeByBlock||{}; bleDeep.lastTypeByBlock[b.id]=type; }
+  if(type==="discriminate"){ const ex=bleFreshContextEx2(b); return {type:"discriminate", block:b, ex, deep:true, reason:"confusion", allOptions:true, miniTest:false}; }
   if(type==="speed"){ const ex=bleFreshContextEx2(b); return {type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}; }
   if(type==="repair"){ const ex=bleFreshContextEx2(b); return {type:"repair", block:b, ex, deep:true, reason:"weak_block"}; }
   if(type==="mixed"){ const ex=bleFreshContextEx2(b); return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
@@ -6458,13 +6483,22 @@ function bleDeepNextItem(){
 }
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
 const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
+function bleDeepGateReady(set){
+  set=set||bleActiveSet();
+  const s=bleGetState();
+  // 세트의 모든 블록이 소개됨 + 각 블록 퀵체크(또는 미니테스트) 최소 1회 시도
+  return set.blocks.every(id=>{ const st=s[id]; return st && st.introducedAt && (st.introAttemptCount||0)>=1; });
+}
 function bleDeepStart(){
-  // 세트 인트로 완료 전엔 진입 불가 (1블록 마스터가 아니라 5개 소개 완료가 조건)
+  // 본격 학습 진입 조건: Set 1의 5개 블록 전부 소개 + 각 퀵체크 1회 이상
   const set=bleActiveSet();
-  if(!bleSetDeepUnlocked(set) && bleUnlockedBlocks().length<1){
+  if(!bleDeepGateReady(set)){
+    // 아직 미완료 → 세트 인트로로 보냄 (남은 블록부터 이어서 소개)
     bleStartSetIntro(set.id); return;
   }
-  bleDeep={ queue:[], results:[], count:0, requeue:[], history:[] };
+  // 게이트 통과 시 세트 상태 동기화
+  bleCheckSetIntro(set);
+  bleDeep={ queue:[], results:[], count:0, requeue:[], history:[], lastTypeByBlock:{} };
   bleCtxCacheLoad();
   bleUnlockedBlocks().forEach(b=>bleEnsureContexts(b));   // 잠금해제 블록들 상황 미리 생성
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -6734,7 +6768,7 @@ function bleOpenHub(){
   const introN=setBlocks.filter(b=>bleBlockIntroduced(b.id)).length;
   const introDone=setSt.introCompleted;
   const dueN=getDueReviewBlocks().length;
-  const canDeep = introDone || bleUnlockedBlocks().length>=setBlocks.length;
+  const canDeep = bleDeepGateReady(set);
   const blockNames=set.blocks.map(id=>BLE_BY_ID[id].block.replace(/\.\.\.$/,"")).join(" · ");
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleHub";
   ov.innerHTML=`<div class="hub-bg"></div>
