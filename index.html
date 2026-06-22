@@ -18,30 +18,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#f3f5f3; --ink-soft:#cfd4d0;
-  --paper:#0e100f; --surface:#191d1b;
-  --mist:#23272a; --line:#2c322e;
-  --jade:#1fd3a0; --jade-deep:#16b488;
-  --amber:#e6ad4a; --amber-soft:#2a2418;
-  --lav:#9b98ec; --lav-soft:#21222e;
-  --text:#eceeec; --muted:#8b948c;
+  --ink:#4A372F; --ink-soft:#6E574B;
+  --paper:#FFEDE3; --surface:#FFFFFF;
+  --mist:#FFE2D5; --line:#F6D8C8;
+  --jade:#FF8568; --jade-deep:#F0664A;
+  --amber:#E89A33; --amber-soft:#FFF1DF;
+  --lav:#FF9E7A; --lav-soft:#FFE8DC;
+  --text:#4A372F; --muted:#B0958A;
   --serif:'Newsreader', Georgia, serif;
   --sans:'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --soft:0 4px 18px -8px rgba(0,0,0,.5);
-  --soft2:0 10px 30px -12px rgba(0,0,0,.6);
-  --card2:#1f2421;
+  --soft:0 4px 16px -8px rgba(170,95,60,.18);
+  --soft2:0 12px 30px -14px rgba(170,95,60,.24);
+  --card2:#FFF4ED;
 }
 /* ===== 🎮 HERO ZONE + DOPAMINE FX ===== */
 .hero{position:relative;border-radius:24px;padding:18px 18px 16px;margin-bottom:16px;overflow:hidden;
-  background:radial-gradient(120% 140% at 0% 0%,rgba(31,211,160,.22),transparent 55%),radial-gradient(120% 140% at 100% 0%,rgba(155,152,236,.20),transparent 55%),linear-gradient(160deg,#1c2320,#14110f);
-  border:1px solid rgba(31,211,160,.28);box-shadow:0 18px 44px -22px rgba(31,211,160,.55),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer}
+  background:radial-gradient(120% 140% at 0% 0%,rgba(255,133,104,.22),transparent 55%),radial-gradient(120% 140% at 100% 0%,rgba(255,158,122,.20),transparent 55%),linear-gradient(160deg,#1c2320,#14110f);
+  border:1px solid rgba(255,133,104,.28);box-shadow:0 18px 44px -22px rgba(255,133,104,.55),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer}
 .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 90% at 85% -10%,rgba(255,255,255,.10),transparent 60%);pointer-events:none}
 .hero:active{transform:scale(.985)}
 .hero-row{display:flex;align-items:center;gap:15px;position:relative;z-index:1}
 .ring-wrap{position:relative;width:78px;height:78px;flex:0 0 auto}
 .ring-wrap svg{width:78px;height:78px;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:rgba(255,255,255,.10);stroke-width:7}
-.ring-fg{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 6px rgba(31,211,160,.6))}
+.ring-fg{fill:none;stroke:url(#ringGrad);stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 0 6px rgba(255,133,104,.6))}
 .ring-lv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
 .ring-lv b{font-size:24px;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4)}
 .ring-lv span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--jade);margin-top:1px}
@@ -53,25 +53,25 @@
 .hchip.flame{color:#ffb454;border-color:rgba(255,160,60,.35);background:rgba(255,140,40,.14)}
 .hchip.flame.lit{animation:flamepulse 1.6s ease-in-out infinite}
 @keyframes flamepulse{0%,100%{box-shadow:0 0 0 0 rgba(255,150,50,0)}50%{box-shadow:0 0 14px 0 rgba(255,150,50,.5)}}
-.hchip.gem{color:#7be0c4;border-color:rgba(31,211,160,.3);background:rgba(31,211,160,.12)}
+.hchip.gem{color:#FFB59E;border-color:rgba(255,133,104,.3);background:rgba(255,133,104,.12)}
 .hero-reward{position:relative;z-index:1;margin-top:13px;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.07)}
 .hero-reward .rwemo{font-size:22px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
 .hero-reward .rwtx{flex:1;min-width:0}
 .hero-reward .rwtop{font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.04em}
 .hero-reward .rwname{font-size:13px;color:#fff;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hero-reward .rwbar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:5px}
-.hero-reward .rwbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec);box-shadow:0 0 8px rgba(31,211,160,.6);transition:width .9s cubic-bezier(.22,1,.36,1)}
+.hero-reward .rwbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#FF9E7A);box-shadow:0 0 8px rgba(255,133,104,.6);transition:width .9s cubic-bezier(.22,1,.36,1)}
 .hero-reward .rwgo{font-size:11px;font-weight:900;color:var(--jade);white-space:nowrap}
 /* XP toast — bouncy pop */
 .xptoast.show{animation:xppop .5s cubic-bezier(.18,1.4,.4,1)}
 @keyframes xppop{0%{transform:translateX(-50%) scale(.6);opacity:0}60%{transform:translateX(-50%) scale(1.08)}100%{transform:translateX(-50%) scale(1);opacity:1}}
 /* Level-up celebration overlay */
-#lvlCelebrate{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(60% 40% at 50% 45%,rgba(31,211,160,.18),transparent 70%)}
+#lvlCelebrate{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(60% 40% at 50% 45%,rgba(255,133,104,.18),transparent 70%)}
 #lvlCelebrate.show{display:flex;animation:celebFade .35s ease}
 @keyframes celebFade{from{opacity:0}to{opacity:1}}
 .celeb-card{text-align:center;transform:translateY(8px);animation:celebPop .6s cubic-bezier(.18,1.5,.4,1)}
 @keyframes celebPop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.celeb-badge{font-size:74px;filter:drop-shadow(0 8px 20px rgba(31,211,160,.6));animation:celebSpin 1.1s ease}
+.celeb-badge{font-size:74px;filter:drop-shadow(0 8px 20px rgba(255,133,104,.6));animation:celebSpin 1.1s ease}
 @keyframes celebSpin{0%{transform:rotate(-18deg) scale(.6)}100%{transform:rotate(0) scale(1)}}
 .celeb-lv{font-size:15px;font-weight:900;letter-spacing:.2em;color:var(--jade);margin-top:4px}
 .celeb-big{font-size:40px;font-weight:900;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.5);line-height:1.1}
@@ -86,49 +86,26 @@
 /* ===== 📖 튜토리얼 오버레이 ===== */
 .tut-ov{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(6,8,7,.82);backdrop-filter:blur(4px);opacity:0;transition:opacity .18s}
 .tut-ov.show{opacity:1}
-.tut-card{width:100%;max-width:380px;background:linear-gradient(165deg,#1c2320,#14110f);border:1px solid rgba(31,211,160,.3);border-radius:24px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06);transform:scale(.94);transition:transform .2s cubic-bezier(.18,1.4,.4,1)}
+.tut-card{width:100%;max-width:380px;background:linear-gradient(165deg,#1c2320,#14110f);border:1px solid rgba(255,133,104,.3);border-radius:24px;padding:26px 22px 20px;text-align:center;box-shadow:0 24px 60px -20px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.06);transform:scale(.94);transition:transform .2s cubic-bezier(.18,1.4,.4,1)}
 .tut-ov.show .tut-card{transform:scale(1)}
-.tut-ico{font-size:54px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 8px 20px rgba(31,211,160,.5))}
+.tut-ico{font-size:54px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 8px 20px rgba(255,133,104,.5))}
 .tut-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:5px}
 .tut-goal{font-size:15px;color:var(--jade);font-weight:700;margin-bottom:16px}
 .tut-steps{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;text-align:left}
 .tut-step{display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 13px;font-size:14.5px;color:var(--text);font-weight:600}
-.tut-num{flex:none;width:25px;height:25px;border-radius:50%;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-weight:900;font-size:13px;display:grid;place-items:center}
+.tut-num{flex:none;width:25px;height:25px;border-radius:50%;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;font-weight:900;font-size:13px;display:grid;place-items:center}
 .tut-succ{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13.5px;color:var(--text);background:var(--amber-soft);border:1px solid #3a3320;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-weight:600}
 .tut-msg{font-family:var(--serif);font-size:16px;font-style:italic;color:var(--ink-soft);margin-bottom:18px}
-.tut-go{width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-size:16px;font-weight:900;border:none;cursor:pointer;box-shadow:0 10px 26px -10px rgba(31,211,160,.6)}
+.tut-go{width:100%;padding:15px;border-radius:15px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;font-size:16px;font-weight:900;border:none;cursor:pointer;box-shadow:0 10px 26px -10px rgba(255,133,104,.6)}
 .tut-skip{width:100%;margin-top:9px;padding:10px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer}
 .tut-kid .tut-ico{font-size:66px}
 .tut-kid .tut-title{font-size:25px}
-/* 📝 Word Power 문제 화면 — 풀스크린 3단 (말해보카 스타일) */
-.wp-stage{flex:1;display:flex;flex-direction:column;min-height:0;padding:4px 0}
-.wp-q-tab{align-self:center;font-size:13px;font-weight:800;color:var(--jade);background:rgba(31,211,160,.12);border:1px solid rgba(31,211,160,.3);border-radius:99px;padding:6px 15px;margin-bottom:14px}
-.wp-q-card{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:30px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.18)}
-.wp-q-ko{font-size:19px;color:var(--jade);font-weight:800;margin-bottom:24px}
-.wp-q-en{font-family:var(--serif);font-size:34px;line-height:1.6;color:var(--text);font-weight:500}
-.wp-blank{display:inline-block;min-width:90px;border-bottom:3px solid var(--jade);margin:0 4px;vertical-align:bottom}
-/* 라이브 음성 인식 영역 */
-.wp-speech{text-align:center;font-size:16px;color:var(--muted);margin-top:14px;min-height:26px;font-weight:600;padding:0 16px}
-.wp-live{color:var(--jade);font-weight:800;animation:wpPulse 1s ease-in-out infinite}
-@keyframes wpPulse{0%,100%{opacity:1}50%{opacity:.4}}
-/* 하단 액션 — 큰 동그란 마이크 + 큰 액션 카드 */
-.wp-dock{flex:none;padding:14px 0 max(14px, env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:13px}
-.wp-mic{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#1fd3a0,#16a085);border:none;color:#06231b;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 8px 26px rgba(31,211,160,.4);transition:transform .1s}
-.wp-mic svg{width:34px;height:34px}
-.wp-mic:active{transform:scale(.95)}
-.wp-mic.live{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 8px 26px rgba(248,113,113,.45);animation:wpPulse 1.1s ease-in-out infinite}
-.wp-dock-row{display:flex;gap:11px;width:100%}
-.wp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:15px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s}
-.wp-act:active{transform:scale(.98);background:var(--mist)}
-.wp-act-ic{font-size:20px}
-.wp-giveup{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px}
-.wp-giveup:active{color:var(--text)}
 /* 🗣 스피킹 결과 — 결과/이유/내답/XP 구조 */
 .wp-spd{flex:1;padding:11px;border-radius:11px;background:var(--mist);border:1px solid var(--line);color:var(--text);font-size:13.5px;font-weight:700;cursor:pointer}
 .wp-spd:active{transform:scale(.97)}
 .wp-line{display:block;width:100%;text-align:left;background:var(--mist);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin-top:7px;font-family:var(--serif);font-size:16px;color:var(--text);cursor:pointer}
 .wp-line:active{transform:scale(.99)}.ro-badge{display:inline-block;font-size:15px;font-weight:900;border-radius:99px;padding:8px 16px;margin-bottom:6px}
-.ro-badge.pass{color:#06231b;background:var(--jade)}
+.ro-badge.pass{color:#ffffff;background:var(--jade)}
 .ro-badge.near{color:#fff;background:linear-gradient(135deg,#7cc4ff,#5b8def)}
 .ro-badge.skip{color:var(--text);background:var(--mist);border:1px solid var(--line)}
 .ro-line{display:flex;flex-direction:column;gap:3px;margin:12px 0 0}
@@ -136,12 +113,12 @@
 .ro-v{font-size:17px;color:var(--text);font-family:var(--serif)}
 .ro-reason{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-top:10px;font-size:14.5px;color:var(--text);line-height:1.55}
 .ro-reason b{color:var(--jade)}
-.ro-native{background:var(--card2);border:1px solid rgba(31,211,160,.25);border-radius:14px;padding:14px;margin-top:12px;text-align:center}
+.ro-native{background:var(--card2);border:1px solid rgba(255,133,104,.25);border-radius:14px;padding:14px;margin-top:12px;text-align:center}
 .ro-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13.5px;color:var(--muted)}
 .ro-xp{font-weight:900;color:var(--jade);font-size:15px}
 /* 📖 사전 팝업 + 탭 가능 단어 */
 .tapw{cursor:pointer;border-radius:4px;transition:background .12s}
-.tapw:active{background:rgba(31,211,160,.25)}
+.tapw:active{background:rgba(255,133,104,.25)}
 .dict-pop{position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;justify-content:center}
 .dict-bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
 .dict-card{position:relative;z-index:1;width:100%;max-width:480px;background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;padding:22px 20px calc(28px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.4);animation:dictUp .22s ease}
@@ -157,9 +134,9 @@
 .dict-relchip{font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--jade);cursor:pointer}
 .dict-src{font-size:11px;color:var(--muted);text-align:right;margin-top:14px}
 .dict-more{display:block;width:100%;margin-top:14px;padding:12px;border-radius:12px;background:var(--mist);border:1px solid var(--line);color:var(--jade);font-size:14px;font-weight:700;cursor:pointer}
-.dict-ask{display:block;width:100%;margin-top:10px;padding:13px;border-radius:12px;background:linear-gradient(135deg,#1fd3a0,#16a085);border:none;color:#06231b;font-size:14.5px;font-weight:800;cursor:pointer}
+.dict-ask{display:block;width:100%;margin-top:10px;padding:13px;border-radius:12px;background:linear-gradient(135deg,#FF8568,#F0664A);border:none;color:#ffffff;font-size:14.5px;font-weight:800;cursor:pointer}
 .dict-ask:active{transform:scale(.99)}
-.ask-u{align-self:flex-end;max-width:82%;background:var(--jade);color:#06231b;padding:10px 14px;border-radius:15px 15px 4px 15px;font-size:14.5px;line-height:1.45}
+.ask-u{align-self:flex-end;max-width:82%;background:var(--jade);color:#ffffff;padding:10px 14px;border-radius:15px 15px 4px 15px;font-size:14.5px;line-height:1.45}
 .ask-a{align-self:flex-start;max-width:88%;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:15px 15px 15px 4px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
 .ask-typing{color:var(--muted)}
 /* 🧠 학습 컨텍스트 패널 */
@@ -171,14 +148,14 @@
 .lp-arrow{text-align:center;color:var(--muted);font-size:18px;margin:5px 0}
 .lp-line{display:block;width:100%;text-align:left;background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:9px;font-family:var(--serif);font-size:18px;color:var(--text);cursor:pointer}
 .lp-line:active{transform:scale(.99)}
-.lp-line.up{border-color:rgba(155,152,236,.35)}
+.lp-line.up{border-color:rgba(255,158,122,.35)}
 .lp-line.wk{font-family:inherit;border-color:rgba(248,113,113,.32);font-size:16px}
 .lp-ko{font-size:14px;color:var(--muted);font-family:var(--font)}
 .lp-dia{font-size:16.5px;color:var(--text);padding:9px 0;line-height:1.5}
 .lp-who{display:inline-block;font-size:13px;font-weight:800;color:var(--muted);background:var(--mist);border-radius:7px;padding:3px 9px;margin-right:9px}
-.lp-who.me{color:#06231b;background:var(--jade)}
+.lp-who.me{color:#ffffff;background:var(--jade)}
 .lp-bar{height:9px;border-radius:99px;background:var(--mist);overflow:hidden;margin:11px 0 6px}
-.lp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec)}
+.lp-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#FF9E7A)}
 .lp-sub{font-size:14px;color:var(--muted)}
 /* 📊 진척 푸터 — 빈 하단 채우기 */
 .prog-footer{display:flex;flex-direction:column;gap:11px;margin:18px auto 0;max-width:520px;width:100%}
@@ -190,7 +167,7 @@
 .pf-tx{flex:1;min-width:0}
 .pf-t{font-size:16px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pf-bar{height:9px;border-radius:99px;background:var(--mist);overflow:hidden;margin-top:8px}
-.pf-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1fd3a0,#9b98ec);transition:width .5s}
+.pf-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#FF9E7A);transition:width .5s}
 .pf-pct{font-size:17px;font-weight:900;color:var(--jade);flex:none}
 .pf-sub{font-size:14px;color:var(--muted);margin-top:9px}
 .pf-h{font-size:15px;font-weight:800;color:var(--text);margin-bottom:12px}
@@ -251,18 +228,18 @@
 .rarity-tag{display:inline-block;font-size:13px;font-weight:900;letter-spacing:.16em;padding:5px 14px;border-radius:99px;margin-bottom:12px}
 .r-common{background:rgba(150,160,155,.2);color:#b9c2bd;border:1px solid rgba(180,190,185,.3)}
 .r-rare{background:rgba(91,155,245,.2);color:#7bb0ff;border:1px solid rgba(91,155,245,.45);box-shadow:0 0 18px rgba(91,155,245,.35)}
-.r-epic{background:rgba(167,139,250,.22);color:#c0aaff;border:1px solid rgba(167,139,250,.5);box-shadow:0 0 22px rgba(167,139,250,.4)}
+.r-epic{background:rgba(255,158,122,.22);color:#c0aaff;border:1px solid rgba(255,158,122,.5);box-shadow:0 0 22px rgba(255,158,122,.4)}
 .r-legendary{background:linear-gradient(90deg,rgba(255,180,60,.25),rgba(255,120,60,.25));color:#ffd17a;border:1px solid rgba(255,180,60,.6);box-shadow:0 0 30px rgba(255,180,60,.55);animation:legendGlow 1.2s ease-in-out infinite}
 @keyframes legendGlow{0%,100%{box-shadow:0 0 24px rgba(255,180,60,.45)}50%{box-shadow:0 0 40px rgba(255,180,60,.75)}}
 .chest-prize-emo{font-size:64px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.4))}
 .chest-prize-tx{font-size:22px;font-weight:900;color:#fff;margin-top:6px;line-height:1.2}
 .chest-prize-sub{font-size:13px;color:var(--ink-soft);font-weight:700;margin-top:8px}
-.chest-ok{margin-top:22px;width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06120e;font-weight:900;font-size:15px;border:none;box-shadow:0 10px 24px -10px rgba(31,211,160,.7)}
+.chest-ok{margin-top:22px;width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#06120e;font-weight:900;font-size:15px;border:none;box-shadow:0 10px 24px -10px rgba(255,133,104,.7)}
 /* 🏅 badges */
 .badge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
 .badge{aspect-ratio:1;border-radius:14px;background:var(--card2);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px;text-align:center}
 .badge.locked{opacity:.32;filter:grayscale(.7)}
-.badge.got{border-color:rgba(31,211,160,.45);box-shadow:0 0 14px -4px rgba(31,211,160,.5)}
+.badge.got{border-color:rgba(255,133,104,.45);box-shadow:0 0 14px -4px rgba(255,133,104,.5)}
 .badge .be{font-size:24px}
 .badge .bt{font-size:8.5px;font-weight:800;color:var(--muted);line-height:1.15}
 .badge.got .bt{color:var(--ink-soft)}
@@ -362,10 +339,10 @@ input,textarea{font-family:inherit}
 .lcard-full .lmeta{margin-bottom:18px}
 /* 🎯 레슨 컨텍스트 히어로 — 토픽/레벨/진행을 크게 */
 .lesson-hero{text-align:center;margin-bottom:22px}
-.lh-emo{font-size:52px;line-height:1;margin-bottom:10px;filter:drop-shadow(0 8px 20px rgba(31,211,160,.35))}
+.lh-emo{font-size:52px;line-height:1;margin-bottom:10px;filter:drop-shadow(0 8px 20px rgba(255,133,104,.35))}
 .lh-topic{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.01em;line-height:1.2}
 .lh-meta{display:inline-flex;align-items:center;gap:9px;margin-top:10px}
-.lh-lvl{font-size:15px;font-weight:800;color:#06231b;background:var(--jade);border-radius:99px;padding:4px 13px}
+.lh-lvl{font-size:15px;font-weight:800;color:#ffffff;background:var(--jade);border-radius:99px;padding:4px 13px}
 .lh-dot{color:var(--muted)}
 .lh-mode{font-size:15px;font-weight:700;color:var(--muted)}
 .lh-qno{font-size:14px;font-weight:700;color:var(--muted);margin-top:12px;background:var(--mist);display:inline-block;border-radius:99px;padding:5px 15px}
@@ -774,28 +751,28 @@ input,textarea{font-family:inherit}
 body{background:var(--paper); color:var(--text)}
 .topbar{background:var(--paper); border-bottom:1px solid var(--line); box-shadow:none}
 .brand h1{color:var(--text)}
-.brand .dot{box-shadow:0 0 0 4px rgba(31,211,160,.16)}
+.brand .dot{box-shadow:0 0 0 4px rgba(255,133,104,.16)}
 .ctx .chip{background:var(--mist); color:var(--ink-soft)}
 .iconbtn{background:var(--mist); color:var(--muted)}
-.iconbtn.on{background:rgba(31,211,160,.16); color:var(--jade)}
+.iconbtn.on{background:rgba(255,133,104,.16); color:var(--jade)}
 
 /* level pills */
 .levels button{border-radius:14px; border:1.5px solid transparent; background:var(--mist); color:var(--ink-soft)}
 .levels button .en{color:var(--muted)}
-.levels button[aria-pressed="true"]{background:rgba(31,211,160,.15); border-color:var(--jade); color:var(--jade)}
+.levels button[aria-pressed="true"]{background:rgba(255,133,104,.15); border-color:var(--jade); color:var(--jade)}
 
 /* scenario / theme cards */
 .scn button{border-radius:18px; border:none; background:var(--surface); color:var(--text); box-shadow:var(--soft); padding:14px; transition:transform .14s, box-shadow .14s}
-.scn button .emo{width:44px; height:44px; flex:none; display:grid; place-items:center; background:rgba(31,211,160,.13); border-radius:14px; font-size:22px}
+.scn button .emo{width:44px; height:44px; flex:none; display:grid; place-items:center; background:rgba(255,133,104,.13); border-radius:14px; font-size:22px}
 .scn button .t{color:var(--text)} .scn button .d{color:var(--muted)}
 .scn button:hover{transform:translateY(-2px); box-shadow:var(--soft2)}
 .scn button[aria-pressed="true"]{background:var(--card2); box-shadow:0 0 0 2px var(--jade), var(--soft2)}
-.scn button[aria-pressed="true"] .emo{background:rgba(31,211,160,.22)}
+.scn button[aria-pressed="true"] .emo{background:rgba(255,133,104,.22)}
 .scn{scrollbar-width:thin}
 .scn::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14)}
 #catScrollBox, .catScroll{background:#121514; border-color:var(--line)}
 
-.startbtn{border-radius:18px; background:linear-gradient(135deg,#1fd3a0,#13b488); color:#06231b; box-shadow:0 10px 26px -10px rgba(31,211,160,.5)}
+.startbtn{border-radius:18px; background:linear-gradient(135deg,#FF8568,#F0664A); color:#ffffff; box-shadow:0 10px 26px -10px rgba(255,133,104,.5)}
 
 /* mode switch — icon forward */
 .modesw{background:transparent; border-radius:0; padding:0; gap:9px; margin-bottom:18px}
@@ -803,33 +780,33 @@ body{background:var(--paper); color:var(--text)}
 .modesw button .ti{width:46px; height:46px; display:grid; place-items:center; border-radius:15px; font-size:25px; transition:.18s}
 .modesw button .tl{font-size:13px; font-weight:800; color:var(--muted); transition:.18s}
 /* 모드별 색 */
-.modesw button[data-mode="vocab"]  .ti{background:rgba(31,211,160,.14); color:#1fd3a0}
+.modesw button[data-mode="vocab"]  .ti{background:rgba(255,133,104,.14); color:#FF8568}
 .modesw button[data-mode="block"]  .ti{background:rgba(240,136,62,.14); color:#f0883e}
-.modesw button[data-mode="talk"]   .ti{background:rgba(167,139,250,.16); color:#a78bfa}
+.modesw button[data-mode="talk"]   .ti{background:rgba(255,158,122,.16); color:#a78bfa}
 .modesw button[data-mode="listen"] .ti{background:rgba(91,155,245,.14); color:#5b9bf5}
 .modesw button[aria-pressed="true"]{transform:translateY(-2px)}
-.modesw button[data-mode="vocab"][aria-pressed="true"]{border-color:#1fd3a0; box-shadow:0 8px 22px -10px rgba(31,211,160,.7)}
+.modesw button[data-mode="vocab"][aria-pressed="true"]{border-color:#FF8568; box-shadow:0 8px 22px -10px rgba(255,133,104,.7)}
 .modesw button[data-mode="block"][aria-pressed="true"]{border-color:#f0883e; box-shadow:0 8px 22px -10px rgba(240,136,62,.7)}
-.modesw button[data-mode="talk"][aria-pressed="true"]{border-color:#a78bfa; box-shadow:0 8px 22px -10px rgba(167,139,250,.7)}
+.modesw button[data-mode="talk"][aria-pressed="true"]{border-color:#a78bfa; box-shadow:0 8px 22px -10px rgba(255,158,122,.7)}
 .modesw button[data-mode="listen"][aria-pressed="true"]{border-color:#5b9bf5; box-shadow:0 8px 22px -10px rgba(91,155,245,.7)}
-.modesw button[data-mode="vocab"][aria-pressed="true"]  .ti{background:#1fd3a0; color:#06231b}
+.modesw button[data-mode="vocab"][aria-pressed="true"]  .ti{background:#FF8568; color:#ffffff}
 .modesw button[data-mode="block"][aria-pressed="true"]  .ti{background:#f0883e; color:#2a1505}
 .modesw button[data-mode="talk"][aria-pressed="true"]   .ti{background:#a78bfa; color:#1a0e33}
-.modesw button[data-mode="listen"][aria-pressed="true"] .ti{background:#5b9bf5; color:#04162e}
-.modesw button[data-mode="vocab"][aria-pressed="true"]  .tl{color:#1fd3a0}
+.modesw button[data-mode="listen"][aria-pressed="true"] .ti{background:#5b9bf5; color:#ffffff}
+.modesw button[data-mode="vocab"][aria-pressed="true"]  .tl{color:#FF8568}
 .modesw button[data-mode="block"][aria-pressed="true"]  .tl{color:#f0883e}
 .modesw button[data-mode="talk"][aria-pressed="true"]   .tl{color:#a78bfa}
 .modesw button[data-mode="listen"][aria-pressed="true"] .tl{color:#5b9bf5}
 
 /* chat bubbles */
 .coach .bubble{background:var(--card2); color:var(--text); border:none; box-shadow:var(--soft); border-radius:22px; border-bottom-left-radius:7px}
-.me .bubble{background:linear-gradient(135deg,#1fd3a0,#13b488); color:#06231b; border-radius:22px; border-bottom-right-radius:7px; font-weight:500}
+.me .bubble{background:linear-gradient(135deg,#FF8568,#F0664A); color:#ffffff; border-radius:22px; border-bottom-right-radius:7px; font-weight:500}
 .who{color:var(--muted)}
 .composer{border-top:1px solid var(--line); background:var(--paper)}
 #msg{border-radius:18px; background:var(--mist); color:var(--text); border:1px solid var(--line)}
 #msg::placeholder{color:var(--muted)}
-.mic{box-shadow:0 8px 20px -7px rgba(31,211,160,.5)}
-.send{background:var(--jade-deep); color:#06231b}
+.mic{box-shadow:0 8px 20px -7px rgba(255,133,104,.5)}
+.send{background:var(--jade-deep); color:#ffffff}
 .quick{border-radius:999px; background:var(--mist); color:var(--ink-soft); border:1px solid var(--line)}
 
 /* generic surfaces */
@@ -848,24 +825,24 @@ body{background:var(--paper); color:var(--text)}
 .vword{font-size:36px; color:var(--jade)}
 .vmean{color:var(--muted)}
 .vex .ex{background:var(--surface); border:1px solid var(--line)} .vex .ex .exen{font-size:16px; color:var(--text)} .vex .exko{color:var(--muted)}
-.vcol{background:rgba(31,211,160,.13); color:var(--jade)}
+.vcol{background:rgba(255,133,104,.13); color:var(--jade)}
 .vmine{background:var(--amber-soft); border:1px solid #3a3320}
 .dline .dl-en{color:var(--text)} .dline .spk{color:var(--muted)}
 .ki .ken{color:var(--text)} .ki .kko{color:var(--muted)}
 
 /* listening practice */
 .lpractice{display:flex; gap:9px; margin-top:14px}
-.lpractice button{flex:1; padding:12px 6px; border-radius:14px; font-size:12.5px; font-weight:700; background:rgba(31,211,160,.12); color:var(--jade); border:none; box-shadow:var(--soft)}
-.lpractice button:hover{background:rgba(31,211,160,.2)}
+.lpractice button{flex:1; padding:12px 6px; border-radius:14px; font-size:12.5px; font-weight:700; background:rgba(255,133,104,.12); color:var(--jade); border:none; box-shadow:var(--soft)}
+.lpractice button:hover{background:rgba(255,133,104,.2)}
 .sh-spk{font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px}
 .sh-line{font-family:var(--serif); font-size:24px; line-height:1.4; color:var(--text); margin:6px 0}
 .sh-ko{font-size:14px; color:var(--muted); margin-bottom:8px}
 .sh-hint{font-size:13.5px; color:var(--muted); margin:14px 0}
-.sh-next{width:100%; max-width:300px; margin:18px auto 0; padding:14px; border-radius:15px; background:var(--jade); color:#06231b; font-size:15px; font-weight:700; display:block}
+.sh-next{width:100%; max-width:300px; margin:18px auto 0; padding:14px; border-radius:15px; background:var(--jade); color:#ffffff; font-size:15px; font-weight:700; display:block}
 .sh-next:hover{background:var(--jade-deep)}
 .rt-ans{margin:14px 0}
-.floodbtn{width:100%; margin-top:12px; padding:14px; border-radius:15px; border:none; background:rgba(31,211,160,.12); color:var(--jade); font-size:14px; font-weight:700; box-shadow:var(--soft); cursor:pointer}
-.floodbtn:hover:not(:disabled){background:rgba(31,211,160,.2)}
+.floodbtn{width:100%; margin-top:12px; padding:14px; border-radius:15px; border:none; background:rgba(255,133,104,.12); color:var(--jade); font-size:14px; font-weight:700; box-shadow:var(--soft); cursor:pointer}
+.floodbtn:hover:not(:disabled){background:rgba(255,133,104,.2)}
 .floodbtn:disabled{opacity:.4; cursor:default}
 .flood-wave{margin:22px 0 16px; display:flex; justify-content:center}
 
@@ -877,10 +854,10 @@ body{background:var(--paper); color:var(--text)}
 .streak{display:flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--line); padding:8px 13px; border-radius:999px; font-size:13px; color:var(--text); white-space:nowrap}
 .streak b{color:var(--jade)}
 .mission{position:relative; border-radius:22px; padding:18px 18px 18px; background:radial-gradient(120% 140% at 0% 0%, #1c2a24 0%, #15201b 55%, #131715 100%); border:1px solid #243029; box-shadow:var(--soft2); overflow:hidden}
-.mission-tag{display:inline-block; font-size:11.5px; font-weight:800; color:var(--jade); background:rgba(31,211,160,.15); padding:5px 11px; border-radius:999px; letter-spacing:.02em}
+.mission-tag{display:inline-block; font-size:11.5px; font-weight:800; color:var(--jade); background:rgba(255,133,104,.15); padding:5px 11px; border-radius:999px; letter-spacing:.02em}
 .mission-title{font-size:23px; font-weight:800; color:#fff; margin:11px 0 6px; line-height:1.25}
 .mission-meta{font-size:12.5px; color:var(--muted); margin-bottom:15px}
-.mission-btn{width:100%; padding:15px; border:none; border-radius:16px; background:linear-gradient(120deg,#1fd3a0,#16b9a6 55%,#1f9fe0); color:#04221b; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 10px 26px -10px rgba(31,211,160,.5)}
+.mission-btn{width:100%; padding:15px; border:none; border-radius:16px; background:linear-gradient(120deg,#FF8568,#F0664A 55%,#1f9fe0); color:#ffffff; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 10px 26px -10px rgba(255,133,104,.5)}
 .mission-btn span{font-size:13px}
 .home-row{display:flex; gap:12px}
 .goal{flex:1; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:15px 17px}
@@ -890,7 +867,7 @@ body{background:var(--paper); color:var(--text)}
 .ring::before{content:""; position:absolute; width:40px; height:40px; border-radius:999px; background:var(--surface)}
 .ring span{position:relative; z-index:1; font-size:12.5px}
 .continue{display:flex; align-items:center; gap:12px; width:100%; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:14px 16px; cursor:pointer; text-align:left}
-.cont-emo{width:42px; height:42px; flex:none; display:grid; place-items:center; background:rgba(31,211,160,.13); border-radius:13px; font-size:20px}
+.cont-emo{width:42px; height:42px; flex:none; display:grid; place-items:center; background:rgba(255,133,104,.13); border-radius:13px; font-size:20px}
 .cont-txt{flex:1; display:flex; flex-direction:column}
 .cont-t{font-size:14.5px; font-weight:700; color:var(--text)}
 .cont-d{font-size:12px; color:var(--muted); margin-top:2px}
@@ -902,7 +879,7 @@ body{background:var(--paper); color:var(--text)}
 .prof-sheet{width:100%; max-width:560px; max-height:92vh; overflow-y:auto; background:var(--paper); border-radius:24px 24px 0 0; border-top:1px solid var(--line); padding:8px 20px max(40px, calc(28px + env(safe-area-inset-bottom))); box-shadow:0 -20px 50px -20px rgba(0,0,0,.7)}
 .prof-grab{width:42px; height:5px; border-radius:99px; background:var(--line); margin:8px auto 14px}
 .prof-hd{display:flex; align-items:center; gap:14px; margin-bottom:18px}
-.prof-av{width:60px; height:60px; flex:none; border-radius:18px; display:grid; place-items:center; font-size:26px; font-weight:800; color:#06231b; background:linear-gradient(135deg,#1fd3a0,#16b9a6)}
+.prof-av{width:60px; height:60px; flex:none; border-radius:18px; display:grid; place-items:center; font-size:26px; font-weight:800; color:#ffffff; background:linear-gradient(135deg,#FF8568,#F0664A)}
 .prof-name{font-size:20px; font-weight:800; color:var(--text)}
 .prof-sub{font-size:13px; color:var(--muted); margin-top:2px}
 .prof-close{margin-left:auto; width:34px;height:34px;border-radius:10px;background:var(--mist);color:var(--muted);border:none;font-size:18px;cursor:pointer}
@@ -912,18 +889,18 @@ body{background:var(--paper); color:var(--text)}
 .xpbar-lv b{color:var(--jade)}
 .xpbar-n{font-size:12.5px; color:var(--muted)}
 .xpbar{height:12px; border-radius:999px; background:var(--mist); overflow:hidden}
-.xpbar i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#1fd3a0,#16b9a6); transition:width .5s}
+.xpbar i{display:block; height:100%; border-radius:999px; background:linear-gradient(90deg,#FF8568,#F0664A); transition:width .5s}
 .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px}
 .stat{background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:14px 15px; display:flex; align-items:center; gap:11px}
-.stat .se{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px;background:rgba(31,211,160,.13);font-size:18px}
+.stat .se{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:11px;background:rgba(255,133,104,.13);font-size:18px}
 .stat .sv{font-size:19px; font-weight:800; color:var(--text); line-height:1}
 .stat .sl{font-size:11.5px; color:var(--muted); margin-top:3px}
 .prof-h{font-size:13px; font-weight:800; color:var(--muted); margin:6px 2px 10px; letter-spacing:.02em}
 .rwd{display:flex; align-items:center; gap:12px; background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:13px 15px; margin-bottom:8px}
-.rwd.done{border-color:rgba(31,211,160,.4); background:rgba(31,211,160,.07)}
+.rwd.done{border-color:rgba(255,133,104,.4); background:rgba(255,133,104,.07)}
 .rwd.next{border-color:var(--jade); box-shadow:0 0 0 1px var(--jade)}
 .rwd .re{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:12px;background:var(--mist);font-size:19px}
-.rwd.done .re{background:rgba(31,211,160,.18)}
+.rwd.done .re{background:rgba(255,133,104,.18)}
 .rwd .rt{flex:1}
 .rwd .rlv{font-size:11.5px; font-weight:800; color:var(--jade)}
 .rwd .rn{font-size:14px; font-weight:600; color:var(--text); margin-top:1px}
@@ -950,7 +927,7 @@ body{background:var(--paper); color:var(--text)}
 .mbsrc{text-align:right;font-size:11px;color:var(--muted);opacity:.6;padding:0 22px 14px}
 .mbctrl{margin-top:auto;padding-top:14px}
 .mbmicwrap{display:flex;align-items:center;justify-content:space-between;padding:0 10px}
-.mbmic{width:96px;height:96px;border-radius:50%;background:var(--jade);color:#06231b;display:grid;place-items:center;border:none;box-shadow:0 8px 30px -6px rgba(31,211,160,.5);position:relative}
+.mbmic{width:96px;height:96px;border-radius:50%;background:var(--jade);color:#ffffff;display:grid;place-items:center;border:none;box-shadow:0 8px 30px -6px rgba(255,133,104,.5);position:relative}
 .mbmic.live{background:#e0533f;color:#fff}
 .mbmic svg{width:38px;height:38px}
 .mbside{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;width:78px}
@@ -1061,7 +1038,7 @@ body{background:var(--paper); color:var(--text)}
 #engSprint .eng-emo{animation:boltpulse 1.8s ease-in-out infinite}
 @keyframes boltpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12) rotate(-4deg)}}
 /* 💬 단어 강화 — 청록 보석 동굴 */
-#vocabCard{--glow:rgba(31,211,160,.55);background:
+#vocabCard{--glow:rgba(255,133,104,.55);background:
   radial-gradient(80% 120% at 14% 0%,rgba(60,235,185,.34),transparent 55%),
   radial-gradient(90% 130% at 100% 120%,rgba(20,120,150,.5),transparent 60%),
   linear-gradient(160deg,#10433f,#0a1c20 80%);
@@ -1095,10 +1072,10 @@ body{background:var(--paper); color:var(--text)}
 /* ===== 🎨 하단 통일: 월드와 같은 깊이·광택·글로우 ===== */
 .seclabel{font-size:12.5px;font-weight:800;color:var(--ink-soft);letter-spacing:.01em;margin:2px 2px 10px;opacity:.92}
 /* 이어서 연습하기 — 재개 카드 */
-.continue{position:relative;overflow:hidden;background:linear-gradient(160deg,#1d2420,#14191600)!important;background-color:#161c19!important;border:1px solid rgba(31,211,160,.28)!important;border-radius:18px!important;box-shadow:0 12px 28px -18px rgba(31,211,160,.5),inset 0 1px 0 rgba(255,255,255,.07)!important}
+.continue{position:relative;overflow:hidden;background:linear-gradient(160deg,#1d2420,#14191600)!important;background-color:#161c19!important;border:1px solid rgba(255,133,104,.28)!important;border-radius:18px!important;box-shadow:0 12px 28px -18px rgba(255,133,104,.5),inset 0 1px 0 rgba(255,255,255,.07)!important}
 .continue::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 40%);pointer-events:none}
 .continue:active{transform:scale(.98)}
-.cont-emo{background:rgba(31,211,160,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 14px -2px rgba(31,211,160,.5)}
+.cont-emo{background:rgba(255,133,104,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 14px -2px rgba(255,133,104,.5)}
 .cont-t{font-weight:900!important;color:#fff!important}
 /* 추가 연습 — 사이드 퀘스트 카드 */
 .sidequest{position:relative;overflow:hidden;background:linear-gradient(160deg,#1b211e,#13181500)!important;background-color:#161b18!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:18px!important;box-shadow:0 12px 26px -18px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.06)!important;transition:transform .12s}
@@ -1108,15 +1085,15 @@ body{background:var(--paper); color:var(--text)}
 .sq-t{font-size:14px;font-weight:900;color:#fff;margin-top:9px}
 .sq-d{font-size:11px;color:var(--muted);margin-top:2px}
 /* 다시 만날 표현 — 복습 카드 (깊이+글로우 통일) */
-.rvbanner{position:relative;overflow:hidden;background:radial-gradient(90% 130% at 0% 0%,rgba(31,211,160,.22),transparent 58%),linear-gradient(160deg,#143a30,#0c1c17 82%)!important;border:1px solid rgba(31,211,160,.32)!important;border-radius:18px!important;box-shadow:0 12px 28px -18px rgba(31,211,160,.55),inset 0 1px 0 rgba(255,255,255,.07)!important}
+.rvbanner{position:relative;overflow:hidden;background:radial-gradient(90% 130% at 0% 0%,rgba(255,133,104,.22),transparent 58%),linear-gradient(160deg,#143a30,#0c1c17 82%)!important;border:1px solid rgba(255,133,104,.32)!important;border-radius:18px!important;box-shadow:0 12px 28px -18px rgba(255,133,104,.55),inset 0 1px 0 rgba(255,255,255,.07)!important}
 .rvbanner::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 40%);pointer-events:none}
 /* 퀘스트/지표/난이도 — 같은 인셋 광택 */
 #questBox>div,#acqStats>div,#dailyCard>div{box-shadow:0 10px 24px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)!important}
 .difcard{position:relative;overflow:hidden;background:linear-gradient(160deg,#1b211e,#14191600)!important;background-color:#161b18!important;border:1px solid rgba(255,255,255,.10)!important;box-shadow:0 10px 24px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06)!important}
 /* 🗣️ 혀 위치 그림 */
 .tongue-wrap{margin:10px auto 4px;max-width:260px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 10px 10px}
-.tongue-badge{font-size:10.5px;font-weight:800;color:#1FD3A0;text-align:center;margin-bottom:6px;letter-spacing:.02em}
-.art-replay{display:block;margin:10px auto 4px;padding:9px 18px;border-radius:999px;border:none;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-weight:900;font-size:14px;box-shadow:0 8px 20px -8px rgba(31,211,160,.6);cursor:pointer}
+.tongue-badge{font-size:10.5px;font-weight:800;color:#FF8568;text-align:center;margin-bottom:6px;letter-spacing:.02em}
+.art-replay{display:block;margin:10px auto 4px;padding:9px 18px;border-radius:999px;border:none;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;font-weight:900;font-size:14px;box-shadow:0 8px 20px -8px rgba(255,133,104,.6);cursor:pointer}
 .art-replay:active{transform:scale(.96)}
 .art-steps{margin:12px auto 2px;max-width:300px;display:flex;flex-direction:column;gap:7px}
 .art-step{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 12px;font-size:15px;font-weight:800;color:var(--text,#fff);line-height:1.35}
@@ -1128,6 +1105,160 @@ body{background:var(--paper); color:var(--text)}
 @keyframes dslotpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 .tongue-hint{font-size:13.5px;font-weight:800;color:var(--text,#fff);text-align:center;margin-top:6px;line-height:1.4}
 .tongue-legend{font-size:10.5px;color:var(--muted,#9aa);text-align:center;margin-top:4px}
+
+/* ============================================================
+   ☀️ B 테마 — 복숭아 소르베 (따뜻한 라이트 오버라이드)
+   ============================================================ */
+body{background:var(--paper)!important;color:var(--text)}
+.scn::-webkit-scrollbar-thumb{background:rgba(160,95,60,.18)!important}
+#catScrollBox,.catScroll{background:#FFF4ED!important}
+
+/* — HERO — */
+.hero{background:linear-gradient(155deg,#FFD9C7,#FFEADF)!important;border:1px solid #FFCDB8!important;box-shadow:0 16px 34px -20px rgba(240,102,74,.45)!important}
+.hero::after{display:none!important}
+.hero-hello{color:#9C8378!important}
+.hero-name{color:#3A2D27!important}
+.ring-lv b{color:#3A2D27!important;text-shadow:none!important}
+.ring-lv span{color:#F0664A!important}
+.ring-bg{stroke:rgba(120,70,45,.13)!important}
+.hchip{background:rgba(255,255,255,.74)!important;border:1px solid #FAD9C9!important;color:#5A463C!important}
+.hchip.flame{background:#FFE3CF!important;border-color:#FFD0A8!important;color:#E07B23!important}
+.hchip.gem{background:#FFE0D2!important;border-color:#FFC9B5!important;color:#E2674A!important}
+.hero-reward{background:rgba(255,255,255,.62)!important;border:1px solid rgba(255,255,255,.7)!important}
+.hero-reward .rwtop{color:#A6968C!important}
+.hero-reward .rwname{color:#3A2D27!important}
+.hero-reward .rwbar{background:#FFD0BD!important}
+.hero-reward .rwgo{color:#F0664A!important}
+
+/* — HOME 모험 타일 (B 시안: 하얀 카드 + 색 칩) — */
+.eng,.engrid .eng{background:#FFFFFF!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.30)!important}
+.eng::after{display:none!important}
+.eng::before{display:none!important}
+.eng-emo{background:#FFE0D2!important;box-shadow:none!important}
+.eng-tx b{color:#3A2D27!important;text-shadow:none!important}
+.eng-tx i{color:#B0958A!important}
+.eng-ar{background:#FFE0D2!important;color:#F0664A!important;box-shadow:none!important}
+#engIn .eng-emo,#vocabCard .eng-emo{background:#FFE0D2!important}
+#engOut .eng-emo{background:#FFD2C0!important}
+#engReal .eng-emo,#boosterCard .eng-emo{background:#DCF1E8!important}
+#engSprint .eng-emo{background:#FFEBC9!important}
+.worldlabel,.seclabel{color:#8A6F62!important;opacity:1!important}
+.kidworld .eng-tx i,.kidworld #kidCard .kt i{color:#B0958A!important}
+.kidworld .worldlabel{color:#C77F26!important}
+
+/* — kidCard (사운드 아카데미) — */
+#kidCard{background:#FFFFFF!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.30)!important}
+#kidCard .ke{background:#FFEBC9!important;box-shadow:none!important}
+#kidCard .kt b{color:#3A2D27!important}
+#kidCard .kt i{color:#B0958A!important}
+#kidCard .ka{color:#F0664A!important}
+
+/* — MISSION — */
+.mission{background:linear-gradient(155deg,#FFD3C2,#FFE6DA)!important;border:1px solid #FFC6B2!important}
+.mission-title{color:#3A2D27!important}
+.mission-tag{background:#FFFFFF!important;color:#F0664A!important}
+.mission-meta{color:#9C8378!important}
+.mission-btn{color:#fff!important}
+
+/* — continue / sidequest / rvbanner / difcard — */
+.continue{background:#FFFFFF!important;background-color:#FFFFFF!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.3)!important}
+.continue::before{display:none!important}
+.cont-t{color:#3A2D27!important}
+.cont-d{color:#B0958A!important}
+.cont-emo{background:#FFE0D2!important;box-shadow:none!important}
+.cont-arr{color:#B0958A!important}
+.sidequest{background:#FFFFFF!important;background-color:#FFFFFF!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.3)!important}
+.sidequest::before{display:none!important}
+.sq-t{color:#3A2D27!important}
+.sq-d{color:#B0958A!important}
+.sq-ico{background:#FFE0D2!important;box-shadow:none!important}
+.rvbanner{background:linear-gradient(155deg,#FFE0D0,#FFF0E7)!important;border:1px solid #FFCDB8!important;box-shadow:0 8px 20px -14px rgba(214,120,70,.4)!important}
+.rvbanner::before{display:none!important}
+.difcard{background:#FFFFFF!important;background-color:#FFFFFF!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.3)!important}
+.ring{background:conic-gradient(var(--jade) calc(var(--p,0)*1%), #FFD9C7 0)!important}
+
+/* — TUTORIAL overlay — */
+.tut-ov{background:rgba(70,38,24,.55)!important}
+.tut-card{background:linear-gradient(165deg,#FFFFFF,#FFF3EC)!important;border:1px solid #FAD9C9!important;box-shadow:0 24px 60px -20px rgba(120,70,40,.4)!important}
+.tut-title{color:#3A2D27!important}
+.tut-num{color:#fff!important}
+
+/* — LESSON header — */
+.lh-topic{color:#3A2D27!important}
+.lh-lvl{color:#fff!important}
+
+/* — LEVEL-UP celebrate — */
+#lvlCelebrate{background:radial-gradient(60% 45% at 50% 45%,rgba(255,133,104,.22),rgba(255,237,227,.9))!important}
+.celeb-big{color:#3A2D27!important;text-shadow:none!important}
+.celeb-sub{color:#6E574B!important}
+
+/* — review banner / block panel (light) — */
+.rvbanner{color:#6E574B!important}
+.rvbanner .rvb-n{color:#F0664A!important}
+.rvbanner .rvb-t{color:#9C8378!important}
+#rvStart{background:#FF8568!important;color:#fff!important}
+#rvStart:hover{background:#F0664A!important}
+#rvSpeed{background:#FFE2D5!important;color:#6E574B!important}
+#rvSpeed:hover{background:#FFD0BD!important}
+.blkp-prog{background:linear-gradient(155deg,#FFE0D0,#FFF0E7)!important;color:#6E574B!important;border:1px solid #FFCDB8!important}
+.blkp-prog .tier{color:#F0664A!important;background:#FFFFFF!important}
+.blkp-prog .next{color:#9C8378!important}
+.blkp-bar{background:#FFD0BD!important}
+.blkp-bar i{background:#FF8568!important}
+.blkp-btn .blk-when,.blkp-btn .lvl{color:var(--muted)!important}
+
+/* — arena battle: warm sunset stage — */
+#sprintScroll{background:radial-gradient(90% 60% at 50% 0%,rgba(255,150,90,.16),transparent 60%),radial-gradient(80% 50% at 50% 100%,rgba(255,190,120,.12),transparent 60%)!important}
+.spell-card{background:linear-gradient(160deg,#FFFFFF,#FFF3EC)!important;border:1px solid #FAD9C9!important;box-shadow:0 14px 32px -18px rgba(214,120,70,.4)!important}
+.spell-card .sc-hint{color:#E2674A!important}
+.spell-card .sc-ko{color:#3A2D27!important}
+.hpbar{background:rgba(120,70,45,.16)!important;border:1px solid rgba(120,70,45,.12)!important}
+
+/* — 단어/스피킹 화면: 빈 공간 줄이고 글씨 키우기 — */
+.rv-body{padding:26px 20px 30px!important}
+.mbtop{padding:32px 24px 28px!important}
+.mbko{font-size:27px!important;line-height:1.5!important}
+.mben{font-size:28px!important}
+.mbstatus{font-size:19px!important;margin:18px 0!important}
+.mbbot{padding:34px 22px 22px!important}
+.mbnote{font-size:14px!important}
+.vword{font-size:42px!important}
+.sh-line{font-size:26px!important;line-height:1.45!important}
+.sh-ko{font-size:15px!important}
+
+/* — 난이도 슬라이더 (따뜻하게) — */
+#lvlRange{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;background:#FFD0BD;outline:none;margin:4px 0}
+#lvlRange::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#FF8568;border:3px solid #fff;box-shadow:0 3px 8px -1px rgba(240,102,74,.55);cursor:pointer}
+#lvlRange::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#FF8568;border:3px solid #fff;box-shadow:0 3px 8px -1px rgba(240,102,74,.55);cursor:pointer}
+#lvlRange::-moz-range-track{height:8px;border-radius:99px;background:#FFD0BD}
+
+.help-q{background:#FFE0D2!important;border:1px solid #FFC9B5!important;color:#E2674A!important}
+
+/* — generic: white text that sat on dark cards — */
+.mb-en .blankbox{background:#FFE2D5!important}
+/* 📝 Word Power 문제 화면 — 풀스크린 3단 (말해보카 스타일) */
+.wp-stage{flex:1;display:flex;flex-direction:column;min-height:0;padding:4px 0}
+.wp-q-tab{align-self:center;font-size:13px;font-weight:800;color:var(--jade);background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 15px;margin-bottom:14px}
+.wp-q-card{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:30px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:var(--soft2)}
+.wp-q-ko{font-size:19px;color:var(--jade);font-weight:800;margin-bottom:24px}
+.wp-q-en{font-family:var(--serif);font-size:34px;line-height:1.6;color:var(--text);font-weight:500}
+.wp-blank{display:inline-block;min-width:90px;border-bottom:3px solid var(--jade);margin:0 4px;vertical-align:bottom}
+/* 라이브 음성 인식 영역 */
+.wp-speech{text-align:center;font-size:16px;color:var(--muted);margin-top:14px;min-height:26px;font-weight:600;padding:0 16px}
+.wp-live{color:var(--jade);font-weight:800;animation:wpPulse 1s ease-in-out infinite}
+@keyframes wpPulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* 하단 액션 — 큰 동그란 마이크 + 큰 액션 카드 */
+.wp-dock{flex:none;padding:14px 0 max(14px, env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:13px}
+.wp-mic{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--jade),var(--jade-deep));border:none;color:#fff;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 8px 26px -6px var(--jade);transition:transform .1s}
+.wp-mic svg{width:34px;height:34px}
+.wp-mic:active{transform:scale(.95)}
+.wp-mic.live{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 8px 26px -6px rgba(248,113,113,.6);animation:wpPulse 1.1s ease-in-out infinite}
+.wp-dock-row{display:flex;gap:11px;width:100%}
+.wp-act{flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border-radius:15px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:16px;font-weight:700;cursor:pointer;transition:transform .1s}
+.wp-act:active{transform:scale(.98);background:var(--mist)}
+.wp-act-ic{font-size:20px}
+.wp-giveup{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:6px}
+.wp-giveup:active{color:var(--text)}
 </style>
 </head>
 <body>
@@ -1174,7 +1305,7 @@ body{background:var(--paper); color:var(--text)}
             <span style="font-size:13px;font-weight:800;color:var(--text)">난이도</span>
             <span id="lvlLabel" style="font-size:13px;font-weight:800;color:var(--jade)">Lv.1 · 유치원</span>
           </div>
-          <input type="range" id="lvlRange" min="1" max="10" step="1" value="1" style="width:100%;accent-color:#1fd3a0">
+          <input type="range" id="lvlRange" min="1" max="10" step="1" value="1" style="width:100%;accent-color:#FF8568">
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
             <span>유치원</span><span>초등</span><span>원어민</span>
           </div>
@@ -1430,7 +1561,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.71.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.72.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2232,7 +2363,7 @@ function renderFeedbackCard(obj){
     corr.forEach((c2,i)=>{
       html+=`<div class="corr"><div class="o">${escapeHtml(c2.original||"")}</div><div class="b">→ ${escapeHtml(c2.better||"")}</div>`;
       if(c2.why) html+=`<div class="w">${escapeHtml(c2.why)}</div>`;
-      html+=`<button class="resay" data-en="${escapeAttr(c2.better||"")}" data-ko="${escapeAttr(c2.ko||"")}" style="margin-top:8px;padding:9px 14px;border-radius:11px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;font-size:13px;font-weight:800">🎤 이렇게 다시 말해보기</button>`;
+      html+=`<button class="resay" data-en="${escapeAttr(c2.better||"")}" data-ko="${escapeAttr(c2.ko||"")}" style="margin-top:8px;padding:9px 14px;border-radius:11px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;font-size:13px;font-weight:800">🎤 이렇게 다시 말해보기</button>`;
       html+=`</div>`;
     });
   }
@@ -2377,8 +2508,7 @@ async function lsGenerate(){
     renderListenPlay();
     lsPrefetchNext();   // 바로 다음 문장 미리 준비
   }catch(e){
-    const msg=(e&&e.message)?String(e.message):"알 수 없는 오류";
-    $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><span style="font-size:12px;color:#f87171">(${escapeHtml(msg)})</span><br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
+    $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
     const r=$("#lsRetry"); if(r) r.onclick=lsGenerate;
   }
 }
@@ -2444,7 +2574,7 @@ function renderListenDictation(){
     </button>
     <div id="lsSlots" class="dict-slots"></div>
     <div id="lsProg" style="text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 2px"></div>
-    <button class="bigplay" id="lsDictMic" style="width:100%;margin-top:10px;background:var(--jade);color:#06231b">
+    <button class="bigplay" id="lsDictMic" style="width:100%;margin-top:10px;background:var(--jade);color:#ffffff">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
       <span>🎤 들은 대로 말하기</span>
     </button>
@@ -2624,7 +2754,7 @@ function renderListenAnalysis(){
     ${missed.length?`<div class="lkey show" style="margin-bottom:10px"><div class="ki"><span><span class="ken">놓친 단어</span><span class="kko">${missed.map(escapeHtml).join(" · ")}</span></span></div></div>`:""}
     ${mistakes.length?`<div style="font-size:13.5px;color:var(--text);background:var(--mist);border-radius:11px;padding:11px 13px;margin-bottom:10px"><b>잘못 들은 것:</b> ${mistakes.map(escapeHtml).join(", ")}</div>`:""}
     ${a.listening_reason?`<div style="font-size:13.5px;line-height:1.6;color:var(--text);background:var(--amber-soft);border:1px solid #3a3320;border-radius:11px;padding:12px 14px;margin-bottom:10px">👂 <b>왜 안 들렸나:</b> ${escapeHtml(a.listening_reason)}</div>`:""}
-    ${c.spoken_version?`<div style="background:rgba(31,211,160,.1);border:1px solid rgba(31,211,160,.3);border-radius:11px;padding:12px 14px;margin-bottom:10px">
+    ${c.spoken_version?`<div style="background:rgba(255,133,104,.1);border:1px solid rgba(255,133,104,.3);border-radius:11px;padding:12px 14px;margin-bottom:10px">
       <div style="font-size:12px;color:var(--jade);font-weight:800;margin-bottom:4px">🔗 실제 발음 (연음·축약)</div>
       <div style="font-family:var(--serif);font-size:19px;color:var(--jade)">${escapeHtml(c.spoken_version)}</div>
       ${c.explanation?`<div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:6px">${escapeHtml(c.explanation)}</div>`:""}
@@ -2731,7 +2861,7 @@ function renderOutput(){
   $("#listenScroll").innerHTML=`<div class="lcard">
     <div class="lmeta" style="text-align:center">🗣 ${loRound===2?"다른 상황 — 또 꺼내보기":"이 상황, 영어로 말해보기"}</div>
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:700;color:var(--jade);background:rgba(31,211,160,.12);border:1px solid rgba(31,211,160,.3);border-radius:99px;padding:4px 11px">🇬🇧 영어로</span>
+      <span style="font-size:12px;font-weight:700;color:var(--jade);background:rgba(255,133,104,.12);border:1px solid rgba(255,133,104,.3);border-radius:99px;padding:4px 11px">🇬🇧 영어로</span>
       <span style="font-size:12px;font-weight:700;color:var(--muted);background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:4px 11px">✓ 문법 틀려도 OK</span>
       <span style="font-size:12px;font-weight:700;color:var(--muted);background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:4px 11px">🎯 뜻만 통하면 통과</span>
     </div>
@@ -3761,7 +3891,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
     ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
       return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
-        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1fd3a0,#9b98ec)"></div></div>
+        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)">${SRS_STAGES.map((s,i)=>`<span style="color:${i<=idx?'var(--jade)':'var(--muted)'};font-weight:${i===idx?'900':'400'}">${srsStageLabel(s)}</span>`).join("")}</div>
       </div>`; })()}
     <div id="wpLearnCard"></div>
@@ -3881,7 +4011,7 @@ function renderVoUse(w){
     <div class="mbtab">${voRound===2?"🔁 다시 — 다른 상황":"실전 상황"}</div>
     <div class="mbcard" style="padding:24px 22px">
       <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">이 상황을 영어로 — <span style="color:var(--jade)">${escapeHtml(w.word)}</span> 꼭 쓰기</div>
-      <div style="font-size:21px;font-weight:600;color:var(--text);line-height:1.5">${escapeHtml(sit.ko)}</div>
+      <div style="font-size:26px;font-weight:700;color:var(--text);line-height:1.55">${escapeHtml(sit.ko)}</div>
     </div>
     <div class="mbstatus" id="voStatus">🎤 눌러서 영어로 말해보세요</div>
     <div class="mbmicwrap">
@@ -3959,12 +4089,12 @@ function renderVoResult(w, answer, elapsed, fb){
     ${(()=>{ const si=srsGet(w.word); if(!si) return ""; const si2=SRS_STAGES.indexOf(si.stage); const pct=Math.round(si2/(SRS_STAGES.length-1)*100);
       return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(si.stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si.uses||0}회</span></div>
-        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1fd3a0,#9b98ec)"></div></div>
+        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
         <div style="font-size:12px;color:var(--muted);margin-top:6px">${si.stage==="mastered"?"마스터! 30일 뒤 복습해요 ⭐":"다음 단계까지 계속 사용해보세요"}</div>
       </div>`; })()}
     <div class="mbbig" style="margin-top:14px">
       <button id="voDrill"><span class="ic">🎤</span>발음 진단</button>
-      <button id="voNextBtn" style="color:#06231b;background:linear-gradient(135deg,#1fd3a0,#13b488);border:none"><span class="ic">▶</span>${(voRound===2 && voPos===voWords.length-1)?"끝내기":"다음"}</button>
+      <button id="voNextBtn" style="color:#ffffff;background:linear-gradient(135deg,#FF8568,#F0664A);border:none"><span class="ic">▶</span>${(voRound===2 && voPos===voWords.length-1)?"끝내기":"다음"}</button>
     </div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(fb.natural),280);
@@ -4204,7 +4334,7 @@ function renderVocabReveal(w, quizRes){
     </div>
     <div class="mbbig">
       <button id="vMineBtn"><span class="ic">✏️</span>내 문장</button>
-      <button id="vNextBtn" style="color:#06231b;background:linear-gradient(135deg,#1fd3a0,#13b488);border:none"><span class="ic">▶</span>다음 문제</button>
+      <button id="vNextBtn" style="color:#ffffff;background:linear-gradient(135deg,#FF8568,#F0664A);border:none"><span class="ic">▶</span>다음 문제</button>
     </div>
     <div id="vExtra" style="margin-top:14px"></div>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
@@ -4434,7 +4564,7 @@ function openDrill(text, koText){
       <div id="drillWord" style="font-family:var(--serif);font-size:28px;font-weight:500;color:var(--text);margin-bottom:4px">${escapeHtml(text)}</div>
       <div style="font-size:14px;color:var(--muted);margin-bottom:20px">${escapeHtml(koText||"")}</div>
       <button id="drillListen" style="width:100%;padding:13px;border-radius:14px;background:var(--mist);color:var(--text);border:none;font-size:15px;font-weight:700;margin-bottom:10px">🔊 원어민 발음 듣기</button>
-      <button id="drillSpeak" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#1fd3a0,#13b488);color:#06231b;border:none;font-size:15px;font-weight:800">🎤 눌러서 말하기</button>
+      <button id="drillSpeak" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;border:none;font-size:15px;font-weight:800">🎤 눌러서 말하기</button>
       <div id="drillResult" style="margin-top:16px;min-height:60px"></div>
       <button id="drillClose" style="width:100%;margin-top:12px;padding:13px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px">닫기</button>
     </div>`;
@@ -4518,13 +4648,13 @@ function renderDrillResult(data){
   const comp=Math.round(pa.CompletenessScore||0);
   // Azure가 PronScore(종합)를 주면 그걸 우선 사용
   const overall=Math.round(pa.PronScore!=null ? pa.PronScore : (acc*0.5+flu*0.3+comp*0.2));
-  const color=overall>=80?"#1fd3a0":overall>=60?"#e6ad4a":"#e0533f";
+  const color=overall>=80?"#FF8568":overall>=60?"#e6ad4a":"#e0533f";
   const emoji=overall>=80?"😊":overall>=60?"🙂":"😅";
   // 단어별 색상 (점수는 단어 객체 바로 위 또는 중첩 둘 다 대응)
   const words=(n?.Words||[]);
   const wordHtml=words.map(w=>{
     const ws=Math.round((w.PronunciationAssessment&&w.PronunciationAssessment.AccuracyScore!=null?w.PronunciationAssessment.AccuracyScore:w.AccuracyScore)||0);
-    const wc=ws>=80?"#1fd3a0":ws>=60?"#e6ad4a":"#e0533f";
+    const wc=ws>=80?"#FF8568":ws>=60?"#e6ad4a":"#e0533f";
     return `<span style="color:${wc};font-family:var(--serif);font-size:17px;margin:0 3px" title="${ws}점">${escapeHtml(w.Word)}</span>`;
   }).join(" ");
   // XP 지급 — 80점 이상이면 확실히 보상
@@ -4537,15 +4667,15 @@ function renderDrillResult(data){
     </div>
     <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${acc>=80?"#1fd3a0":acc>=60?"#e6ad4a":"#e0533f"}">${acc}</div>
+        <div style="font-size:18px;font-weight:800;color:${acc>=80?"#FF8568":acc>=60?"#e6ad4a":"#e0533f"}">${acc}</div>
         <div style="font-size:11px;color:var(--muted)">정확도</div>
       </div>
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${flu>=80?"#1fd3a0":flu>=60?"#e6ad4a":"#e0533f"}">${flu}</div>
+        <div style="font-size:18px;font-weight:800;color:${flu>=80?"#FF8568":flu>=60?"#e6ad4a":"#e0533f"}">${flu}</div>
         <div style="font-size:11px;color:var(--muted)">유창성</div>
       </div>
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${comp>=80?"#1fd3a0":comp>=60?"#e6ad4a":"#e0533f"}">${comp}</div>
+        <div style="font-size:18px;font-weight:800;color:${comp>=80?"#FF8568":comp>=60?"#e6ad4a":"#e0533f"}">${comp}</div>
         <div style="font-size:11px;color:var(--muted)">완성도</div>
       </div>
     </div>
@@ -4800,7 +4930,7 @@ function openAskAI(term, sentence){
       <div id="askChips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px"></div>
       <div style="display:flex;gap:8px">
         <input id="askInput" placeholder="예: 언제 써요? 비슷한 말은?" style="flex:1;padding:13px;border:1.5px solid var(--line);border-radius:13px;background:var(--mist);color:var(--text);font-size:15px">
-        <button id="askSend" style="padding:13px 18px;border-radius:13px;background:var(--jade);color:#06231b;border:none;font-weight:800;cursor:pointer">전송</button>
+        <button id="askSend" style="padding:13px 18px;border-radius:13px;background:var(--jade);color:#ffffff;border:none;font-weight:800;cursor:pointer">전송</button>
       </div>
     </div>`;
   // 추천 질문 칩
@@ -5138,7 +5268,7 @@ function spCombatHit(it, heard, elapsed, gained, grade){
   const stat=$("#spStat");
   if(stat){
     const label = grade==="perfect" ? `<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
-                : grade==="hit"     ? `<span style="color:#1fd3a0;font-weight:900">⚔️ HIT</span>`
+                : grade==="hit"     ? `<span style="color:#FF8568;font-weight:900">⚔️ HIT</span>`
                 :                      `<span style="color:#f87171;font-weight:900">💥 MISS</span>`;
     const xpLine = isMiss ? `<span style="font-size:11.5px;color:#f87171">+0 XP · 콤보 -1${heard?` · 들림 "${escapeHtml(heard)}"`:" · 안 들렸어요"}</span>`
                           : `<span style="font-size:11.5px;color:var(--muted)">${elapsed.toFixed(1)}초 · +${gained} XP${heard?` · 들림 "${escapeHtml(heard)}"`:""}</span>`;
@@ -5156,7 +5286,7 @@ function spDone(){
   const mastery = total? Math.round((spPerfect*1 + spHit*0.6)/total*100) : 0;
   const grade = spGrade5(mastery);
   const weak = weakList(3);
-  const gColor = grade==="S"?"#ffd17a": grade==="A"?"#1fd3a0": grade==="B"?"#7cc4ff": grade==="C"?"#e6ad4a":"#f87171";
+  const gColor = grade==="S"?"#ffd17a": grade==="A"?"#FF8568": grade==="B"?"#7cc4ff": grade==="C"?"#e6ad4a":"#f87171";
   const weakHtml = weak.length ? `
     <div style="margin:18px 0 6px;font-size:14px;font-weight:900;color:var(--text);text-align:left">🎯 오늘의 약한 청크</div>
     <div style="font-size:12px;color:var(--muted);text-align:left;margin-bottom:10px">탭하면 그 청크만 집중 훈련해요 — 실수를 바로 실력으로</div>
@@ -5169,7 +5299,7 @@ function spDone(){
    <div class="rv-done" style="max-width:460px"><div class="em">⚡</div><h2>아레나 결과</h2>
    <div style="display:flex;gap:9px;justify-content:center;margin:10px 0 8px">
      <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#ffd17a">${spPerfect}</div><div style="font-size:11px;color:var(--muted)">⚡ PERFECT</div></div>
-     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#1fd3a0">${spHit}</div><div style="font-size:11px;color:var(--muted)">⚔️ HIT</div></div>
+     <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#FF8568">${spHit}</div><div style="font-size:11px;color:var(--muted)">⚔️ HIT</div></div>
      <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#f87171">${spMiss}</div><div style="font-size:11px;color:var(--muted)">💥 MISS</div></div>
    </div>
    <div style="display:flex;gap:9px;justify-content:center;margin:0 0 6px">
@@ -5235,7 +5365,7 @@ function ctNext(){
    <div class="arena" style="max-width:520px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <button id="ctExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
-      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#1fd3a0,#7cc4ff)"></div></div>
+      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#FF8568,#7cc4ff)"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--muted)">${ctIdx+1}/${ctItems.length} · ✓${ctPass}</div>
     </div>
     <div style="text-align:center;margin:8px 0 16px">
@@ -5264,7 +5394,7 @@ function ctScore(it, heard){
   const stat=$("#ctStat");
   if(stat){
     const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
-             : grade==="hit"?`<span style="color:#1fd3a0;font-weight:900">⚔️ 통과</span>`
+             : grade==="hit"?`<span style="color:#FF8568;font-weight:900">⚔️ 통과</span>`
              : `<span style="color:#f87171;font-weight:900">💥 다시</span>`;
     stat.innerHTML=`${lbl} <span style="font-family:var(--serif);color:var(--text);font-size:17px">${escapeHtml(it.en)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`들림 "${escapeHtml(heard)}"`:"안 들렸어요"}</span>`;
   }
@@ -5302,7 +5432,7 @@ function renderWeakHome(){
   let html="";
   // 🔥 오늘 복습 (SRS due) — 재사용이 유창함을 만든다
   if(st.due>0){
-    html+=`<button id="dueToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(31,211,160,.35);margin-bottom:9px;width:100%">
+    html+=`<button id="dueToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(255,133,104,.35);margin-bottom:9px;width:100%">
       <span><span style="font-size:15.5px;font-weight:900;color:var(--text)">🔥 오늘 복습할 표현</span><br><span style="font-size:12.5px;color:var(--jade);font-weight:700">${st.due}개 · 잊기 전에 다시 꺼내보기</span></span>
       <span style="font-size:20px">📚</span></button>`;
   }
@@ -5787,8 +5917,8 @@ function renderAcqStats(){
     {ic:"🔥", v:streak+"일", l:"연속"},
     {ic:"⚡", v:avgTxt, l:"인출속도"}
   ];
-  box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;background:linear-gradient(160deg,#1b211e,#14191600);background-color:#161b18;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)">
-    ${tiles.map((t,i)=>`${i?'<span style="width:1px;height:18px;background:rgba(255,255,255,.1)"></span>':''}<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
+  box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;background:#FFFFFF;border:1px solid #F6D8C8;border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px -12px rgba(214,120,70,.25)">
+    ${tiles.map((t,i)=>`${i?'<span style="width:1px;height:18px;background:#F6D8C8"></span>':''}<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
   </div>`;
 }
 function applyAgeUI(){
@@ -5868,7 +5998,7 @@ function renderHero(){
    <div class="hero-row">
      <div class="ring-wrap">
        <svg viewBox="0 0 78 78"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-         <stop offset="0" stop-color="#1fd3a0"/><stop offset="1" stop-color="#9b98ec"/></linearGradient></defs>
+         <stop offset="0" stop-color="#FF8568"/><stop offset="1" stop-color="#FF9E7A"/></linearGradient></defs>
          <circle class="ring-bg" cx="39" cy="39" r="${R}"/>
          <circle class="ring-fg" cx="39" cy="39" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/>
        </svg>
@@ -5909,7 +6039,7 @@ function levelUpCelebrate(level){
   </div>`;
   ov.classList.add("show");
   // 색종이
-  const colors=["#1fd3a0","#9b98ec","#ffb454","#ff6b9d","#5b9bf5","#fff"];
+  const colors=["#FF8568","#FF9E7A","#ffb454","#ff6b9d","#5b9bf5","#fff"];
   for(let i=0;i<80;i++){ const c=document.createElement("div"); c.className="confetti";
     c.style.left=(Math.random()*100)+"vw"; c.style.background=colors[(Math.random()*colors.length)|0];
     c.style.animationDuration=(1.6+Math.random()*1.6)+"s"; c.style.animationDelay=(Math.random()*0.4)+"s";
@@ -6003,13 +6133,13 @@ function renderQuestBox(){
     <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-bottom:4px">
       <span>Lv.${lvl.level} → 다음 보상 ${nr?("Lv."+nr.lv+" "+nr.emo+nr.t):"전부 달성 🏆"}</span><span>${lvl.inLevel}/${lvl.need}</span>
     </div>
-    <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#1fd3a0,#13b488);border-radius:99px"></div></div>
+    <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#F0664A);border-radius:99px"></div></div>
   </div>`;
 }
 const MODE_HERO={
-  vocab:{emo:"📖",t:"단어 학습",d:"여러 다른 문장으로 단어를 익혀요",c:"#1fd3a0",bg:"rgba(31,211,160,.14)"},
+  vocab:{emo:"📖",t:"단어 학습",d:"여러 다른 문장으로 단어를 익혀요",c:"#FF8568",bg:"rgba(255,133,104,.14)"},
   block:{emo:"🧱",t:"블록 영어",d:"핵심 표현을 블록처럼 쌓아요",c:"#f0883e",bg:"rgba(240,136,62,.14)"},
-  talk: {emo:"🗣️",t:"실전 회화",d:"상황 속에서 직접 말해봐요",c:"#a78bfa",bg:"rgba(167,139,250,.16)"},
+  talk: {emo:"🗣️",t:"실전 회화",d:"상황 속에서 직접 말해봐요",c:"#a78bfa",bg:"rgba(255,158,122,.16)"},
   listen:{emo:"🎧",t:"듣기 훈련",d:"섀도잉·되말하기로 귀를 뚫어요",c:"#5b9bf5",bg:"rgba(91,155,245,.14)"}
 };
 function renderModeHero(){
@@ -6120,7 +6250,7 @@ function openChestFlow(){
     const q3=chestQueueGet(); if(q3.pending>0) setTimeout(openChestFlow,300); else renderHome(); } });
 }
 function chestConfetti(rarity){
-  const colors = rarity==="legendary"? ["#ffd17a","#ffb454","#ff8a3d","#fff"] : ["#c0aaff","#9b98ec","#7bb0ff","#fff"];
+  const colors = rarity==="legendary"? ["#ffd17a","#ffb454","#ff8a3d","#fff"] : ["#c0aaff","#FF9E7A","#7bb0ff","#fff"];
   for(let i=0;i<70;i++){ const c=document.createElement("div"); c.className="confetti";
     c.style.left=(Math.random()*100)+"vw"; c.style.background=colors[(Math.random()*colors.length)|0];
     c.style.animationDuration=(1.5+Math.random()*1.5)+"s"; c.style.zIndex="220";
@@ -6367,9 +6497,9 @@ async function endAndEvaluate(){
       if(rec>=70) awardXP("survival",15,"혼란 회복 성공 🔄");
       questBump("survival");
       goToSetup();
-      const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#1fd3a0':v>=45?'#e6ad4a':'#e0533f'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
+      const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#FF8568':v>=45?'#e6ad4a':'#e0533f'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
       const plist=(Array.isArray(r.phrases)?r.phrases:[]).filter(p=>p&&p.en).map(p=>`• ${p.en}${p.ko?" — "+p.ko:""}`).join("\n");
-      const html=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${r.solved?"🟢 문제 해결 성공":"🔴 아직 미해결 — 다시 도전!"}</div><div style="font-size:40px;font-weight:900;color:${overall>=70?'#1fd3a0':overall>=45?'#e6ad4a':'#e0533f'}">${overall}</div><div style="font-size:11px;color:var(--muted)">생존 종합 점수</div></div>
+      const html=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${r.solved?"🟢 문제 해결 성공":"🔴 아직 미해결 — 다시 도전!"}</div><div style="font-size:40px;font-weight:900;color:${overall>=70?'#FF8568':overall>=45?'#e6ad4a':'#e0533f'}">${overall}</div><div style="font-size:11px;color:var(--muted)">생존 종합 점수</div></div>
       ${bar("소통",com)}${bar("문제해결",ps)}${bar("자신감",conf)}${bar("회복력",rec)}
       ${r.ko?`<div style="font-size:13px;color:var(--text);margin-top:10px;line-height:1.6">${escapeHtml(r.ko)}</div>`:""}
       ${plist?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px;white-space:pre-line">💾 저장된 핵심표현\n${escapeHtml(plist)}</div>`:""}
@@ -6412,7 +6542,7 @@ async function clearAllCaches(){
 async function forceUpdate(){
   const t=document.createElement("div");
   t.textContent="업데이트 확인 중…";
-  t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#06231b;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
+  t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#ffffff;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
   document.body.appendChild(t);
   await clearAllCaches();
   setTimeout(()=>{ location.replace(location.pathname+"?v="+Date.now()); }, 400);
@@ -6431,14 +6561,14 @@ async function checkForUpdate(){
       if(tried===latest){
         const b=document.createElement("button");
         b.textContent="🔄 새 버전("+latest+") 적용하기";
-        b.style.cssText="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--jade);color:#06231b;font-weight:900;padding:13px 20px;border-radius:999px;z-index:99999;font-size:14px;border:none;box-shadow:0 10px 28px -8px rgba(0,0,0,.6)";
+        b.style.cssText="position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--jade);color:#ffffff;font-weight:900;padding:13px 20px;border-radius:999px;z-index:99999;font-size:14px;border:none;box-shadow:0 10px 28px -8px rgba(0,0,0,.6)";
         b.onclick=forceUpdate; document.body.appendChild(b);
         return;
       }
       try{ sessionStorage.setItem("sr_upd", latest); }catch(e){}
       const t=document.createElement("div");
       t.textContent="새 버전 적용 중… ("+latest+")";
-      t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#06231b;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
+      t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#ffffff;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
       document.body.appendChild(t);
       await clearAllCaches();
       setTimeout(()=>{ location.replace(location.pathname+"?v="+encodeURIComponent(latest)+"_"+Date.now()); }, 700);
