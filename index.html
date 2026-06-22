@@ -129,6 +129,7 @@
 .dict-ko{font-size:19px;font-weight:700;color:var(--text);margin-top:6px}
 .dict-kid{font-size:14.5px;color:var(--muted);margin-top:10px;line-height:1.5;background:var(--mist);border-radius:12px;padding:11px 13px}
 .dict-sec{font-size:12px;font-weight:800;color:var(--muted);margin-top:16px;margin-bottom:7px}
+.dict-sayword{display:inline-flex;align-items:center;gap:5px;margin-top:9px;background:var(--jade);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:13.5px;font-weight:700;cursor:pointer}
 .dict-ex{display:block;width:100%;text-align:left;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-top:6px;font-family:var(--serif);font-size:16px;color:var(--text);cursor:pointer}
 .dict-rel{display:flex;flex-wrap:wrap;gap:7px}
 .dict-relchip{font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--jade);cursor:pointer}
@@ -1673,7 +1674,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.89.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.90.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2935,7 +2936,8 @@ function renderListenCorrect(){
   const orig=(lsItem&&lsItem.en)||"";
   $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
     <div class="lmeta">✅ 완벽하게 들었어요!</div>
-    <div style="font-family:var(--serif);font-size:24px;line-height:1.5;color:var(--jade);margin:14px 0 4px">${escapeHtml(orig)}</div>
+    <div style="font-family:var(--serif);font-size:24px;line-height:1.5;color:var(--jade);margin:14px 0 4px">${tappableEn(orig)}</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">👆 단어를 누르면 뜻·발음이 나와요</div>
     ${lsItem.ko?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${escapeHtml(lsItem.ko)}</div>`:""}
     <div style="font-size:13px;color:var(--muted);margin:6px 0 14px">📈 인출 속도와 귀가 좋아지고 있어요</div>
     <div class="lctrls" style="justify-content:center;margin-bottom:4px">
@@ -2989,8 +2991,10 @@ function diffHighlight(correct, answer){
   return (correct||"").split(/(\s+)/).map(tok=>{
     if(/^\s+$/.test(tok)) return tok;
     const clean=normAns(tok);
-    if(clean && !ans.has(clean)) return `<span style="color:#e0533f;font-weight:700;border-bottom:2px solid #e0533f">${escapeHtml(tok)}</span>`;
-    return escapeHtml(tok);
+    const word=(tok.match(/[A-Za-z][A-Za-z']*/)||[""])[0];
+    const tap=word?` onclick="dictShow(this,'${word}')"`:"";
+    if(clean && !ans.has(clean)) return `<span class="tapw"${tap} style="color:#e0533f;font-weight:700;border-bottom:2px solid #e0533f">${escapeHtml(tok)}</span>`;
+    return `<span class="tapw"${tap}>${escapeHtml(tok)}</span>`;
   }).join("");
 }
 function renderListenAnalysis(){
@@ -3000,7 +3004,7 @@ function renderListenAnalysis(){
   const mistakes=(a.mistakes||[]).filter(Boolean);
   $("#listenScroll").innerHTML=`<div class="lcard">
     <div class="lmeta" style="text-align:center">🔍 오답 분석</div>
-    <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">정답 문장 <span style="color:#e0533f">(빨강 = 놓친 부분)</span></div>
+    <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">정답 문장 <span style="color:#e0533f">(빨강 = 놓친 부분)</span> · 👆 단어를 누르면 뜻·발음</div>
     <div style="font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--text);margin-bottom:6px">${diffHighlight(correct, lsAnswer)}</div>
     ${lsAnswer?`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">내 답: "${escapeHtml(lsAnswer)}"</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">(답을 건너뛰었어요)</div>`}
     ${missed.length?`<div class="lkey show" style="margin-bottom:10px"><div class="ki"><span><span class="ken">놓친 단어</span><span class="kko">${missed.map(escapeHtml).join(" · ")}</span></span></div></div>`:""}
@@ -5392,6 +5396,7 @@ function dictRenderPopup(d){
     <div class="dict-card">
       <button class="dict-x" onclick="document.getElementById('dictPop').remove()">✕</button>
       <div class="dict-term">${escapeHtml(d.term)} ${d.type==="chunk"?'<span class="dict-tag">표현</span>':""}</div>
+      <button class="dict-sayword" data-sayword="${escapeAttr(d.term)}">🔊 이 단어만 다시 듣기</button>
       <div class="dict-ko">${escapeHtml(d.ko)}</div>
       ${d.kid?`<div class="dict-kid">💡 ${escapeHtml(d.kid)}</div>`:""}
       ${(d.ex&&d.ex.length)?`<div class="dict-sec">예문</div>${d.ex.slice(0,3).map(e=>`<button class="dict-ex" data-say="${escapeAttr(e)}">${escapeHtml(e)} 🔊</button>`).join("")}`:""}
@@ -5401,6 +5406,7 @@ function dictRenderPopup(d){
       <div class="dict-src">${d.src==="local"?"📖 사전":d.src==="cache"?"📖 저장됨":d.src==="loading"?"⏳ 찾는 중…":"✨ AI"}</div>
     </div>`;
   pop.querySelectorAll(".dict-ex").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
+  const sw=pop.querySelector(".dict-sayword"); if(sw) sw.onclick=()=>speakEn(sw.dataset.sayword);
   pop.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>dictShow(null,b.dataset.rel); });
   const more=pop.querySelector(".dict-more"); if(more) more.onclick=()=>{ more.textContent="찾는 중…"; more.disabled=true; dictAILookup(more.dataset.more); };
   const ask=pop.querySelector(".dict-ask"); if(ask) ask.onclick=()=>{ openAskAI(ask.dataset.ask, (d.ex&&d.ex[0])||""); };
