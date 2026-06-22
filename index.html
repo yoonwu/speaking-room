@@ -1664,7 +1664,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.78.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.79.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2585,7 +2585,30 @@ function startListening(){
   $("#ctxLvl").textContent = levelName()+" · 듣기";
   $("#lnext").style.display="none";
   lsPrevReply=""; lsCount=0; lsPrefetch=null; lsPrefetching=false; lsRecent=[];
+  lsSession={blocks:[], words:[], missed:[]};
   lsGenerate();
+}
+// 🎧 리스닝 재료 — 배운 블록 + 배운 단어 (랜덤 아님, 학습 루프 연결)
+function listenMaterials(){
+  const lvl=state.lvl||1;
+  // 비율: 초급 70/20/10, 중급 60/25/15, 고급 50/30/20
+  const tier = lvl<=3 ? {learned:70,weak:20,fresh:10} : lvl<=6 ? {learned:60,weak:25,fresh:15} : {learned:50,weak:30,fresh:20};
+  const all=Object.values(srsAll());
+  const today=EDAY();
+  const pickEn=arr=>arr.map(x=>x.en).filter(Boolean);
+  // 배운 블록 (CORE_PHRASES 중 사용된 것 + SRS 학습됨)
+  const learnedBlocks = CORE_PHRASES.filter(p=>{ const si=srsGet(p.phrase); return si && (si.uses>0 || ["learning","review","strong","mastered"].includes(si.stage)); }).map(p=>p.phrase);
+  // SRS에서 배운 표현/단어
+  const learnedItems = all.filter(x=>x && x.en && (x.uses>0)).map(x=>x.en);
+  const weakItems = all.filter(x=>x && x.en && ((x.miss||0)>0 || ((x.due||0)<=today && x.stage!=="mastered"))).sort((a,b)=>(b.miss||0)-(a.miss||0)).map(x=>x.en);
+  const recentItems = all.filter(x=>x && x.en && x.lastT).sort((a,b)=>(b.lastT||0)-(a.lastT||0)).slice(0,10).map(x=>x.en);
+  // 배운 단어 (FREQ_DICT 중 SRS에 있는 건 위에서 잡힘; vocab 학습한 단어)
+  return {
+    blocks: [...new Set([...learnedBlocks, ...learnedItems])].slice(0,20),
+    weak: [...new Set(weakItems)].slice(0,12),
+    recent: [...new Set(recentItems)].slice(0,8),
+    tier
+  };
 }
 // 실전 구어 한 문장 생성
 let lsBoosterMode=false;
@@ -2593,8 +2616,21 @@ function listenSentenceSys(){
   const seed=Math.floor(Math.random()*100000);
   const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
   const booster = (lsBoosterMode && (state.lvl||1)>=5) ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
+  // 🎧 배운 블록·단어 기반 (학습 루프 연결)
+  const mat = (typeof listenMaterials==="function") ? listenMaterials() : null;
+  let materialRule="";
+  if(mat && (mat.blocks.length || mat.weak.length)){
+    const t=mat.tier;
+    materialRule = [
+      "CRITICAL — This listening is NOT random. It must mostly REUSE what the learner has already studied, so they recognize learned blocks in real speech. Build the sentence AROUND these:",
+      mat.blocks.length? ("LEARNED blocks/words (use these "+t.learned+"% of the time — weave one into a natural spoken sentence): "+mat.blocks.slice(0,14).join("; ")) : "",
+      mat.weak.length? ("WEAK / due-review (use ~"+t.weak+"%): "+mat.weak.slice(0,10).join("; ")) : "",
+      "Only about "+t.fresh+"% of the time may you introduce a fresh new real-life phrase. Combine a learned BLOCK with a learned WORD when possible (e.g. block 'Can I get...' + word 'receipt' → 'Can I get a receipt?')."
+    ].filter(Boolean).join("\n");
+  }
   return [
 "This is NOT an English lesson. This is LISTENING training for real-world spoken English. Optimize for how people ACTUALLY speak — contractions, reductions, connected speech, natural rhythm — not textbook grammar.",
+materialRule,
 kidMode()? ("Produce ONE short, simple spoken English sentence for a young CHILD about: "+KID_TOPICS[(seed)%KID_TOPICS.length]+".") : ("Produce ONE natural spoken English sentence for a Korean learner. Topic context: "+topicDesc()+"."),
 booster,
 prev,
@@ -2602,7 +2638,7 @@ kidMode()? kidRules() : levelHint(),
 levelCap(),
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
 (lsRecent.length? "DO NOT repeat or closely paraphrase any of these already-used sentences (make something clearly different in meaning and words):\n- "+lsRecent.slice(-15).join("\n- ") : ""),
-'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻"}'
+'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻","block":"the learned block reused, or empty"}'
   ].join("\n");
 }
 async function lsGenerate(){
@@ -2766,10 +2802,26 @@ function lsAllCorrect(){
 function lsCheckAnswer(){
   if(lsAllCorrect()){
     if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답 ✅","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
+    // 🎧 들은 블록/표현을 SRS 강화 + 세션 추적 (학습 루프 연결)
+    try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
     renderListenCorrect();
   } else {
     lsRunAnalysis();
   }
+}
+// 들은 문장에서 배운 블록을 인식 → SRS 강화 + 세션 기록
+let lsSession={blocks:[], words:[], missed:[]};
+function lsTrackHeard(en, ko, block){
+  if(!en) return;
+  // 명시적 block 필드 우선, 없으면 CORE_PHRASES에서 매칭
+  let matched=block||"";
+  if(!matched){
+    const low=" "+en.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\s+/g," ")+" ";
+    const hit=CORE_PHRASES.find(p=>{ const core=p.phrase.toLowerCase().replace(/[^a-z' ]/g," ").replace(/\.\.\.|\?/g,"").trim().split(" ").slice(0,3).join(" "); return core.length>=3 && low.indexOf(" "+core)>=0; });
+    if(hit) matched=hit.phrase;
+  }
+  if(matched){ srsPass(matched, ko||"", "listen"); if(!lsSession.blocks.includes(matched)) lsSession.blocks.push(matched); }
+  try{ refreshRvBanner&&refreshRvBanner(); }catch(e){}
 }
 // 정답 화면 — 자동 분석 없이 사용자가 선택
 // 🧠 학습 컨텍스트 패널 — 방금 배운 문장을 패턴으로 확장 (암기X, 패턴 학습)
