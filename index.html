@@ -134,6 +134,11 @@
 .dict-relchip{font-size:14px;background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 13px;color:var(--jade);cursor:pointer}
 .dict-src{font-size:11px;color:var(--muted);text-align:right;margin-top:14px}
 .dict-more{display:block;width:100%;margin-top:14px;padding:12px;border-radius:12px;background:var(--mist);border:1px solid var(--line);color:var(--jade);font-size:14px;font-weight:700;cursor:pointer}
+.dict-ask{display:block;width:100%;margin-top:10px;padding:13px;border-radius:12px;background:linear-gradient(135deg,#1fd3a0,#16a085);border:none;color:#06231b;font-size:14.5px;font-weight:800;cursor:pointer}
+.dict-ask:active{transform:scale(.99)}
+.ask-u{align-self:flex-end;max-width:82%;background:var(--jade);color:#06231b;padding:10px 14px;border-radius:15px 15px 4px 15px;font-size:14.5px;line-height:1.45}
+.ask-a{align-self:flex-start;max-width:88%;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:15px 15px 15px 4px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
+.ask-typing{color:var(--muted)}
 /* 🧠 학습 컨텍스트 패널 */
 .learn-panel{display:flex;flex-direction:column;gap:11px;max-width:520px;margin:16px auto 0;width:100%}
 .lp-loading{text-align:center;color:var(--muted);font-size:15px;padding:16px}
@@ -1402,7 +1407,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.65.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.66.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3690,10 +3695,12 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
         <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)">${SRS_STAGES.map((s,i)=>`<span style="color:${i<=idx?'var(--jade)':'var(--muted)'};font-weight:${i===idx?'900':'400'}">${srsStageLabel(s)}</span>`).join("")}</div>
       </div>`; })()}
     <div id="wpLearnCard"></div>
-    <button class="sh-next" id="wpNextBtn" style="margin-top:14px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
+    <button class="dict-ask" id="wpAsk" style="margin-top:10px">💬 이 표현에 대해 AI에게 질문하기</button>
+    <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(full),260);
   $("#wpSay").onclick=()=>speakEn(full);
+  const askB=$("#wpAsk"); if(askB) askB.onclick=()=>openAskAI(q.word.word, full);
   card.querySelectorAll(".wp-spd").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
   $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
   if(correct) wpLoadLearnCard(q.word.word, q.word.ko);
@@ -4706,6 +4713,55 @@ function lookupLocal(text){
   if(typeof FREQ_DICT!=="undefined" && FREQ_DICT[k]){ return {type:"word", term:k, ko:FREQ_DICT[k], kid:"", ex:[], rel:[], src:"local"}; }
   return null;
 }
+// 💬 AI에게 질문하기 — 현재 단어/표현 맥락으로 자유 질문
+let askCtx={term:"", sentence:""};
+function openAskAI(term, sentence){
+  askCtx={term:term||"", sentence:sentence||""};
+  let m=document.getElementById("askPop");
+  if(!m){ m=document.createElement("div"); m.id="askPop"; document.body.appendChild(m); }
+  m.className="dict-pop";
+  m.innerHTML=`
+    <div class="dict-bg" onclick="document.getElementById('askPop').remove()"></div>
+    <div class="dict-card" style="max-height:82vh;display:flex;flex-direction:column">
+      <button class="dict-x" onclick="document.getElementById('askPop').remove()">✕</button>
+      <div class="dict-term" style="font-size:20px">💬 AI에게 질문 <span class="dict-tag">${escapeHtml(term||"")}</span></div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">이 단어·표현에 대해 궁금한 걸 물어보세요</div>
+      <div id="askLog" style="flex:1;overflow-y:auto;margin:14px 0;display:flex;flex-direction:column;gap:10px"></div>
+      <div id="askChips" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input id="askInput" placeholder="예: 언제 써요? 비슷한 말은?" style="flex:1;padding:13px;border:1.5px solid var(--line);border-radius:13px;background:var(--mist);color:var(--text);font-size:15px">
+        <button id="askSend" style="padding:13px 18px;border-radius:13px;background:var(--jade);color:#06231b;border:none;font-weight:800;cursor:pointer">전송</button>
+      </div>
+    </div>`;
+  // 추천 질문 칩
+  const chips=term?[`"${term}" 언제 써요?`,`비슷한 표현은?`,`예문 더 보여줘`]:["이거 언제 써요?","비슷한 표현은?"];
+  const chipBox=$("#askChips");
+  chipBox.innerHTML=chips.map(c=>`<span class="dict-relchip" data-q="${escapeAttr(c)}">${escapeHtml(c)}</span>`).join("");
+  chipBox.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>{ $("#askInput").value=b.dataset.q; askSend(); }; });
+  $("#askSend").onclick=askSend;
+  $("#askInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); askSend(); }});
+  setTimeout(()=>$("#askInput").focus(),100);
+}
+async function askSend(){
+  const inp=$("#askInput"); const q=(inp.value||"").trim(); if(!q) return;
+  inp.value="";
+  const log=$("#askLog");
+  const u=document.createElement("div"); u.className="ask-u"; u.textContent=q; log.appendChild(u);
+  const a=document.createElement("div"); a.className="ask-a"; a.innerHTML='<span class="ask-typing">생각 중…</span>'; log.appendChild(a);
+  log.scrollTop=log.scrollHeight;
+  try{
+    const sys=[
+"You are a friendly English tutor answering a Korean learner's question about a specific word/expression. Answer in KOREAN, short and clear, with 1-2 English examples. Kid-friendly tone.",
+askCtx.term?("The word/expression in focus: \""+askCtx.term+"\"."):"",
+askCtx.sentence?("It appeared in: \""+askCtx.sentence+"\"."):"",
+levelHint()
+    ].filter(Boolean).join("\n");
+    const d=await callClaude(sys,[{role:"user",content:q}], FAST_MODEL);
+    const txt=extractText(d)||"답을 못 했어요. 다시 물어봐 주세요.";
+    a.innerHTML=""; a.textContent=txt;
+  }catch(e){ a.textContent="앗, 연결이 안 됐어요. 다시 시도해 주세요."; }
+  log.scrollTop=log.scrollHeight;
+}
 // 영어 문장을 탭 가능한 단어들로 감싸기
 function tappableEn(text){
   if(!text) return "";
@@ -4746,11 +4802,13 @@ function dictRenderPopup(d){
       ${(d.ex&&d.ex.length)?`<div class="dict-sec">예문</div>${d.ex.slice(0,3).map(e=>`<button class="dict-ex" data-say="${escapeAttr(e)}">${escapeHtml(e)} 🔊</button>`).join("")}`:""}
       ${(d.rel&&d.rel.length)?`<div class="dict-sec">관련 표현</div><div class="dict-rel">${d.rel.map(r=>`<span class="dict-relchip" data-rel="${escapeAttr(r)}">${escapeHtml(r)}</span>`).join("")}</div>`:""}
       ${(d.src==="local"&&(!d.ex||!d.ex.length)&&d.ko!=="…")?`<button class="dict-more" data-more="${escapeAttr(d.term)}">＋ 예문·설명 더 보기 (AI)</button>`:""}
+      <button class="dict-ask" data-ask="${escapeAttr(d.term)}">💬 AI에게 질문하기</button>
       <div class="dict-src">${d.src==="local"?"📖 사전":d.src==="cache"?"📖 저장됨":d.src==="loading"?"⏳ 찾는 중…":"✨ AI"}</div>
     </div>`;
   pop.querySelectorAll(".dict-ex").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
   pop.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>dictShow(null,b.dataset.rel); });
   const more=pop.querySelector(".dict-more"); if(more) more.onclick=()=>{ more.textContent="찾는 중…"; more.disabled=true; dictAILookup(more.dataset.more); };
+  const ask=pop.querySelector(".dict-ask"); if(ask) ask.onclick=()=>{ openAskAI(ask.dataset.ask, (d.ex&&d.ex[0])||""); };
   if(d.src!=="loading"){ try{ speakEn(d.term); }catch(e){} }
 }
 // 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
