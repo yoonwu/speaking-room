@@ -1673,7 +1673,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.85.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.86.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3744,8 +3744,9 @@ function vbankGet(){ return hGet("speakingroom:vbank",{}); }
 function bankKey(themeId){ return themeId+"@"+(state.lvl||1); }
 function vbankSave(b){ hSet("speakingroom:vbank",b); }
 function ensureSeed(themeId){
+  if((state.lvl||1)>=4) return;   // 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
   const b=vbankGet();
-  if(b[themeId]===undefined && SEED_VOCAB[themeId]){ b[themeId]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
+  if(b[bankKey(themeId)]===undefined && SEED_VOCAB[themeId]){ b[bankKey(themeId)]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
 }
 function takeFromBank(themeId){
   const key=bankKey(themeId);
@@ -3833,11 +3834,17 @@ async function generateVocab(){
   else {
     // 2) 없으면 그 테마 단어를 AI로 생성 (로딩)
     $("#vbBody").innerHTML=`<div class="lloading">${escapeHtml(theme.t)} 단어를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
-    try{
-      const ws=await aiVocabSet(theme);
-      if(ws && ws.length){ vocabWords=ws; vbIdx=0; markVocabSeen(ws); showVocabCard(); }
-      else throw new Error("empty");
-    }catch(e){ vocabWords=instantSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard(); }
+    let ws=null;
+    for(let attempt=0; attempt<2 && !(ws&&ws.length); attempt++){
+      try{ ws=await aiVocabSet(theme); }catch(e){ ws=null; }
+    }
+    if(ws && ws.length){ vocabWords=ws; vbIdx=0; markVocabSeen(ws); showVocabCard(); }
+    else if((state.lvl||1)>=4){
+      // 고레벨은 시드(초급 카페단어)로 떨어지면 안 됨 — 재시도 버튼
+      $("#vbBody").innerHTML=`<div class="lloading">단어를 만들지 못했어요.<br><button class="sh-next" id="vbRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
+      const r=$("#vbRetry"); if(r) r.onclick=generateVocab;
+    }
+    else { vocabWords=instantSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard(); }
   }
   // 3) 다음을 위해 여러 랜덤 테마 미리 생성
   prefetchVocab(theme);
@@ -7129,6 +7136,15 @@ async function endAndEvaluate(){
 }
 
 /* ============ wire up ============ */
+// 🧹 옛 단어 캐시 정리 (레벨 무관 시드/구버전 잔재 제거) — 한 번만
+try{
+  const MIG="speakingroom:vbankmig";
+  if(hGet(MIG,0) < 2){
+    // 구형 vbank(테마 키, 레벨태그 없음) 전부 비움 → 레벨별로 새로 생성됨
+    hSet("speakingroom:vbank", {});
+    hSet(MIG, 2);
+  }
+}catch(e){}
 buildSetup();
 initRec();
 loadNotes();
