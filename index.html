@@ -1339,6 +1339,33 @@ body{background:var(--paper)!important;color:var(--text)}
 .arena.arena2 .ar2-foot span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .arena.arena2 .ar2-foot b{color:#E2674A;font-size:15px;font-weight:900}
 
+/* ===== 🍑 블록영어 상황인출 — 복숭아 소르베 시안 (안 A/C) ===== */
+.blpz{background:linear-gradient(180deg,#FFF1E6,#FFE8DB);border:1px solid #FBD6C4;border-radius:30px;box-shadow:0 20px 44px -22px rgba(214,120,70,.46);padding:22px 20px 24px;margin:0 auto;max-width:460px}
+.blpz-coach{display:flex;align-items:flex-end;gap:10px;margin-bottom:14px}
+.blpz-fox{width:42px;height:42px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:22px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)}
+.blpz-bubble{background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:11px 14px;font-size:14px;color:#5A463C;font-weight:600;line-height:1.45}
+.blpz-card{background:#fff;border:1px solid #FBE0D2;border-radius:18px;padding:20px 18px;text-align:center;box-shadow:0 8px 20px -14px rgba(214,120,70,.4)}
+.blpz-card .blpz-emo{font-size:26px}
+.blpz-card .blpz-ko{font-size:20px;font-weight:800;color:#3A2D27;line-height:1.45;margin-top:8px}
+.blpz-card .blpz-tip{font-size:12.5px;color:#B0958A;font-weight:700;margin-bottom:8px}
+.blpz-micwrap{display:flex;justify-content:center;margin:22px 0 10px}
+.blpz-micring{position:relative;width:118px;height:118px;display:grid;place-items:center}
+.blpz-micring::before{content:"";position:absolute;inset:0;border-radius:50%;background:rgba(255,133,104,.16)}
+.blpz-micring::after{content:"";position:absolute;inset:13px;border-radius:50%;background:rgba(255,133,104,.26)}
+.blpz-mic{position:relative;z-index:1;width:84px;height:84px;border:none;border-radius:50%;background:linear-gradient(155deg,#FF9576,#F0664A);display:grid;place-items:center;font-size:34px;cursor:pointer;box-shadow:0 14px 28px -10px rgba(240,102,74,.6);transition:transform .12s}
+.blpz-mic:active{transform:scale(.94)}
+.blpz-mic.live{animation:blpzpulse .8s infinite}
+@keyframes blpzpulse{0%,100%{box-shadow:0 14px 28px -10px rgba(240,102,74,.6)}50%{box-shadow:0 14px 40px -6px rgba(240,102,74,.9)}}
+.blpz-miclbl{text-align:center;font-size:14px;color:#C08763;font-weight:800;min-height:22px}
+.blpz-stat{text-align:center;font-size:14px;color:#8A6F62;font-weight:700;min-height:24px;margin-top:4px}
+.blpz-foot{display:flex;gap:9px;margin-top:16px}
+.blpz-foot button{flex:1;border:1px solid #FBD6C4;background:#fff;color:#8A6F62;font-size:13.5px;font-weight:700;border-radius:99px;padding:11px;cursor:pointer}
+.blpz-timer{text-align:center;font-size:13px;font-weight:800;color:#F0664A;margin-bottom:8px}
+.blpz-stepbadge{display:block;text-align:center;margin-bottom:14px}
+.blpz-stepbadge span{font-size:11.5px;font-weight:900;letter-spacing:.04em;color:#fff;background:#F0664A;border-radius:99px;padding:4px 13px}
+.blpz-in{width:100%;margin-top:10px;padding:13px;border:1.5px solid #FF8568;border-radius:13px;background:#fff;color:#3A2D27;font-size:16px}
+
+
 /* ===== 모드 허브 시트 (스피킹 훈련장 / 청크) ===== */
 .hub-ov{position:fixed;inset:0;z-index:140;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s}
 .hub-ov.show{opacity:1}
@@ -1683,7 +1710,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.01.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.02.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5474,20 +5501,23 @@ function bleRender(){
   if(!bleSession || bleSession.idx>=bleSession.items.length) return bleSummary();
   const it=bleSession.items[bleSession.idx];
   const prog=Math.round(bleSession.idx/bleSession.items.length*100);
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <button id="bleExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
-      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
-      <div style="font-size:12px;font-weight:800;color:var(--muted)">${bleSession.idx+1}/${bleSession.items.length}</div>
-    </div>`;
   let body="";
+  let isPeach=false;
   if(it.type==="understand") body=bleViewUnderstand(it);
   else if(it.type==="pattern") body=bleViewPattern(it);
   else if(it.type==="pattern_fill") body=bleViewFill(it,"pattern");
   else if(it.type==="block_fill") body=bleViewFill(it,"block");
   else if(it.type==="discriminate") body=bleViewDiscriminate(it);
-  else body=bleViewRetrieve(it);   // situation / mixed / speed
-  $("#sprintScroll").innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
-  $("#sprintScroll").scrollTop=0;
+  else { body=bleViewRetrieve(it); isPeach=true; }   // situation / mixed / speed
+  const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
+      <button id="bleExit" style="background:${headBg};border:1px solid ${headTrack};color:${headTx};font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
+      <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:${headTrack};overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+      <div style="font-size:12px;font-weight:800;color:${headTx}">${bleSession.idx+1}/${bleSession.items.length}</div>
+    </div>`;
+  const ss=$("#sprintScroll"); ss.style.background=isPeach?"#EAE3DD":""; 
+  ss.innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
+  ss.scrollTop=0;
   $("#bleExit").onclick=()=>goToSetup();
   bleT0=Date.now(); bleSpoke=0;
   if(it.type==="understand") bleWireUnderstand(it);
@@ -5612,20 +5642,29 @@ function bleWireDiscriminate(it){
 function bleViewRetrieve(it){
   const ex=it.ex;
   const isSpeed=it.type==="speed";
-  return `${blePhaseTag(it.type)}
-   <div class="ar2-scene">
-    ${isSpeed?`<div id="bleTimer" style="text-align:center;font-size:13px;font-weight:800;color:#e0533f;margin-bottom:6px">⏱ ${it.limit}초</div>`:""}
-    <div style="text-align:center">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">${it.type==="mixed"?"이 상황을 영어로 (힌트 없이)":"상황에 맞게 영어로"}</div>
-      <div style="font-size:21px;color:var(--text);font-weight:700">${escapeHtml(ex.ko)}</div>
+  const emo = ex.emoji || ({restaurant:"🍽",cafe:"☕",hotel:"🏨",hospital:"🏥",school:"🏫",shopping:"🛍",airport:"✈️",taxi:"🚕",office:"🏢",bank:"🏦"})[ex.situation] || "💬";
+  const coachMsg = it.type==="mixed"?"이 상황, 영어로 말해볼까요?" : it.type==="speed"?"빠르게! 바로 말해보세요 ⚡" : "이 상황을 영어로 말해볼까요?";
+  return `<div class="blpz">
+    ${isSpeed?`<div class="blpz-timer" id="bleTimer">⏱ ${it.limit}초</div>`:""}
+    <div class="blpz-coach">
+      <div class="blpz-fox">🦊</div>
+      <div class="blpz-bubble">${coachMsg}</div>
     </div>
-    <div id="bleStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:24px;margin-top:16px">🎤 눌러서 말하기</div>
-   </div>
-   <div class="ar2-ctrl">
-    <button id="bleMic" class="bigplay" style="width:100%;justify-content:center;padding:17px;font-size:17px">🎤 말하기</button>
-    <button id="bleType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기</button>
-    <button id="bleHint" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">💡 힌트</button>
-   </div>`;
+    <div class="blpz-card">
+      <div class="blpz-tip">${it.type==="mixed"?"힌트 없이 영어로":"상황에 맞는 블록으로"}</div>
+      <div class="blpz-emo">${emo}</div>
+      <div class="blpz-ko">${escapeHtml(ex.ko)}</div>
+    </div>
+    <div class="blpz-micwrap">
+      <div class="blpz-micring"><button id="bleMic" class="blpz-mic">🎤</button></div>
+    </div>
+    <div class="blpz-miclbl" id="bleMicLbl">눌러서 바로 말하기</div>
+    <div class="blpz-stat" id="bleStat"></div>
+    <div class="blpz-foot">
+      <button id="bleHint">💡 힌트</button>
+      <button id="bleType">⌨️ 글로 쓰기</button>
+    </div>
+  </div>`;
 }
 function bleWireRetrieve(it){
   const ex=it.ex, b=it.block;
@@ -5634,16 +5673,16 @@ function bleWireRetrieve(it){
     let left=it.limit;
     timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초"; if(left<=0){ clearInterval(timer); bleFinishRetrieve(it, ""); } }, 1000);
   }
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleStat").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieve(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieve(it, t); }); };
   $("#bleType").onclick=()=>{
-    const ctrl=document.querySelector(".ar2-ctrl"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
+    const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
-    const w=document.createElement("div"); w.style.cssText="margin-top:8px";
-    w.innerHTML=`<input id="bleTypeIn" style="width:100%;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
-    ctrl.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
+    const w=document.createElement("div");
+    w.innerHTML=`<input id="bleTypeIn" class="blpz-in" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
+    wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(b.block)+'</b> 로 시작'; };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; };
 }
 function bleFinishRetrieve(it, heard){
   const ex=it.ex, b=it.block;
@@ -5656,9 +5695,10 @@ function bleFinishRetrieve(it, heard){
       : res.grade==="hit"?'<span style="color:#E2674A;font-weight:900">✓ 통과</span>'
       : res.grade==="weak_hit"?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
       : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:var(--text);font-size:18px;margin-top:6px">${escapeHtml(ex.en)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${res.blockUsed?"블록 사용 ✓":"의미는 통했어요"}</div>`;
+    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:2px">${res.blockUsed?"블록 사용 ✓":"의미는 통했어요"}</div>`;
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
+  const lbl2=$("#bleMicLbl"); if(lbl2) lbl2.textContent="";
   speakEn(ex.en);
   const mixed = it.type==="mixed"||it.type==="speed";
   bleRecord(b.id, {correct, fast, situation:ex.situation, ms, mixed});
@@ -5671,6 +5711,7 @@ function bleFinishRetrieve(it, heard){
 // ===== 세션 요약 =====
 function bleSummary(){
   TTS&&TTS.cancel();
+  { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleSession.results;
   const newB=bleSession.newBlock;
   // 🔓 새 블록 코스를 마쳤으면 잠금해제 표시
@@ -5784,17 +5825,20 @@ function bleDeepRender(){
   bleDeep.current=it; bleDeep.count++;
   const doneN=bleDeep.results.length;
   const rk=BLE_REASON_KO[it.reason]||"", rc=BLE_REASON_COLOR[it.reason]||"#8A6F62";
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <button id="bleExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 끝내기</button>
-      <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:var(--jade)">🔁 본격 학습 · ${doneN}문제</div>
+  let body;
+  let isPeach=false;
+  if(it.type==="discriminate") body=bleViewDiscriminate(it);
+  else if(it.type==="repair") { body=bleViewRepair(it); isPeach=true; }
+  else { body=bleViewRetrieve(it); isPeach=true; }
+  const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
+      <button id="bleExit" style="background:${headBg};border:1px solid ${headTrack};color:${headTx};font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 끝내기</button>
+      <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#F0664A">🔁 본격 학습 · ${doneN}문제</div>
       <div style="width:64px;text-align:right">${rk?`<span style="font-size:10.5px;font-weight:800;color:#fff;background:${rc};border-radius:99px;padding:3px 8px">${rk}</span>`:""}</div>
     </div>`;
-  let body;
-  if(it.type==="discriminate") body=bleViewDiscriminate(it);
-  else if(it.type==="repair") body=bleViewRepair(it);
-  else body=bleViewRetrieve(it);
-  $("#sprintScroll").innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
-  $("#sprintScroll").scrollTop=0;
+  const ss=$("#sprintScroll"); ss.style.background=isPeach?"#EAE3DD":"";
+  ss.innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
+  ss.scrollTop=0;
   $("#bleExit").onclick=()=>bleDeepSummary();
   bleT0=Date.now(); bleSpoke=0;
   if(it.type==="discriminate") bleWireDiscriminateDeep(it);
@@ -5806,7 +5850,8 @@ async function bleFinishRetrieveDeep(it, heard){
   const ex=it.ex, b=it.block;
   const ms=Math.max(100,(bleSpoke||Date.now())-bleT0); const fast=ms<=(it.type==="speed"?(it.limit*1000):5000);
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
-  const stat=$("#bleStat"); if(stat) stat.innerHTML='<span style="color:var(--muted)">채점 중…</span>';
+  const micLbl=$("#bleMicLbl"); if(micLbl) micLbl.textContent="";
+  const stat=$("#bleStat"); if(stat) stat.innerHTML='<span style="color:#8A6F62">채점 중…</span>';
   const j=await bleJudge(b, ex, heard);   // {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo}
   const isPerfect=j.result==="PERFECT", isHit=j.result==="HIT", isWeak=j.result==="WEAK_HIT";
   if(stat){
@@ -5815,9 +5860,9 @@ async function bleFinishRetrieveDeep(it, heard){
       : isWeak?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
       : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
     const sub = isPerfect?`${b.block} 블록 사용 ✓ · ${(ms/1000).toFixed(1)}초`
-      : isHit?`의미는 통했어요. 다음엔 <b style="color:var(--jade)">${escapeHtml(b.block)}</b> 로!`
+      : isHit?`의미는 통했어요. 다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로!`
       : (j.shortFeedbackKo||"");
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:var(--text);font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">${sub}</div>`;
+    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:#8A6F62;margin-top:3px">${sub}</div>`;
   }
   speakEn(j.naturalAnswer||ex.en);
   bleRecord(b.id, {result:j.result, fast, situation:ex.situation, ms, mixed:(it.type==="mixed"||it.type==="speed"), deep:true, confusedWith:j.confusedWith});
@@ -5835,16 +5880,16 @@ function bleWireRetrieveDeep(it){
     let left=it.limit;
     timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초"; if(left<=0){ clearInterval(timer); bleFinishRetrieveDeep(it, ""); } }, 1000);
   }
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleStat").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieveDeep(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer) clearInterval(timer); bleFinishRetrieveDeep(it, t); }); };
   $("#bleType").onclick=()=>{
-    const ctrl=document.querySelector(".ar2-ctrl"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
+    const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
-    const w=document.createElement("div"); w.style.cssText="margin-top:8px";
-    w.innerHTML=`<input id="bleTypeIn" style="width:100%;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
-    ctrl.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
+    const w=document.createElement("div");
+    w.innerHTML=`<input id="bleTypeIn" class="blpz-in" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
+    wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieveDeep(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(b.block)+'</b> 로 시작'; };
+  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:#F0664A">'+escapeHtml(b.block)+'</b> 로 시작'; };
 }
 // Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
@@ -5905,6 +5950,7 @@ function bleWireRepair(it){
 // ===== Deep Practice 세션 요약 =====
 function bleDeepSummary(){
   TTS&&TTS.cancel();
+  { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleDeep?bleDeep.results:[];
   if(!res.length){ goToSetup(); return; }
   const byId={};
@@ -8261,6 +8307,7 @@ $("#lsTopBack") && ($("#lsTopBack").onclick=goToSetup);
 $("#spTopBack") && ($("#spTopBack").onclick=goToSetup);
 function goToSetup(fromPop){
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
+  const _ss=$("#sprintScroll"); if(_ss) _ss.style.background="";
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
   rvActive=false;
