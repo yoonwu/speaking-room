@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.00.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.01.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5259,31 +5259,52 @@ function bleRecord(id, opts){
   bleBlockState(id);
   const s=bleGetState();
   const stt=s[id];
-  const correct=!!opts.correct, fast=!!opts.fast, situation=opts.situation||"", ms=opts.ms;
-  if(correct){ stt.successCount++; stt.consecFails=0; if(situation && stt.contextsUsed.indexOf(situation)<0) stt.contextsUsed.push(situation); }
-  else { stt.failCount++; stt.consecFails=(stt.consecFails||0)+1; }
-  if(correct && !fast) stt.slowCount++;
-  if(correct && fast) stt.fastCount++;
-  if(opts.mixed && correct) stt.mixedSuccessCount++;
+  // result: "PERFECT" | "HIT" | "WEAK_HIT" | "MISS"
+  const result=opts.result||(opts.correct?"PERFECT":"MISS");
+  const fast=!!opts.fast, situation=opts.situation||"", ms=opts.ms;
+  stt.communicationSuccessCount=stt.communicationSuccessCount||0;
+  if(result==="PERFECT"){
+    // 의미 맞고 + 타겟 블록 사용 + 충분히 빠름
+    stt.successCount++; stt.communicationSuccessCount++; stt.consecFails=0;
+    if(situation && stt.contextsUsed.indexOf(situation)<0) stt.contextsUsed.push(situation);
+    if(fast) stt.fastCount++; else stt.slowCount++;
+    if(opts.mixed) stt.mixedSuccessCount++;
+  } else if(result==="HIT"){
+    // 의미는 통했지만 타겟 블록 안 씀 → 마스터리 안 올림
+    stt.communicationSuccessCount++; stt.consecFails=0;
+  } else if(result==="WEAK_HIT"){
+    // 어설픔 → 약점 표시, 마스터리 보류
+    stt.slowCount++;
+  } else { // MISS
+    stt.failCount++; stt.consecFails=(stt.consecFails||0)+1;
+  }
   if(opts.deep) stt.deepPracticeCount=(stt.deepPracticeCount||0)+1;
-  // 블록 구별 오답: 헷갈린 블록 기록
+  // 헷갈린 블록 기록
   if(opts.confusedWith){ stt.confusedWith=stt.confusedWith||{}; stt.confusedWith[opts.confusedWith]=(stt.confusedWith[opts.confusedWith]||0)+1; }
-  if(typeof ms==="number" && ms>0){ stt.avgMs = stt.avgMs==null? ms : Math.round((stt.avgMs*stt.samples+ms)/(stt.samples+1)); stt.samples++; }
+  if(typeof ms==="number" && ms>0 && (result==="PERFECT"||result==="HIT")){ stt.avgMs = stt.avgMs==null? ms : Math.round((stt.avgMs*stt.samples+ms)/(stt.samples+1)); stt.samples++; }
   // 단계 갱신
   stt.stage=bleComputeStage(stt);
   s[id]=stt; bleSaveState(s);
-  bleScheduleNext(id, correct, fast);
+  // 복습 스케줄: PERFECT/HIT는 정답, WEAK_HIT/MISS는 곧 다시
+  bleScheduleNext(id, (result==="PERFECT"||result==="HIT"), fast && result==="PERFECT");
 }
-// 단계 계산 (문서 정의)
+// 단계 계산 (P9 엄격 게이트)
 function bleComputeStage(st){
   const ctx=(st.contextsUsed||[]).length;
-  if(st.realConversationSuccessCount>=1) return "ready_for_real";
-  if(st.mixedSuccessCount>=1 && st.fastCount>=3) return "ready_for_real";
-  if(st.fastCount>=3) return "fast";
-  if(ctx>=5) return "strong";
-  if(ctx>=3) return "active";
-  if(st.successCount>=1) return "retrieved";
-  if(st.successCount===0 && st.failCount===0) return "learning";
+  const succ=st.successCount||0;       // PERFECT(타겟블록 인출 성공) 횟수
+  const mixed=st.mixedSuccessCount||0;
+  const fast=st.fastCount||0;
+  // READY_FOR_REAL: active+ & 혼합 2회 & 빠른 1회
+  if(succ>=3 && ctx>=3 && mixed>=2 && fast>=1) return "ready_for_real";
+  // FAST: 5초 이내 인출 3회
+  if(fast>=3 && succ>=3) return "fast";
+  // STRONG: 인출 5회 + 5상황 + 혼합 2회
+  if(succ>=5 && ctx>=5 && mixed>=2) return "strong";
+  // ACTIVE: 인출 3회 + 3상황
+  if(succ>=3 && ctx>=3) return "active";
+  // RETRIEVED: 숨김 인출 1회 성공
+  if(succ>=1) return "retrieved";
+  if(succ===0 && (st.failCount||0)===0) return "learning";
   return "learning";
 }
 const BLE_STAGE_KO={new:"새 블록",learning:"배우는 중",controlled:"빈칸 연습",retrieved:"인출 성공",discriminated:"블록 구별",active:"여러 상황",strong:"탄탄함",fast:"빠른 인출",ready_for_real:"실전 준비"};
@@ -5312,6 +5333,63 @@ function bleFreshContextEx(b){
   const fresh=b.examples.filter(e=>used.indexOf(e.situation)<0);
   const pool=fresh.length?fresh:b.examples;
   return pool[(Math.random()*pool.length)|0];
+}
+// ===== P4: AI 채점 (의사소통 성공 ≠ 블록 성공 분리) =====
+// 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded}
+async function bleJudge(targetBlock, ex, heard){
+  const local=bleGradeLocal(targetBlock, ex.en, heard);   // 즉시 폴백값
+  if(!heard || !heard.trim()) return local;
+  try{
+    const others=bleUnlockedBlocks().filter(b=>b.id!==targetBlock.id).map(b=>`${b.id}: ${b.block} (${b.meaningKo})`).join("\n");
+    const sys=`You are a strict but fair Korean-to-English speaking coach judging ONE spoken answer.
+TARGET BLOCK: "${targetBlock.block}" (${targetBlock.meaningKo}) — id: ${targetBlock.id}
+KOREAN SITUATION: ${ex.ko}
+A natural target answer: ${ex.en}
+Other blocks the learner knows (for confusedWith):
+${others||"(none)"}
+
+Judge the learner's spoken answer. Rules:
+- Accept imperfect grammar if the meaning is clearly communicated.
+- Do NOT require exact wording.
+- Mark targetBlockSuccess TRUE only if the studied TARGET block "${targetBlock.block}" was actually used.
+- If a different but valid expression communicates it, result=HIT (not PERFECT), targetBlockSuccess=false.
+- If the learner used a different known block, set confusedWith to that block id.
+- result: PERFECT (meaning right + target block used), HIT (meaning right, different expression), WEAK_HIT (partial/awkward/incomplete), MISS (wrong/unrelated/empty).
+- Keep shortFeedbackKo to ONE short Korean sentence.
+Return ONLY JSON, no markdown:
+{"result":"PERFECT|HIT|WEAK_HIT|MISS","communicationSuccess":true,"targetBlockSuccess":true,"usedBlockId":"id_or_null","confusedWith":"id_or_null","naturalAnswer":"...","shortFeedbackKo":"...","repairNeeded":false}`;
+    const d=await callClaude(sys, [{role:"user", content:"Learner said: "+heard}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(o && o.result){
+      return {
+        result:o.result,
+        communicationSuccess:!!o.communicationSuccess,
+        targetBlockSuccess:!!o.targetBlockSuccess,
+        usedBlockId:o.usedBlockId&&o.usedBlockId!=="null"?o.usedBlockId:null,
+        confusedWith:o.confusedWith&&o.confusedWith!=="null"?o.confusedWith:null,
+        naturalAnswer:o.naturalAnswer||ex.en,
+        shortFeedbackKo:o.shortFeedbackKo||"",
+        repairNeeded:!!o.repairNeeded
+      };
+    }
+  }catch(e){}
+  return local;
+}
+// 로컬 폴백 채점 (AI 실패 시) — 결과타입으로 변환
+function bleGradeLocal(targetBlock, expectedEn, heard){
+  const g=bleGrade(targetBlock, expectedEn, heard);
+  const map={perfect:"PERFECT",hit:"HIT",weak_hit:"WEAK_HIT",miss:"MISS"};
+  const result = g.blockUsed&&g.grade==="perfect"?"PERFECT" : g.blockUsed?"PERFECT" : map[g.grade]||"MISS";
+  return {
+    result,
+    communicationSuccess: result==="PERFECT"||result==="HIT",
+    targetBlockSuccess: !!g.blockUsed,
+    usedBlockId: g.blockUsed?targetBlock.id:null,
+    confusedWith:null,
+    naturalAnswer:expectedEn,
+    shortFeedbackKo: result==="PERFECT"?"블록 잘 썼어요.":result==="HIT"?"의미는 통했어요. 다음엔 블록으로!":result==="WEAK_HIT"?"거의! 조금 더 다듬어봐요.":"다시 해볼까요?",
+    repairNeeded: result==="MISS"||result==="WEAK_HIT"
+  };
 }
 
 // ===== 답 채점 (4단계, 여러 표현 허용) =====
@@ -5639,25 +5717,27 @@ function bleSummary(){
 // 잠금해제된 블록을 약점 기반으로 계속 꺼냄. 7단계 코스와 별개.
 // ============================================================
 let bleDeep=null;   // {queue:[], history:[], results:[], count, repairing}
-// 가중치 기반으로 다음 블록 하나 선택 (우선순위: due > weak > 최근 > 느림 > 단일맥락 > 강함)
+let bleLastReason="mixed_test";
+// 가중치 기반으로 다음 블록 하나 선택 (우선순위: due > weak > 혼동 > 느림 > 단일맥락 > 최근 > 강함)
 function bleDeepPickBlock(){
   const unlocked=bleUnlockedBlocks(); if(!unlocked.length) return null;
   const s=bleGetState(); const now=bleNow();
   const scored=unlocked.map(b=>{
-    const st=s[b.id]; let w=1;
-    if(st.nextReviewAt && st.nextReviewAt<=now) w+=6;          // due 복습
-    if(st.failCount>=2 && st.failCount>st.successCount) w+=5;  // 약점
-    if((st.consecFails||0)>=1) w+=3;
-    if(st.avgMs && st.avgMs>5000) w+=2;                        // 느림
-    if((st.contextsUsed||[]).length<=1) w+=2;                  // 단일 맥락
+    const st=s[b.id]; let w=1; let reason="maintenance";
+    if(st.nextReviewAt && st.nextReviewAt<=now){ w+=6; reason="due_review"; }       // due 복습
+    if(st.failCount>=2 && st.failCount>st.successCount){ w+=5; reason="weak_block"; } // 약점
+    if(Object.keys(st.confusedWith||{}).length){ w+=4; reason="confusion"; }          // 혼동
+    if((st.consecFails||0)>=1){ w+=3; reason="weak_block"; }
+    if(st.avgMs && st.avgMs>5000){ w+=2; if(reason==="maintenance")reason="slow_block"; } // 느림
+    if((st.contextsUsed||[]).length<=1){ w+=2; if(reason==="maintenance")reason="context_gap"; } // 단일 맥락
     if(st.lastSeenAt && (now-st.lastSeenAt)<5*60*1000) w-=2;   // 방금 본 건 덜
-    if(st.stage==="strong"||st.stage==="fast"||st.stage==="ready_for_real") w=Math.max(0.5,w-3); // 강하면 가끔만
-    return {b, w:Math.max(0.2,w)};
+    if(st.stage==="strong"||st.stage==="fast"||st.stage==="ready_for_real") w=Math.max(0.5,w-3);
+    return {b, w:Math.max(0.2,w), reason};
   });
   const total=scored.reduce((a,x)=>a+x.w,0);
   let r=Math.random()*total;
-  for(const x of scored){ r-=x.w; if(r<=0) return x.b; }
-  return scored[0].b;
+  for(const x of scored){ r-=x.w; if(r<=0){ bleLastReason=x.reason; return x.b; } }
+  bleLastReason=scored[0].reason; return scored[0].b;
 }
 // 블록 하나에 대해 약점에 맞는 문제 유형 선택
 function bleDeepPickType(b){
@@ -5677,14 +5757,17 @@ function bleDeepPickType(b){
 // 다음 문제 한 개 생성
 function bleDeepNextItem(){
   const b=bleDeepPickBlock(); if(!b) return null;
+  const reason=bleLastReason;
   const type=bleDeepPickType(b);
-  if(type==="discriminate"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"discriminate", block:b, ex, deep:true}; }
-  if(type==="speed"){ const ex=bleFreshContextEx(b); return {type:"speed", block:b, ex, limit:5, deep:true}; }
-  if(type==="repair"){ const ex=bleFreshContextEx(b); return {type:"repair", block:b, ex, deep:true}; }
-  if(type==="mixed"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"mixed", block:b, ex, deep:true}; }
+  if(type==="discriminate"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"discriminate", block:b, ex, deep:true, reason:"confusion"}; }
+  if(type==="speed"){ const ex=bleFreshContextEx(b); return {type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}; }
+  if(type==="repair"){ const ex=bleFreshContextEx(b); return {type:"repair", block:b, ex, deep:true, reason:"weak_block"}; }
+  if(type==="mixed"){ const ex=b.examples[(Math.random()*b.examples.length)|0]; return {type:"mixed", block:b, ex, deep:true, reason:"mixed_test"}; }
   // situation (context variation)
-  const ex=bleFreshContextEx(b); return {type:"situation", block:b, ex, deep:true};
+  const ex=bleFreshContextEx(b); return {type:"situation", block:b, ex, deep:true, reason};
 }
+const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
+const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepStart(){
   bleDeep={ queue:[], results:[], count:0, requeue:[] };
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -5700,10 +5783,11 @@ function bleDeepRender(){
   if(!it){ return bleDeepSummary(); }
   bleDeep.current=it; bleDeep.count++;
   const doneN=bleDeep.results.length;
+  const rk=BLE_REASON_KO[it.reason]||"", rc=BLE_REASON_COLOR[it.reason]||"#8A6F62";
   const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <button id="bleExit" style="background:var(--mist);border:none;color:var(--muted);font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 끝내기</button>
       <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:var(--jade)">🔁 본격 학습 · ${doneN}문제</div>
-      <div style="width:64px"></div>
+      <div style="width:64px;text-align:right">${rk?`<span style="font-size:10.5px;font-weight:800;color:#fff;background:${rc};border-radius:99px;padding:3px 8px">${rk}</span>`:""}</div>
     </div>`;
   let body;
   if(it.type==="discriminate") body=bleViewDiscriminate(it);
@@ -5717,28 +5801,32 @@ function bleDeepRender(){
   else if(it.type==="repair") bleWireRepair(it);
   else bleWireRetrieveDeep(it);
 }
-// Deep용 인출 마무리 (세션 대신 deep 큐로 흐름)
-function bleFinishRetrieveDeep(it, heard){
+// Deep용 인출 마무리 (AI 채점 · 의사소통/블록 성공 분리)
+async function bleFinishRetrieveDeep(it, heard){
   const ex=it.ex, b=it.block;
   const ms=Math.max(100,(bleSpoke||Date.now())-bleT0); const fast=ms<=(it.type==="speed"?(it.limit*1000):5000);
-  const res=bleGrade(b, ex.en, heard);
-  const correct=res.grade==="perfect"||res.grade==="hit";
-  const stat=$("#bleStat");
-  if(stat){
-    const lbl = res.grade==="perfect"?'<span style="color:#19a06b;font-weight:900">⚡ PERFECT</span>'
-      : res.grade==="hit"?'<span style="color:#E2674A;font-weight:900">✓ 통과</span>'
-      : res.grade==="weak_hit"?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
-      : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
-    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:var(--text);font-size:18px;margin-top:6px">${escapeHtml(ex.en)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${res.blockUsed?"블록 사용 ✓":"의미는 통했어요"} · ${(ms/1000).toFixed(1)}초</div>`;
-  }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
-  speakEn(ex.en);
-  bleRecord(b.id, {correct, fast, situation:ex.situation, ms, mixed:(it.type==="mixed"||it.type==="speed"), deep:true});
-  bleDeep.results.push({id:b.id, type:it.type, ok:correct, fast, ms, situation:ex.situation, blockUsed:res.blockUsed});
-  // 틀리면 곧 다시 / 느리면 속도문제로 다시
-  if(!correct){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx(b), deep:true}); }
-  else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true}); }
-  setTimeout(()=>bleDeepRender(), 1500);
+  const stat=$("#bleStat"); if(stat) stat.innerHTML='<span style="color:var(--muted)">채점 중…</span>';
+  const j=await bleJudge(b, ex, heard);   // {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo}
+  const isPerfect=j.result==="PERFECT", isHit=j.result==="HIT", isWeak=j.result==="WEAK_HIT";
+  if(stat){
+    const lbl = isPerfect?'<span style="color:#19a06b;font-weight:900">⚡ PERFECT</span>'
+      : isHit?'<span style="color:#E2674A;font-weight:900">✓ 통했어요 (다른 표현)</span>'
+      : isWeak?'<span style="color:#E0A300;font-weight:900">△ 거의</span>'
+      : '<span style="color:#e0533f;font-weight:900">✗ 다시</span>';
+    const sub = isPerfect?`${b.block} 블록 사용 ✓ · ${(ms/1000).toFixed(1)}초`
+      : isHit?`의미는 통했어요. 다음엔 <b style="color:var(--jade)">${escapeHtml(b.block)}</b> 로!`
+      : (j.shortFeedbackKo||"");
+    stat.innerHTML=`${lbl}<div style="font-family:var(--serif);color:var(--text);font-size:18px;margin-top:6px">${escapeHtml(j.naturalAnswer||ex.en)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">${sub}</div>`;
+  }
+  speakEn(j.naturalAnswer||ex.en);
+  bleRecord(b.id, {result:j.result, fast, situation:ex.situation, ms, mixed:(it.type==="mixed"||it.type==="speed"), deep:true, confusedWith:j.confusedWith});
+  bleDeep.results.push({id:b.id, type:it.type, result:j.result, comm:j.communicationSuccess, target:j.targetBlockSuccess, usedBlockId:j.usedBlockId, confusedWith:j.confusedWith, fast, ms, situation:ex.situation, naturalAnswer:j.naturalAnswer, reason:it.reason});
+  // MISS/WEAK → 곧 다시 (situation) / HIT(통했지만 블록 못씀) → 같은 블록 한번 더 / 느린 PERFECT → 속도로
+  if(j.result==="MISS"||j.result==="WEAK_HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx(b), deep:true, reason:"weak_block"}); }
+  else if(j.result==="HIT"){ bleDeep.requeue.push({type:"situation", block:b, ex:bleFreshContextEx(b), deep:true, reason:"context_gap"}); }
+  else if(!fast && it.type!=="speed"){ bleDeep.requeue.push({type:"speed", block:b, ex, limit:5, deep:true, reason:"slow_block"}); }
+  setTimeout(()=>bleDeepRender(), isPerfect?1500:2300);
 }
 function bleWireRetrieveDeep(it){
   const ex=it.ex, b=it.block;
@@ -5758,7 +5846,7 @@ function bleWireRetrieveDeep(it){
   };
   $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(b.block)+'</b> 로 시작'; };
 }
-// Deep 블록구별
+// Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
   const ans=bleSession_discSetup(it);
   document.querySelectorAll(".ble-opt").forEach(btn=>{
@@ -5767,12 +5855,17 @@ function bleWireDiscriminateDeep(it){
       document.querySelectorAll(".ble-opt").forEach(b=>b.style.pointerEvents="none");
       btn.style.borderColor= ok?"#19a06b":"#e0533f";
       if(!ok){ const right=document.querySelector('.ble-opt[data-id="'+ans+'"]'); if(right) right.style.borderColor="#19a06b"; }
-      const fb=$("#bleFb"); fb.innerHTML= ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(BLE_BY_ID[ans].block)} 가 맞아요</span>`;
+      const fb=$("#bleFb");
+      const right=BLE_BY_ID[ans], wrong=picked!==ans?BLE_BY_ID[picked]:null;
+      // 대조 피드백
+      let contrast="";
+      if(!ok && wrong){ contrast=`<div style="font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.5"><b style="color:var(--jade)">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
+      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
-      bleRecord(ans, {correct:ok, fast, situation:it.ex.situation, ms, mixed:true, deep:true, confusedWith: ok?null:picked});
-      bleDeep.results.push({id:ans, type:"discriminate", ok, fast, ms, situation:it.ex.situation});
-      if(!ok) bleDeep.requeue.push({type:"situation", block:BLE_BY_ID[ans], ex:it.ex, deep:true});
-      setTimeout(()=>bleDeepRender(), 1200);
+      bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:it.ex.situation, ms, mixed:true, deep:true, confusedWith: ok?null:picked});
+      bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:it.ex.situation, reason:"confusion"});
+      if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion"});
+      setTimeout(()=>bleDeepRender(), ok?1200:2600);
     };
   });
 }
@@ -5814,10 +5907,22 @@ function bleDeepSummary(){
   TTS&&TTS.cancel();
   const res=bleDeep?bleDeep.results:[];
   if(!res.length){ goToSetup(); return; }
-  const byId={}; res.forEach(r=>{ const o=byId[r.id]=byId[r.id]||{ok:0,no:0,slow:0,newCtx:[]}; r.ok?o.ok++:o.no++; if(r.ok&&!r.fast)o.slow++; if(r.ok&&r.situation&&o.newCtx.indexOf(r.situation)<0)o.newCtx.push(r.situation); });
-  const practiced=Object.keys(byId).map(id=>BLE_BY_ID[id].block);
-  const weak=Object.keys(byId).filter(id=>byId[id].no>=byId[id].ok&&byId[id].no>0).map(id=>BLE_BY_ID[id].block);
+  const byId={};
+  res.forEach(r=>{ const o=byId[r.id]=byId[r.id]||{perfect:0,hit:0,miss:0,slow:0,newCtx:[],commNotBlock:[]};
+    if(r.result==="PERFECT")o.perfect++; else if(r.result==="HIT")o.hit++; else o.miss++;
+    if(r.result==="PERFECT"&&!r.fast)o.slow++;
+    if(r.result==="PERFECT"&&r.situation&&o.newCtx.indexOf(r.situation)<0)o.newCtx.push(r.situation);
+    if(r.result==="HIT"&&r.naturalAnswer)o.commNotBlock.push(r.naturalAnswer);
+  });
+  const practiced=Object.keys(byId).filter(id=>byId[id].perfect>0).map(id=>BLE_BY_ID[id].block);
+  const weak=Object.keys(byId).filter(id=>byId[id].miss>=byId[id].perfect&&byId[id].miss>0).map(id=>BLE_BY_ID[id].block);
   const slow=Object.keys(byId).filter(id=>byId[id].slow>0).map(id=>BLE_BY_ID[id].block);
+  // 의미는 통했지만 타겟 블록 못 쓴 케이스
+  const commLines=[];
+  Object.keys(byId).forEach(id=>{ if(byId[id].commNotBlock.length) commLines.push(`"${byId[id].commNotBlock[0]}" → ${BLE_BY_ID[id].block}`); });
+  // 헷갈린 블록 (이번 세션 confusedWith 기록)
+  const confusedPairs=[];
+  res.forEach(r=>{ if(r.confusedWith && BLE_BY_ID[r.confusedWith]) confusedPairs.push(`${BLE_BY_ID[r.id].block} vs ${BLE_BY_ID[r.confusedWith].block}`); });
   const newCtxLines=[];
   Object.keys(byId).forEach(id=>{ byId[id].newCtx.forEach(c=>newCtxLines.push(BLE_BY_ID[id].block+" · "+c)); });
   const s=bleGetState(); const now=bleNow();
@@ -5826,17 +5931,31 @@ function bleDeepSummary(){
     if(dt<=0) when="지금"; else if(dt<3600000) when=Math.round(dt/60000)+"분 뒤"; else if(dt<86400000) when=Math.round(dt/3600000)+"시간 뒤"; else when=Math.round(dt/86400000)+"일 뒤";
     return {block:b.block, when, t:s[b.id].nextReviewAt};
   }).sort((a,b)=>a.t-b.t).slice(0,4);
-  try{ awardXP("output", res.filter(r=>r.ok).length*6, "본격 학습", "bledeep"); }catch(e){}
+  // 추천 액션
+  let rec="";
+  if(weak.length) rec=`<b style="color:#e0533f">${escapeHtml(weak[0])}</b> 보정 드릴 추천`;
+  else if(confusedPairs.length) rec=`${escapeHtml(confusedPairs[0])} 구별 연습 추천`;
+  else if(slow.length) rec=`<b style="color:#E0A300">${escapeHtml(slow[0])}</b> 속도 훈련 추천`;
+  else if(commLines.length) rec="다음엔 다른 표현 말고 타겟 블록으로 말해보기";
+  else rec="좋아요! 새 블록을 하나 더 배워볼까요?";
+  const perfectN=res.filter(r=>r.result==="PERFECT").length;
+  try{ awardXP("output", perfectN*6, "본격 학습", "bledeep"); }catch(e){}
   const row=(label,val,color)=> val? `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px;color:var(--muted)">${label}</span><span style="font-size:14px;font-weight:700;color:${color||'var(--text)'};text-align:right;max-width:62%">${val}</span></div>`:"";
   $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
     <div class="em">🔁</div><h2>본격 학습 완료</h2>
-    <p style="font-size:13px;color:var(--muted)">${res.length}문제 · 정답 ${res.filter(r=>r.ok).length}</p>
+    <p style="font-size:13px;color:var(--muted)">${res.length}문제 · 블록 인출 성공 ${perfectN}</p>
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("오늘 꺼낸 블록", [...new Set(practiced)].map(escapeHtml).join(", ")||"—", "var(--jade)")}
+      ${commLines.length?row("의미는 통했지만 블록 못 씀", commLines.slice(0,3).map(escapeHtml).join("<br>"), "#E2674A"):""}
       ${row("약한 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#e0533f")}
+      ${confusedPairs.length?row("헷갈린 블록", [...new Set(confusedPairs)].slice(0,3).map(escapeHtml).join("<br>"), "#C06CC0"):""}
       ${row("느렸던 블록", [...new Set(slow)].map(escapeHtml).join(", ")||"—", "#E0A300")}
       ${row("새 상황 성공", newCtxLines.slice(0,4).map(escapeHtml).join(", ")||"—", "#19a06b")}
       ${nextList.length?`<div style="padding-top:10px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">다음 복습 예정</div>${nextList.map(n=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="font-family:var(--serif);color:var(--text)">${escapeHtml(n.block)}</span><span style="color:var(--jade);font-weight:700">${n.when}</span></div>`).join("")}</div>`:""}
+    </div>
+    <div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:14px;padding:12px 15px;margin-bottom:12px;text-align:left">
+      <div style="font-size:12px;font-weight:900;color:#C08763">💡 추천</div>
+      <div style="font-size:14px;color:#4A372F;font-weight:600;margin-top:3px">${rec}</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="sh-next" id="bleDeepMore" style="margin:0">계속 학습하기 →</button>
