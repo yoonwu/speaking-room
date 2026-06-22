@@ -435,7 +435,8 @@ input,textarea{font-family:inherit}
 .rv-progbar{height:6px; border-radius:999px; background:var(--mist); overflow:hidden}
 .rv-progbar i{display:block; height:100%; background:var(--jade); border-radius:999px; transition:width .3s}
 .rv-progtxt{font-size:11.5px; color:var(--muted); font-weight:600; margin-top:5px}
-.rv-mode{font-size:12px; font-weight:700; color:var(--jade-deep); background:#eafaf3; padding:5px 11px; border-radius:999px}
+.rv-mode{font-size:12px; font-weight:700; color:var(--jade-deep); background:var(--mist); padding:5px 11px; border-radius:999px}
+.rv-lvl{font-size:11px;font-weight:800;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:4px 9px;border-radius:999px;white-space:nowrap}
 .rv-body{flex:1; overflow-y:auto; padding:30px 20px; display:flex; flex-direction:column}
 
 .rvcard{max-width:540px; width:100%; margin:auto; text-align:center}
@@ -1526,7 +1527,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="vbBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="vbProgTxt"></div></div>
-      <div class="rv-mode" id="vbModeTag">📖 단어</div>
+      <span class="rv-lvl" id="vbLvl">Lv.1</span><div class="rv-mode" id="vbModeTag">📖 단어</div>
     </div>
     <div class="rv-body" id="vbBody"></div>
   </div>
@@ -1589,7 +1590,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="blkBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="blkProgTxt"></div></div>
-      <div class="rv-mode" id="blkModeTag">🧱 블록</div>
+      <span class="rv-lvl" id="blkLvl">Lv.1</span><div class="rv-mode" id="blkModeTag">🧱 블록</div>
     </div>
     <div class="rv-body" id="blkBody"></div>
   </div>
@@ -1601,7 +1602,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="rvBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="rvProgTxt"></div></div>
-      <div class="rv-mode" id="rvModeTag">복습</div>
+      <span class="rv-lvl" id="rvLvl">Lv.1</span><div class="rv-mode" id="rvModeTag">복습</div>
     </div>
     <div class="rv-body" id="rvBody"></div>
   </div>
@@ -1612,7 +1613,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="lsBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="lsTopProg"></div></div>
-      <div class="rv-mode" id="lsModeTag">🎧 듣기</div>
+      <span class="rv-lvl" id="lsLvl">Lv.1</span><div class="rv-mode" id="lsModeTag">🎧 듣기</div>
     </div>
     <div class="listen-scroll" id="listenScroll"></div>
     <div class="lnext" id="lnext" style="display:none">
@@ -1636,7 +1637,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="spBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="spTopProg"></div></div>
-      <div class="rv-mode" id="spModeTag">⚡ 꺼내기</div>
+      <span class="rv-lvl" id="spLvl">Lv.1</span><div class="rv-mode" id="spModeTag">⚡ 꺼내기</div>
     </div>
     <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px max(40px, calc(24px + env(safe-area-inset-bottom)))"></div>
   </div>
@@ -1672,7 +1673,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.83.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.84.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1930,6 +1931,11 @@ function lvlBucket(){ const v=state.lvl||1; return v<=3?"초급":(v>=7?"고급":
 function syncLevel(){ state.level=lvlBucket(); }
 const LVL_NAMES={1:"유치원",2:"초1",3:"초2",4:"초3",5:"초4",6:"초5",7:"초6",8:"중1",9:"중2~3",10:"원어민"};
 function levelName(){ return "Lv."+(state.lvl||1)+" · "+(LVL_NAMES[state.lvl||1]||""); }
+// 모든 진행 화면 상단에 현재 레벨 작게 표시
+function updateLevelBadges(){
+  const txt="Lv."+(state.lvl||1);
+  ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
+}
 function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 연령 모드 헬퍼
 function kidMode(){ return state.age==="kid"; }
@@ -2126,7 +2132,7 @@ function buildSetup(){
 
   // 난이도 슬라이더 1~10
   const lr=$("#lvlRange");
-  if(lr){ lr.value=state.lvl||1; const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); };
+  if(lr){ lr.value=state.lvl||1; const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); };
     lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -2585,7 +2591,7 @@ async function lsPrefetchNext(){
 
 function startListening(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:state.topic.emo||"🎧", label:(state.topic.id==="custom"?"직접 입력 듣기":(state.topic.t||"듣기")+" 듣기")});
-  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen");
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen"); try{updateLevelBadges();}catch(e){}
   $("#ctxBar").style.display="flex";
   $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
@@ -3292,7 +3298,7 @@ function renderRetell(){
 let floodOn=false, floodCount=0;
 function startFlood(){
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:"🎧", label:(state.topic.t||"")+" 흘려듣기"});
-  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen");
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen"); try{updateLevelBadges();}catch(e){}
   $("#ctxBar").style.display="flex"; $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
   $("#evalBtn").style.display="none";
   $("#ctxScn").textContent = state.topic.id==="custom" ? "직접 입력" : state.topic.t;
@@ -3396,6 +3402,7 @@ function enterStage(which){
   $("#block").style.display = which==="block"?"flex":"none";
   $("#vocab").style.display = which==="vocab"?"flex":"none";
   pushScreen(which);
+  try{ updateLevelBadges(); }catch(e){}
 }
 
 let rvQueue=[], rvOkCount=0, rvSessionTotal=0, rvWeak=new Set(), rvActive=false;
@@ -5373,7 +5380,7 @@ function startSprint(len){
   const n=SPRINT_LEN[len]||20;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
-  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   spIdx=0; spCombo=0; spMaxCombo=0; spTimes=[]; spPerfect=0; spHit=0; spMiss=0;
   spEnemy=SP_ENEMIES[(Math.random()*SP_ENEMIES.length)|0];
   // 로컬 Phrase DB에서 즉시 출제 — AI 호출 없음, 로딩 없음
@@ -5780,7 +5787,7 @@ function blockLessonStart(pid){
   blIdx=0; blPass=0; blMixOk=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
-  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   blRender();
 }
 function blRender(){
@@ -5853,7 +5860,7 @@ function startChunkTraining(pid){
   ctPid=pid; ctChunk=p.phrase; ctIdx=0; ctPass=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
-  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   // 베이스: DB 예문 전부 + 중복 제거. 10개 채울 때까지 AI로 다양한 상황 보충.
   const base=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
   ctItems=base.slice(0,10);
