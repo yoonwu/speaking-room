@@ -1419,7 +1419,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.67.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.68.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -1637,13 +1637,28 @@ async function callClaude(system, messages, model){
   const NO_MD="\n\n[FORMAT] Plain conversational text only. Do NOT use markdown: no **, no *, no ##, no ---, no bullet lists, no backticks. Write naturally as if texting.";
   const sys = (typeof system==="string" && system.indexOf("ONLY")===-1 && system.indexOf("JSON")===-1)
     ? system+NO_MD : system;
-  const res = await fetch(PROXY_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({ model: model||MODEL, max_tokens:2000, system:sys, messages })
-  });
-  if(!res.ok) throw new Error("API "+res.status);
-  return res.json();
+  const payload=JSON.stringify({ model: model||MODEL, max_tokens:2000, system:sys, messages });
+  let lastErr=null;
+  // 최대 2회 시도 (사파리 첫 연결 실패 대비)
+  for(let attempt=0; attempt<2; attempt++){
+    // 타임아웃 (사파리 무한대기 방지)
+    let ctrl=null, timer=null;
+    try{ ctrl=new AbortController(); timer=setTimeout(()=>{try{ctrl.abort();}catch(e){}}, 30000); }catch(e){}
+    try{
+      const opt={ method:"POST", headers:{"Content-Type":"application/json"}, body:payload };
+      if(ctrl) opt.signal=ctrl.signal;
+      const res = await fetch(PROXY_URL, opt);
+      if(timer) clearTimeout(timer);
+      if(!res.ok){ lastErr=new Error("서버 응답 "+res.status); if(res.status>=500||res.status===429){ continue; } throw lastErr; }
+      return await res.json();
+    }catch(e){
+      if(timer) clearTimeout(timer);
+      if(e && e.name==="AbortError"){ lastErr=new Error("응답 시간 초과"); continue; }
+      lastErr=new Error(e&&e.message? ("연결 실패: "+e.message) : "네트워크 연결 실패");
+      // 네트워크 오류면 한 번 더 시도
+    }
+  }
+  throw lastErr || new Error("연결 실패");
 }
 function extractText(data){
   if(!data || !Array.isArray(data.content)) return "";
@@ -2351,7 +2366,8 @@ async function lsGenerate(){
     renderListenPlay();
     lsPrefetchNext();   // 바로 다음 문장 미리 준비
   }catch(e){
-    $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
+    const msg=(e&&e.message)?String(e.message):"알 수 없는 오류";
+    $("#listenScroll").innerHTML=`<div class="lloading">문장을 만들지 못했어요.<br><span style="font-size:12px;color:#f87171">(${escapeHtml(msg)})</span><br><button class="sh-next" id="lsRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`;
     const r=$("#lsRetry"); if(r) r.onclick=lsGenerate;
   }
 }
