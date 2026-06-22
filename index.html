@@ -1510,6 +1510,13 @@ body{background:var(--paper)!important;color:var(--text)}
   </div>
 
   <div class="listen" id="listen" style="display:none">
+    <div class="rv-top">
+      <button class="rvback" id="lsTopBack" aria-label="나가기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="rv-prog"><div class="rv-progbar"><i id="lsBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="lsTopProg"></div></div>
+      <div class="rv-mode" id="lsModeTag">🎧 듣기</div>
+    </div>
     <div class="listen-scroll" id="listenScroll"></div>
     <div class="lnext" id="lnext" style="display:none">
       <button class="back" id="lBack" aria-label="설정으로">
@@ -1527,6 +1534,13 @@ body{background:var(--paper)!important;color:var(--text)}
   </div>
   <!-- OUTPUT SPRINT -->
   <div class="sprint" id="sprint" style="display:none;flex-direction:column;height:100%">
+    <div class="rv-top">
+      <button class="rvback" id="spTopBack" aria-label="나가기">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+      </button>
+      <div class="rv-prog"><div class="rv-progbar"><i id="spBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="spTopProg"></div></div>
+      <div class="rv-mode" id="spModeTag">⚡ 꺼내기</div>
+    </div>
     <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px max(40px, calc(24px + env(safe-area-inset-bottom)))"></div>
   </div>
   <!-- MODAL (custom; native prompt/confirm blocked in webview) -->
@@ -1561,7 +1575,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.72.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.73.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -2516,6 +2530,10 @@ async function lsGenerate(){
 function renderListenPlay(){
   const topicName = state.topic.id==="custom"?"직접 입력":state.topic.t;
   const emo = state.topic.emo||"🎧";
+  // 상단 통일 헤더 갱신
+  const lsModeEl=$("#lsModeTag"); if(lsModeEl) lsModeEl.textContent="🎧 "+emo+" "+topicName;
+  const lsProgEl=$("#lsTopProg"); if(lsProgEl) lsProgEl.textContent=lsCount+"번째";
+  const lsBarEl=$("#lsBarFill"); if(lsBarEl) lsBarEl.style.width=Math.min(100,(lsCount%10)*10)+"%";
   $("#listenScroll").innerHTML=`<div class="lcard lcard-full">
     <div class="lesson-hero">
       <div class="lh-emo">${emo}</div>
@@ -5187,6 +5205,10 @@ function spNext(){
   const it=spItems[spIdx];
   const mult=spMult();
   const hpPct=Math.round((spItems.length-spIdx)/spItems.length*100);
+  // 상단 통일 헤더 갱신
+  const spProgEl=$("#spTopProg"); if(spProgEl) spProgEl.textContent=`${spIdx+1} / ${spItems.length}`;
+  const spBarEl=$("#spBarFill"); if(spBarEl) spBarEl.style.width=Math.round(spIdx/spItems.length*100)+"%";
+  const spModeEl=$("#spModeTag"); if(spModeEl){ const tn=state.topic? (state.topic.id==="custom"?"직접 입력":state.topic.t):""; spModeEl.textContent="⚡ "+(state.topic&&state.topic.emo?state.topic.emo+" ":"")+(tn||"꺼내기"); }
   const face = hpPct<=20?"😵": hpPct<=50?"😣": spEnemy;
   $("#sprintScroll").innerHTML=`
    <div class="arena" style="max-width:520px;margin:0 auto">
@@ -6599,6 +6621,8 @@ $("#rvSpeed").onclick=startSpeed;
 $("#rvBack").onclick=goToSetup;
 $("#lNext").onclick=()=>{ TTS && TTS.cancel(); lsGenerate(); };
 $("#lBack").onclick=goToSetup;
+$("#lsTopBack") && ($("#lsTopBack").onclick=goToSetup);
+$("#spTopBack") && ($("#spTopBack").onclick=goToSetup);
 function goToSetup(fromPop){
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
   if(TTS) TTS.cancel();
