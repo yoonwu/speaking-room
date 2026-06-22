@@ -1683,7 +1683,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.93.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.94.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5975,6 +5975,7 @@ function blRender(){
     </div>
     <div class="ar2-ctrl">
      <button id="blMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
+     <button id="blType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기 (공공장소)</button>
      ${teach?'':'<button id="blHint" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">💡 힌트 보기</button>'}
     </div>
    </div>`;
@@ -5982,7 +5983,20 @@ function blRender(){
   $("#blExit").onclick=()=>{ goToSetup(); };
   $("#blMic").onclick=function(){ const b=this; if(qzRecording) return; if(!blSpoke) blSpoke=Date.now(); b.classList.add("live"); $("#blStat").textContent="시전 중…"; micFillCb((t)=>{ b.classList.remove("live"); blScore(it,t); }); };
   const hb=$("#blHint"); if(hb) hb.onclick=()=>{ const s=$("#blStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(it.chunk)+'</b> 로 시작해요'; };
-  if(teach) setTimeout(()=>speakEn(it.en),220);
+  // 문제 단계에서는 정답을 읽어주지 않음 (스스로 떠올려야 함). 정답 음성은 답한 뒤에만.
+  $("#blType").onclick=()=>blTypeAnswer(it);
+}
+// ⌨️ 글로 쓰기 — 마이크 대신 타이핑으로 답 (공공장소용)
+function blTypeAnswer(it){
+  const ctrl=document.querySelector(".ar2-ctrl"); if(!ctrl) return;
+  if(document.getElementById("blTypeIn")) { const ex=document.getElementById("blTypeIn"); ex.focus(); return; }
+  const wrap=document.createElement("div"); wrap.style.cssText="margin-top:8px";
+  wrap.innerHTML=`<input id="blTypeIn" style="width:100%;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off">`;
+  ctrl.appendChild(wrap);
+  const inp=document.getElementById("blTypeIn"); inp.focus();
+  if(!blSpoke) blSpoke=Date.now();
+  const submit=()=>{ const t=inp.value.trim(); if(!t) return; inp.disabled=true; blScore(it, t); };
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
 }
 function blScore(it, heard){
   const elapsed=Math.max(0.1,((blSpoke||Date.now())-blT0)/1000);
