@@ -1430,7 +1430,7 @@ body{background:var(--paper); color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v2.70.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v2.71.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -3641,8 +3641,31 @@ function wpAsk(q){
   $("#wpHint").onclick=()=>{ hintN++; const a=q.blank.answer;
     if(hintN===1) status.textContent="힌트: 첫 글자 '"+a[0]+"…' ("+a.length+"글자)";
     else { status.innerHTML="정답: <b>"+escapeHtml(a)+"</b>"; } };
-  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.style.color=""; status.innerHTML='<span class="wp-live">● 듣고 있어요…</span>';
-    micFillCb((t)=>{ b.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); };
+  // 라이브 음성 인식 (interim results 실시간 표시)
+  let liveRecog=null;
+  try{ liveRecog = new(window.webkitSpeechRecognition || window.SpeechRecognition); }catch(e){}
+  
+  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.style.color=""; status.textContent="듣고 있어요…";
+    let interimText="";
+    // 실시간 인식 시도 (Chrome/안드로이드)
+    if(liveRecog){
+      try{
+        liveRecog.lang=state.lang||"en-US"; liveRecog.interimResults=true; liveRecog.continuous=false;
+        liveRecog.onstart=()=>{}; 
+        liveRecog.onresult=(e)=>{
+          let interim=""; 
+          for(let i=e.resultIndex;i<e.results.length;i++){ 
+            const t=e.results[i][0].transcript; 
+            interim+=(e.results[i].isFinal?"":"<span style=\"color:var(--muted)\">"+escapeHtml(t)+"</span>"); 
+          }
+          if(interim) status.innerHTML="🎤 "+interim;
+          if(e.isFinal) interimText=e.results[e.results.length-1][0].transcript;
+        };
+        liveRecog.start();
+      }catch(e){ liveRecog=null; }
+    }
+    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
+  };
   $("#wpKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
