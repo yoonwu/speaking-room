@@ -1746,7 +1746,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.11.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.12.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -7652,7 +7652,7 @@ function openSpeakHub(){
      <div class="hub-sub">어떤 방식으로 말해볼까요?</div>
      <button class="hub-opt" data-go="out">
        <span class="hub-emo">⚔️</span>
-       <span class="hub-tx"><b>꺼내기 훈련</b><i>한국어 생각을 영어로 꺼내기</i></span>
+       <span class="hub-tx"><b>영어로 꺼내기</b><i>한국어 상황을 보고 영어로 말하기</i></span>
        <span class="hub-ar">›</span>
      </button>
      <button class="hub-opt" data-go="real">
