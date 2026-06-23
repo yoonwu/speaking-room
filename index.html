@@ -1393,6 +1393,10 @@ body{background:var(--paper)!important;color:var(--text)}
 .blpz-stat{text-align:center;font-size:14px;color:#8A6F62;font-weight:700;min-height:24px;margin-top:4px}
 .blpz-foot{display:flex;gap:9px;margin-top:16px}
 .blpz-foot button{flex:1;border:1px solid #FBD6C4;background:#fff;color:#8A6F62;font-size:13.5px;font-weight:700;border-radius:99px;padding:11px;cursor:pointer}
+/* 힌트 토스트 — 레이아웃 안 건드리고 카드 위에 떠서 표시 */
+.ble-hint-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(12px);z-index:250;max-width:min(420px,90vw);background:#3A2D27;color:#fff;border-radius:16px;padding:13px 18px;font-size:14px;font-weight:600;line-height:1.55;box-shadow:0 14px 34px -10px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.ble-hint-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ble-hint-toast b{color:#FFB089;font-family:var(--serif)}
 .blpz-timer{text-align:center;font-size:13px;font-weight:800;color:#F0664A;margin-bottom:8px}
 .blpz-stepbadge{display:block;text-align:center;margin-bottom:14px}
 .blpz-stepbadge span{font-size:11.5px;font-weight:900;letter-spacing:.04em;color:#fff;background:#F0664A;border-radius:99px;padding:4px 13px}
@@ -1746,7 +1750,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.14.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.15.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5769,6 +5773,17 @@ function bleSituationHint(b){
   };
   return map[b.func]||"상황의 목적을 먼저 고르고 영어로 말해보세요.";
 }
+// 힌트를 카드 위에 토스트로 띄움 (레이아웃 출렁임 방지). html 허용.
+let _bleHintTimer=null;
+function bleShowHintToast(html){
+  let t=document.getElementById("bleHintToast");
+  if(!t){ t=document.createElement("div"); t.id="bleHintToast"; t.className="ble-hint-toast"; document.body.appendChild(t); }
+  t.innerHTML=html;
+  // 강제 리플로우 후 show (트랜지션 재생)
+  void t.offsetWidth; t.classList.add("show");
+  if(_bleHintTimer) clearTimeout(_bleHintTimer);
+  _bleHintTimer=setTimeout(()=>{ t.classList.remove("show"); }, 4200);
+}
 // AI로 새 상황 예문 N개 생성 (비차단 — 백그라운드 캐시 적재)
 async function bleGenContexts(b, n){
   n=n||4;
@@ -6295,7 +6310,7 @@ function bleWireRetrieve(it){
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(s) s.innerHTML='💡 '+escapeHtml(bleSituationHint(b)); };
+  $("#bleHint").onclick=()=>{ bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); };
 }
 async function bleFinishRetrieve(it, heard){
   if(it._finished) return;
@@ -6616,6 +6631,7 @@ function bleDeepStart(){
 }
 function bleDeepRender(){
   if(!bleDeep) return goToSetup();
+  { const _ht=document.getElementById("bleHintToast"); if(_ht) _ht.classList.remove("show"); }   // 이전 힌트 토스트 숨김
   // output 모드: 문제 수 제한 도달 시 요약
   if(bleDeep.outputMode && bleDeep.results.length>=(bleDeep.limit||10)){ return bleDeepSummary(); }
   // 다시 풀어야 할 게 있으면 우선, 없으면 새 문제
@@ -6714,7 +6730,7 @@ function bleWireRetrieveDeep(it){
     wrap.appendChild(w); const inp=document.getElementById("bleTypeIn"); inp.focus();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer){clearInterval(timer);timer=null;} bleFinishRetrieveDeep(it, v); } });
   };
-  $("#bleHint").onclick=()=>{ const s=$("#bleStat"); if(!s) return; if(it.type==="repair_fill"){ s.innerHTML='💡 <b style="color:#F0664A;font-family:var(--serif)">'+escapeHtml(ex.en)+'</b>'; speakEn(ex.en); } else { s.innerHTML='💡 '+escapeHtml(bleSituationHint(b)); } };
+  $("#bleHint").onclick=()=>{ if(it.type==="repair_fill"){ bleShowHintToast('💡 <b>'+escapeHtml(ex.en)+'</b>'); speakEn(ex.en); } else { bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); } };
 }
 // Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
