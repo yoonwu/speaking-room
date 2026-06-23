@@ -1566,6 +1566,8 @@ body{background:var(--paper)!important;color:var(--text)}
       <div class="home" id="homeCard">
         <!-- 🎮 HERO ZONE -->
         <div class="hero" id="heroZone" title="내 프로필"></div>
+        <!-- 🧱 오늘의 영어 블록 — 홈 최상단 메인 (앱 정체성) -->
+        <div id="dailyCard"></div>
         <!-- 습득 지표 — 프로필 바로 아래 (짧게) -->
         <div id="acqStats" style="margin:2px 0 14px"></div>
         <!-- 난이도 -->
@@ -1579,8 +1581,6 @@ body{background:var(--paper)!important;color:var(--text)}
             <span>입문</span><span>중간</span><span>원어민</span>
           </div>
         </div>
-        <!-- 🧱 오늘의 영어 블록 — 난이도 바로 아래 (앱 정체성) -->
-        <div id="dailyCard"></div>
         <!-- 🗺️ 모험 지도 -->
         <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
         <div class="engrid">
@@ -1615,8 +1615,8 @@ body{background:var(--paper)!important;color:var(--text)}
         </button>
       </div>
 
-      <!-- 🎯 오늘의 퀘스트 + 보상 진행률 -->
-      <div id="questBox"></div>
+      <!-- 🎯 오늘의 루틴(questBox) — 메인에서 제거됨, 숨김 -->
+      <div id="questBox" style="display:none"></div>
 
       <!-- 🔥 약점 청크 (아레나 MISS 누적) → 탭하면 즉시 집중 훈련 -->
       <div id="weakHome" style="display:none;margin-bottom:11px"></div>
@@ -1831,7 +1831,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.39.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.40.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9809,7 +9809,7 @@ function firstRunDone(){
     </div>
   </div>`;
   // firstRunFlow 완료 → 정식 홈으로 착지 (사이에 추가 오버레이/드릴 없음)
-  $("#frToHome").onclick=()=>{ firstRun=null; goToSetup(); };
+  $("#frToHome").onclick=()=>{ firstRun=null; startDailyRoom(); };  // 온보딩 흐름: 첫 성공 → 바로 실전 상황(오늘의 방)
 }
 
 // ===== 🏨 오늘의 방 (dailyRoom) — firstRunFlow 다음 단계: 실제 상황 적용 =====
@@ -10507,9 +10507,9 @@ function renderHome(){
         <span style="font-size:20px;color:#ffd17a;font-weight:900">›</span></div>`;
       chestBanner.onclick=openChestFlow;
     } else { chestBanner.style.display="none"; } }
-  renderQuestBox();
+  // renderQuestBox();  // 오늘의 루틴 — 제거 (오늘의 영어 블록이 메인)
   renderDailyCard();
-  try{ renderDailyRoomCard(); }catch(e){}
+  // renderDailyRoomCard 제거 — 오늘의 방은 온보딩(firstRun 직후)으로 흡수
   try{ renderWeakHome(); }catch(e){}
   renderAcqStats();
   // continue
