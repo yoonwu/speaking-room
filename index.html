@@ -106,7 +106,7 @@
 .onb-text b{color:#F0664A;font-weight:800}
 .onb-slogan{background:linear-gradient(135deg,#FFF0E8,#FFE3D5);border:1px solid #FBD6C4;border-radius:18px;padding:18px 20px;font-size:18px;font-weight:800;color:#F0664A;line-height:1.5}
 .onb-blocks{display:flex;flex-direction:column;gap:9px}
-.onb-blk{background:#fff;border:1px solid #FBE0D2;border-radius:13px;padding:12px 16px;font-family:var(--serif);font-size:17px;color:#3A2D27;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)}
+.onb-blk{background:#fffdfb;border:1px solid #FBE0D2;border-radius:15px;padding:12px 16px;font-family:var(--sans);font-size:16px;font-weight:800;letter-spacing:.01em;line-height:1.25;color:#5A3E34;box-shadow:0 6px 14px -9px rgba(214,120,70,.45)}
 .onb-flow{display:flex;flex-direction:column;align-items:center;gap:6px}
 .onb-flow .fl-item{width:100%;background:#fff;border:1px solid #FBE0D2;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;color:#5A463C;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)}
 .onb-flow .fl-item.core{background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;border:none;box-shadow:0 8px 18px -8px rgba(240,102,74,.55)}
@@ -1441,6 +1441,75 @@ body{background:var(--paper)!important;color:var(--text)}
 .bl-sumcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center}
 .bl-sumcell b{display:block;font-size:21px;font-weight:900;color:var(--jade)}
 .bl-sumcell i{font-size:10.5px;color:var(--muted);font-style:normal}
+
+/* ================= learning-first home v3.23 ================= */
+.home.learning-home{gap:14px;max-width:560px;margin:0 auto 18px}
+.home.learning-home .hero{padding:0;margin:0;background:transparent!important;border:none!important;box-shadow:none!important;border-radius:0}
+.learn-statbar{display:flex;align-items:center;justify-content:space-between;gap:0;background:rgba(255,255,255,.78);border:1px solid #F4D4C4;border-radius:16px;padding:11px 14px;box-shadow:0 10px 22px -18px rgba(214,120,70,.42)}
+.learn-stat{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:#A38C81;font-weight:800;white-space:nowrap}
+.learn-stat b{font-size:15px;color:#2F241F;font-weight:900}
+.learn-stat+.learn-stat{border-left:1px solid #F0CDBE}
+.learn-diff{background:rgba(255,255,255,.62);border:1px solid #F2D4C5;border-radius:16px;padding:13px 14px;box-shadow:0 10px 22px -18px rgba(214,120,70,.35)}
+.learn-diff .ld-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.learn-diff .ld-title{font-size:14px;color:#2F241F;font-weight:900}
+.learn-diff .ld-lv{font-size:13px;color:#F0664A;font-weight:900}
+.learn-diff input{width:100%;accent-color:#FF8568}
+.learn-diff .ld-labels{display:flex;justify-content:space-between;font-size:10.5px;color:#A99186;margin-top:2px}
+.home.learning-home .difcard{background:rgba(255,255,255,.62)!important;border:1px solid #F2D4C5!important;border-radius:16px!important;padding:13px 14px!important;margin-bottom:13px!important;box-shadow:0 10px 22px -18px rgba(214,120,70,.35)!important}
+.home.learning-home .difcard>div:first-child span:first-child{font-size:14px!important;color:#2F241F!important;font-weight:900!important}
+.home.learning-home #lvlLabel{font-size:13px!important;color:#F0664A!important;font-weight:900!important}
+.home.learning-home .difcard input{width:100%!important;accent-color:#FF8568}
+.home.learning-home .difcard>div:last-child{font-size:10.5px!important;color:#A99186!important;margin-top:2px!important}
+#ageToggle,.worldlabel,.engrid,#acqStats{display:none!important}
+.routine-card{position:relative;background:#FFF9F5;border:1px solid #F3D2C3;border-radius:22px;padding:19px 18px 17px;box-shadow:0 16px 34px -24px rgba(214,120,70,.45);overflow:hidden}
+.routine-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.routine-kicker{font-size:11px;font-weight:900;letter-spacing:.11em;color:#C57B5E;text-transform:uppercase}
+.routine-title{font-size:23px;font-weight:950;color:#2F241F;line-height:1.05;margin-top:3px}
+.routine-sub{font-size:13px;color:#8E766B;margin-top:6px;font-weight:700}
+.routine-time{background:#FFE5DA;color:#F0664A;font-size:13px;font-weight:900;border-radius:99px;padding:8px 12px;white-space:nowrap}
+.routine-bar{height:8px;border-radius:99px;background:#FFE1D5;overflow:hidden;margin:12px 0 13px}
+.routine-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A)}
+.routine-list{display:flex;flex-direction:column;gap:9px}
+.routine-step{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:rgba(255,255,255,.76);border:1px solid #F3D2C3;border-radius:15px;padding:12px 13px;cursor:pointer;box-shadow:0 10px 22px -20px rgba(214,120,70,.5)}
+.routine-step:first-child{background:#fff;border-color:#FFBDA8;box-shadow:0 12px 24px -18px rgba(240,102,74,.55)}
+.routine-step:active{transform:scale(.985)}
+.routine-ico{width:34px;height:34px;display:grid;place-items:center;border-radius:12px;background:#FFE5DA;font-size:16px;flex:none}
+.routine-tx{flex:1;min-width:0}
+.routine-tx b{display:block;font-size:14.5px;color:#2F241F;font-weight:950}
+.routine-tx span{display:block;font-size:12px;color:#A28A7F;margin-top:1px;font-weight:750}
+.routine-step:first-child .routine-tx span{color:#F0664A}
+.routine-go{font-size:18px;color:#F0664A;font-weight:950}
+.routine-main{width:100%;margin-top:14px;border:none;border-radius:15px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:950;padding:15px;cursor:pointer;box-shadow:0 14px 26px -18px rgba(240,102,74,.7)}
+.routine-main:active{transform:scale(.985)}
+.block-hero.learn-block{background:linear-gradient(155deg,#FF7F66,#F35F49)!important;border-radius:22px!important;border:none!important;padding:18px!important;box-shadow:0 18px 34px -20px rgba(240,102,74,.65)!important}
+.block-hero.learn-block .bh-badge{background:rgba(255,255,255,.18);color:#fff}
+.block-hero.learn-block .bh-due{background:rgba(255,255,255,.18);color:#fff;border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:900}
+.block-hero.learn-block .bh-block{font-size:29px;color:#fff;letter-spacing:-.02em}
+.block-hero.learn-block .bh-ko,.block-hero.learn-block .bh-flow,.block-hero.learn-block .bh-stats{color:rgba(255,255,255,.94)}
+.block-hero.learn-block .bh-go{background:#fff!important;color:#F0664A!important;border:none!important;border-radius:14px!important;font-weight:950!important}
+.auto-card{max-width:520px;margin:0 auto;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:24px;padding:18px;box-shadow:0 18px 34px -24px rgba(214,120,70,.5)}
+.auto-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.auto-exit{border:1px solid #F2D4C5;background:#fff;color:#9A7F73;font-weight:900;border-radius:13px;padding:8px 13px;cursor:pointer}
+.auto-prog{flex:1;height:8px;border-radius:99px;background:#FFE1D5;overflow:hidden}
+.auto-prog i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A)}
+.auto-count{font-size:12px;color:#A28A7F;font-weight:900}
+.auto-kicker{font-size:11px;font-weight:950;letter-spacing:.1em;color:#C57B5E;text-align:center;text-transform:uppercase}
+.auto-block{font-family:var(--serif);font-size:30px;color:#F0664A;text-align:center;line-height:1.12;margin:5px 0 4px}
+.auto-ko{font-size:20px;line-height:1.45;color:#2F241F;text-align:center;font-weight:850;margin:14px 0}
+.auto-meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:9px 0 14px}
+.auto-chip{font-size:12px;font-weight:850;color:#8E766B;background:#fff;border:1px solid #F1D4C7;border-radius:99px;padding:5px 10px}
+.auto-answer{margin:12px 0;background:#fff;border:1px solid #F2D4C5;border-radius:16px;padding:13px;text-align:center}
+.auto-answer b{font-family:var(--serif);font-size:22px;color:#3A2D27}
+.auto-answer.hide b{filter:blur(7px);user-select:none}
+.auto-stat{min-height:44px;text-align:center;font-size:13.5px;color:#8A6F62;line-height:1.55;margin:10px 0}
+.auto-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.auto-actions button{border:none;border-radius:15px;padding:13px 16px;font-size:15px;font-weight:950;cursor:pointer}
+.auto-mic{background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;min-width:180px}
+.auto-mic.live{animation:pulse 1s infinite}
+.auto-sub{background:#fff;color:#8A6F62;border:1px solid #F2D4C5!important}
+.auto-input{width:100%;margin-top:10px;border:1.5px solid #F2D4C5;border-radius:14px;padding:13px 14px;font-size:16px;background:#fff;color:#2F241F;display:none}
+.auto-done{max-width:460px;margin:0 auto;text-align:center;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:24px;padding:24px 18px;box-shadow:0 18px 34px -24px rgba(214,120,70,.5)}
+.auto-done .em{font-size:42px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -1487,11 +1556,11 @@ body{background:var(--paper)!important;color:var(--text)}
         <div class="difcard" style="border-radius:14px;padding:11px 14px;margin-bottom:13px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
             <span style="font-size:13px;font-weight:800;color:var(--text)">난이도</span>
-            <span id="lvlLabel" style="font-size:13px;font-weight:800;color:var(--jade)">Lv.1 · 유치원</span>
+            <span id="lvlLabel" style="font-size:13px;font-weight:800;color:var(--jade)">Lv.1 · 입문</span>
           </div>
-          <input type="range" id="lvlRange" min="1" max="10" step="1" value="1" style="width:100%;accent-color:#FF8568">
+          <input type="range" id="lvlRange" min="1" max="60" step="1" value="1" style="width:100%;accent-color:#FF8568">
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
-            <span>유치원</span><span>초등</span><span>원어민</span>
+            <span>입문</span><span>중간</span><span>원어민</span>
           </div>
         </div>
         <!-- 🧱 오늘의 영어 블록 — 난이도 바로 아래 (앱 정체성) -->
@@ -1548,7 +1617,7 @@ body{background:var(--paper)!important;color:var(--text)}
         </div>
       </div>
 
-      <!-- 난이도 1~10 (세분화) — 위치: 어른/아이 토글 아래로 이동됨 -->
+      <!-- 난이도 D1~D60 (세분화) — 위치: 어른/아이 토글 아래로 이동됨 -->
       <div class="levels" id="levels" style="display:none"></div>
       <div id="verFoot" style="text-align:center;margin-top:14px;font-size:11.5px;color:var(--muted);opacity:.7;letter-spacing:.03em"></div>
 
@@ -1597,7 +1666,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="vbBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="vbProgTxt"></div></div>
-      <span class="rv-lvl" id="vbLvl">Lv.1</span><div class="rv-mode" id="vbModeTag">📖 단어</div>
+      <span class="rv-lvl" id="vbLvl">D1</span><div class="rv-mode" id="vbModeTag">📖 단어</div>
     </div>
     <div class="rv-body" id="vbBody"></div>
   </div>
@@ -1660,7 +1729,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="blkBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="blkProgTxt"></div></div>
-      <span class="rv-lvl" id="blkLvl">Lv.1</span><div class="rv-mode" id="blkModeTag">🧱 블록</div>
+      <span class="rv-lvl" id="blkLvl">D1</span><div class="rv-mode" id="blkModeTag">🧱 블록</div>
     </div>
     <div class="rv-body" id="blkBody"></div>
   </div>
@@ -1672,7 +1741,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="rvBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="rvProgTxt"></div></div>
-      <span class="rv-lvl" id="rvLvl">Lv.1</span><div class="rv-mode" id="rvModeTag">복습</div>
+      <span class="rv-lvl" id="rvLvl">D1</span><div class="rv-mode" id="rvModeTag">복습</div>
     </div>
     <div class="rv-body" id="rvBody"></div>
   </div>
@@ -1683,7 +1752,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="lsBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="lsTopProg"></div></div>
-      <span class="rv-lvl" id="lsLvl">Lv.1</span><div class="rv-mode" id="lsModeTag">🎧 듣기</div>
+      <span class="rv-lvl" id="lsLvl">D1</span><div class="rv-mode" id="lsModeTag">🎧 듣기</div>
     </div>
     <div class="listen-scroll" id="listenScroll"></div>
     <div class="lnext" id="lnext" style="display:none">
@@ -1707,7 +1776,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
       </button>
       <div class="rv-prog"><div class="rv-progbar"><i id="spBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="spTopProg"></div></div>
-      <span class="rv-lvl" id="spLvl">Lv.1</span><div class="rv-mode" id="spModeTag">⚡ 꺼내기</div>
+      <span class="rv-lvl" id="spLvl">D1</span><div class="rv-mode" id="spModeTag">⚡ 꺼내기</div>
     </div>
     <div id="sprintScroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px max(40px, calc(24px + env(safe-area-inset-bottom)))"></div>
   </div>
@@ -1746,15 +1815,15 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.20.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.25.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
-  if(localStorage.getItem("speakingroom:vocab_reset_v3200")!=="1"){
+  if(localStorage.getItem("speakingroom:vocab_reset_v3210")!=="1"){
     localStorage.removeItem("speakingroom:wp_progress");   // 갇힌 이어하기 세트
     localStorage.removeItem("speakingroom:vbank");          // 같은 단어만 쌓인 AI 캐시
     localStorage.removeItem("speakingroom:vseen");          // 최근 본 단어 기록 초기화(새 풀로 시작)
-    localStorage.setItem("speakingroom:vocab_reset_v3200","1");
+    localStorage.setItem("speakingroom:vocab_reset_v3210","1");
   }
 }catch(e){}
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
@@ -1937,7 +2006,7 @@ const VOCAB_THEMES = [
 /* ============ state ============ */
 const state = {
   level:"초급",
-  lvl:1,             // 난이도 1~10 (진실원본). level은 버킷 파생값.
+  lvl:1,             // 문제 난이도 D1~D60. level은 큰 버킷 파생값.
   engine:"input",    // 'output'(꺼내기) | 'input'(귀뚫기) | 'survival'(실전상황)
   age:"adult",       // 'adult' | 'kid' — 연령 모드 (콘텐츠 규칙만 분기)
   mode:"vocab",      // 'talk' | 'listen' | 'block' | 'vocab'
@@ -2008,17 +2077,19 @@ function parseJSON(text){
 }
 
 /* ============ prompt builders ============ */
-// 난이도 1~10 → 기존 버킷/프롬프트/속도로 매핑
-function lvlBucket(){ const v=state.lvl||1; return v<=3?"초급":(v>=7?"고급":"중급"); }
+// 문제 난이도 D1~D60 → 기존 10개 큰 단계 프롬프트/속도로 매핑
+function diffLevel(){ return Math.max(1, Math.min(60, Math.round(Number(state.lvl)||1))); }
+function diffMacro(){ return Math.max(1, Math.min(10, Math.ceil(diffLevel()/6))); }
+function lvlBucket(){ const v=diffMacro(); return v<=3?"초급":(v>=7?"고급":"중급"); }
 function syncLevel(){ state.level=lvlBucket(); }
-const LVL_NAMES={1:"유치원",2:"초1",3:"초2",4:"초3",5:"초4",6:"초5",7:"초6",8:"중1",9:"중2~3",10:"원어민"};
-function levelName(){ return "Lv."+(state.lvl||1)+" · "+(LVL_NAMES[state.lvl||1]||""); }
-// 모든 진행 화면 상단에 현재 레벨 작게 표시
+const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1",7:"B1+",8:"B2",9:"C1",10:"원어민"};
+function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
+// 모든 진행 화면 상단에 현재 난이도 작게 표시
 function updateLevelBadges(){
-  const txt="Lv."+(state.lvl||1);
+  const txt="D"+diffLevel();
   ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
 }
-function levelRate(slow){ const v=state.lvl||1; const base=0.70 + (v-1)*(0.34/9); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
+function levelRate(slow){ const v=diffLevel(); const base=0.70 + (v-1)*(0.34/59); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 연령 모드 헬퍼
 function kidMode(){ return false; }   // 아이 모드 제거됨 — 항상 어른 경로
 // 🛡️ 모든 영어 생성에 적용 — 문법 완전성 강제 (단어 나열식 비문 방지: "dad open bag" 같은 것)
@@ -2030,6 +2101,20 @@ function grammarRule(){
 "- Use a vocative comma when speaking TO someone (e.g. 'Mom, look!').",
 "- It must read exactly like something a native speaker would actually say or write. If unsure, prefer a simple but 100% correct sentence.",
 "- Contractions and casual speech (wanna, gonna, I'll, you're) are fine, but the sentence must still be grammatically well-formed."
+  ].join("\n");
+}
+function speakingLearningLaw(){
+  return [
+"LEARNING EFFICIENCY LAW — highest priority:",
+"- Optimize for useful English coming out of the learner's mouth automatically, quickly, and flexibly in real situations.",
+"- Do NOT optimize for content volume, passive recognition, lesson completion, entertainment, or long explanations.",
+"- Speaking growth is declarative knowledge becoming procedural automaticity through repeated retrieval under mild time pressure.",
+"- Always prefer retrieval practice over exposure. Situation first, learner speaks before seeing the answer.",
+"- Judge meaning first. Accept meaning-equivalent answers, then give one natural native version and one tiny improvement.",
+"- After feedback, make the learner re-produce the natural version when the UI flow allows it; feedback must not remain passive.",
+"- Reuse one useful expression across several different contexts; one correct answer is not mastery.",
+"- Keep success near 70-85%. If too easy, remove hints or shorten time; if too hard, give a starter phrase or simplify the slot.",
+"- Track automaticity by fast retrieval, target chunk use, and context transfer, not XP alone."
   ].join("\n");
 }
 const KID_TOPICS=["school","friends","Roblox and video games","sports","animals","family","food","hobbies","the classroom","the playground","asking for help"];
@@ -2047,7 +2132,7 @@ function kidRules(){
 }
 // NPC(상대)의 발화 길이 제한 — 레벨이 낮을수록 짧게. 아이 모드는 강하게.
 function npcLenRule(){
-  const v=state.lvl||1; const kid=kidMode();
+  const v=diffMacro(); const kid=kidMode();
   let maxWords, maxSent;
   if(kid){ maxSent=1; maxWords = v<=2?5 : v<=4?7 : 9; }
   else   { maxSent = v<=3?1 : v<=6?2 : 3; maxWords = v<=3?8 : v<=6?12 : 18; }
@@ -2064,7 +2149,7 @@ const KID_SITUATIONS=[
  {id:"kd_intro",emo:"😀", t:"나를 소개하기", role:"a new friend", ctx:"Introducing yourself — your name, age, what you like, your favorite color."}
 ];
 function levelHint(){
-  const v=state.lvl||1;
+  const v=diffMacro(), micro=diffLevel();
   const map={
 1:"LEVEL 1 — absolute beginner. Each line a SHORT but COMPLETE, grammatical sentence (about 2-5 words) — a real sentence, never a word-pile. 'I see a cat.' / 'It is hot.' / 'Open the door.' / 'I like coffee.' are good; 'apple is happy' or 'dad open bag' are WRONG (broken grammar). Keep articles (a/an/the) and correct verbs. Use the most basic everyday words. Present tense, simple statements and basic requests. NO idioms. Grammar completeness ALWAYS beats shortness.",
 2:"LEVEL 2 — beginner. Each line a SHORT but COMPLETE, grammatical sentence (about 3-6 words). Real sentences only — keep articles and correct verb forms, never a telegraphic word-pile. Very common everyday words. Simple present tense. Greetings, feelings, food, daily needs. Grammar completeness beats shortness.",
@@ -2077,12 +2162,12 @@ function levelHint(){
 9:"LEVEL 9 — advanced (C1). Fully natural, fast casual speech, reductions and everyday slang.",
 10:"LEVEL 10 — native adult. No simplification at all. Fast, idiomatic, reduced, exactly as natives talk to each other."
   };
-  return map[v]||map[1];
+  return (map[v]||map[1])+"\nMICRO DIFFICULTY: internal problem difficulty is D"+micro+"/60. Stay within the selected macro level, but adjust vocabulary, sentence length, speed, and naturalness subtly for this exact D-level.";
 }
 function levelLine(){ return levelHint(); }
 // 🎯 상황(기능) 난이도도 레벨에 묶기 — Lv1~2는 단순 진술만, 부탁/질문 등 복잡 기능 금지
 function levelSituation(){
-  const v=state.lvl||1;
+  const v=diffMacro();
   if(v<=1) return "SITUATION DIFFICULTY LOCK (level 1 beginner): Only the SIMPLEST self-statements. The required English answer must be like \"I like X.\" / \"I want X.\" / \"It is X.\" / \"I am X.\" / \"This is X.\" Give situations such as: 좋아하는 것 말하기, 원하는 것 말하기, 기분 말하기, 색깔/사물 이름 말하기. FORBIDDEN situations: any request/asking a favor (부탁), questions to others, polite forms (Could you/Can you), past or future events, multi-step situations. Keep the needed answer short but a complete sentence.";
   if(v<=2) return "SITUATION DIFFICULTY LOCK (1st grade): Simple statements and very basic wants/feelings. Answer like \"I want water.\" / \"I am hungry.\" / \"I like dogs.\" Allowed: 좋아하는 것·원하는 것·기분·간단한 사실 말하기. Avoid polite requests (Could you...), questions to others, and past/future. Keep answer 3-4 words.";
   if(v<=3) return "SITUATION DIFFICULTY (2nd grade): Simple everyday statements and ONE basic question (What is...? / Do you like...?). Simple requests with 'Can I...' ok. Keep situations to one clear idea.";
@@ -2091,7 +2176,7 @@ function levelSituation(){
 }
 // 🔒 확장 금지 — 한국 학년 기준(미국 원어민 확장 금지). Lv1~2는 짧은 핵심 문장에서 끝.
 function levelCap(){
-  const v=state.lvl||1;
+  const v=diffMacro();
   if(v<=1) return "STRICT LENGTH LOCK — level 1 beginner: EVERY English sentence the learner hears or is asked to say MUST be the shortest COMPLETE, GRAMMATICAL form: Subject + verb + ONE word/object, with correct articles. Example: \"I like soccer.\" / \"I see a cat.\" — then STOP. It MUST be a real sentence, never a word-pile like 'apple is happy' or 'dad open bag'. ABSOLUTELY FORBIDDEN: adding 'with my friends', 'every day', 'and ...', 'because ...', 'at school', 'a lot', adjectives, or ANY extra detail or clause. But NEVER drop grammar to hit the word count — completeness beats brevity. The model/native answer must ALSO obey this.";
   if(v<=2) return "STRICT LENGTH LOCK — 1st grade: keep EVERY English sentence to a COMPLETE, GRAMMATICAL Subject + verb + 1-2 short words, ONE simple object at most, with correct articles/verbs. It must be a real sentence, never a telegraphic word-pile. FORBIDDEN: 'with/and/because/at/every day' add-ons, stacked adjectives, any clause. Never sacrifice grammar for shortness. The model/native answer must also stay this short.";
   if(v<=3) return "LENGTH LOCK — 2nd grade: ONE short simple sentence, 4-5 words, one idea. No subordinate clauses, no 'because'. Keep it plain. Model/native answer stays this short.";
@@ -2112,6 +2197,7 @@ function rolePrompt(){
     if(kidMode()){
       return [
 "You are a warm, playful OUTPUT coach for a young Korean child practicing speaking. Make it feel like a fun game, never a test.",
+speakingLearningLaw(),
 grammarRule(),
 "Keep EVERY reply EXTREMELY short and clean — a small child reads it. NEVER use markdown stars or dashes.",
 "Reply format, MAX 2 short lines total:",
@@ -2128,6 +2214,7 @@ kidRules(),
     }
     return [
 "You are an OUTPUT coach for a Korean adult learner. Their problem is NOT knowledge — it's RETRIEVAL. Make them pull English out of memory under mild pressure.",
+speakingLearningLaw(),
 grammarRule(),
 "Every turn works EXACTLY like this:",
 "1) Give ONE realistic everyday SITUATION described IN KOREAN (one short line), e.g. '카페에서 아메리카노 라지 한 잔을 주문하세요.' Do NOT show any English example. Do NOT give hints.",
@@ -2139,6 +2226,7 @@ levelCap(),
 levelSituation(),
 "Format each of your turns as: a Korean situation line. After they answer, a short feedback line (👍 + native English) then the next Korean situation. Never reveal English before they try.",
 "TODAY'S target survival expression to weave in whenever it fits naturally: \""+dailyExpr().en+"\" ("+dailyExpr().ko+"). Try to create situations where this expression is the natural thing to say, so the learner retrieves it again and again.",
+reusePromptHint(),
 bleSpeakingHint()
     ].join("\n");
   }
@@ -2147,6 +2235,7 @@ bleSpeakingHint()
     if(kidMode()){
       return [
 "You are a kind, friendly character in a young Korean child's everyday life (a classmate, a patient teacher, a friend at the playground). This is gentle 'Kid Daily Life' speaking practice — NOT a stressful simulation.",
+speakingLearningLaw(),
 grammarRule(),
 "Situation: "+scnDesc(),
 "You play "+scnRole()+". Be warm, cheerful, patient, and encouraging at all times. Use friendly emojis.",
@@ -2161,10 +2250,12 @@ kidRules()
     const blocks=convoBlockHint();
     return [
 "You are a friendly, realistic conversation partner for a Korean learner practicing spoken English. This is 실전회화 (real conversation practice). The learner has been studying reusable English 'blocks' (chunks like 'Can I get...', 'Could you...', 'Do you have...'). Your job: create natural situations where those blocks are USEFUL, so the learner naturally reaches for them — WITHOUT turning this into a quiz.",
+speakingLearningLaw(),
 grammarRule(),
 "Situation: "+scnDesc(),
 "You play "+scnRole()+". Be natural, warm, and realistic — like a real café worker, clerk, receptionist, or friend. One thing at a time.",
 blocks ? ("The learner has studied these blocks (priority order — earlier = more important to surface). Gently create openings where these fit naturally:\n"+blocks) : "The learner is new — keep it very simple and encouraging.",
+reusePromptHint(),
 "CRITICAL RULES (do NOT break):",
 "- This is NOT a quiz. NEVER say 'Please say Can I get...' or demand an exact phrase before they try.",
 "- Create realistic situations that INVITE a studied block, but ACCEPT any answer whose meaning is clear. 'Can I get water?', 'I'd like water', 'Water please' are ALL fine.",
@@ -2181,18 +2272,22 @@ levelCap()
   if(state.scn && state.scn.id==="freetalk"){
     return [
 "You are a warm, encouraging English speaking COACH helping a Korean learner (level: "+state.level+") practice FREE speaking — producing English from scratch, which is the hardest part for them.",
+speakingLearningLaw(),
 "How each turn works:",
 "- Ask ONE simple, open question at a time about their real everyday life (their day, food, weekend, work, family, opinions, plans). Start easy and build up.",
 "- After they answer (their English may be broken — that's totally fine, understand their intent), do BOTH: (1) give ONE short, natural model of what they meant, said better — start it with 👍 if they did well; (2) then ask your next question.",
 "- Keep every reply SHORT (a model line + one question). "+levelLine(),
 levelCap(),
 "Your model line MUST obey the length lock above — for low levels keep the model sentence bare and minimal (e.g. \"I like soccer.\"); never add 'with...', 'and...', 'because...'.",
+"When it fits naturally, reuse one expression from the retrieval queue in a new personal-life question, but never reveal it before the learner tries.",
+reusePromptHint(),
 "- Be warm and low-pressure. Only ONE improvement per turn — never pile on corrections.",
 "- Reply in English. You may add a tiny Korean gloss in parentheses only for a genuinely hard word."
     ].join("\n");
   }
   return [
 "You are role-playing as "+scnRole()+".",
+speakingLearningLaw(),
 "Situation: "+scnDesc(),
 "You are talking with a Korean person practicing spoken English (level: "+state.level+").",
 levelCap(),
@@ -2229,9 +2324,9 @@ function buildSetup(){
   c.onclick=()=>pickScn("custom",c);
   grid.appendChild(c);
 
-  // 난이도 슬라이더 1~10
+  // 난이도 슬라이더 D1~D60
   const lr=$("#lvlRange");
-  if(lr){ lr.value=state.lvl||1; const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); };
+  if(lr){ lr.max=60; lr.value=diffLevel(); const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); };
     lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -2584,6 +2679,7 @@ function renderHelpCard(ko, obj){
   });
   if(obj.note) html+=`<div class="note">${escapeHtml(obj.note)}</div>`;
   c.innerHTML=html;
+  try{ (obj.phrases||[]).forEach(p=>reuseAdd(p, ko, "help", "help:"+ko.slice(0,40))); }catch(e){}
   threadInner.appendChild(c);
   c.querySelectorAll("button[data-say]").forEach(b=>{
     b.onclick=()=>{ msg.value=b.getAttribute("data-say"); autoSize(); msg.focus(); refreshSend(); speak(b.getAttribute("data-say")); };
@@ -2630,8 +2726,8 @@ function renderFeedbackCard(obj){
   if(obj.encouragement) html+=`<div class="enc">🌱 <span>${escapeHtml(obj.encouragement)}</span></div>`;
   // enroll into review deck: corrections + chunks
   const enrolled=[];
-  corr.forEach(c2=>{ if(c2 && c2.better && addReviewItem(c2.better, c2.ko, "correction", c2.original)) enrolled.push(c2.better); });
-  (obj.chunks||[]).forEach(ch=>{ if(ch && ch.en && addReviewItem(ch.en, ch.ko, "chunk")) enrolled.push(ch.en); });
+  corr.forEach(c2=>{ if(c2 && c2.better){ try{ reuseAdd(c2.better, c2.ko, "feedback", c2.original||"feedback"); }catch(e){} if(addReviewItem(c2.better, c2.ko, "correction", c2.original)) enrolled.push(c2.better); } });
+  (obj.chunks||[]).forEach(ch=>{ if(ch && ch.en){ try{ reuseAdd(ch.en, ch.ko, "feedback-chunk", "feedback"); }catch(e){} if(addReviewItem(ch.en, ch.ko, "chunk")) enrolled.push(ch.en); } });
   if(enrolled.length){
     renderNotes(); saveNotes(); refreshRvBanner();
     html+=`<div class="chunks-added">📓 복습 노트에 ${enrolled.length}개 추가됨 — 며칠 뒤 복습으로 다시 나와요.</div>`;
@@ -2729,7 +2825,7 @@ function startListening(){
 }
 // 🎧 리스닝 재료 — 배운 블록 + 배운 단어 (랜덤 아님, 학습 루프 연결)
 function listenMaterials(){
-  const lvl=state.lvl||1;
+  const lvl=diffMacro();
   // 비율: 초급 70/20/10, 중급 60/25/15, 고급 50/30/20
   const tier = lvl<=3 ? {learned:70,weak:20,fresh:10} : lvl<=6 ? {learned:60,weak:25,fresh:15} : {learned:50,weak:30,fresh:20};
   const all=Object.values(srsAll());
@@ -2755,7 +2851,7 @@ let lsBoosterMode=false;
 function listenSentenceSys(){
   const seed=Math.floor(Math.random()*100000);
   const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
-  const booster = (lsBoosterMode && (state.lvl||1)>=5) ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
+  const booster = (lsBoosterMode && diffMacro()>=5) ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
   // 🎧 배운 블록·단어 기반 (학습 루프 연결)
   const mat = (typeof listenMaterials==="function") ? listenMaterials() : null;
   let materialRule="";
@@ -2821,7 +2917,7 @@ async function lsGenerate(){
 // 듣기 첫 문장 즉시용 — 배운 블록 예문 또는 레벨 맞는 CORE_PHRASES 예문
 function listenInstantSentence(){
   try{
-    const lvl=state.lvl||1;
+    const lvl=diffMacro();
     let cands=[];
     // 1차: BLE에서 배운/due/약점/최근 블록
     const ble=blePriorityBlocks(20, false).map(bleItemFromBlock);
@@ -2974,6 +3070,7 @@ function lsCheckAnswer(){
     if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답 ✅","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
     // 🎧 들은 블록/표현을 SRS 강화 + 세션 추적 (학습 루프 연결)
     try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
+    try{ profRecordListenPerfect(lsItem.en, lsItem.ko); }catch(e){}
     renderListenCorrect();
   } else {
     lsRunAnalysis();
@@ -3242,6 +3339,7 @@ async function lsOutput(){
   const myItem=lsItem;
   const sys=[
 "You are an OUTPUT coach. The learner just heard and understood: \""+(lsItem.en||"")+"\".",
+speakingLearningLaw(),
 "Pick ONE useful, reusable target expression a learner should be able to SAY (a chunk like \"Could you say that again?\", \"I'd like to ...\", \"Do you have ...?\"). Keep it close to the sentence's function.",
 "Create TWO different realistic situations (in Korean) where the learner would naturally NEED to say that target. Different settings (e.g. cafe vs hotel vs phone). Describe each situation briefly in Korean — describe the NEED, do NOT reveal the English.",
 levelHint(),
@@ -3301,6 +3399,7 @@ async function loSubmit(answer){
   if(answer){
     try{ const sys=[
 "You are an OUTPUT coach (not a teacher). Situation (Korean): \""+sitKo+"\". Target expression: \""+(loData.target||"")+"\".",
+speakingLearningLaw(),
 "The learner SAID: \""+answer+"\". Judge ONLY whether they COMMUNICATED the intent. Accept imperfect grammar if meaning is clear — do NOT overcorrect.",
 "Then give the natural native version (use the target naturally). Keep praise warm and short in Korean.",
 "ALSO give a one-line Korean reason explaining WHY it passed or didn't (what they did well, or what meaning was missing). Be concrete and encouraging.",
@@ -3314,10 +3413,16 @@ levelCap(),
   }
   // 인출 기록 + 저장(STEP 7 미래 인출)
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+  try{ if(loData.target) reuseAdd(loData.target, "", "output-target", sitKo); if(fb.native) reuseAdd(fb.native, "", "output-feedback", sitKo); }catch(e){}
   if(loData.target){ if(addReviewItem(loData.target, sitKo, "chunk")){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); } }
   // Active Vocabulary: 의사소통 성공 시 이 상황을 인출 컨텍스트로 기록
   let becameActive=false;
-  if(fb.communicated && answer && loData.target){ becameActive = avRetrieve(loData.target, "", "lo:"+(sitKo||loRound).slice(0,24)); }
+  if(fb.communicated && answer && loData.target){
+    becameActive = avRetrieve(loData.target, "", "lo:"+(sitKo||loRound).slice(0,24));
+    try{ reuseRecord(loData.target, "", sitKo, true); if(fb.native) reuseRecord(fb.native, "", sitKo, true); }catch(e){}
+  }else if(loData.target){
+    try{ reuseRecord(loData.target, "", sitKo, false); }catch(e){}
+  }
   fb._active=becameActive;
   if(loRound===1){
     if(!answer){ awardXP("output",3,"도전!","oe:"+loRound); }
@@ -3353,7 +3458,7 @@ function renderOutputResult(answer, elapsed, fb){
       <span class="ro-xp">+${xpGain} XP</span>
     </div>
     <div class="lctrls" style="justify-content:center;margin-top:12px">
-      <button id="loDrill">🎤 발음 진단</button>
+      <button id="loDrill">🎤 원어민처럼 다시 말하기</button>
       <button class="sh-next" id="loNext" style="margin:0">${last?"다음 문장 →":"다른 상황에서 또 말하기 →"}</button>
     </div>
     ${last?"":`<button id="loSkip2" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">건너뛰고 새 표현으로 →</button>`}
@@ -3948,10 +4053,10 @@ const SEED_VOCAB = {
 };
 function vbankGet(){ return hGet("speakingroom:vbank",{}); }
 // 레벨별로 캐시 분리 — 레벨 바꾸면 다른 난이도 단어가 나오게
-function bankKey(themeId){ return themeId+"@"+(state.lvl||1); }
+function bankKey(themeId){ return themeId+"@D"+diffLevel(); }
 function vbankSave(b){ hSet("speakingroom:vbank",b); }
 function ensureSeed(themeId){
-  if((state.lvl||1)>=4) return;   // 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
+  if(diffMacro()>=4) return;   // 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
   const b=vbankGet();
   if(b[bankKey(themeId)]===undefined && SEED_VOCAB[themeId]){ b[bankKey(themeId)]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
 }
@@ -3966,7 +4071,7 @@ function pushToBank(themeId,set){
   const b=vbankGet(); const arr=b[key]||[]; arr.push(set); while(arr.length>6) arr.shift(); b[key]=arr; vbankSave(b);
 }
 function vocabWordLevelRule(){
-  const v=state.lvl||1;
+  const v=diffMacro(), micro=diffLevel();
   const map={
 1:"WORD DIFFICULTY: absolute beginner. Pick the ~300 most basic English words only (cat, dog, run, eat, big, happy, water). Single common words. NO phrasal verbs, NO idioms, NO abstract nouns.",
 2:"WORD DIFFICULTY: beginner (1st grade). Very common concrete everyday words (kitchen, friend, hungry, jump, clean). Simple and frequent only.",
@@ -3979,7 +4084,7 @@ function vocabWordLevelRule(){
 9:"WORD DIFFICULTY: very advanced (CEFR C1). Nuanced, lower-frequency words, natural idioms and slang, fine shades of meaning (subtle, tedious, knack, hassle).",
 10:"WORD DIFFICULTY: native adult. Use genuinely advanced, idiomatic, lower-frequency vocabulary a native uses (meticulous, ambivalent, off the cuff). NO simplification."
   };
-  return map[v]||map[1];
+  return (map[v]||map[1])+" MICRO WORD DIFFICULTY: selected problem difficulty is D"+micro+"/60. Within this macro band, choose slightly easier words near the lower end and less obvious/lower-frequency words near the upper end.";
 }
 function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
@@ -3990,7 +4095,7 @@ function vocabPrompt(theme){
 "Create a vocabulary set for a Korean learner. Loose theme context: "+theme.topic+".",
 grammarRule(),
 vocabWordLevelRule(),
-"CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher levels pick genuinely harder, less obvious words even within the theme. Lv.1 and Lv.10 on the SAME theme MUST produce clearly different difficulty words.",
+"CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher difficulty bands pick genuinely harder, less obvious words even within the theme. D1 and D60 on the SAME theme MUST produce clearly different difficulty words.",
 avoidLine,
 freqLine,
 "Use the frequency bank as the main source for new vocabulary. Do not keep falling back to the same tiny theme words; the app has 5000 ordered common words available.",
@@ -4623,7 +4728,7 @@ const STARTER_EXTRA_ROWS={
 const COMMON_FREQ_WORDS=["you","i","the","to","a","it","and","that","of","is","in","what","we","me","this","he","for","my","on","have","your","do","was","no","not","be","are","don","know","can","with","but","all","so","just","there","here","they","like","get","she","go","if","right","out","about","up","at","him","now","oh","one","come","well","her","how","yeah","will","got","want","think","as","see","did","good","who","why","from","let","his","yes","when","going","time","an","okay","back","look","us","would","them","where","were","take","then","had","or","been","our","gonna","tell","really","man","some","say","hey","could","by","need","something","has","too","more","way","down","make","very","never","only","people","over","because","little","please","love","should","mean","said","sorry","give","off","am","thank","any","two","even","much","doing","sure","thing","these","help","first","into","anything","still","find","life","nothing","sir","day","work","their","uh","again","maybe","must","before","other","wait","stop","call","after","won","talk","away","than","thought","home","night","put","great","those","last","better","everything","told","new","things","always","keep","long","years","leave","does","money","around","name","place","ever","feel","guys","father","guy","made","old","which","big","lot","done","hello","nice","believe","girl","someone","fine","thanks","wanted","kind","coming","house","every","ok","through","being","course","stay","left","dad","enough","happened","came","may","mother","wrong","world","bad","might","three","today","listen","another","understand","hear","remember","ask","own","same","show","else","kill","talking","found","next","getting","care","car","looking","son","try","woman","went","hi","dead","many","mind","friend","best","mom","morning","trying","boy","together","yourself","job","saw","family","real","without","baby","room","already","move","most","seen","live","miss","actually","both","heard","once","ready","head","called","used","idea","knew","hold","happy","door","such","brother","also","pretty","bit","took","haven","yet","men","whole","start","use","while","since","wife","days","guess","tomorrow","matter","meet","bring","tonight","everyone","run","wanna","hard","ah","alone","myself","school","gone","um","end","saying","phone","play","looks","problem","few","friends","gotta","ago","open","anyone","killed","hope","face","until","lost","police","excuse","turn","business","case","wants","says","true","die","heart","soon","each","worry","later","year","watch","music","hand","having","probably","beautiful","doctor","sit","eat","thinking","young","second","working","water","person","part","kids","late","stuff","exactly","under","death","minute","pay","crazy","forget","everybody","kid","change","gave","happen","five","drink","far","knows","its","whatever","eyes","shut","hit","taking","easy","times","check","hands","minutes","deal","different","means","point","inside","makes","asked","somebody","mine","making","body","afraid","sleep","chance","dear","quite","four","anyway","close","party","fun","against","word","comes","important","set","shall","story","number","daughter","least","waiting","hurt","wish","moment","fight","week","husband","girls","rest","married","fire","game","nobody","mr","children","side","stand","read","though","cut","started","sister","supposed","between","child","goes","hours","speak","women","behind","almost","truth","blood","able","lady","anymore","playing","gets","shot","reason","trouble","break","war","city","walk","town","trust","met","office","question","brought","yours","welcome","high","wow","couple","half","died","cool","free","either","seems","power","bye","buy","telling","honey","tried","front","team","answer","gun","boys","line","send","news","stupid","bed","full","months","save","sometimes","become","along","hate","food","outside","light","l","needs","dog","country","clear","order","em","fact","lord","captain","six","hot","funny","black","alive","pick","feeling","living","cause","ahead","lose","king","plan","dinner","sort","leaving","running","boss","promise","taken","safe","ma","book","sent","white","hour","anybody","small","perfect","lives","special","parents","s","john","himself","perhaps","sounds","serious","sick","company","ha","scared","uncle","poor","red","past","earth","possible","shoot","touch","sound","top","asking","win","glad","control","human","drive","hair","jack","luck","murder","happens","air","ten","daddy","finally","fast","cold","seem","laughing","words","hospital","street","hang","dance","meeting","till","others","catch","follow","sense","lie","evening","master","known","dream","write","million","voice","sweet","rather","felt","sign","lucky","somewhere","bet","o","jesus","longer","calling","worked","quiet","looked","less","pull","beat","careful","coffee","return","secret","weeks","date","seeing","fall","given","fault","straight","takes","song","future","loved","changed","road","calm","wonderful","mad","turned","drop","ladies","learn","step","absolutely","early","explain","clean","piece","yesterday","throw","picture","land","feet","wonder","questions","speaking","worth","dude","giving","president","eye","quick","moving","figure","state","strong","sam","none","amazing","ones","works","act","needed","weird","law","worried","report","missing","choice","happening","chief","wedding","strange","general","pain","decided","ya","pass","tired","class","officer","kept","wake","worse","busy","eh","mistake","kiss","court","building","finish","during","age","ship","caught","meant","sell","dark","watching","system","suppose","evidence","movie","ride","t","completely","mouth","totally","birthday","tv","born","imagine","information","instead","definitely","security","certainly","film","month","lying","unless","train","seven","wear","clothes","michael","hotel","christmas","attack","round","expect","sing","terrible","george","bag","history","blue","near","broke","station","seriously","forever","david","frank","except","thinks","message","entire","joe","table","talked","across","rock","lovely","handle","middle","buddy","paid","protect","using","floor","ran","spend","situation","ring","anywhere","dangerous","bill","york","army","lead","bought","finished","fair","sun","letter","fool","attention","club","simple","interesting","space","test","box","group","single","sitting","marriage","join","fear","d","peace","forgot","force","short","normal","charlie","present","enjoy","mike","crime","horse","ground","american","count","area","charge","honor","lunch","miles","radio","ball","surprise","paper","key","boat","quickly","gold","bar","fish","mark","tom","wearing","accident","government","eight","fell","cover","certain","interested","deep","star","sea","agree","problems","detective","prison","major","stick","offer","difficult","smart","personal","record","stopped","hide","whether","bank","trip","relax","america","public","list","afternoon","brain","fix","proud","tea","service","forward","angry","park","soul","fighting","peter","rich","agent","blow","paul","dress","mary","missed","scene","killing","standing","saved","mm","respect","killer","ice","mess","tough","feels","church","sad","cell","drunk","share","camera","within","card","fly","ben","girlfriend","laugh","smell","broken","honest","often","starting","calls","y","spent","third","english","visit","judge","window","hungry","dare","relationship","moved","prove","private","wall","seat","position","realize","lt","especially","machine","walking","art","pleasure","college","french","involved","cry","became","lived","impossible","obviously","neither","accept","besides","queen","teacher","sake","loves","carry","teach","apartment","upset","green","la","liked","cute","evil","professor","contact","joke","cop","huge","holy","store","jail","likes","lawyer","doubt","continue","appreciate","cat","shop","driving","congratulations","wrote","village","quit","field","james","wine","decision","south","sleeping","slow","island","glass","beginning","cash","dying","hundred","whose","difference","plane","push","continues","singing","eating","north","mrs","tree","gift","truck","putting","bear","board","grab","beer","stuck","magic","support","rules","partner","reach","wind","max","immediately","seconds","thousand","gives","experience","cheers","victim","upon","computer","christ","planet","promised","bus","henry","dirty","search","staying","dreams","arrest","holding","suddenly","usually","lots","shoes","er","jump","rid","yo","knock","harry","grow","worst","river","patient","kitchen","fat","passed","m","final","summer","bob","listening","escape","everywhere","moon","arms","turns","address","match","grand","nervous","de","choose","themselves","decide","mate","drinking","press","bother","foot","blame","drugs","type","rings","mission","named","heaven","picked","paris","race","risk","books","further","danny","action","allowed","orders","learned","price","arrived","nick","otherwise","pictures","fit","smoke","favor","played","notice","awesome","smile","director","guard","begin","spot","surprised","innocent","herself","london","feelings","enemy","battle","ourselves","alex","dollars","allow","nine","gay","department","guilty","apart","earlier","duty","jim","suit","bell","west","legs","hero","destroy","stage","bunch","according","chicken","bigger","low","helping","admit","closed","names","witness","arm","steal","jimmy","kick","twice","cross","ways","indeed","gas","keeping","energy","pregnant","waste","helped","fired","favorite","tony","taste","locked","places","writing","adam","brothers","starts","prince","form","sold","silly","mention","build","throat","hole","figured","track","lock","leg","above","steve","seemed","breakfast","engine","written","complete","video","however","pressure","fresh","weapon","sky","study","burn","reading","crowd","treat","roll","double","spirit","danger","cost","empty","level","memory","itself","acting","interest","nose","plans","following","bathroom","built","closer","ray","sarah","band","apparently","excited","richard","losing","animals","flight","nature","raise","pop","client","bomb","neck","suspect","warm","extra","bottle","van","heavy","dogs","wild","simply","lee","animal","showed","billy","shooting","keeps","camp","guns","medical","shame","hoping","whom","bird","flowers","famous","beauty","driver","keys","rain","awful","large","local","deserve","stone","jane","grace","consider","weekend","wondering","lay","plenty","willing","pants","skin","excellent","beach","c","faith","responsible","military","opportunity","common","bottom","german","cook","walked","papers","justice","hall","commander","drug","main","knife","devil","necessary","although","princess","lights","flying","rose","knowing","clearly","hat","agreed","johnny","corner","code","note","tommy","due","correct","language","stars","faster","cars","folks","fellow","several","shows","leader","leaves","restaurant","east","blind","ghost","cup","gotten","tight","conversation","tells","lies","nor","pulled","hanging","speed","stories","health","advice","held","beyond","rule","hardly","possibly","inspector","trial","emergency","ought","eddie","somehow","hearing","states","account","spoke","file","understood","angel","tape","milk","powerful","weapons","practice","manager","vote","jake","national","career","minister","super","taught","robert","biggest","plays","natural","dancing","copy","plus","martin","cake","freedom","among","breath","operation","chris","crew","challenge","market","meat","towards","bringing","dropped","student","strength","size","color","monster","loud","photo","aw","nearly","sight","greatest","games","bridge","dressed","arrested","horrible","coach","planning","checked","breaking","noticed","fantastic","serve","ideas","investigation","center","older","pack","soldiers","doc","project","training","example","trick","prepared","science","united","travel","incredible","paying","character","teeth","criminal","charles","chinese","truly","survive","bobby","target","feed","nurse","e","fake","records","breathing","numbers","oil","suicide","belong","perfectly","amy","forgotten","remain","original","onto","concerned","credit","invited","discuss","research","easier","view","chair","strike","roger","fill","condition","mountain","dr","nowhere","sheriff","kim","turning","brown","recognize","heads","audience","society","finding","shirt","comfortable","meaning","guest","pieces","dry","letting","began","aye","jeff","female","release","ho","cards","pray","unfortunately","destroyed","ended","universe","prepare","opinion","movies","soldier","wash","program","heat","usual","ticket","stolen","prefer","aware","surely","male","base","matters","lift","lab","command","proof","cream","selling","believed","create","h","afford","sunday","total","dumb","france","birth","created","realized","british","noise","nuts","students","birds","social","brilliant","bodies","tie","opened","ours","bucks","kevin","ugly","ryan","focus","dan","opens","exist","followed","england","draw","purpose","letters","daniel","opening","bullet","anna","lately","stayed","falling","season","ends","suggest","joy","distance","responsibility","whenever","issue","thousands","process","sword","shower","weak","lonely","happiness","eric","tiny","desk","pool","property","forced","settle","weight","received","gang","bite","friday","interview","kinda","surgery","horses","mayor","babe","ancient","thomas","saturday","staff","lines","unit","fan","gentleman","introduce","fate","split","recently","expected","add","ordered","slowly","alarm","member","signed","enter","spanish","garden","brings","brave","pig","model","finger","medicine","access","failed","flat","easily","discovered","based","screw","weather","fingers","san","scott","path","soft","harm","style","community","sees","basically","al","signal","spare","speech","covered","shake","loose","snow","russian","lake","bright","roof","sending","paint","remind","pal","naked","post","sugar","heading","streets","damage","silence","doors","pete","ed","success","wet","amount","members","kate","manage","safety","returned","harder","fbi","block","showing","fancy","chef","contract","dig","chest","drinks","dave","buried","brian","trade","journey","stomach","changes","details","thoughts","divorce","funeral","maria","football","reality","theory","gate","william","spread","japanese","sudden","coat","cheese","larry","spring","page","ears","simon","castle","hidden","storm","cos","personally","artist","hill","exciting","permission","jerry","expensive","tickets","forest","barely","eggs","lesson","lover","bread","andy","subject","legal","growing","ill","jason","mood","owner","caused","points","dating","loss","secretary","revenge","santa","likely","rent","connection","assistant","reasons","painting","trees","doctors","rush","foreign","rough","century","nights","pair","runs","pocket","farm","matt","bike","obvious","ate","grew","professional","tim","parts","alan","university","square","europe","genius","cases","winter","tongue","memories","da","buying","cancer","clock","ocean","dna","tour","lisa","rights","including","competition","smith","planned","emily","boring","victims","mentioned","bones","plant","bless","warning","re","crash","bedroom","lower","silver","defense","results","toilet","event","complicated","shape","priest","royal","cheap","romantic","invite","fortune","tears","avoid","reached","higher","familiar","telephone","burning","filled","kelly","alice","airport","jobs","grown","walter","rachel","giant","insurance","woods","n","pleased","period","political","player","stops","secrets","laura","repeat","photos","finds","statement","younger","china","humans","delicious","particular","proper","rome","belongs","attacked","bath","hired","site","knowledge","b","led","guests","celebrate","map","horn","eventually","powers","assume","glasses","rise","fixed","request","officers","pounds","data","carefully","per","depends","jury","positive","attorney","direction","families","forces","location","walls","grant","saving","speaks","fought","meal","deliver","answers","changing","temple","scary","millions","offered","regular","carrying","official","jacket","switch","grave","chase","role","odd","faces","becomes","closes","badly","tall","confused","affair","television","shock","raised","pizza","image","golden","patients","watched","committed","sexual","suffer","arthur","wherever","plate","appear","chocolate","mercy","shots","lucy","dealing","trap","charges","phil","bang","poison","drove","headed","babies","yellow","soup","mystery","picking","sat","wound","traffic","courage","hunt","indian","rat","terms","italian","emma","checking","disease","managed","winner","council","appointment","monday","crack","threat","jenny","physical","nation","source","chose","healthy","carl","victory","rick","stood","annie","palace","below","shopping","neighborhood","march","lips","midnight","advantage","pure","india","aside","mail","dawn","effect","spell","wood","enemies","gary","vacation","violence","leo","modern","luke","firm","prime","touched","talent","piano","license","cooking","concern","moves","available","factory","gods","value","central","union","mirror","studio","media","taxi","dies","iron","hearts","desire","rob","claire","fred","songs","washington","monkey","pride","pills","miracle","swim","christian","bleeding","hook","protection","treatment","ear","carter","metal","grateful","extremely","treasure","rescue","capable","passing","result","suffering","sisters","laid","governor","guards","louis","text","literally","remove","becoming","performance","stronger","rate","deeply","desert","vehicle","illegal","pulling","throwing","josh","ted","zero","dean","curious","sean","candy","bone","tied","edge","load","susan","mountains","boom","former","holiday","riding","hundreds","sue","bags","appears","arrive","remains","decent","issues","tip","fail","bride","penny","claim","friendship","desperate","flower","dramatic","refuse","solve","theme","loving","properly","dragon","mostly","chuck","directly","surface","false","cast","junior","hunting","silent","thou","egg","germany","punch","africa","intelligence","winning","falls","popular","witch","convinced","champagne","dust","kyle","fallen","stranger","presence","tear","internet","therefore","technology","tires","wise","clark","americans","notes","smoking","ls","april","wolf","precious","rooms","coast","treated","material","released","uniform","considered","rice","exchange","steps","blake","beast","cow","files","signs","drag","cab","hung","carried","ordinary","successful","eve","mistakes","houses","japan","creature","fourth","separate","cleaning","california","lf","ll","shift","elizabeth","chicago","exact","karen","goal","expert","served","direct","score","row","marks","twenty","receive","series","section","pilot","jackson","darkness","thy","sale","destiny","cure","spoken","armed","rare","helen","grade","juice","wide","tower","solution","schedule","explosion","wheel","cigarette","julie","fruit","victor","talks","sacrifice","range","button","reports","prisoner","pie","effort","youth","pot","taylor","garage","parking","chances","circumstances","sin","gordon","progress","unusual","county","campaign","vision","reporter","equipment","moments","mass","alien","helps","route","defend","trace","nasty","tests","magazine","rocks","dump","searching","connected","pushed","merry","zone","senior","closing","freeze","emperor","incident","snake","mexico","actor","newspaper","sentence","greg","leading","friendly","jones","chosen","engaged","julia","charming","anger","spending","learning","spy","sharp","shadow","warrant","kingdom","ricky","jamie","squad","shoulder","wave","amanda","kinds","fishing","attitude","negative","screen","workers","bored","cameras","similar","understanding","chain","bull","fully","robin","collect","gorgeous","morgan","passion","writer","empire","international","hire","puts","leads","id","sons","estate","customers","device","troops","design","movement","thunder","object","pen","politics","despite","alcohol","climb","clients","conference","provide","seek","witnesses","earn","trash","valley","fashion","howard","episode","prize","previously","sports","wanting","debt","wishes","wire","thee","circle","approach","stock","facts","remembered","percent","normally","tail","joined","education","library","wings","thrown","tank","authority","current","failure","nightmare","hitting","glory","studying","barry","agency","apple","border","rope","duck","reputation","confidence","yard","lack","actual","skills","films","mental","salt","flesh","anne","secure","highly","federal","sand","emotional","setting","senator","services","fed","reward","theater","johnson","commit","patrick","entirely","extraordinary","ships","opposite","parties","stands","terry","chat","events","bay","slip","disappointed","settled","begins","andrew","alert","detail","pink","accepted","background","garbage","panic","minds","belt","blowing","hollywood","agreement","jackie","pushing","ability","tiger","culture","saint","jesse","task","solid","doll","intend","district","pa","custody","ignore","naturally","useful","attempt","abandoned","cutting","guarantee","gather","policy","violent","childhood","bow","chick","sara","disaster","revolution","online","f","heavily","perform","thin","mac","crown","identity","virgin","impressive","windows","potential","guitar","committee","dozen","delivery","advance","stan","teaching","hunter","latest","swing","capital","counting","drew","dirt","marie","hits","doug","deny","urgent","threatened","behavior","mixed","stays","assure","explanation","wins","unique","billion","duke","production","slave","agents","carol","lets","mask","sally","massive","species","loan","struggle","dish","trusted","channel","stopping","asks","jean","swimming","daily","basement","linda","quarter","bound","navy","article","guide","accused","transfer","quality","roman","greater","vegas","shoe","title","punishment","los","clicks","fever","flash","impressed","bruce","prisoners","sides","bowl","katie","supply","sensitive","hopefully","rolling","roy","dollar","tone","voices","g","demand","museum","unknown","drama","adult","todd","warned","steady","kills","lou","particularly","sandwich","laws","joint","package","trained","thursday","boots","possibility","albert","civil","june","baseball","express","tuesday","parker","lion","joseph","refused","shine","assault","hong","jokes","breaks","argue","trail","option","recall","mighty","collection","oliver","wilson","accent","believes","decisions","mobile","customer","sec","charity","considering","donna","protecting","flag","italy","balance","creatures","nuclear","wallet","vincent","entered","impression","angela","jay","degrees","favour","reaction","network","jessica","version","concert","gear","singer","diamond","defeat","steven","lane","blast","anytime","partners","ages","charlotte","ceremony","league","bars","orange","specific","conditions","plastic","crisis","fifth","term","self","offering","suffered","reported","commissioner","rip","mysterious","entrance","tunnel","designed","neighbor","justin","crimes","costs","el","teddy","kong","messages","enjoying","afterwards","comfort","mason","gym","kitty","arranged","suits","pee","stress","cave","wing","jordan","arrange","noble","tricks","betty","launch","legend","mix","golf","imagination","fox","kissing","butter","tax","gross","edward","texas","marcus","classic","shown","bat","print","champion","bills","therapy","lifetime","throughout","nathan","toward","sauce","experiment","margaret","describe","ross","grass","cheat","attend","homework","lewis","cap","tyler","bible","catherine","steel","burns","j","generation","cabin","financial","industry","bond","sheep","scientists","deck","fans","script","brand","degree","painful","religion","cats","stephen","influence","fuel","drawing","rabbit","exercise","attractive","virus","torture","blessed","plain","rebecca","recent","barbara","sacred","removed","jewish","robot","crystal","confirm","mile","division","scratch","walks","ending","russia","contest","valuable","distant","motion","electricity","centre","jeremy","seal","standard","ellen","surrounded","struck","inform","gentle","status","purse","prints","players","charged","delivered","kenny","buck","construction","confirmed","trigger","cells","ali","exit","response","cancel","argument","principal","turkey","lucas","clinic","greetings","neighbors","vice","toy","everyday","generous","gain","holly","enjoyed","jungle","link","underground","mistress","teams","product","beef","religious","presents","identify","chip","surveillance","carlos","vampire","routine","uses","michelle","systems","temperature","waves","tribe","brad","deputy","headquarters","equal","phones","ken","related","tracks","oscar","makeup","bug","spirits","nerve","stake","port","miller","units","proceed","landing","fields","recording","loaded","tokyo","davis","costume","wayne","injured","ian","pet","cage","spain","seats","pattern","visiting","jews","answering","concentrate","citizens","aim","nancy","affairs","thick","sport","basic","electric","pleasant","cliff","nail","russell","environment","western","average","ease","judy","satisfied","documents","anniversary","beth","election","warrior","r","forth","banks","placed","timing","stones","complex","frozen","replace","prayer","skip","angeles","tune","actions","officially","martha","machines","smaller","determined","booth","pour","berlin","cleared","packed","wrap","randy","behalf","reasonable","trunk","homes","festival","tradition","cigarettes","le","beside","harvey","beings","bishop","dealer","defendant","backup","ann","nearby","effects","jonathan","dennis","benefit","adventure","p","territory","ve","dylan","unlike","owns","boxes","thus","clay","developed","pipe","gray","goods","favourite","salad","atmosphere","eva","mouse","downtown","francisco","heroes","pit","paradise","organization","hills","exam","fairy","earl","comment","activity","frame","knight","testing","shelter","flow","jennifer","holes","prevent","anthony","cooper","figures","boston","sample","strip","slightly","produce","annoying","judgment","laundry","ron","souls","existence","belly","tries","foster","returning","answered","ward","plants","actress","chairman","individual","hopes","tattoo","fence","sink","punk","confident","limit","st","wednesday","gifts","na","precisely","lawyers","greek","merely","underwear","hoped","earned","reveal","appeared","derek","personality","batman","virginia","wives","colour","worker","pope","instructions","intelligent","traveling","x","impact","relief","host","footage","odds","patrol","circus","mud","captured","lessons","occasion","sets","pulse","ad","diamonds","matthew","cloud","francis","angels","classes","signature","blah","monitor","options","claims","pat","britain","countries","vic","rats","smooth","resist","companies","fantasy","passport","pitch","hammer","casey","holds","jacob","noon","helicopter","dishes","spin","charm","apply","discover","previous","kit","authorities","photograph","sales","fifty","beneath","clouds","represent","deaf","facing","offense","citizen","snap","hood","twelve","interests","liz","informed","humanity","producer","accounts","extreme","cia","ii","pays","profile","oxygen","gene","shed","minor","ex","theatre","scientific","lovers","chaos","rocket","math","august","chips","intense","grey","terrorist","angle","invitation","gambling","respond","thirty","procedure","absolute","investigate","tragedy","stable","session","capture","attacks","stretch","bush","dates","unable","gates","mars","artists","increase","bottles","highest","meanwhile","wheels","commercial","engagement","louise","worthy","scale","beats","williams","threatening","exists","academy","acts","hop","judges","furniture","shared","ralph","consequences","engineer","schools","caroline","shark","transport","population","succeed","studies","destruction","keith","protected","monsters","joining","lightning","shell","fascinating","chamber","romance","instance","jumping","groups","studied","walker","pin","drill","ye","experienced","necklace","junk","cole","stanley","southern","blocks","emotions","begun","liver","serving","matches","surgeon","granted","jazz","july","supplies","deeper","typical","remote","daughters","latin","teachers","sandy","strategy","parent","album","compared","helpful","powder","sync","passes","joan","fort","choices","pole","scientist","fighter","highway","blade","alpha","diet","jet","liberty","philip","moral","award","ashley","random","intention","julian","active","tools","driven","trauma","safely","alexander","knee","novel","conversations","waters","invisible","internal","peaceful","drives","talented","li","aid","elephant","core","serial","painted","divine","jam","goat","opera","florida","resistance","dressing","attached","aaron","brief","eternal","required","victoria","fabulous","twins","characters","cooked","ln","ruth","arts","naughty","tend","diane","tap","soap","development","images","global","string","sharing","corn","craig","fits","tent","forms","votes","harold","propose","monica","constantly","granny","abuse","relatives","survival","gloves","tracking","u","bend","review","connect","separated","elder","diana","salary","areas","pro","maintain","solved","wealth","possession","plates","recorded","upper","counts","tale","profit","colleague","warehouse","shore","miami","fifteen","visitors","bo","net","owen","cities","causing","lemon","appeal","marshall","critical","creating","scotland","enormous","testimony","praise","indians","commission","nicole","fraud","branch","covering","occurred","beans","raw","muscle","pages","relationships","management","assignment","blonde","exposed","canada","dont","von","comedy","marco","stroke","buildings","facility","appropriate","remarkable","transferred","drawn","clicking","symbol","motor","employees","ambassador","mothers","feeding","checks","bears","cookies","toys","levels","differently","magnificent","tube","leaders","superior","pan","expression","currently","deadly","bee","tooth","potatoes","wicked","resources","native","centuries","karl","poetry","multiple","cable","shortly","buzz","socks","september","colors","basketball","promises","explained","appearance","musical","sends","slide","ultimate","pork","communication","payment","structure","lazy","actors","magical","colleagues","madness","roads","entry","injury","burden","racing","manner","bits","norman","mount","battery","pound","visited","motel","cinema","reception","fridge","brick","lap","wars","recommend","brush","nelson","pill","concept","w","delay","quarters","korea","janet","mall","soil","complaint","sail","baker","description","badge","measure","hip","function","harris","foundation","labor","homeless","proved","log","meetings","combat","poem","polish","handed","mia","weed","raymond","tons","satellite","jersey","eagle","privacy","chapter","treating","wisdom","flip","entering","barn","farmer","clan","budget","pub","temporary","effective","wendy","juan","lamb","plot","proposal","sticks","searched","rage","sydney","basis","recover","twist","neil","item","catholic","retired","kings","inner","cents","affect","forbidden","patch","drops","necessarily","provided","meters","returns","fires","humor","rocky","introduced","creative","soviet","various","added","discovery","cowboy","suspected","suggested","dive","radar","amber","vast","owned","cookie","finest","pump","valentine","counter","sorts","coin","warren","marine","illness","bid","require","moscow","largest","washing","achieve","causes","k","mo","nest","palm","logan","constant","medication","gravity","abroad","christine","rising","analysis","cuts","employee","damaged","solar","height","yards","chemical","preparing","advanced","fund","web","phase","suggesting","fleet","irish","editor","october","assumed","mel","region","amongst","discussion","engines","operate","sunshine","horror","tested","contrary","roses","poker","wrapped","korean","graham","mi","fu","focused","rounds","entertainment","gathered","lincoln","crossing","blanket","nut","travis","pockets","limited","paintings","intended","computers","tennis","needle","chicks","traditional","independent","leslie","lauren","repair","brandon","executive","colin","recognized","holmes","regarding","european","method","tool","demands","permit","daisy","spider","northern","rangers","zoo","antonio","passengers","con","australia","technique","gently","operations","planes","bunny","skill","sealed","massage","raising","menu","diary","wagon","mexican","casino","bacon","diego","dutch","promotion","click","burst","permanent","spencer","recovered","registered","sunny","packing","scenes","admitted","completed","conduct","prayers","sheet","avenue","reverse","newspapers","ford","investment","potato","grows","inspired","ruby","tag","ram","requires","bugs","leonard","jill","ranch","safer","worn","lands","heather","ash","leather","grounds","assuming","nails","dana","conspiracy","thanksgiving","pierre","guardian","yen","terror","tire","boats","parade","adults","steam","closely","pearl","soccer","adrian","priority","donald","root","larger","november","boot","conflict","cherry","concerns","celebration","cattle","fairly","fee","radiation","holidays","register","shadows","specifically","ideal","turtle","candidate","lance","types","immediate","identified","di","hunger","closest","combination","gabriel","develop","severe","en","organized","franklin","pm","yang","halloween","vulnerable","continued","vital","bureau","harper","retreat","pillow","troy","ace","cart","chan","ham","announce","galaxy","voted","jewelry","luggage","oops","lighter","masters","alliance","clothing","denied","alike","relative","photographs","approve","produced","christina","physically","stations","spiritual","inch","limits","unexpected","arrival","basket","sheets","christopher","shield","instant","objects","directed","scan","electronic","republic","overnight","counsel","explains","lean","tracy","gossip","economy","worlds","clara","tissue","et","supreme","bingo","mitchell","excitement","document","broad","vietnam","vessel","lit","dale","mario","foul","deaths","elements","puppy","handled","announcement","cotton","deposit","taxes","injuries","advise","gig","lecture","posted","lo","include","revealed","infected","assistance","solo","determine","terrorists","elsewhere","lamp","practical","marked","rubber","purple","operating","suite","personnel","beam","poet","samples","arrow","carpet","allen","floating","corrected","located","journalist","operator","rely","singh","arrives","leon","walt","eastern","remaining","anderson","lip","acid","si","december","anonymous","inn","oldest","breast","sixth","error","reporting","egypt","islands","roommate","visitor","described","inches","commitment","protest","theft","andrea","communicate","fathers","flame","medal","silk","photographer","cemetery","rear","banana","dated","bin","efforts","content","del","rap","debate","era","ton","liquid","murphy","application","profession","bench","symptoms","scout","keen","aircraft","formed","hon","aggressive","pale","significant","duncan","clubs","visual","embassy","defence","cabinet","display","fame","twin","vault","watson","quote","penalty","bargain","pepper","speaker","compare","helmet","copies","envelope","perry","african","arrangements","discussed","assigned","rosa","oven","tin","sonic","collar","mere","belief","storage","climbing","melissa","fears","sum","dedicated","ladder","alternative","raid","dining","ms","corporate","folk","jon","replaced","bailey","un","duties","existed","surprising","chess","requested","cruise","primary","rhythm","drum","models","motorcycle","adopted","barrel","cargo","planets","trailer","cannon","tables","lawrence","tapes","sandra","teenage","kent","risks","ties","items","grip","relations","skirt","frog","lloyd","claimed","perfume","instrumental","association","january","israel","eleven","gallery","activities","iraq","fist","stuffed","improve","creation","infection","strikes","tension","certificate","curtis","bold","threats","twisted","suspended","affected","whale","dial","cameron","martial","controlled","lung","coal","imperial","pam","signing","congress","villa","candles","filling","comic","recovery","volunteer","tech","positions","cindy","narrow","stuart","perspective","faced","pierce","observe","cycle","handling","conclusion","designer","importance","spots","communist","pacific","filed","cam","deals","pos","persons","executed","brakes","blank","tender","kurt","turner","tub","slight","addition","campus","graduate","genuine","ceiling","somewhat","established","attempted","generations","gathering","warriors","electrical","collins","couples","depend","institute","principle","therapist","compete","worship","residence","democracy","joel","published","myth","kennedy","execution","formal","strictly","tanks","technical","rod","meets","shepherd","brazil","brutal","switched","chi","deer","brooklyn","dresses","overcome","inspiration","benjamin","suggestion","destination","bass","picnic","idol","trucks","rank","yu","blocked","strict","formula","clerk","disturbed","cafe","consciousness","val","min","bare","hans","arrangement","ministry","locate","examine","trains","candle","prior","stream","passage","reaching","organ","directions","outer","morris","luxury","v","funds","sunset","strings","engineering","element","balloon","ty","broadcast","spray","handy","nations","behaviour","pace","concrete","allah","vegetables","euros","rolls","genetic","scheme","performed","plug","rejected","respected","protocol","muscles","kidney","finishing","products","im","wu","invasion","endless","discipline","absence","philosophy","nicholas","reed","connections","privilege","controls","airplane","values","consent","puzzle","disagree","winds","wizard","ranger","celebrity","stores","farmers","convenient","bonus","entitled","porter","wrist","originally","coins","drain","physics","sector","income","laser","boxing","accurate","thumb","bald","sharon","convicted","roots","shares","bernard","harrison","blues","lobby","recipe","las","winston","generally","seeking","declare","missile","ensure","pointed","hockey","bubble","contacts","maximum","circles","author","wallace","receiving","tips","reporters","associate","laptop","rainbow","seed","mature","kay","expenses","discussing","meals","performing","remained","adams","retirement","platform","beds","writes","mill","dealt","manhattan","fatal","copper","owners","length","lesbian","enterprise","tournament","travelling","website","ja","flood","harbor","auction","bachelor","scheduled","allows","cocktail","pointing","butler","methods","reference","georgia","collapse","alfred","ana","minimum","chairs","included","carmen","civilization","prices","depression","tide","bra","password","th","kirk","static","hawaii","murray","offers","phrase","sources","approval","collected","fur","jan","legally","benefits","arnold","domestic","hack","muslim","loads","nurses","glenn","rebel","clearing","survivors","reply","orbit","austin","toe","sympathy","intel","growth","encounter","passenger","hats","column","economic","tales","follows","spreading","hamilton","exclusive","decades","bowling","buttons","confusion","collecting","lions","douglas","february","elvis","forty","sleeps","brass","email","proven","covers","rarely","programme","dee","contacted","chemistry","assured","applied","elected","subjects","label","shakespeare","tan","phoenix","companion","lottery","worm","publicity","butterfly","dialogue","cal","tremendous","establish","intimate","se","atlantic","contains","thompson","presentation","den","wells","chen","accomplished","politicians","logic","afghanistan","exception","ultimately","compromise","majority","journal","signals","bent","dock","essential","campbell","climate","experiments","ink","magazines","rivers","administration","precise","lawn","via","jeans","resort","announced","capacity","opponent","chains","minus","seattle","instrument","healing","convention","messenger","explore","versus","survivor","ruled","madison","experts","bicycle","pregnancy","declared","drums","wooden","cloth","pond","robbie","assist","presented","civilian","fighters","customs","florence","seventh","ou","avoiding","isaac","rolled","championship","household","float","chad","ballet","officials","nearest","que","corps","pirates","reservation","fog","flu","hint","autumn","bracelet","contain","simpson","sperm","materials","lindsay","standards","receipt","regards","homeland","targets","leaf","jar","proposed","savage","caring","approximately","carries","creek","cleaner","unlikely","situations","colony","sells","chambers","volume","reads","seeds","engage","stewart","mutual","lighting","scores","savings","stephanie","educated","complaints","offensive","harvest","qualified","cape","buffalo","triple","palmer","armor","poverty","leadership","cakes","bean","occupied","correctly","hugh","marc","draft","factor","portrait","suggests","font","blair","pencil","coordinates","reserve","jeffrey","shirts","ta","auto","logical","eliminate","beverly","carbon","cancelled","independence","medium","asian","quest","represents","memorial","bearing","watches","cooperation","earthquake","sailing","involve","houston","asia","spectacular","reliable","breach","sophisticated","echo","indicate","vehicles","manual","elegant","compound","serves","pursue","revolutionary","wa","tribal","cleveland","depth","aids","occur","camping","stamp","kathy","approved","crucial","annual","dallas","bon","reunion","graduated","sub","hospitals","legacy","shops","samuel","mines","orleans","literature","transmission","panel","sole","sequence","sexually","hugo","anxiety","mode","communications","welfare","dice","locks","settlement","advertising","devoted","principles","circuit","nickname","dot","scenario","choir","isolated","equally","statements","shaw","courtesy","hobby","luis","experiences","fiction","pastor","dolls","pose","importantly","industrial","musician","labour","evolution","ba","cent","calendar","regard","fold","suitable","movements","differences","trading","strongly","fluid","scholarship","translation","cricket","shuttle","picks","videos","initial","yea","divided","linked","laboratory","classified","cultural","measures","update","cottage","amateur","hawk","shorts","ni","representative","dip","marilyn","es","flush","cuba","increased","toxic","broadway","rally","bloom","corporation","buys","disorder","barnes","evans","specialist","burke","prescription","referring","knives","graduation","grid","regardless","lodge","edgar","software","marina","queens","oak","trips","sofa","conscious","olive","psychological","robinson","belle","landscape","dam","rehab","switzerland","agenda","projects","floors","mainly","biological","pad","swiss","opposed","harvard","parliament","topic","offices","loop","drivers","blond","races","salmon","bizarre","rico","reaches","heights","possibilities","wax","travels","confidential","pursuit","cd","spies","exams","invention","explaining","replacement","erik","springs","chelsea","integrity","dash","senate","beautifully","roberts","slim","choosing","promising","objective","joyce","attract","prep","restore","dozens","betting","visits","database","achieved","sucking","encourage","grades","gps","patterns","relevant","hudson","expense","occasionally","identical","gained","venice","classical","consistent","clip","insects","failing","organic","charging","mug","fountain","observation","abortion","railroad","legitimate","fork","du","ciao","jade","griffin","digital","milan","jr","cooler","metres","harmony","difficulty","bands","dried","maker","supporting","brake","features","photography","inappropriate","vacuum","throws","residents","substance","potter","investigator","thread","gap","institution","marsh","chapel","accidents","fabric","railway","dame","custom","pension","possess","poster","developing","feature","cope","wrestling","rio","reduce","mercedes","guaranteed","poland","theories","tumor","automatic","unnecessary","voting","stadium","visible","easter","jeep","dj","les","garcia","tracked","pledge","fisher","salvation","maintenance","tobacco","divide","discount","yoga","reduced","pressing","tops","variety","ignored","helena","writers","grain","essentially","individuals","subtle","interviews","cord","sites","vienna","issued","origin","unto","superintendent","ol","challenges","corruption","sullivan","ski","flavor","fastest","housing","canal","robots","shade","orchestra","guidance","hence","jose","purchase","ireland","elite","craft","cult","profits","shelf","kai","allowing","chart","weekends","submit","supervisor","resident","opportunities","knights","jerusalem","counted","instruments","triumph","frequency","resume","satisfaction","historical","creates","costumes","swedish","depending","freely","globe","peak","hollow","concentration","invest","radical","protective","stunning","breed","controlling","pasta","execute","architect","delta","preserve","dose","codes","instantly","bolt","habits","assembly","magnetic","joshua","sorted","assets","outstanding","essence","nam","restaurants","disco","abilities","mice","bennett","anchor","interior","moore","urge","surrounding","strain","tomato","bonds","greece","ceo","arabic","examination","participate","cups","additional","responsibilities","ridge","intent","corners","whereas","promoted","maiden","comments","batteries","seas","canyon","casual","rack","expectations","adjust","decade","pine","wires","finance","demonstration","appointed","views","violin","lifestyle","realm","fitting","inspection","nursing","carlo","tourist","conviction","lounge"];
 const COMMON_FREQ_SKIP=new Set("the of and to in a is that for it as was with be by on not he i this are or his from at which but have an had they you were their one all we can her has there been if more when will would who so no out up said what about than into them could only other new some these two may then do first any my now such like our over man me even most made after also did many before must through back years where much your way well down should because each just those people mr how too little state good very make world still own see work long get here between both life being under never day same another know while last might us great old year off come since against go came right used take three she him hers herself himself we me mine your yours yourself yourselves ourselves themselves them theirs it its itself these those who whom whose what which when where why how yes nope yep yeah okay ok oh uh um don ll ve re im ive youre hes shes theyre didn doesn isn wasn weren haven hasn hadn wouldn couldn shouldn won cant gonna wanna gotta ain john mary david michael james robert william thomas george paul mark peter keith patrick johnson ben jane susan linda anna maria jason alex simon bruce kerry laura nancy sean greg larry scott".split(" "));
 function commonFreqWindow(){
-  const lvl=state.lvl||1;
+  const lvl=diffMacro();
   const ranges = lvl<=2 ? [0,1200] : lvl<=4 ? [250,2200] : lvl<=6 ? [900,3600] : lvl<=8 ? [1600,5000] : [2400,5000];
   const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
   const slice=COMMON_FREQ_WORDS.slice(ranges[0], ranges[1]).filter(w=>!recent.has(w));
@@ -4668,7 +4773,7 @@ function seedVocabWords(){
 }
 const VOCAB_SET_SIZE=12;
 function starterSet(){
-  const lvl=state.lvl||1;
+  const lvl=diffMacro();
   const bandKey = lvl<=3 ? "low" : lvl<=6 ? "mid" : "high";
   const band = (STARTER_VOCAB[bandKey]||[]).concat(starterExtraWords(bandKey));
   const currentThemeSeeds = state.vocabTheme && SEED_VOCAB[state.vocabTheme.id]
@@ -4874,7 +4979,7 @@ function wpSaveProgress(){
     if(!wpQueue || !wpQueue.length || wpPos>=wpQueue.length){ wpClearProgress(); return; }
     // 큐를 직렬화 (word 전체 + blank)
     const slim=wpQueue.map(q=>({word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _ctx:q._ctx||null}));
-    hSet(WP_PROG_KEY, {schema:2, queue:slim, pos:wpPos, stats:wpStats, theme:state.vocabTheme||null, lvl:(state.lvl||1), savedAt:Date.now()});
+    hSet(WP_PROG_KEY, {schema:2, queue:slim, pos:wpPos, stats:wpStats, theme:state.vocabTheme||null, lvl:diffLevel(), savedAt:Date.now()});
   }catch(e){}
 }
 function wpClearProgress(){ try{ hSet(WP_PROG_KEY, null); }catch(e){} }
@@ -4882,7 +4987,7 @@ function wpResumeData(){
   try{ const d=hGet(WP_PROG_KEY,null); if(!d||!d.queue||!d.queue.length) return null;
     if(d.schema!==2) return null;
     if(d.pos>=d.queue.length) return null;
-    if((d.lvl||1)!==(state.lvl||1)) return null;   // 레벨 바뀌면 무효
+    if((d.lvl||1)!==diffLevel()) return null;   // 난이도 바뀌면 무효
     // 6시간 지나면 무효 (옛 세트 무한 복원 방지 — 짧게)
     if(Date.now()-(d.savedAt||0) > 21600000) return null;
     // 저장된 세트의 단어가 대부분 '이미 최근 본 단어'면 이어하기 무효 → 새 단어 뽑게
@@ -5051,25 +5156,47 @@ function wpWordEq(a, b){
   if(a.length>=3 && b.length>=3 && stem(a)===stem(b)) return true;
   return false;
 }
+function wpKeepTrying(q, answer){
+  const status=$("#wpStatus"), inp=$("#wpInput"), panel=$("#wpHintPanel");
+  const tries=q._wrongCount||1;
+  const nudge = tries>=3 ? " 그래도 막히면 힌트를 보고, 정말 안 되면 정답 보기를 누르세요." : " 다시 생각해서 한 번 더 해보세요.";
+  if(status){
+    status.style.color="#E2674A";
+    status.innerHTML=`"${escapeHtml(answer)}" — 아니에요.${nudge}`;
+  }
+  if(panel && tries>=2 && panel.style.display==="none"){
+    panel.style.display="block";
+    panel.innerHTML=`<div style="font-size:13px;font-weight:900;color:var(--text);margin-bottom:6px">조금만 더!</div><div style="font-size:13.5px;color:var(--muted);line-height:1.55">바로 정답을 보지 말고 문장 뜻과 빈칸 위치를 다시 맞춰보세요. 필요하면 힌트 보기를 눌러요.</div>`;
+  }
+  if(inp && inp.style.display!=="none"){
+    inp.value="";
+    inp.disabled=false;
+    setTimeout(()=>inp.focus(),60);
+  }
+}
 function wpSubmit(q, answer){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
   const correct = !!answer && wpMatch(ans, target);
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
-  // ❌ 틀리면 같은 화면에 붙잡아두지 않고, 새 단어를 더 본 뒤 한 번만 재등장시킨다.
+  // 오답은 정답지로 넘기지 않는다. 같은 문제에서 최대한 다시 생각하게 둔다.
   if(answer && !correct){
     flashResult(false);
-    srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
     q._wrongCount=(q._wrongCount||0)+1;
-    wpStats.total++;
-    if(!q._retryNow) wpRescheduleFail(q);
-    try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
-    wpResult(q, answer, false, elapsed, false);
+    if(!q._missLogged){
+      srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
+      q._missLogged=true;
+      try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+    }
+    wpKeepTrying(q, answer);
     return;
   }
   // 💡 정답을 다 보고(전체 공개) 맞힌 경우 → 정답 처리 X, 복습 대기로
   if(answer && correct && q._answerShown){
-    srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
+    if(!q._missLogged){
+      srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
+      q._missLogged=true;
+    }
     if(!q._retryNow) wpRescheduleFail(q);
     wpResult(q, answer, false, Math.max(0.1,(Date.now()-wpT0)/1000), true);   // 정답 공개 화면(포기 취급)
     return;
@@ -5086,7 +5213,7 @@ function wpSubmit(q, answer){
     q._retryNow=false;
   } else {
     // 포기(정답 보기)
-    srsFail(q.word.word, q.word.ko, ctxTag);
+    if(!q._missLogged) srsFail(q.word.word, q.word.ko, ctxTag);
     if(!isRetry) wpRescheduleFail(q);
   }
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
@@ -5467,19 +5594,24 @@ const VAD_OPTS={maxMs:12000, silenceMs:600, minSpeechMs:280, thresh:0.02};
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
+  const onSpeechStart=typeof opts.onSpeechStart==="function"?opts.onSpeechStart:null;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;
     const ac=new AC(); const src=ac.createMediaStreamSource(stream);
     const an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
     const buf=new Uint8Array(an.fftSize);
-    const t0=Date.now(); let lastLoud=0, spoke=false, done=false;
+    const t0=Date.now(); let lastLoud=0, spoke=false, started=false, done=false;
     function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
       let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
-      if(rms>thresh){ lastLoud=now; if(now-t0>minSpeechMs) spoke=true; }
+      if(rms>thresh){
+        lastLoud=now;
+        if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
+        if(now-t0>minSpeechMs) spoke=true;
+      }
       if(spoke && lastLoud && (now-lastLoud)>silenceMs){ return fin(); }
       if(now-t0>maxMs){ return fin(); }
       requestAnimationFrame(tick);
@@ -5494,23 +5626,26 @@ function attachVAD(stream, onStop, opts){
 async function micFillCb(cb){
   if(qzRecording){ return; }
   try{
+    const meta={startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null};
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     qzChunks=[]; const mime=getBestMime();
     qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
     const am=qzMR.mimeType||mime;
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
+      meta.stopAt=Date.now();
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
-      const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb(""); return; }
+      const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb("", meta); return; }
       try{
         const res=await sttRecognize(raw, am);
         const data=await res.json();
-        cb(data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):"");
-      }catch(e){ cb(""); }
+        meta.sttDoneAt=Date.now();
+        cb(data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):"", meta);
+      }catch(e){ cb("", meta); }
     };
     micBeep(); qzMR.start(250); qzRecording=true;
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, VAD_OPTS);
-  }catch(e){ cb(""); }
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
+  }catch(e){ cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null}); }
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
@@ -6075,12 +6210,116 @@ const BLE_BLOCKS=[
       {situation:"병원", ko:"제 생각엔 좀 나아졌어요.", en:"I think I feel better.", object:"I feel better"},
     ]},
 ];
+const BLE_EXTRA_ROWS=[
+["id_like","I'd like...","~하고 싶어요 / ~주세요","request",[["카페","커피 한 잔 주세요.","I'd like a coffee.","a coffee"],["식당","창가 자리로 부탁해요.","I'd like a table by the window.","a table by the window"],["호텔","늦은 체크아웃을 하고 싶어요.","I'd like a late checkout.","a late checkout"]]],
+["im_looking_for","I'm looking for...","~을 찾고 있어요","search",[["쇼핑","충전기를 찾고 있어요.","I'm looking for a charger.","a charger"],["공항","택시 타는 곳을 찾고 있어요.","I'm looking for the taxi stand.","the taxi stand"],["병원","접수처를 찾고 있어요.","I'm looking for reception.","reception"]]],
+["where_is","Where is...","~이 어디예요?","location",[["공항","화장실이 어디예요?","Where is the restroom?","the restroom"],["호텔","엘리베이터가 어디예요?","Where is the elevator?","the elevator"],["쇼핑","계산대가 어디예요?","Where is the checkout?","the checkout"]]],
+["how_do_i","How do I...","어떻게 ~하죠?","procedure",[["공항","와이파이에 어떻게 연결하죠?","How do I connect to the Wi-Fi?","connect to the Wi-Fi"],["호텔","체크아웃은 어떻게 하죠?","How do I check out?","check out"],["앱","비밀번호를 어떻게 바꾸죠?","How do I change my password?","change my password"]]],
+["can_you_help_me","Can you help me...","~하는 것 좀 도와주실래요?","help",[["쇼핑","이거 찾는 것 좀 도와주실래요?","Can you help me find this?","find this"],["공항","이 양식 쓰는 것 좀 도와주실래요?","Can you help me fill this out?","fill this out"],["호텔","문 여는 것 좀 도와주실래요?","Can you help me open the door?","open the door"]]],
+["could_i_have","Could I have...","~을 받을 수 있을까요?","polite-request",[["식당","계산서 받을 수 있을까요?","Could I have the check?","the check"],["카페","물 한 잔 받을 수 있을까요?","Could I have some water?","some water"],["호텔","새 수건 받을 수 있을까요?","Could I have a fresh towel?","a fresh towel"]]],
+["is_there","Is there...","~이 있나요?","availability",[["호텔","근처에 약국이 있나요?","Is there a pharmacy nearby?","a pharmacy nearby"],["공항","셔틀이 있나요?","Is there a shuttle?","a shuttle"],["식당","채식 메뉴가 있나요?","Is there a vegetarian option?","a vegetarian option"]]],
+["do_i_need_to","Do I need to...","~해야 하나요?","requirement",[["공항","여기서 기다려야 하나요?","Do I need to wait here?","wait here"],["병원","보험 카드를 보여줘야 하나요?","Do I need to show my insurance card?","show my insurance card"],["호텔","지금 결제해야 하나요?","Do I need to pay now?","pay now"]]],
+["i_have_a_problem_with","I have a problem with...","~에 문제가 있어요","problem",[["호텔","방 키에 문제가 있어요.","I have a problem with my room key.","my room key"],["고객센터","결제에 문제가 있어요.","I have a problem with my payment.","my payment"],["공항","수하물에 문제가 있어요.","I have a problem with my luggage.","my luggage"]]],
+["it_doesnt_work","It doesn't work.","작동하지 않아요","problem",[["호텔","키 카드가 작동하지 않아요.","It doesn't work.","it"],["앱","앱이 작동하지 않아요.","It doesn't work.","it"],["사무실","프린터가 작동하지 않아요.","It doesn't work.","it"]]],
+["i_dont_understand","I don't understand...","~을 이해하지 못했어요","clarify",[["학교","이 설명을 이해하지 못했어요.","I don't understand this explanation.","this explanation"],["병원","이 안내를 이해하지 못했어요.","I don't understand these instructions.","these instructions"],["고객센터","그 요금을 이해하지 못했어요.","I don't understand the charge.","the charge"]]],
+["could_you_repeat","Could you repeat...","~을 다시 말해주시겠어요?","clarify",[["학교","그 부분 다시 말해주시겠어요?","Could you repeat that part?","that part"],["전화","번호를 다시 말해주시겠어요?","Could you repeat the number?","the number"],["공항","게이트를 다시 말해주시겠어요?","Could you repeat the gate?","the gate"]]],
+["could_you_speak_slowly","Could you speak slowly?","천천히 말해주시겠어요?","clarify",[["병원","천천히 말해주시겠어요?","Could you speak slowly?","slowly"],["전화","죄송한데 천천히 말해주시겠어요?","Sorry, could you speak slowly?","slowly"],["공항","조금만 천천히 말해주시겠어요?","Could you speak a little slowly?","a little slowly"]]],
+["what_does_mean","What does... mean?","~은 무슨 뜻이에요?","meaning",[["학교","이 단어는 무슨 뜻이에요?","What does this word mean?","this word"],["병원","이 표시는 무슨 뜻이에요?","What does this sign mean?","this sign"],["고객센터","이 요금은 무슨 뜻이에요?","What does this charge mean?","this charge"]]],
+["how_much_is","How much is...","~은 얼마예요?","price",[["쇼핑","이거 얼마예요?","How much is this?","this"],["호텔","하룻밤 얼마예요?","How much is one night?","one night"],["병원","진료비 얼마예요?","How much is the visit?","the visit"]]],
+["how_long_does_it_take","How long does it take...","~하는 데 얼마나 걸려요?","time",[["식당","음식 나오려면 얼마나 걸려요?","How long does it take?","it"],["공항","도심까지 얼마나 걸려요?","How long does it take to get downtown?","to get downtown"],["병원","검사 결과까지 얼마나 걸려요?","How long does it take to get the results?","to get the results"]]],
+["when_does","When does...","~은 언제 하나요?","time",[["공항","탑승은 언제 시작해요?","When does boarding start?","boarding start"],["호텔","아침 식사는 언제 시작해요?","When does breakfast start?","breakfast start"],["학교","수업은 언제 끝나요?","When does class end?","class end"]]],
+["what_time_is","What time is...","~이 몇 시예요?","time",[["호텔","체크아웃이 몇 시예요?","What time is checkout?","checkout"],["공항","비행기가 몇 시예요?","What time is the flight?","the flight"],["학교","회의가 몇 시예요?","What time is the meeting?","the meeting"]]],
+["i_have","I have...","~이 있어요","state",[["호텔","예약했어요.","I have a reservation.","a reservation"],["병원","예약이 있어요.","I have an appointment.","an appointment"],["공항","전자 티켓이 있어요.","I have an e-ticket.","an e-ticket"]]],
+["i_dont_have","I don't have...","~이 없어요","state",[["호텔","예약 번호가 없어요.","I don't have my reservation number.","my reservation number"],["병원","보험 카드가 없어요.","I don't have my insurance card.","my insurance card"],["공항","프린트한 티켓이 없어요.","I don't have a printed ticket.","a printed ticket"]]],
+["i_forgot","I forgot...","~을 잊었어요","problem",[["호텔","방 번호를 잊었어요.","I forgot my room number.","my room number"],["앱","비밀번호를 잊었어요.","I forgot my password.","my password"],["학교","숙제를 잊었어요.","I forgot my homework.","my homework"]]],
+["i_lost","I lost...","~을 잃어버렸어요","problem",[["공항","여권을 잃어버렸어요.","I lost my passport.","my passport"],["호텔","키 카드를 잃어버렸어요.","I lost my key card.","my key card"],["택시","휴대폰을 잃어버렸어요.","I lost my phone.","my phone"]]],
+["im_here_to","I'm here to...","~하러 왔어요","purpose",[["병원","진료받으러 왔어요.","I'm here to see a doctor.","see a doctor"],["학교","선생님 만나러 왔어요.","I'm here to meet the teacher.","meet the teacher"],["은행","계좌를 열러 왔어요.","I'm here to open an account.","open an account"]]],
+["i_want_to","I want to...","~하고 싶어요","want",[["호텔","방을 바꾸고 싶어요.","I want to change rooms.","change rooms"],["쇼핑","이걸 반품하고 싶어요.","I want to return this.","return this"],["공항","좌석을 바꾸고 싶어요.","I want to change my seat.","change my seat"]]],
+["i_need_to","I need to...","~해야 해요","need-action",[["공항","비행기를 타야 해요.","I need to catch my flight.","catch my flight"],["병원","약을 받아야 해요.","I need to pick up my medicine.","pick up my medicine"],["은행","돈을 인출해야 해요.","I need to withdraw money.","withdraw money"]]],
+["i_cant","I can't...","~할 수 없어요","cannot",[["앱","로그인할 수 없어요.","I can't log in.","log in"],["호텔","문을 열 수 없어요.","I can't open the door.","open the door"],["전화","잘 들을 수 없어요.","I can't hear you.","hear you"]]],
+["can_i_try","Can I try...","~을 입어봐도/해봐도 돼요?","permission",[["쇼핑","이거 입어봐도 돼요?","Can I try this on?","this on"],["카페","샘플 먹어봐도 돼요?","Can I try a sample?","a sample"],["학교","다시 해봐도 돼요?","Can I try again?","again"]]],
+["can_i_use","Can I use...","~을 사용해도 돼요?","permission",[["카페","화장실 써도 돼요?","Can I use the restroom?","the restroom"],["호텔","프린터 써도 돼요?","Can I use the printer?","the printer"],["사무실","이 충전기 써도 돼요?","Can I use this charger?","this charger"]]],
+["can_i_pay","Can I pay...","~로 결제해도 돼요?","payment",[["식당","카드로 결제해도 돼요?","Can I pay by card?","by card"],["쇼핑","현금으로 결제해도 돼요?","Can I pay in cash?","in cash"],["호텔","나중에 결제해도 돼요?","Can I pay later?","later"]]],
+["id_rather","I'd rather...","차라리 ~할래요","preference",[["식당","차라리 밖에 앉을래요.","I'd rather sit outside.","sit outside"],["쇼핑","차라리 작은 사이즈로 할래요.","I'd rather get a smaller size.","get a smaller size"],["호텔","차라리 조용한 방으로 할래요.","I'd rather have a quiet room.","have a quiet room"]]],
+["i_prefer","I prefer...","~을 더 선호해요","preference",[["카페","아이스로 더 좋아요.","I prefer it iced.","it iced"],["호텔","조용한 방을 더 선호해요.","I prefer a quiet room.","a quiet room"],["식당","덜 매운 걸 더 좋아해요.","I prefer it less spicy.","it less spicy"]]],
+["is_it_ok_if","Is it OK if I...","제가 ~해도 괜찮나요?","permission",[["호텔","조금 늦게 체크아웃해도 괜찮나요?","Is it OK if I check out a little late?","check out a little late"],["식당","여기 앉아도 괜찮나요?","Is it OK if I sit here?","sit here"],["학교","질문해도 괜찮나요?","Is it OK if I ask a question?","ask a question"]]],
+["would_it_be_possible","Would it be possible to...","~하는 게 가능할까요?","polite-request",[["호텔","방을 바꾸는 게 가능할까요?","Would it be possible to change rooms?","change rooms"],["병원","오늘 진료받는 게 가능할까요?","Would it be possible to see someone today?","see someone today"],["회사","일정을 바꾸는 게 가능할까요?","Would it be possible to change the schedule?","change the schedule"]]],
+["could_you_show_me","Could you show me...","~을 보여주시겠어요?","request",[["쇼핑","다른 색을 보여주시겠어요?","Could you show me another color?","another color"],["공항","어디로 가야 하는지 보여주시겠어요?","Could you show me where to go?","where to go"],["병원","이 양식을 보여주시겠어요?","Could you show me the form?","the form"]]],
+["could_you_tell_me","Could you tell me...","~을 알려주시겠어요?","request-info",[["공항","게이트 번호를 알려주시겠어요?","Could you tell me the gate number?","the gate number"],["호텔","와이파이 비밀번호를 알려주시겠어요?","Could you tell me the Wi-Fi password?","the Wi-Fi password"],["식당","추천 메뉴를 알려주시겠어요?","Could you tell me what you recommend?","what you recommend"]]],
+["could_you_write","Could you write...","~을 적어주시겠어요?","request",[["전화","주소를 적어주시겠어요?","Could you write down the address?","down the address"],["병원","약 이름을 적어주시겠어요?","Could you write down the medicine name?","down the medicine name"],["학교","숙제를 적어주시겠어요?","Could you write down the homework?","down the homework"]]],
+["could_you_check","Could you check...","~을 확인해주시겠어요?","request",[["호텔","제 예약을 확인해주시겠어요?","Could you check my reservation?","my reservation"],["은행","제 계좌를 확인해주시겠어요?","Could you check my account?","my account"],["공항","제 항공편을 확인해주시겠어요?","Could you check my flight?","my flight"]]],
+["could_you_call","Could you call...","~을 불러/전화해주시겠어요?","request",[["호텔","택시를 불러주시겠어요?","Could you call a taxi?","a taxi"],["병원","간호사를 불러주시겠어요?","Could you call a nurse?","a nurse"],["식당","매니저를 불러주시겠어요?","Could you call the manager?","the manager"]]],
+["could_you_send","Could you send...","~을 보내주시겠어요?","request",[["호텔","영수증을 이메일로 보내주시겠어요?","Could you send the receipt by email?","the receipt by email"],["회사","파일을 보내주시겠어요?","Could you send me the file?","me the file"],["고객센터","확인 문자를 보내주시겠어요?","Could you send me a confirmation text?","me a confirmation text"]]],
+["could_you_give_me","Could you give me...","~을 주시겠어요?","request",[["병원","영수증을 주시겠어요?","Could you give me a receipt?","a receipt"],["학교","예시를 주시겠어요?","Could you give me an example?","an example"],["호텔","지도 하나 주시겠어요?","Could you give me a map?","a map"]]],
+["let_me","Let me...","제가 ~할게요","action",[["식당","확인해볼게요.","Let me check.","check"],["전화","다시 말해볼게요.","Let me try again.","try again"],["쇼핑","생각해볼게요.","Let me think about it.","think about it"]]],
+["ill","I'll...","제가 ~할게요","future-action",[["식당","이걸로 할게요.","I'll take this.","take this"],["호텔","나중에 다시 올게요.","I'll come back later.","come back later"],["전화","다시 전화할게요.","I'll call back.","call back"]]],
+["i_can","I can...","제가 ~할 수 있어요","ability",[["호텔","지금 결제할 수 있어요.","I can pay now.","pay now"],["학교","내일 올 수 있어요.","I can come tomorrow.","come tomorrow"],["회사","파일을 보낼 수 있어요.","I can send the file.","send the file"]]],
+["i_could","I could...","제가 ~할 수도 있어요","option",[["호텔","다른 방을 쓸 수도 있어요.","I could take another room.","take another room"],["회사","내일 할 수도 있어요.","I could do it tomorrow.","do it tomorrow"],["식당","밖에서 기다릴 수도 있어요.","I could wait outside.","wait outside"]]],
+["im_going_to","I'm going to...","~할 거예요","plan",[["호텔","체크아웃할 거예요.","I'm going to check out.","check out"],["공항","택시를 탈 거예요.","I'm going to take a taxi.","take a taxi"],["회사","이메일을 보낼 거예요.","I'm going to send an email.","send an email"]]],
+["im_trying_to","I'm trying to...","~하려고 하고 있어요","attempt",[["앱","로그인하려고 하고 있어요.","I'm trying to log in.","log in"],["공항","게이트를 찾으려고 하고 있어요.","I'm trying to find my gate.","find my gate"],["호텔","예약을 확인하려고 하고 있어요.","I'm trying to confirm my reservation.","confirm my reservation"]]],
+["im_waiting_for","I'm waiting for...","~을 기다리고 있어요","waiting",[["공항","수하물을 기다리고 있어요.","I'm waiting for my luggage.","my luggage"],["호텔","택시를 기다리고 있어요.","I'm waiting for a taxi.","a taxi"],["병원","의사를 기다리고 있어요.","I'm waiting for the doctor.","the doctor"]]],
+["im_supposed_to","I'm supposed to...","~하기로 되어 있어요","scheduled",[["병원","3시에 진료받기로 되어 있어요.","I'm supposed to see the doctor at 3.","see the doctor at 3"],["회사","오늘 시작하기로 되어 있어요.","I'm supposed to start today.","start today"],["학교","여기서 만나기로 되어 있어요.","I'm supposed to meet here.","meet here"]]],
+["im_not_sure","I'm not sure...","~인지 잘 모르겠어요","uncertain",[["공항","어디로 가야 할지 잘 모르겠어요.","I'm not sure where to go.","where to go"],["식당","뭘 주문해야 할지 잘 모르겠어요.","I'm not sure what to order.","what to order"],["병원","이걸 어떻게 써야 할지 잘 모르겠어요.","I'm not sure how to fill this out.","how to fill this out"]]],
+["i_feel","I feel...","~한 느낌이에요","feeling",[["병원","어지러워요.","I feel dizzy.","dizzy"],["병원","좀 나아졌어요.","I feel better.","better"],["일상","피곤해요.","I feel tired.","tired"]]],
+["my_is","My ... is...","제 ~가 ~해요","state",[["호텔","제 방이 너무 추워요.","My room is too cold.","room is too cold"],["앱","제 계정이 잠겼어요.","My account is locked.","account is locked"],["공항","제 가방이 없어졌어요.","My bag is missing.","bag is missing"]]],
+["this_is","This is...","이건 ~예요","identify",[["식당","이건 제 주문이 아니에요.","This is not my order.","not my order"],["호텔","이건 제 방 키예요.","This is my room key.","my room key"],["병원","이건 제 보험 카드예요.","This is my insurance card.","my insurance card"]]],
+["that_sounds","That sounds...","그거 ~하네요","reaction",[["식당","좋네요.","That sounds good.","good"],["회사","괜찮네요.","That sounds fine.","fine"],["병원","좀 심각하네요.","That sounds serious.","serious"]]],
+["that_would_be","That would be...","그러면 ~하겠네요","reaction",[["호텔","좋겠네요.","That would be great.","great"],["식당","도움이 되겠네요.","That would be helpful.","helpful"],["회사","괜찮겠네요.","That would be fine.","fine"]]],
+["what_if","What if...","~하면 어떻게 되죠?","hypothetical",[["공항","제가 늦으면 어떻게 되죠?","What if I'm late?","I'm late"],["호텔","예약이 없으면 어떻게 되죠?","What if I don't have a reservation?","I don't have a reservation"],["병원","보험이 없으면 어떻게 되죠?","What if I don't have insurance?","I don't have insurance"]]],
+["what_should_i_do","What should I do...","제가 어떻게 해야 하죠?","advice",[["공항","이제 어떻게 해야 하죠?","What should I do now?","now"],["병원","다음에 어떻게 해야 하죠?","What should I do next?","next"],["고객센터","이 문제는 어떻게 해야 하죠?","What should I do about this?","about this"]]],
+["which_one","Which one...","어느 것이 ~인가요?","choice",[["식당","어느 것이 덜 매워요?","Which one is less spicy?","is less spicy"],["쇼핑","어느 것이 더 싸요?","Which one is cheaper?","is cheaper"],["공항","어느 줄이 맞아요?","Which one is the right line?","is the right line"]]],
+["do_you_know","Do you know...","~을 아세요?","ask-info",[["공항","게이트가 어디인지 아세요?","Do you know where the gate is?","where the gate is"],["호텔","근처 식당을 아세요?","Do you know a good restaurant nearby?","a good restaurant nearby"],["학교","이게 무슨 뜻인지 아세요?","Do you know what this means?","what this means"]]],
+["do_you_mind_if","Do you mind if I...","제가 ~해도 될까요?","permission",[["식당","여기 앉아도 될까요?","Do you mind if I sit here?","sit here"],["회사","창문 열어도 될까요?","Do you mind if I open the window?","open the window"],["전화","다시 전화해도 될까요?","Do you mind if I call back?","call back"]]],
+["would_you_mind","Would you mind...","~해주셔도 괜찮을까요?","polite-request",[["호텔","창문 닫아주셔도 괜찮을까요?","Would you mind closing the window?","closing the window"],["학교","다시 설명해주셔도 괜찮을까요?","Would you mind explaining it again?","explaining it again"],["식당","사진 찍어주셔도 괜찮을까요?","Would you mind taking a picture?","taking a picture"]]],
+["make_sure_to","Make sure to...","꼭 ~하세요","instruction",[["호텔","키를 반납하세요.","Make sure to return the key.","return the key"],["학교","이름을 쓰세요.","Make sure to write your name.","write your name"],["회사","파일을 저장하세요.","Make sure to save the file.","save the file"]]],
+["you_can","You can...","~하셔도 돼요","permission-info",[["호텔","여기서 기다리셔도 돼요.","You can wait here.","wait here"],["식당","카드로 결제하셔도 돼요.","You can pay by card.","pay by card"],["학교","이걸 사용하셔도 돼요.","You can use this.","use this"]]],
+["you_need_to","You need to...","~해야 해요","instruction",[["공항","여기서 체크인해야 해요.","You need to check in here.","check in here"],["병원","이 양식을 작성해야 해요.","You need to fill out this form.","fill out this form"],["호텔","신분증을 보여줘야 해요.","You need to show your ID.","show your ID"]]],
+["i_was_wondering_if","I was wondering if...","혹시 ~인지 궁금해서요","polite-question",[["호텔","혹시 방이 있는지 궁금해서요.","I was wondering if you have a room available.","you have a room available"],["회사","혹시 내일 가능한지 궁금해서요.","I was wondering if tomorrow works.","tomorrow works"],["식당","혹시 예약할 수 있는지 궁금해서요.","I was wondering if I could make a reservation.","I could make a reservation"]]],
+["would_you_be_able_to","Would you be able to...","~해주실 수 있을까요?","polite-request",[["호텔","택시 불러주실 수 있을까요?","Would you be able to call a taxi?","call a taxi"],["회사","파일 보내주실 수 있을까요?","Would you be able to send the file?","send the file"],["병원","오늘 진료해주실 수 있을까요?","Would you be able to see me today?","see me today"]]],
+["is_it_possible_for_me_to","Is it possible for me to...","제가 ~할 수 있을까요?","permission",[["호텔","일찍 체크인할 수 있을까요?","Is it possible for me to check in early?","check in early"],["학교","수업을 바꿀 수 있을까요?","Is it possible for me to change classes?","change classes"],["공항","좌석을 바꿀 수 있을까요?","Is it possible for me to change seats?","change seats"]]],
+["i_would_like_to_make","I would like to make...","~을 만들고/예약하고 싶어요","booking",[["식당","예약하고 싶어요.","I would like to make a reservation.","a reservation"],["병원","진료 예약을 하고 싶어요.","I would like to make an appointment.","an appointment"],["은행","계좌를 만들고 싶어요.","I would like to make an account.","an account"]]],
+["i_would_like_to_cancel","I would like to cancel...","~을 취소하고 싶어요","cancel",[["호텔","예약을 취소하고 싶어요.","I would like to cancel my reservation.","my reservation"],["병원","예약을 취소하고 싶어요.","I would like to cancel my appointment.","my appointment"],["구독","구독을 취소하고 싶어요.","I would like to cancel my subscription.","my subscription"]]],
+["i_would_like_to_change","I would like to change...","~을 바꾸고 싶어요","change",[["호텔","방을 바꾸고 싶어요.","I would like to change rooms.","rooms"],["공항","좌석을 바꾸고 싶어요.","I would like to change my seat.","my seat"],["회사","일정을 바꾸고 싶어요.","I would like to change the schedule.","the schedule"]]],
+["i_have_to","I have to...","~해야 해요","obligation",[["공항","지금 가야 해요.","I have to go now.","go now"],["회사","이걸 오늘 끝내야 해요.","I have to finish this today.","finish this today"],["병원","약을 먹어야 해요.","I have to take my medicine.","take my medicine"]]],
+["i_used_to","I used to...","예전에는 ~하곤 했어요","past-habit",[["일상","예전에는 여기 살았어요.","I used to live here.","live here"],["일상","예전에는 커피를 많이 마셨어요.","I used to drink a lot of coffee.","drink a lot of coffee"],["회사","예전에는 밤에 일했어요.","I used to work at night.","work at night"]]],
+["i_have_been","I have been...","계속 ~해왔어요","duration",[["공항","계속 기다리고 있었어요.","I have been waiting.","waiting"],["회사","계속 이 문제를 해결하려고 했어요.","I have been trying to fix this.","trying to fix this"],["병원","며칠 동안 아팠어요.","I have been sick for a few days.","sick for a few days"]]],
+["i_would_appreciate_it_if","I would appreciate it if...","~해주시면 감사하겠습니다","polite-request",[["호텔","조용한 방으로 해주시면 감사하겠습니다.","I would appreciate it if you could give me a quiet room.","give me a quiet room"],["회사","오늘 보내주시면 감사하겠습니다.","I would appreciate it if you could send it today.","send it today"],["학교","다시 설명해주시면 감사하겠습니다.","I would appreciate it if you could explain it again.","explain it again"]]],
+["please_let_me_know","Please let me know...","~을 알려주세요","request-info",[["회사","가능한 시간 알려주세요.","Please let me know what time works.","what time works"],["호텔","준비되면 알려주세요.","Please let me know when it's ready.","when it's ready"],["고객센터","업데이트 있으면 알려주세요.","Please let me know if there is an update.","if there is an update"]]],
+["just_to_confirm","Just to confirm...","확인차 말씀드리면 ~","confirm",[["호텔","확인차 말씀드리면, 예약은 오늘이에요.","Just to confirm, my reservation is for today.","my reservation is for today"],["회사","확인차 말씀드리면, 회의는 3시예요.","Just to confirm, the meeting is at 3.","the meeting is at 3"],["공항","확인차 말씀드리면, 게이트는 12번이에요.","Just to confirm, the gate is 12.","the gate is 12"]]],
+["to_be_honest","To be honest...","솔직히 말하면 ~","opinion",[["식당","솔직히 말하면 너무 매워요.","To be honest, it's too spicy.","it's too spicy"],["호텔","솔직히 말하면 방이 너무 시끄러워요.","To be honest, the room is too noisy.","the room is too noisy"],["회사","솔직히 말하면 시간이 더 필요해요.","To be honest, I need more time.","I need more time"]]],
+["as_far_as_i_know","As far as I know...","제가 알기로는 ~","knowledge",[["회사","제가 알기로는 회의가 취소됐어요.","As far as I know, the meeting was canceled.","the meeting was canceled"],["호텔","제가 알기로는 조식이 포함돼요.","As far as I know, breakfast is included.","breakfast is included"],["학교","제가 알기로는 오늘 수업이 있어요.","As far as I know, there is class today.","there is class today"]]],
+["it_depends_on","It depends on...","~에 달려 있어요","condition",[["회사","일정에 달려 있어요.","It depends on the schedule.","the schedule"],["여행","날씨에 달려 있어요.","It depends on the weather.","the weather"],["쇼핑","가격에 달려 있어요.","It depends on the price.","the price"]]],
+["i_agree_with","I agree with...","~에 동의해요","agree",[["회사","그 의견에 동의해요.","I agree with that idea.","that idea"],["학교","선생님 말씀에 동의해요.","I agree with the teacher.","the teacher"],["일상","당신 말에 동의해요.","I agree with you.","you"]]],
+["i_disagree_with","I disagree with...","~에 동의하지 않아요","disagree",[["회사","그 결정에 동의하지 않아요.","I disagree with that decision.","that decision"],["학교","그 답에 동의하지 않아요.","I disagree with that answer.","that answer"],["일상","그 부분은 동의하지 않아요.","I disagree with that part.","that part"]]],
+["i_recommend","I recommend...","~을 추천해요","recommend",[["식당","이 메뉴를 추천해요.","I recommend this dish.","this dish"],["여행","이 호텔을 추천해요.","I recommend this hotel.","this hotel"],["회사","이 방법을 추천해요.","I recommend this method.","this method"]]],
+["you_should_try","You should try...","~해보세요","suggest",[["식당","이 디저트 먹어보세요.","You should try this dessert.","this dessert"],["여행","그 박물관 가보세요.","You should try that museum.","that museum"],["공부","매일 말해보세요.","You should try speaking every day.","speaking every day"]]],
+["it_might_be","It might be...","~일 수도 있어요","possibility",[["호텔","예약 문제일 수도 있어요.","It might be a reservation issue.","a reservation issue"],["앱","비밀번호 문제일 수도 있어요.","It might be a password issue.","a password issue"],["병원","감기일 수도 있어요.","It might be a cold.","a cold"]]],
+["it_seems_like","It seems like...","~인 것 같아요","impression",[["호텔","문제가 있는 것 같아요.","It seems like there is a problem.","there is a problem"],["회사","시간이 더 필요할 것 같아요.","It seems like we need more time.","we need more time"],["식당","주문이 잘못된 것 같아요.","It seems like the order is wrong.","the order is wrong"]]],
+["i_guess","I guess...","아마 ~인 것 같아요","guess",[["일상","아마 괜찮은 것 같아요.","I guess it's fine.","it's fine"],["회사","아마 내일 해야 할 것 같아요.","I guess we should do it tomorrow.","we should do it tomorrow"],["식당","아마 이걸로 할게요.","I guess I'll take this.","I'll take this"]]],
+["i_wish","I wish...","~이면 좋겠어요","wish",[["호텔","더 조용했으면 좋겠어요.","I wish it were quieter.","it were quieter"],["회사","시간이 더 있었으면 좋겠어요.","I wish we had more time.","we had more time"],["일상","제가 영어를 더 잘했으면 좋겠어요.","I wish I spoke English better.","I spoke English better"]]],
+["im_afraid","I'm afraid...","유감이지만 ~","soft-negative",[["회사","유감이지만 시간이 없어요.","I'm afraid I don't have time.","I don't have time"],["호텔","유감이지만 예약이 없어요.","I'm afraid I don't have a reservation.","I don't have a reservation"],["식당","유감이지만 못 먹어요.","I'm afraid I can't eat this.","I can't eat this"]]],
+["i_was_told","I was told...","~라고 들었어요","reported",[["호텔","여기서 체크인하라고 들었어요.","I was told to check in here.","to check in here"],["병원","이 양식을 작성하라고 들었어요.","I was told to fill out this form.","to fill out this form"],["공항","이 게이트로 가라고 들었어요.","I was told to go to this gate.","to go to this gate"]]],
+["i_was_looking_at","I was looking at...","~을 보고 있었어요","context",[["쇼핑","이 셔츠를 보고 있었어요.","I was looking at this shirt.","this shirt"],["식당","메뉴를 보고 있었어요.","I was looking at the menu.","the menu"],["앱","이 페이지를 보고 있었어요.","I was looking at this page.","this page"]]],
+["im_done_with","I'm done with...","~을 끝냈어요","complete",[["식당","식사 끝났어요.","I'm done with my meal.","my meal"],["회사","이 파일 끝냈어요.","I'm done with this file.","this file"],["학교","숙제 끝냈어요.","I'm done with my homework.","my homework"]]],
+["im_ready_to","I'm ready to...","~할 준비가 됐어요","ready",[["공항","탑승할 준비가 됐어요.","I'm ready to board.","board"],["회사","시작할 준비가 됐어요.","I'm ready to start.","start"],["식당","주문할 준비가 됐어요.","I'm ready to order.","order"]]],
+["im_available","I'm available...","~에 시간 돼요","availability-person",[["회사","오후에 시간 돼요.","I'm available in the afternoon.","in the afternoon"],["회사","내일 시간 돼요.","I'm available tomorrow.","tomorrow"],["학교","3시에 시간 돼요.","I'm available at 3.","at 3"]]],
+["i_have_no_idea","I have no idea...","전혀 모르겠어요","unknown",[["공항","어디로 가야 할지 전혀 모르겠어요.","I have no idea where to go.","where to go"],["회사","무슨 일인지 전혀 모르겠어요.","I have no idea what happened.","what happened"],["학교","답이 뭔지 전혀 모르겠어요.","I have no idea what the answer is.","what the answer is"]]],
+["i_dont_mind","I don't mind...","~해도 괜찮아요","accept",[["식당","기다려도 괜찮아요.","I don't mind waiting.","waiting"],["호텔","다른 방도 괜찮아요.","I don't mind another room.","another room"],["회사","내일 해도 괜찮아요.","I don't mind doing it tomorrow.","doing it tomorrow"]]],
+["im_in_a_hurry","I'm in a hurry.","제가 급해요","urgency",[["공항","제가 급해요.","I'm in a hurry.","in a hurry"],["택시","조금 급해요.","I'm in a bit of a hurry.","in a bit of a hurry"],["병원","정말 급해요.","I'm really in a hurry.","really in a hurry"]]],
+["take_your_time","Take your time.","천천히 하세요","reassure",[["식당","천천히 하세요.","Take your time.","your time"],["회사","괜찮아요, 천천히 하세요.","It's okay, take your time.","your time"],["일상","급하지 않아요, 천천히 하세요.","No rush, take your time.","your time"]]],
+["no_worries","No worries.","괜찮아요","reassure",[["식당","괜찮아요.","No worries.","worries"],["일상","괜찮아요, 문제없어요.","No worries, it's fine.","it's fine"],["회사","걱정 마세요.","No worries at all.","worries"]]]
+];
+BLE_EXTRA_ROWS.forEach(r=>{
+  BLE_BLOCKS.push({id:r[0], block:r[1], meaningKo:r[2], func:r[3], contrast:[], examples:r[4].map(e=>({situation:e[0], ko:e[1], en:e[2], object:e[3]}))});
+});
 const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
 // ===== 세트 기반 학습 (5블록 1세트) =====
-const BLE_SETS=[
-  { id:"survival_basic_1", title:"생존 기본 블록", emo:"🧱",
-    blocks:["can_i_get","do_you_have","i_need","could_you","i_think"] }
-];
+const BLE_SETS=(()=>{
+  const names=["생존 기본 블록","요청·위치 블록","문제해결 블록","시간·가격 블록","상태 말하기 블록","허락·선호 블록","정중한 부탁 블록","내 행동 말하기 블록","계획·시도 블록","상황 설명 블록","반응·조언 블록","선택·정보 블록"];
+  const ids=BLE_BLOCKS.map(b=>b.id), out=[];
+  for(let i=0;i<ids.length;i+=5){ out.push({id:"survival_basic_"+(out.length+1), title:names[out.length]||("실전 블록 "+(out.length+1)), emo:"🧱", blocks:ids.slice(i,i+5)}); }
+  return out;
+})();
 const BLE_SET_STATE_KEY="speakingroom:ble_sets";
 function bleSetStateAll(){ try{ return hGet(BLE_SET_STATE_KEY,{})||{}; }catch(e){ return {}; } }
 function bleSetState(setId){
@@ -6089,7 +6328,10 @@ function bleSetState(setId){
   return all[setId];
 }
 function bleSetStateSave(setId, st){ const all=bleSetStateAll(); all[setId]=st; hSet(BLE_SET_STATE_KEY, all); }
-function bleActiveSet(){ return BLE_SETS[0]; }
+function bleActiveSet(){
+  const firstOpen=BLE_SETS.find(set=>!bleSetState(set.id).introCompleted);
+  return firstOpen || BLE_SETS[BLE_SETS.length-1];
+}
 function bleSetBlocks(set){ return (set.blocks||[]).map(id=>BLE_BY_ID[id]).filter(Boolean); }
 // 블록이 소개됐는지 (introducedAt 존재)
 function bleBlockIntroduced(id){ const s=bleGetState()[id]; return !!(s && s.introducedAt); }
@@ -6534,6 +6776,7 @@ async function bleJudge(targetBlock, ex, heard){
   try{
     const others=bleUnlockedBlocks().filter(b=>b.id!==targetBlock.id).map(b=>`${b.id}: ${b.block} (${b.meaningKo})`).join("\n");
     const sys=`You are a strict but fair Korean-to-English speaking coach judging ONE spoken answer.
+${speakingLearningLaw()}
 TARGET BLOCK: "${targetBlock.block}" (${targetBlock.meaningKo}) — id: ${targetBlock.id}
 KOREAN SITUATION: ${ex.ko}
 A natural target answer: ${ex.en}
@@ -7389,6 +7632,13 @@ async function bleFinishRetrieveDeep(it, heard){
   }
   speakEn(j.naturalAnswer||ex.en);
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, confusedWith:j.confusedWith});
+  try{
+    const nat=j.naturalAnswer||ex.en;
+    const ctx=bleContextKey(ex)||bleContextLabel(ex);
+    if(nat) reuseAdd(nat, ex.ko||b.meaningKo||"", "ble-natural", ctx);
+    if(ex.en) reuseAdd(ex.en, ex.ko||b.meaningKo||"", "ble-target", ctx);
+    reuseRecord(nat||ex.en, ex.ko||b.meaningKo||"", ctx, !!j.communicationSuccess);
+  }catch(e){}
   bleDeep.results.push({id:b.id, type:it.type, result:j.result, comm:j.communicationSuccess, target:j.targetBlockSuccess, usedBlockId:j.usedBlockId, confusedWith:j.confusedWith, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), heard, naturalAnswer:j.naturalAnswer, reason:it.reason});
   // MISS/WEAK → 곧 다시 (situation) / HIT(통했지만 블록 못씀) → 같은 블록 한번 더 / 느린 PERFECT → 속도로
   const retryDelay=bleUnlockedBlocks().length>1 ? bleDeep.count+bleEffectiveGap(bleUnlockedBlocks()) : bleDeep.count;
@@ -7444,6 +7694,7 @@ function bleWireDiscriminateDeep(it){
       fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
       bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, confusedWith: ok?null:picked});
+      try{ reuseAdd(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", "ble-discriminate", bleContextKey(it.ex)||bleContextLabel(it.ex)); reuseRecord(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", bleContextKey(it.ex)||bleContextLabel(it.ex), ok); }catch(e){}
       bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), reason:"confusion"});
       if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion", delayUntil:bleDeep.count+bleEffectiveGap(bleUnlockedBlocks())});
       const w=$("#bleDiscNextWrap");
@@ -8014,7 +8265,7 @@ function dictRenderPopup(d){
 // 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
 function pickPhrases(opts){
   opts=opts||{}; const age=opts.age||(typeof kidMode==="function"&&kidMode()?"kid":"adult");
-  const lvl=opts.level||(typeof state!=="undefined"&&state.lvl)||3; const topic=opts.topic||null; const n=opts.n||20;
+  const lvl=opts.level||(typeof diffMacro==="function"?diffMacro():((typeof state!=="undefined"&&state.lvl)||3)); const topic=opts.topic||null; const n=opts.n||20;
   let pool=CORE_PHRASES.filter(p=> age==="kid"? p.kid : p.adult );
   if(topic) pool=pool.filter(p=>p.tags.includes(topic));
   // 레벨: 현재 레벨 이하 위주(±0), 너무 적으면 전체로 완화
@@ -8101,6 +8352,7 @@ async function spGenerate(n){
   const seed=Math.floor(Math.random()*100000);
   const sys=[
 "Generate "+n+" EXTREMELY common, short, everyday Korean sentences with their natural English versions, for rapid speaking practice.",
+speakingLearningLaw(),
 grammarRule(),
 kidMode()? "The learner is a young CHILD. Use very short, simple sentences (max 6 English words). Topics: "+topics+"."
          : "Adult everyday survival English. Keep each English version short and natural (max 8 words). Topics: "+topics+".",
@@ -8183,6 +8435,7 @@ function srsPass(en, ko, ctx){
   if(ctx){ it.ctx=it.ctx||{}; it.ctx[ctx]=(it.ctx[ctx]||0)+1; }
   it.due=EDAY()+ (SRS_INTERVAL_DAYS[it.stage]||1);
   it.lastT=Date.now(); o[k]=it; srsSave(o);
+  try{ profRecordWordIfMastered(en, ko); }catch(e){}
 }
 // 실패 → 단계 하락, 복습 빨리
 function srsFail(en, ko, ctx){
@@ -8245,6 +8498,15 @@ function convoBlockHint(){
   const b=convoBlocks();
   const pick=[];
   const seen=new Set();
+  try{
+    reuseDue(5).forEach(x=>{
+      const k=srsKey(x.en);
+      if(k&&!seen.has(k)){
+        seen.add(k);
+        pick.push(x.en+(x.ko?(" ("+x.ko+")"):"")+" [reuse "+((x.ctx||[]).length)+"/"+REUSE_GOAL_CONTEXTS+"]");
+      }
+    });
+  }catch(e){}
   const add=(arr,tag)=>arr.forEach(x=>{ const k=srsKey(x.en); if(k&&!seen.has(k)){ seen.add(k); pick.push(x.en+(x.ko?(" ("+x.ko+")"):"")+" ["+tag+"]"); } });
   add(b.due,"due-review"); add(b.weak,"weak"); add(b.ready,"ready-for-real"); add(b.recent,"recent"); add(b.studied,"studied");
   if(!pick.length) return "";   // 아직 학습한 블록 없음 → 일반 대화
@@ -8797,9 +9059,16 @@ function renderWeakHome(){
         <span style="font-size:18px">⚡</span></button>`).join("")}
       </div>`;
   }
+  const reuse=reuseDue(3);
+  if(reuse.length){
+    html+=`<button id="reuseToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(25,160,107,.28);margin-top:9px;width:100%">
+      <span><span style="font-size:15.5px;font-weight:900;color:var(--text)">같은 표현, 다른 상황</span><br><span style="font-size:12.5px;color:#19a06b;font-weight:700">${reuse.length}개 표현 · 실전회화에서 다시 꺼내기</span></span>
+      <span style="font-size:20px">↻</span></button>`;
+  }
   if(!html){ box.style.display="none"; box.innerHTML=""; return; }
   box.style.display="block"; box.innerHTML=html;
   const dt=$("#dueToday"); if(dt) dt.onclick=()=>startVocabCoach();
+  const rt=$("#reuseToday"); if(rt) rt.onclick=()=>openSurvival();
   box.querySelectorAll(".weakHomeItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
 function openPhonics(){
@@ -9223,6 +9492,257 @@ function bleDeepStartOutput(){
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   bleDeepRender();
 }
+
+/* ============================================================
+   ⚡ Automaticity Drill
+   - initiation latency = situation shown -> speech start
+   - deterministic STT match: target chunk + slot, no AI grading
+   - answer flash -> hidden recall, so re-production is retrieval, not reading
+   ============================================================ */
+let autoDrill=null;
+function adNorm(s){
+  return String(s||"").toLowerCase()
+    .replace(/[’]/g,"'")
+    .replace(/\bi'm\b/g,"im").replace(/\bi am\b/g,"im")
+    .replace(/\bi'd\b/g,"id").replace(/\bi would\b/g,"id")
+    .replace(/\bi'll\b/g,"ill").replace(/\bi will\b/g,"ill")
+    .replace(/\bdon't\b/g,"dont").replace(/\bdo not\b/g,"dont")
+    .replace(/\bdoesn't\b/g,"doesnt").replace(/\bdoes not\b/g,"doesnt")
+    .replace(/\bcan't\b/g,"cant").replace(/\bcannot\b/g,"cant")
+    .replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+}
+const AD_STOP=new Set("a an the some any my your me you i it this that to for of in on at with by now here there please little bit one very".split(" "));
+function adWords(s){ return adNorm(s).split(" ").filter(Boolean); }
+function adCoreVariants(block){
+  const raw=adNorm(String(block||"").replace(/\.\.\.|\?/g,""));
+  const set=new Set([raw]);
+  if(raw.includes("id ")) set.add(raw.replace(/\bid\b/g,"i would"));
+  if(raw.includes("im ")) set.add(raw.replace(/\bim\b/g,"i am"));
+  if(raw.includes("ill ")) set.add(raw.replace(/\bill\b/g,"i will"));
+  if(raw.includes("dont ")) set.add(raw.replace(/\bdont\b/g,"do not"));
+  if(raw.includes("doesnt ")) set.add(raw.replace(/\bdoesnt\b/g,"does not"));
+  if(raw.includes("cant ")) set.add(raw.replace(/\bcant\b/g,"cannot"));
+  return [...set].filter(x=>x.length>=2);
+}
+// 블록의 핵심 단어 시퀀스 (stop word 제거). 부분/순서 매칭용.
+function adCoreSeq(block){
+  const raw=adNorm(String(block||"").replace(/\.\.\.|\?/g,""));
+  return raw.split(" ").filter(w=>w && !AD_STOP.has(w));
+}
+// 들린 말 안에 시퀀스가 "순서대로"(연속 아니어도) 모두 등장하는지 — STT가 단어 흘려도 통과
+function adSeqInOrder(heardWords, seq){
+  if(!seq.length) return false;
+  let i=0;
+  for(const w of heardWords){ if(w===seq[i] || adLooseWordEq(w,seq[i])){ i++; if(i>=seq.length) return true; } }
+  return false;
+}
+// 흔한 STT 활용형 관대 매칭 (get/gets/getting, 복수 -s 등)
+function adLooseWordEq(a,b){
+  if(a===b) return true;
+  if(a.length<3||b.length<3) return false;
+  return adStem(a)===adStem(b);
+}
+function adStem(w){
+  let s=w;
+  // -ing: 자음 중복 복원(getting→get) 포함
+  if(/ing$/.test(s) && s.length>5){ s=s.slice(0,-3); if(s.length>=3 && s[s.length-1]===s[s.length-2]) s=s.slice(0,-1); }
+  else if(/ed$/.test(s) && s.length>4){ let t=s.slice(0,-2); if(t.length>=3 && t[t.length-1]===t[t.length-2]) t=t.slice(0,-1); s=t; }
+  else if(/es$/.test(s) && s.length>4){ s=s.slice(0,-2); }
+  else if(/s$/.test(s) && s.length>3 && !/ss$/.test(s)){ s=s.slice(0,-1); }
+  return s;
+}
+function adSlotWords(ex, block){
+  // 슬롯 = 상황마다 바뀌는 핵심어(빈칸에 채우는 말). ex.object가 있으면 그게 정답 슬롯.
+  const blockWords=new Set(block?adCoreSeq(block.block):[]);
+  const fromObj=ex.object ? adWords(ex.object).filter(w=>!AD_STOP.has(w)&&w.length>1&&!blockWords.has(w)) : [];
+  if(fromObj.length) return fromObj.slice(0,3);
+  // object 없으면 en에서 추출하되 블록 단어는 빼고 (블록과 안 겹치는 내용어만)
+  const fromEn=adWords(ex.en||"").filter(w=>!AD_STOP.has(w)&&w.length>1&&!blockWords.has(w));
+  return fromEn.slice(-3);
+}
+function adGrade(block, ex, heard){
+  const h=adNorm(heard);
+  const hWords=h.split(" ").filter(Boolean);
+  // 1) 블록 매칭: 정확 연속 매칭 → 실패 시 핵심어 순서 매칭(STT가 단어 흘려도 통과)
+  let blockHit=adCoreVariants(block.block).some(v=>(" "+h+" ").includes(" "+v+" "));
+  if(!blockHit){ blockHit=adSeqInOrder(hWords, adCoreSeq(block.block)); }
+  // 2) 슬롯 매칭: 정확 포함 → 실패 시 활용형(get/getting) 관대 매칭
+  const slot=adSlotWords(ex, block);
+  const hit=slot.filter(w=>(" "+h+" ").includes(" "+w+" ") || hWords.some(hw=>adLooseWordEq(hw,w))).length;
+  const slotHit=!slot.length || hit>=Math.max(1, Math.ceil(slot.length*0.5));
+  const ok=blockHit && slotHit;
+  return {ok, blockHit, slotHit, slot, hit, heardNorm:h};
+}
+function adLimits(){
+  const d=diffLevel();
+  if(d<=12) return [8,6,5,4,3];
+  if(d<=36) return [6,5,4,3,3];
+  return [5,4,3,2.5,2.5];
+}
+function autoDrillBlocks(){
+  const lists=[
+    getDueReviewBlocks(),
+    getWeakBlocks(),
+    getSlowBlocks(),
+    getLimitedContextBlocks(),
+    getRecentlyLearnedBlocks(),
+    bleUnlockedBlocks()
+  ];
+  const out=bleUniqueBlocks(lists, 5);
+  return out.length?out:bleUnlockedBlocks().slice(0,5);
+}
+function autoDrillBuildItems(blocks){
+  const limits=adLimits(), items=[];
+  const focus=blocks.slice(0, Math.min(3, blocks.length));
+  focus.forEach((b,bi)=>{
+    for(let r=0;r<(diffLevel()<=12?4:3);r++){
+      const ex=bleFreshContextEx2(b, {forceFresh:true});
+      items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
+    }
+  });
+  let guard=0;
+  while(items.length<8 && blocks.length && guard++<30){
+    const b=blocks[items.length%blocks.length];
+    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
+  }
+  return items.slice(0, diffLevel()<=12?8:10);
+}
+function startAutoDrill(){
+  bleCtxCacheLoad();
+  let blocks=autoDrillBlocks();
+  if(!blocks.length){
+    openModal({
+      title:"먼저 블록을 하나 배워요",
+      msg:"자동화 드릴은 배운 블록을 입에 붙이는 단계예요. 새 블록을 하나 배운 뒤 바로 이어서 할게요.",
+      okText:"새 블록 배우기",
+      onOk:()=>bleOpenHub()
+    });
+    return;
+  }
+  blocks.forEach(b=>bleEnsureContexts(b));
+  autoDrill={items:autoDrillBuildItems(blocks), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  autoDrillRender();
+}
+function autoDrillRender(recallMode){
+  if(!autoDrill) return goToSetup();
+  if(autoDrill.idx>=autoDrill.items.length) return autoDrillDone();
+  const it=autoDrill.items[autoDrill.idx]; it.recall=!!recallMode;
+  const prog=Math.round(autoDrill.idx/autoDrill.items.length*100);
+  const answerClass=it.recall?"auto-answer hide":"auto-answer";
+  const answerHtml=it.recall?`<div class="${answerClass}" id="autoAnswer"><div style="font-size:11px;color:#B0958A;font-weight:900;margin-bottom:5px">방금 본 문장을 가렸어요. 기억에서 꺼내세요.</div><b>${escapeHtml(it.ex.en)}</b></div>`:"";
+  $("#sprintScroll").style.background="#EAE3DD";
+  $("#sprintScroll").innerHTML=`<div class="auto-card">
+    <div class="auto-top">
+      <button class="auto-exit" id="autoExit">‹ 끝내기</button>
+      <div class="auto-prog"><i style="width:${prog}%"></i></div>
+      <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
+    </div>
+    <div class="auto-kicker">${it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"}</div>
+    <div class="auto-block">${escapeHtml(it.block.block)}</div>
+    <div class="auto-meta">
+      <span class="auto-chip">시작 지연 ${it.limit}초 안</span>
+      <span class="auto-chip">말 길이 제외</span>
+      <span class="auto-chip">${escapeHtml(bleContextLabel(it.ex))}</span>
+    </div>
+    <div class="auto-ko">${escapeHtml(it.ex.ko)}</div>
+    ${answerHtml}
+    <div class="auto-stat" id="autoStat">상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.</div>
+    <div class="auto-actions">
+      <button class="auto-mic" id="autoMic">🎤 바로 말하기</button>
+      <button class="auto-sub" id="autoType">⌨️ 입력</button>
+      <button class="auto-sub" id="autoShow">정답 보기</button>
+    </div>
+    <input id="autoInput" class="auto-input" autocomplete="off" placeholder="영어로 입력 후 Enter">
+  </div>`;
+  $("#sprintScroll").scrollTop=0;
+  autoDrill.t0=Date.now(); autoDrill.typedAt=null; autoDrill.speechStartAt=null;
+  $("#autoExit").onclick=()=>autoDrillDone();
+  $("#autoMic").onclick=function(){
+    if(qzRecording) return;
+    this.classList.add("live"); $("#autoStat").textContent="듣고 있어요…";
+    micFillCb((t,meta)=>{ this.classList.remove("live"); autoDrillFinish(t, meta||{}); });
+  };
+  $("#autoType").onclick=()=>{ const inp=$("#autoInput"); inp.style.display="block"; inp.focus(); };
+  const inp=$("#autoInput");
+  inp.addEventListener("input",()=>{ if(!autoDrill.typedAt) autoDrill.typedAt=Date.now(); });
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
+  $("#autoShow").onclick=()=>autoDrillRevealAndRecall("정답을 봤어요. 1.5초 뒤 가리고 다시 말합니다.");
+}
+function autoDrillInitMs(meta){
+  const t=(meta&&meta.speechStartAt) || autoDrill.speechStartAt || autoDrill.typedAt || Date.now();
+  return Math.max(100, t-autoDrill.t0);
+}
+function autoDrillFinish(heard, meta){
+  if(!autoDrill) return;
+  const it=autoDrill.items[autoDrill.idx], stat=$("#autoStat");
+  const initMs=autoDrillInitMs(meta||{});
+  const initSec=initMs/1000;
+  const g=adGrade(it.block, it.ex, heard);
+  const fast=initSec<=it.limit;
+  const perfect=g.ok && fast;
+  const result=g.ok ? "PERFECT" : "MISS";
+  bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true});
+  autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
+  try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
+  if(perfect){
+    if(stat) stat.innerHTML=`<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
+    try{ speakEn(it.ex.en); profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
+    autoDrillNextButton("다음 →");
+  }else if(g.ok){
+    if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. 이번엔 ${it.limit}초 안에 시작해봐요.`;
+    autoDrillRevealAndRecall("정답을 잠깐 보고, 가린 뒤 더 빨리 다시 꺼냅니다.");
+  }else{
+    const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
+    if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}<br>정답을 1.5초만 보고 가린 뒤 다시 말해요.`;
+    autoDrillRevealAndRecall("정답을 잠깐 보고, 가린 뒤 다시 꺼냅니다.");
+  }
+}
+function autoDrillRevealAndRecall(msg){
+  const it=autoDrill&&autoDrill.items[autoDrill.idx]; if(!it) return;
+  const card=document.querySelector(".auto-card"); if(!card) return;
+  const old=card.querySelector("#autoAnswer"); if(old) old.remove();
+  const ans=document.createElement("div"); ans.className="auto-answer"; ans.id="autoAnswer";
+  ans.innerHTML=`<div style="font-size:11px;color:#B0958A;font-weight:900;margin-bottom:5px">${escapeHtml(msg||"잠깐 보고 외워요")}</div><b>${escapeHtml(it.ex.en)}</b>`;
+  const stat=$("#autoStat"); card.insertBefore(ans, stat);
+  try{ speakEn(it.ex.en); }catch(e){}
+  document.querySelectorAll(".auto-actions button").forEach(b=>b.disabled=true);
+  setTimeout(()=>{ autoDrillRender(true); },1500);
+}
+function autoDrillNextButton(label){
+  const actions=document.querySelector(".auto-actions"); if(!actions) return;
+  actions.innerHTML=`<button class="auto-mic" id="autoNext">${escapeHtml(label||"다음 →")}</button>`;
+  $("#autoNext").onclick=()=>{ autoDrill.idx++; autoDrillRender(false); };
+}
+function autoDrillDone(){
+  if(!autoDrill){ goToSetup(); return; }
+  const res=autoDrill.results, total=res.length||1;
+  const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
+  const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
+  const autoNow=autoChunkCount();
+  try{ awardXP("output", Math.max(8, perfect*8+ok*3), "자동화 드릴", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
+  $("#sprintScroll").style.background="";
+  $("#sprintScroll").innerHTML=`<div class="auto-done">
+    <div class="em">⚡</div>
+    <h2>자동화 드릴 완료</h2>
+    <p style="font-size:13px;color:#8A6F62;margin:4px 0 14px">정답률보다 중요한 건 <b>상황 보자마자 입이 열리는 속도</b>예요.</p>
+    <div style="display:flex;gap:9px;margin:12px 0">
+      <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#19a06b">${perfect}</b><div style="font-size:11px;color:#A28A7F">자동화 성공</div></div>
+      <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#F0664A">${avg.toFixed(1)}초</b><div style="font-size:11px;color:#A28A7F">평균 시작 지연</div></div>
+      <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#3A2D27">${autoNow}</b><div style="font-size:11px;color:#A28A7F">자동화 블록</div></div>
+    </div>
+    <div style="font-size:13px;color:#8A6F62;line-height:1.55;margin:8px 0 16px">통과 ${ok}/${total}. 실패한 문장은 정답을 보고 읽은 게 아니라, 가린 뒤 다시 꺼내게 처리했어요.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
+      <button class="routine-main" id="autoAgain" style="margin:0">한 번 더 자동화 →</button>
+      <button class="auto-sub" id="autoHome">홈으로</button>
+    </div>
+  </div>`;
+  $("#autoAgain").onclick=()=>startAutoDrill();
+  $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
+}
 // 🌎 실전상황 Engine — 생존 시뮬레이션
 const SURVIVAL=[
  {id:"sv_ms",   emo:"💳", t:"카드 결제 문제", role:"a customer-service agent at a software company (like Microsoft)", ctx:"The learner called customer service because their card expired and a payment/subscription failed. They must explain the problem, verify the account, and get it fixed.", emotion:"polite but a bit impatient, follows a strict verification script", pressure:"a long support queue; the agent wants to move fast"},
@@ -9286,11 +9806,132 @@ function avRetrieve(en, ko, situationKey){
   if(!m[k].ctx.includes(sk)) m[k].ctx.push(sk);
   if(m[k].ctx.length>=3) m[k].state=4; else if(m[k].state<3) m[k].state=3;
   if(ko && !m[k].ko) m[k].ko=ko;
+  if(m[k].state>=4){ try{ profRecordSpeakPerfect(en, ko, sk); }catch(e){} }
   avSave(m);
   return (!wasActive && m[k].state>=4);
 }
 function avActiveCount(){ const m=avGet(); return Object.values(m).filter(x=>x.state>=4).length; }
 function avProgressOf(en){ const m=avGet(); const x=m[avKey(en)]; return x?{state:x.state,ctx:x.ctx.length}:{state:0,ctx:0}; }
+
+/* ===== Conversation reuse queue: same expression, new situations ===== */
+const REUSE_Q_KEY="speakingroom:reuse_queue_v1";
+const REUSE_GOAL_CONTEXTS=5;
+function reuseNorm(en){ return String(en||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim(); }
+function reuseGet(){ const q=hGet(REUSE_Q_KEY,[]); return Array.isArray(q)?q:[]; }
+function reuseSave(q){ hSet(REUSE_Q_KEY, (q||[]).filter(Boolean).slice(0,80)); }
+function reuseAdd(en, ko, source, context){
+  const key=reuseNorm(en);
+  const raw=String(en||"").trim();
+  if(!key || key.length<3 || key.split(" ").length>14) return false;
+  const q=reuseGet();
+  let it=q.find(x=>x&&x.key===key);
+  if(!it){
+    it={key, en:raw, ko:ko||"", source:source||"speak", createdAt:Date.now(), lastAt:0, tries:0, success:0, ctx:[], due:Date.now()};
+    q.unshift(it);
+  }else{
+    it.en=raw||it.en; if(ko&&!it.ko) it.ko=ko; if(source) it.source=source;
+    it.due=Math.min(it.due||Date.now(), Date.now());
+  }
+  if(context){ const sk=String(context).slice(0,60); if(sk && it.ctx.indexOf(sk)<0) it.ctx.push(sk); }
+  reuseSave(q.sort((a,b)=>(a.due||0)-(b.due||0) || (b.createdAt||0)-(a.createdAt||0)));
+  return true;
+}
+function reuseRecord(en, ko, context, ok){
+  const key=reuseNorm(en); if(!key) return false;
+  let q=reuseGet(); let it=q.find(x=>x&&x.key===key);
+  if(!it){ reuseAdd(en, ko, "record", context); q=reuseGet(); it=q.find(x=>x&&x.key===key); if(!it) return false; }
+  it.tries=(it.tries||0)+1; if(ok) it.success=(it.success||0)+1;
+  if(ko&&!it.ko) it.ko=ko;
+  if(context){ const sk=String(context).slice(0,60); if(sk && it.ctx.indexOf(sk)<0) it.ctx.push(sk); }
+  it.lastAt=Date.now();
+  const ctxLeft=Math.max(0, REUSE_GOAL_CONTEXTS-(it.ctx||[]).length);
+  it.due = ctxLeft>0 ? Date.now()+Math.max(1,ctxLeft)*120000 : Date.now()+3*86400000;
+  reuseSave(q.sort((a,b)=>(a.due||0)-(b.due||0) || (b.createdAt||0)-(a.createdAt||0)));
+  return true;
+}
+function reuseDue(max){
+  const now=Date.now();
+  return reuseGet()
+    .filter(x=>x&&x.en&&(((x.ctx||[]).length<REUSE_GOAL_CONTEXTS) || (x.due||0)<=now))
+    .sort((a,b)=>(a.due||0)-(b.due||0) || ((a.ctx||[]).length-(b.ctx||[]).length))
+    .slice(0,max||5);
+}
+function reusePromptHint(){
+  const due=reuseDue(6);
+  if(!due.length) return "";
+  return [
+    "RETRIEVAL QUEUE: The learner has already met these expressions. Your priority is to make them retrieve the SAME expression in NEW situations, not repeat the same example.",
+    due.map((x,i)=>`${i+1}. ${x.en}${x.ko?` (${x.ko})`:""} - used in ${(x.ctx||[]).length}/${REUSE_GOAL_CONTEXTS} contexts`).join("\n"),
+    "Create situations where one queued expression is the natural answer. Do not reveal the English before the learner tries. Accept meaning-equivalent answers. After they answer, give the natural version and reuse it later in a different setting."
+  ].join("\n");
+}
+function reuseBestTarget(){
+  const x=reuseDue(1)[0];
+  return x?{target:x.en, ko:x.ko||"", source:x.source||"reuse"}:null;
+}
+
+// 실제 사용자 실력 레벨: 문제 난이도와 분리해서 "완전히 아는/들은/말한" 개수로 계산
+const SKILL_PROF_KEY="speakingroom:skill_profile_v1";
+function skillProfBase(){ return {words:{}, listen:{}, speak:{}}; }
+function skillProfGet(){
+  const p=hGet(SKILL_PROF_KEY, skillProfBase())||skillProfBase();
+  p.words=p.words||{}; p.listen=p.listen||{}; p.speak=p.speak||{};
+  return p;
+}
+function skillProfSave(p){ hSet(SKILL_PROF_KEY,p); }
+function skillKey(en){ return String(en||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ").trim(); }
+function isSingleWordTarget(en){ const k=skillKey(en); return /^[a-z]+$/.test(k); }
+function commonFreqRank(en){
+  try{ const i=(COMMON_FREQ_WORDS||[]).indexOf(skillKey(en)); return i>=0?i+1:null; }catch(e){ return null; }
+}
+function profRecordWordIfMastered(en, ko){
+  const k=skillKey(en); if(!k || !isSingleWordTarget(k)) return false;
+  const si=srsGet(en); if(!si || si.stage!=="mastered") return false;
+  const p=skillProfGet();
+  const cur=p.words[k]||{en:en, ko:ko||si.ko||"", rank:commonFreqRank(en), masteredAt:Date.now(), perfect:0};
+  cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
+  if(ko && !cur.ko) cur.ko=ko;
+  p.words[k]=cur; skillProfSave(p); return true;
+}
+function profRecordListenPerfect(en, ko){
+  const k=skillKey(en); if(!k) return false;
+  const p=skillProfGet();
+  const cur=p.listen[k]||{en:en, ko:ko||"", perfect:0, firstAt:Date.now()};
+  cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
+  if(ko && !cur.ko) cur.ko=ko;
+  p.listen[k]=cur; skillProfSave(p); return true;
+}
+function profRecordSpeakPerfect(en, ko, ctx){
+  const k=skillKey(en); if(!k) return false;
+  const p=skillProfGet();
+  const cur=p.speak[k]||{en:en, ko:ko||"", perfect:0, ctx:[], firstAt:Date.now()};
+  cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
+  if(ctx && cur.ctx.indexOf(ctx)<0) cur.ctx.push(ctx);
+  if(ko && !cur.ko) cur.ko=ko;
+  p.speak[k]=cur; skillProfSave(p); return true;
+}
+function profLevelByCount(n, maxCount){
+  n=Math.max(0, Number(n)||0);
+  if(n<=0) return 1;
+  return Math.max(1, Math.min(60, Math.floor(Math.sqrt(Math.min(n,maxCount)/maxCount)*59)+1));
+}
+function profSkillStats(){
+  const p=skillProfGet();
+  const wordKeys=new Set(Object.keys(p.words||{}));
+  try{
+    Object.values(srsAll()).forEach(it=>{
+      if(it && it.stage==="mastered" && isSingleWordTarget(it.en)) wordKeys.add(skillKey(it.en));
+    });
+  }catch(e){}
+  const listenPerfect=Object.keys(p.listen||{}).length;
+  const speakPerfect=Object.keys(p.speak||{}).length;
+  const wordKnown=wordKeys.size;
+  const wordLevel=profLevelByCount(wordKnown,5000);
+  const listenLevel=profLevelByCount(listenPerfect,1200);
+  const speakLevel=profLevelByCount(speakPerfect,800);
+  const overallLevel=Math.max(1, Math.min(60, Math.round(wordLevel*0.45+listenLevel*0.30+speakLevel*0.25)));
+  return {wordKnown, listenPerfect, speakPerfect, wordLevel, listenLevel, speakLevel, overallLevel};
+}
 
 const DAILY_EXPRESSIONS=[
  {en:"I'd like to ...",ko:"~하고 싶어요"},{en:"Could you ...?",ko:"~해 주시겠어요?"},
@@ -9305,6 +9946,7 @@ const DAILY_EXPRESSIONS=[
 function dailyExpr(){
   const today=DAYN(); let d=hGet("speakingroom:daily",null);
   if(!d || d.date!==today){ const idx=today%DAILY_EXPRESSIONS.length; const e=DAILY_EXPRESSIONS[idx]; d={date:today, en:e.en, ko:e.ko}; hSet("speakingroom:daily",d); avSeen(e.en,e.ko); }
+  try{ if(d&&d.en) reuseAdd(d.en, d.ko||"", "daily", "daily:"+today); }catch(e){}
   return d;
 }
 function renderDailyCard(){
@@ -9317,7 +9959,7 @@ function renderDailyCard(){
   // 상황 진행 (3상황 인출)
   const ctxDone = Math.min(5, p.ctx||0);
   const dueTxt = si ? ((si.due||0)<=EDAY()?"오늘":"준비됨") : "오늘";
-  box.innerHTML=`<div class="block-hero" id="blockHero">
+  box.innerHTML=`<div class="block-hero learn-block" id="blockHero">
     <div class="bh-row">
       <span class="bh-badge">🧱 오늘의 영어 블록</span>
       <span class="bh-due">다음 복습: ${dueTxt}</span>
@@ -9339,14 +9981,16 @@ function renderAcqStats(){
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
   // 🧱 블록 통계는 BLE를 기준으로 보여준다.
   const ready=getReadyForRealBlocks().length;
-  const due=getDueReviewBlocks().length;
+  const skill=profSkillStats();
   const tiles=[
+    {ic:"📚", v:"Lv."+skill.wordLevel, l:"단어 "+skill.wordKnown+"개"},
+    {ic:"🎧", v:"Lv."+skill.listenLevel, l:"듣기 "+skill.listenPerfect+"개"},
+    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기 "+skill.speakPerfect+"개"},
     {ic:"🧱", v:ready, l:"실전 준비"},
-    {ic:"🔄", v:due, l:"복습할 블록"},
     {ic:"🔥", v:streak+"일", l:"연속"}
   ];
-  box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;background:#FFF7F0;border:1px solid #F6D8C8;border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px -12px rgba(214,120,70,.25)">
-    ${tiles.map((t,i)=>`${i?'<span style="width:1px;height:18px;background:#F6D8C8"></span>':''}<div style="display:flex;align-items:center;gap:6px"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
+  box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;flex-wrap:wrap;background:#FFF7F0;border:1px solid #F6D8C8;border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px -12px rgba(214,120,70,.25)">
+    ${tiles.map(t=>`<div style="display:flex;align-items:center;gap:6px;min-width:88px;justify-content:center"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
   </div>`;
 }
 function applyAgeUI(){
@@ -9412,46 +10056,33 @@ function progressFooter(){
 function wireProgressFooter(scope){
   (scope||document).querySelectorAll(".pf-chunk").forEach(c=>{ c.onclick=()=>{ const pid=c.dataset.pid; if(pid) startChunkTraining(pid); }; });
 }
+function autoChunkCount(){
+  try{
+    const s=bleGetState();
+    return Object.keys(s||{}).filter(id=>{
+      const st=s[id]||{};
+      return st.stage==="ready_for_real" || ((st.fastCount||0)>=3 && (st.successCount||0)>=3 && ((st.contextsUsed||[]).length)>=3);
+    }).length;
+  }catch(e){ return 0; }
+}
+function routineDoneCount(){
+  try{
+    const q=questGet(), c=q.c||{};
+    const reviewDone=(c.vocab||0)>0 || (c.chunk||0)>0;
+    return [reviewDone,(c.chunk||0)>=1,(c.talk||0)>=1,(c.listen||0)>=1].filter(Boolean).length;
+  }catch(e){ return 0; }
+}
 function renderHero(){
   const hz=$("#heroZone"); if(!hz) return;
-  const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
+  const p=getProf(); const li=levelInfo(p.xp);
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
-  const name=hGet("speakingroom:name","")||"친구";
-  const nr=nextReward(li.level); const active=avActiveCount();
-  const R=33, C=2*Math.PI*R, off=C*(1-pct);
-  const lvBucket = li.level>=20?"MASTER": li.level>=10?"PRO": li.level>=5?"HERO":"ROOKIE";
-  hz.innerHTML=`
-   <div class="hero-row">
-     <div class="ring-wrap">
-       <svg viewBox="0 0 78 78"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-         <stop offset="0" stop-color="#FF8568"/><stop offset="1" stop-color="#FF9E7A"/></linearGradient></defs>
-         <circle class="ring-bg" cx="39" cy="39" r="${R}"/>
-         <circle class="ring-fg" cx="39" cy="39" r="${R}" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${C.toFixed(1)}"/>
-       </svg>
-       <div class="ring-lv"><b>${li.level}</b><span>LV</span></div>
-     </div>
-     <div class="hero-mid">
-       <div class="hero-hello">${escapeHtml(homeGreeting())} · ${lvBucket}</div>
-       <div class="hero-name">${escapeHtml(name)} ${kidMode()?"🧒":"🧑"}</div>
-       <div class="hero-chips">
-         <span class="hchip flame ${streak>=2?'lit':''}">🔥 ${streak}일</span>
-         <span class="hchip gem">💎 ${active}</span>
-         <span class="hchip">⚡ ${todayXP()} XP</span>
-       </div>
-     </div>
-   </div>
-   <div class="hero-reward">
-     <span class="rwemo">${nr?nr.emo:"🏆"}</span>
-     <div class="rwtx">
-       <div class="rwtop">다음 보물까지</div>
-       <div class="rwname">${nr?("Lv."+nr.lv+" · "+escapeHtml(nr.t)):"전부 달성! 최고예요"}</div>
-       <div class="rwbar"><i style="width:${Math.round(pct*100)}%"></i></div>
-     </div>
-     <span class="rwgo">${nr?("D-"+(nr.lv-li.level)):"MAX"}</span>
-   </div>`;
-  // 링 애니메이션 (다음 프레임에 채움)
-  const fg=hz.querySelector(".ring-fg");
-  if(fg) requestAnimationFrame(()=>requestAnimationFrame(()=>{ fg.style.strokeDashoffset=off.toFixed(1); }));
+  const done=routineDoneCount(), auto=autoChunkCount();
+  hz.innerHTML=`<div class="learn-statbar" title="내 학습 상태">
+    <div class="learn-stat"><span>🧱</span><b>Lv.${li.level}</b><span>내 레벨</span></div>
+    <div class="learn-stat"><span>🔁</span><b>${done}/4</b><span>오늘 전적</span></div>
+    <div class="learn-stat"><span>⚡</span><b>${auto}</b><span>자동화</span></div>
+    <div class="learn-stat"><span>🔥</span><b>${streak}일</b><span>연속</span></div>
+  </div>`;
 }
 // 🎉 레벨업 풀스크린 축포
 function levelUpCelebrate(level){
@@ -9485,6 +10116,9 @@ function renderHome(){
   if(!$("#homeCard")) return;
   state.age="adult";
   applyAgeUI();
+  const home=$("#homeCard"), qbox=$("#questBox"), daily=$("#dailyCard");
+  if(home){ home.classList.add("learning-home"); }
+  if(home&&qbox&&daily){ home.insertBefore(qbox, daily); }
   // streak (calc first so hero can show it)
   let st=hGet("speakingroom:streak",{last:0,n:0}); const today=DAYN();
   if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
@@ -9502,8 +10136,8 @@ function renderHome(){
         <span style="font-size:20px;color:#ffd17a;font-weight:900">›</span></div>`;
       chestBanner.onclick=openChestFlow;
     } else { chestBanner.style.display="none"; } }
-  renderDailyCard();
   renderQuestBox();
+  renderDailyCard();
   try{ renderWeakHome(); }catch(e){}
   renderAcqStats();
   // continue
@@ -9539,24 +10173,64 @@ function questBump(cat){
   renderQuest();
 }
 function renderQuest(){ renderQuestBox(); renderModeProgress(); }
+function routineReviewCount(){
+  let n=0;
+  try{ n+=dueCount(); }catch(e){}
+  try{ n+=getDueReviewBlocks().length; }catch(e){}
+  try{ n+=srsDue(99).length; }catch(e){}
+  try{ n+=reuseDue(99).length; }catch(e){}
+  try{ n+=weakList(99).length; }catch(e){}
+  return Math.min(99,n);
+}
+function todayRoutineSteps(){
+  const q=questGet(), c=q.c||{};
+  const due=routineReviewCount();
+  return [
+    {id:"routineReview", emo:"🔁", t:"복습 먼저", d:due?`만기 표현 ${due}개 · 약 2분`:"약한 표현 점검 · 약 2분", done:(c.vocab||0)>0 || (c.chunk||0)>0, run:startRoutineReview},
+    {id:"routineBlock", emo:"🧱", t:"새 블록", d:"1개 배우기 · 약 4분", done:(c.chunk||0)>=1, run:()=>bleOpenHub()},
+    {id:"routineSpeak", emo:"⚡", t:"자동화 드릴", d:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
+    {id:"routineListen", emo:"👂", t:"듣기 드릴", d:"3문장 듣기 · 약 2분", done:(c.listen||0)>=1, run:()=>openListenHub()}
+  ];
+}
+function startRoutineReview(){
+  try{ if(dueCount()>0) return startReview(); }catch(e){}
+  try{ if(getDueReviewBlocks().length) return bleOpenHub(); }catch(e){}
+  return startVocabCoach();
+}
+function startTodayRoutine(){
+  const steps=todayRoutineSteps();
+  const next=steps.find(x=>!x.done)||steps[0];
+  next.run();
+}
 function renderQuestBox(){
   const box=$("#questBox"); if(!box) return;
-  const {goals,meta}=questDefs(); const q=questGet();
-  const items=Object.keys(goals).map(k=>{ const cur=Math.min(goals[k],q.c[k]||0), fin=cur>=goals[k]; const pc=Math.round(cur/goals[k]*100);
-    return `<div class="qtile${fin?' done':''}">
-      <span class="qt-emo">${meta[k].emo}</span>
-      <span class="qt-t">${meta[k].t}</span>
-      <span class="qt-c">${fin?'✓':cur+'/'+goals[k]}</span>
-    </div>`; }).join("");
-  const lvl=levelInfo(getProf().xp); const nr=nextReward(lvl.level);
-  const pct=Math.round(lvl.inLevel/lvl.need*100);
-  box.innerHTML=`<div class="qbox">
-    <div class="qbox-head">
-      <span class="qbox-title">🎯 오늘의 퀘스트</span>
-      <span class="qbox-xp">오늘 +${todayXP()} XP</span>
+  const steps=todayRoutineSteps();
+  const done=steps.filter(x=>x.done).length;
+  const pct=Math.round(done/steps.length*100);
+  box.innerHTML=`<div class="routine-card">
+    <div class="routine-head">
+      <div>
+        <div class="routine-kicker">TODAY'S TRAINING</div>
+        <div class="routine-title">오늘의 루틴</div>
+        <div class="routine-sub">천천히 하나씩 따라오면 돼요</div>
+      </div>
+      <div class="routine-time">⏱ 약 11분</div>
     </div>
-    <div class="qbox-grid">${items}</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="routine-bar" style="flex:1"><i style="width:${pct}%"></i></div>
+      <span style="font-size:14px;color:#8E766B;font-weight:900">${done}/${steps.length}</span>
+    </div>
+    <div class="routine-list">
+      ${steps.map(x=>`<button class="routine-step${x.done?' done':''}" id="${x.id}">
+        <span class="routine-ico">${x.emo}</span>
+        <span class="routine-tx"><b>${escapeHtml(x.t)}</b><span>${escapeHtml(x.d)}</span></span>
+        <span class="routine-go">${x.done?'✓':'›'}</span>
+      </button>`).join("")}
+    </div>
+    <button class="routine-main" id="routineStart">오늘 훈련 시작 →</button>
   </div>`;
+  steps.forEach(x=>{ const el=$("#"+x.id); if(el) el.onclick=x.run; });
+  const start=$("#routineStart"); if(start) start.onclick=startTodayRoutine;
 }
 const MODE_HERO={
   vocab:{emo:"📖",t:"단어 학습",d:"여러 다른 문장으로 단어를 익혀요",c:"#FF8568",bg:"rgba(255,133,104,.14)"},
@@ -9908,7 +10582,8 @@ function renderProfile(){
   const bp=bestPronToday(); const stars=phStars(); const txp=todayXP();
   const {goals,meta}=questDefs(); const q=questGet();
   const qLine=Object.keys(goals).map(k=>`${meta[k].emo}${Math.min(goals[k],q.c[k]||0)}/${goals[k]}`).join("  ");
-  const stats=[["💎",avActiveCount(),"능동 어휘"],["⭐",stars,"모은 별"],["🎤",bp||"—","오늘 최고 발음"],["⚡",txp,"오늘 얻은 XP"]];
+  const skill=profSkillStats();
+  const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["💎",skill.wordKnown,"완벽 단어"]];
   let rwHtml="", nextSet=false;
   REWARDS.forEach(r=>{
     const done=li.level>=r.lv; const isNext=!done&&!nextSet; if(isNext) nextSet=true;
@@ -9922,9 +10597,18 @@ function renderProfile(){
       <button class="prof-close" id="profClose">✕</button>
     </div>
     <div class="xpbar-wrap">
-      <div class="xpbar-top"><div class="xpbar-lv">레벨 <b>${li.level}</b></div><div class="xpbar-n">${li.inLevel} / ${li.need} XP</div></div>
+      <div class="xpbar-top"><div class="xpbar-lv">보상 레벨 <b>${li.level}</b></div><div class="xpbar-n">${li.inLevel} / ${li.need} XP</div></div>
       <div class="xpbar"><i style="width:${pct}%"></i></div>
       <div style="font-size:11.5px;color:var(--muted);margin-top:7px;text-align:center">🎁 다음 보상: ${nr?`<b style="color:var(--text)">LV ${nr.lv} ${nr.emo} ${escapeHtml(nr.t)}</b> (${nr.lv-li.level}레벨 남음)`:"전부 달성! 🏆"}</div>
+    </div>
+    <div class="xpbar-wrap">
+      <div class="xpbar-top"><div class="xpbar-lv">실력 레벨 <b>${skill.overallLevel}</b></div><div class="xpbar-n">문제 난이도 ${levelName()}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);line-height:1.5">
+        <span>📚 완벽 단어 ${skill.wordKnown}개</span>
+        <span>🎧 완벽 듣기 ${skill.listenPerfect}개</span>
+        <span>🗣️ 능동 말하기 ${skill.speakPerfect}개</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:7px">실력 레벨은 XP가 아니라 실제로 완전히 맞힌/들은/꺼낸 항목 수로만 올라가요.</div>
     </div>
     <div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 14px;margin:0 0 14px;text-align:center">
       <div style="font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px">🎯 오늘의 퀘스트</div>
