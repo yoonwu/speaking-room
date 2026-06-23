@@ -1815,7 +1815,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.27.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.28.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9607,6 +9607,184 @@ function autoDrillBuildItems(blocks){
   }
   return items.slice(0, diffLevel()<=12?8:10);
 }
+// ===== 🚀 첫 5분 세션 (firstRunFlow) — 무조건 성공 경험 설계 =====
+// 슬롯은 극도로 쉬운 단어만 (water, coffee, this, help...) — 단어 때문에 막히면 안 됨
+const FIRSTRUN_BLOCKS=[
+  { id:"can_i_get", block:"Can I get...", ko:"~ 주세요 / 받을 수 있을까요?",
+    items:[
+      {situation:"카페에서 물 한 잔 달라고 해보세요.", answer:"Can I get some water?", key:"water"},
+      {situation:"식당에서 물 달라고 해보세요. (똑같죠?)", answer:"Can I get some water?", key:"water"},
+      {situation:"카페에서 커피 한 잔 주문해보세요.", answer:"Can I get a coffee?", key:"coffee"},
+    ]},
+  { id:"do_you_have", block:"Do you have...", ko:"~ 있어요?",
+    items:[
+      {situation:"가게에서 물 있냐고 물어보세요.", answer:"Do you have water?", key:"water"},
+      {situation:"카페에서 커피 있냐고 물어보세요.", answer:"Do you have coffee?", key:"coffee"},
+      {situation:"식당에서 메뉴 있냐고 물어보세요.", answer:"Do you have a menu?", key:"menu"},
+    ]},
+  { id:"i_need", block:"I need...", ko:"~이 필요해요",
+    items:[
+      {situation:"도움이 필요하다고 말해보세요.", answer:"I need help.", key:"help"},
+      {situation:"물이 필요하다고 말해보세요.", answer:"I need water.", key:"water"},
+      {situation:"시간이 좀 필요하다고 말해보세요.", answer:"I need time.", key:"time"},
+    ]},
+  { id:"could_you", block:"Could you...", ko:"~해 주시겠어요?",
+    items:[
+      {situation:"도와달라고 정중히 부탁해보세요.", answer:"Could you help me?", key:"help"},
+      {situation:"다시 말해달라고 부탁해보세요.", answer:"Could you say that again?", key:"again"},
+      {situation:"천천히 말해달라고 부탁해보세요.", answer:"Could you speak slowly?", key:"slowly"},
+    ]},
+  { id:"i_think", block:"I think...", ko:"제 생각엔 ~",
+    items:[
+      {situation:"\"이거 좋은 것 같아요\"라고 말해보세요.", answer:"I think this is good.", key:"good"},
+      {situation:"\"맞는 것 같아요\"라고 말해보세요.", answer:"I think so.", key:"think"},
+      {situation:"\"좋은 생각인 것 같아요\"라고 말해보세요.", answer:"I think it's a good idea.", key:"good"},
+    ]},
+];
+// 랜덤 믹스 3개 — 5블록 중 골라 꺼내기 (쉬운 난이도 유지)
+const FIRSTRUN_MIX=[
+  {situation:"카페에서 물 달라고 해보세요.", answer:"Can I get some water?", key:"water", block:"Can I get..."},
+  {situation:"도움이 필요하다고 말해보세요.", answer:"I need help.", key:"help", block:"I need..."},
+  {situation:"커피 있냐고 물어보세요.", answer:"Do you have coffee?", key:"coffee", block:"Do you have..."},
+];
+
+
+// ===== 🚀 firstRunFlow 엔진 — 온보딩 직후 첫 성공 경험 =====
+let firstRun=null;
+function buildFirstRunQueue(){
+  const q=[];
+  FIRSTRUN_BLOCKS.forEach(b=>{
+    q.push({type:"intro", block:b.block, ko:b.ko});
+    b.items.forEach((it,i)=>{
+      q.push({type:"speak", block:b.block, blockKo:b.ko, situation:it.situation, answer:it.answer, key:it.key, hideAnswer:(i>=2)});
+    });
+  });
+  q.push({type:"mixIntro"});
+  FIRSTRUN_MIX.forEach(m=>{ q.push({type:"speak", block:m.block, situation:m.situation, answer:m.answer, key:m.key, hideAnswer:true, mix:true}); });
+  q.push({type:"done"});
+  return q;
+}
+function startFirstRun(){
+  firstRun={ queue:buildFirstRunQueue(), idx:0, said:0, t0:0, tries:0 };
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); $("#ctxBar").style.display="none";
+  firstRunRender();
+}
+function frProg(){
+  const total=firstRun.queue.filter(x=>x.type==="speak").length;
+  return {said:firstRun.said, total};
+}
+function firstRunRender(){
+  if(!firstRun) return goToSetup();
+  const it=firstRun.queue[firstRun.idx];
+  if(!it) return goToSetup();
+  const scroll=$("#sprintScroll"); scroll.style.background="";
+  firstRun.tries=0;
+
+  if(it.type==="intro"){
+    scroll.innerHTML=`<div class="auto-card" style="text-align:center">
+      <div style="font-size:12px;font-weight:900;color:#C08763;letter-spacing:.5px">이 표현을 배워볼게요</div>
+      <div style="font-size:30px;font-weight:950;color:#F0664A;font-family:var(--serif);margin:14px 0 6px">${escapeHtml(it.block)}</div>
+      <div style="font-size:15px;color:#8A6F62;margin-bottom:18px">${escapeHtml(it.ko)}</div>
+      <div class="auto-actions"><button class="auto-mic" id="frNext">이 표현 써먹어보기 →</button></div>
+    </div>`;
+    try{ speakEn(it.block.replace(/\.\.\.$/,"")); }catch(e){}
+    $("#frNext").onclick=()=>{ firstRun.idx++; firstRunRender(); };
+    return;
+  }
+  if(it.type==="mixIntro"){
+    scroll.innerHTML=`<div class="auto-card" style="text-align:center">
+      <div style="font-size:46px;margin-bottom:8px">🎲</div>
+      <div style="font-size:21px;font-weight:950;color:#3A2D27;margin-bottom:8px">이번엔 섞어볼게요</div>
+      <div style="font-size:14px;color:#8A6F62;line-height:1.6;margin-bottom:18px">방금 배운 5개 중에서<br><b>골라서</b> 꺼내보세요. 이게 진짜 실전이에요.</div>
+      <div class="auto-actions"><button class="auto-mic" id="frNext">해볼게요 →</button></div>
+    </div>`;
+    $("#frNext").onclick=()=>{ firstRun.idx++; firstRunRender(); };
+    return;
+  }
+  if(it.type==="done"){ return firstRunDone(); }
+
+  // speak
+  const p=frProg();
+  scroll.innerHTML=`<div class="auto-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-size:12px;font-weight:900;color:#C08763">${it.mix?"🎲 골라서 꺼내기":"방금 배운 "+escapeHtml(it.block)}</span>
+      <span style="font-size:12px;font-weight:800;color:#B0958A">${p.said} / ${p.total}</span>
+    </div>
+    <div style="font-size:18px;font-weight:800;color:#3A2D27;line-height:1.5;text-align:center;margin:8px 0 16px">${escapeHtml(it.situation)}</div>
+    ${!it.hideAnswer?`<div style="text-align:center;background:#FFF0E8;border:1px solid #FBD6C4;border-radius:14px;padding:12px;margin-bottom:14px">
+       <div style="font-size:11px;color:#C08763;font-weight:900;margin-bottom:4px">이렇게 말하면 돼요</div>
+       <div style="font-size:19px;font-weight:900;color:#F0664A;font-family:var(--serif)">${escapeHtml(it.answer)}</div>
+     </div>`:`<div style="text-align:center;font-size:12px;color:#B0958A;margin-bottom:14px">💪 이번엔 안 보고 말해볼까요?</div>`}
+    <div id="frStat" style="text-align:center;font-size:13px;color:#8A6F62;min-height:20px;font-weight:700"></div>
+    <div class="auto-actions"><button class="auto-mic" id="frMic">🎤 눌러서 말하기</button></div>
+  </div>`;
+  if(!it.hideAnswer){ try{ speakEn(it.answer); }catch(e){} }
+  let hintTimer=setTimeout(()=>{ try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){} }, 7000);
+  const mic=$("#frMic");
+  mic.onclick=()=>{
+    mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
+    firstRun.t0=Date.now();
+    micFillCb((heard)=>{
+      mic.classList.remove("live");
+      clearTimeout(hintTimer);
+      firstRunJudge(it, heard||"");
+    });
+  };
+}
+function firstRunJudge(it, heard){
+  firstRun.tries++;
+  const h=adNorm(heard);
+  const key=adNorm(it.key||"");
+  // 극관대 판정: 핵심어 들어가거나, 블록 일부 들어가거나, 2번째 시도면 무조건 통과
+  const keyHit = key && (" "+h+" ").includes(" "+key+" ");
+  const blockHit = adCoreVariants(it.block).some(v=>(" "+h+" ").includes(" "+v.split(" ")[0]+" "));
+  const pass = keyHit || blockHit || firstRun.tries>=2 || h.length>=3;
+  const stat=$("#frStat"); const mic=$("#frMic");
+  if(pass){
+    firstRun.said++;
+    if(stat) stat.innerHTML='<b style="color:#19a06b">✅ 통했어요!</b> 방금 영어로 말했어요.';
+    try{ speakEn(it.answer); }catch(e){}
+    if(mic){ mic.textContent="좋아요 →"; mic.classList.remove("live");
+      mic.onclick=()=>{ firstRun.idx++; firstRunRender(); }; }
+  }else{
+    if(stat) stat.innerHTML='<span style="color:#E0A300">거의 다 됐어요! 한 번만 더요.</span>';
+    try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
+    if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
+      mic.onclick=()=>{ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
+        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }); }; }
+  }
+}
+function firstRunDone(){
+  const said=firstRun.said;
+  try{ awardXP("output", 30, "첫 시작", "firstrun:"+DAYN()); }catch(e){}
+  try{ hSet("firstrun_done", true); }catch(e){}
+  const scroll=$("#sprintScroll");
+  scroll.innerHTML=`<div class="auto-done" style="max-width:480px;text-align:center">
+    <div style="font-size:54px;margin-bottom:6px">🎉</div>
+    <h2 style="font-size:24px;font-weight:950;color:#3A2D27;line-height:1.3;margin:0 0 14px">방금, 영어가<br>입에서 나왔죠?</h2>
+    <div style="background:linear-gradient(135deg,#FFF0E8,#FFE3D5);border:1px solid #FBD6C4;border-radius:18px;padding:18px 20px;margin-bottom:16px">
+      <div style="font-size:17px;font-weight:900;color:#F0664A;margin-bottom:6px">외운 게 아니라 꺼낸 거예요.</div>
+      <div style="font-size:14px;color:#8A6F62">5개 표현으로 <b style="color:#F0664A">${said}번</b>, 직접 말했어요.</div>
+    </div>
+    <div style="text-align:left;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:14px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:12.5px;color:#8A6F62;line-height:1.7">
+        이건 <b>제2언어 습득론(SLA)·인지심리학이 가장 강력하게 미는 학습법</b>이에요.<br>
+        직접 말하고<b>(출력)</b> · 머리에서 꺼내고<b>(인출)</b> · 자동으로 나오게<b>(자동성)</b>.
+      </div>
+    </div>
+    <div style="font-size:13.5px;color:#8A6F62;line-height:1.6;margin-bottom:20px">영어가 안 나왔던 건 몰라서가 아니라,<br><b>꺼내는 연습이 부족했을 뿐</b>이에요.</div>
+    <div style="display:flex;flex-direction:column;gap:9px;max-width:320px;margin:0 auto">
+      <button class="auto-mic" id="frToDrill" style="margin:0">⚡ 자동화 드릴로 입에 더 붙이기</button>
+      <button class="rv-stop" id="frToHome">🏠 홈으로</button>
+    </div>
+  </div>`;
+  $("#frToDrill").onclick=()=>{ firstRun=null; try{ startAutoDrill(); }catch(e){ goToSetup(); } };
+  $("#frToHome").onclick=()=>{ firstRun=null; goToSetup(); };
+}
+
 function startAutoDrill(){
   bleCtxCacheLoad();
   let blocks=autoDrillBlocks();
@@ -10488,8 +10666,8 @@ function onbRender(){
   const skip=$("#onbSkip"); if(skip) skip.onclick=onbClose;
   const next=$("#onbNext"); if(next) next.onclick=()=>{ onbIdx++; onbRender(); };
   const back=$("#onbBack"); if(back) back.onclick=()=>{ onbIdx--; onbRender(); };
-  const start=$("#onbStart"); if(start) start.onclick=onbClose;          // 닫기만 (다음에 또 나옴)
-  const never=$("#onbNeverShow"); if(never) never.onclick=onbComplete;    // 완료 저장 (다시 안 나옴)
+  const start=$("#onbStart"); if(start) start.onclick=()=>{ onbClose(); try{ if(!hGet("firstrun_done",false)) return startFirstRun(); }catch(e){} };          // 첫 실행이면 첫 성공 세션으로
+  const never=$("#onbNeverShow"); if(never) never.onclick=()=>{ onbComplete(); try{ if(!hGet("firstrun_done",false)) startFirstRun(); }catch(e){} };    // 완료 저장 + 첫 세션
 }
 function openOnboarding(){ onbIdx=0; $("#onbOv").classList.add("show"); onbRender(); }
 function onbClose(){ $("#onbOv").classList.remove("show"); }   // 완료 표시 안 함
