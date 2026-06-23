@@ -1815,7 +1815,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.28.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.29.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9720,6 +9720,8 @@ function firstRunRender(){
      </div>`:`<div style="text-align:center;font-size:12px;color:#B0958A;margin-bottom:14px">💪 이번엔 안 보고 말해볼까요?</div>`}
     <div id="frStat" style="text-align:center;font-size:13px;color:#8A6F62;min-height:20px;font-weight:700"></div>
     <div class="auto-actions"><button class="auto-mic" id="frMic">🎤 눌러서 말하기</button></div>
+    <button id="frType" style="width:100%;margin-top:9px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+    <div id="frTypeWrap"></div>
   </div>`;
   if(!it.hideAnswer){ try{ speakEn(it.answer); }catch(e){} }
   let hintTimer=setTimeout(()=>{ try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){} }, 7000);
@@ -9732,6 +9734,15 @@ function firstRunRender(){
       clearTimeout(hintTimer);
       firstRunJudge(it, heard||"");
     });
+  };
+  const typeBtn=$("#frType");
+  if(typeBtn) typeBtn.onclick=()=>{
+    const wrap=$("#frTypeWrap"); if(!wrap) return;
+    if(document.getElementById("frTypeIn")){ document.getElementById("frTypeIn").focus(); return; }
+    wrap.innerHTML=`<input id="frTypeIn" style="width:100%;margin-top:9px;padding:13px;border:1.5px solid #F0664A;border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off" autocapitalize="off">`;
+    const inp=document.getElementById("frTypeIn"); inp.focus();
+    const submit=()=>{ const t=inp.value.trim(); if(!t) return; inp.disabled=true; clearTimeout(hintTimer); firstRunJudge(it, t); };
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
   };
 }
 function firstRunJudge(it, heard){
