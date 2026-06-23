@@ -225,7 +225,7 @@
 .help-q:active{transform:scale(.9)}
 .eng{position:relative}
 .sidequest{position:relative}
-/* ===== ⚡ 라이트닝 아레나 — 전투 ===== */
+/* ===== ⚡ 스피드런 — 전투 ===== */
 #sprintScroll{background:radial-gradient(90% 60% at 50% 0%,rgba(150,80,255,.16),transparent 60%),radial-gradient(80% 50% at 50% 100%,rgba(255,150,60,.10),transparent 60%)}
 .enemy-stage{position:relative;text-align:center;padding:8px 0 4px;margin-bottom:8px;min-height:130px}
 .enemy{font-size:80px;display:inline-block;filter:drop-shadow(0 12px 26px rgba(150,80,255,.55));transition:transform .12s}
@@ -1065,7 +1065,7 @@ body{background:var(--paper); color:var(--text)}
   radial-gradient(90% 130% at 100% 120%,rgba(190,70,30,.55),transparent 60%),
   linear-gradient(160deg,#5e3318,#1f1410 80%);
   box-shadow:0 16px 36px -16px rgba(245,150,60,.6),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -30px 40px -20px rgba(0,0,0,.55)}
-/* ⚡ 라이트닝 아레나 — 번개 투기장 */
+/* ⚡ 스피드런 — 번개 투기장 */
 #engSprint{--glow:rgba(255,200,80,.6);background:
   linear-gradient(100deg,rgba(8,10,14,.80),rgba(8,10,14,.32) 58%,rgba(8,10,14,.12)),url('scene-arena.png') center/cover no-repeat,
   radial-gradient(70% 120% at 8% 0%,rgba(255,210,90,.42),transparent 52%),
@@ -1364,7 +1364,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .qr-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A)}
 .qr-go{font-size:11.5px;font-weight:900;color:#E2674A;background:#FFE7DC;border-radius:99px;padding:5px 11px;white-space:nowrap}
 
-/* ===== ⚡ 라이트닝 아레나 — 공백 채우기 ===== */
+/* ===== ⚡ 스피드런 — 공백 채우기 ===== */
 .arena.arena2{min-height:calc(100svh - 56px - 58px);display:flex;flex-direction:column}
 .arena.arena2 .ar2-scene{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px}
 .arena.arena2 .ar2-ctrl{margin-top:6px}
@@ -1507,7 +1507,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <button class="eng" id="engSprint">
           <span class="help-q" data-tut="sprint">?</span>
           <span class="eng-emo">⚡</span>
-          <span class="eng-tx"><b>라이트닝 아레나</b><i>스프린트 · 많이 말하기</i></span>
+          <span class="eng-tx"><b>스피드런</b><i>빠르게 · 많이 말하기</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng" id="boosterCard">
@@ -1746,7 +1746,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.10.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.11.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -5559,7 +5559,7 @@ function bleItemFromBlock(b){
   const ex=bleFreshContextEx2(src);
   return {ko:ex.ko, en:ex.en, tag:ex.situation||"ble", pid:"ble:"+src.id, chunk:src.block, chunkKo:src.meaningKo, block:src.block, bleId:src.id};
 }
-// ===== P10: 타 모드(듣기/스피킹/라이트닝)용 블록 재료 =====
+// ===== P10: 타 모드(듣기/스피킹/스피드런)용 블록 재료 =====
 // 70% 배운/due/약한 블록 / 20% 혼합 / 10% 새 상황
 function bleMaterialsForMode(mode){
   const blocks=blePriorityBlocks(16, false);
@@ -5582,7 +5582,7 @@ function bleSpeakingHint(){
   const ex=m.blocks.slice(0,8).map(x=>`- ${x.ko} (목표 블록: ${x.block})`).join("\n");
   return `\nLEARNED-BLOCK FOCUS — The learner has studied these speaking blocks. About 70% of the time, create Korean situations where ONE of these blocks is the natural answer. 20% mix freely, 10% fresh.\n${ex}\n`;
 }
-// 라이트닝용: 느린/최근 블록 우선 빠른 인출 문항
+// 스피드런용: 느린/최근 블록 우선 빠른 인출 문항
 function bleLightningItems(n){
   const ranked=blePriorityBlocks(40, false);
   if(!ranked.length) return [];
@@ -8930,7 +8930,7 @@ const ONB_PAGES=[
         <div class="fl-item">📖 단어</div><div class="fl-ar">↓</div>
         <div class="fl-item core">🧱 블록영어</div><div class="fl-ar">↓</div>
         <div class="fl-item">⚔️ 스피킹 훈련장</div><div class="fl-ar">↓</div>
-        <div class="fl-item">⚡ 라이트닝 아레나</div><div class="fl-ar">↓</div>
+        <div class="fl-item">⚡ 스피드런</div><div class="fl-ar">↓</div>
         <div class="fl-item">🌎 실전회화</div>
       </div>` },
   { ico:"🧱", title:"블록영어가 핵심입니다",
@@ -8940,7 +8940,7 @@ const ONB_PAGES=[
         <div class="onb-blk">Can I get a receipt?</div>
         <div class="onb-blk">Can I get another towel?</div>
       </div>
-      <div class="onb-text" style="font-size:14px">블록영어에서 배운 표현은 스피킹 훈련장과 라이트닝 아레나에서 <b>계속 다시 나옵니다.</b></div>
+      <div class="onb-text" style="font-size:14px">블록영어에서 배운 표현은 스피킹 훈련장과 스피드런에서 <b>계속 다시 나옵니다.</b></div>
       <div class="onb-key">상황 → 블록 선택 → 말하기</div>` },
   { ico:"🎯", title:"오늘은 이렇게 시작하세요",
     html:`처음이라면 이 순서로 해보세요.`,
@@ -8948,7 +8948,7 @@ const ONB_PAGES=[
         <div class="onb-step"><span class="sn">1</span><span class="st">단어 5개</span></div>
         <div class="onb-step"><span class="sn">2</span><span class="st">블록영어 기본 5개</span></div>
         <div class="onb-step"><span class="sn">3</span><span class="st">스피킹 훈련장 3문제</span></div>
-        <div class="onb-step"><span class="sn">4</span><span class="st">라이트닝 아레나 1회</span></div>
+        <div class="onb-step"><span class="sn">4</span><span class="st">스피드런 1회</span></div>
       </div>
       <div class="onb-text" style="font-size:14px">처음부터 완벽할 필요 없습니다.<br>틀린 표현은 <b>다시 나오고</b>, 느린 표현은 <b>더 빠르게</b> 연습하게 됩니다.</div>` }
 ];
@@ -9012,7 +9012,7 @@ const TUTORIALS={
     howKid:["상황 보기","영어로 말하기","뜻만 통하면 OK 😊"],
     success:"문법 완벽 말고 '뜻 전달'이 목표.",
     msg:"외우기보다 말하기예요."},
-  sprint:{icon:"⚡", title:"라이트닝 아레나",
+  sprint:{icon:"⚡", title:"스피드런",
     goal:"빠르게 바로 꺼내요.",
     how:["한국어가 뜨면","빠르게 영어로","콤보를 이어가기 🔥"],
     howKid:["한국어 보기","빨리 영어로! ⚡","콤보 이어가기 🔥"],
