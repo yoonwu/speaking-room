@@ -1738,15 +1738,15 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.18.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.19.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
-  if(localStorage.getItem("speakingroom:vocab_reset_v318")!=="1"){
+  if(localStorage.getItem("speakingroom:vocab_reset_v319")!=="1"){
     localStorage.removeItem("speakingroom:wp_progress");   // 갇힌 이어하기 세트
     localStorage.removeItem("speakingroom:vbank");          // 같은 단어만 쌓인 AI 캐시
     localStorage.removeItem("speakingroom:vseen");          // 최근 본 단어 기록 초기화(새 풀로 시작)
-    localStorage.setItem("speakingroom:vocab_reset_v318","1");
+    localStorage.setItem("speakingroom:vocab_reset_v319","1");
   }
 }catch(e){}
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
@@ -4294,32 +4294,377 @@ const STARTER_VOCAB={
     {word:"off the cuff",ko:"즉흥적으로",diff:3,examples:[{en:"He spoke off the cuff.",ko:"그는 즉흥적으로 말했어."},{en:"An off-the-cuff remark.",ko:"즉흥적인 발언."},{en:"Just off the cuff.",ko:"그냥 즉흥적으로."}],blank:{en:"He spoke off the ____.",ko:"그는 즉흥적으로 말했어.",answer:"cuff"},colloc:["off the cuff"]},
   ],
 };
+const STARTER_EXTRA_ROWS={
+  low:[
+["cold","추운 / 차가운",1,["It's cold today.","I want cold water.","My hands are cold."],["오늘 추워.","차가운 물 원해.","내 손이 차가워."],"It's ____ today.","오늘 추워.","cold",["cold water","cold day"]],
+    ["hot","더운 / 뜨거운",1,["It's hot outside.","This soup is hot.","I feel hot."],["밖이 더워.","이 수프는 뜨거워.","나 더워."],"It's ____ outside.","밖이 더워.","hot",["hot day","hot soup"]],
+    ["busy","바쁜",1,["I'm busy now.","Are you busy?","She is busy today."],["나 지금 바빠.","너 바빠?","그녀는 오늘 바빠."],"I'm ____ now.","나 지금 바빠.","busy",["busy now","busy day"]],
+    ["ready","준비된",1,["I'm ready.","Are you ready?","Dinner is ready."],["나 준비됐어.","준비됐어?","저녁 준비됐어."],"I'm ____.","나 준비됐어.","ready",["ready now","get ready"]],
+    ["late","늦은",1,["I'm late.","The bus is late.","Don't be late."],["나 늦었어.","버스가 늦어.","늦지 마."],"I'm ____.","나 늦었어.","late",["late today","be late"]],
+    ["early","이른",1,["You're early.","I came early.","It's still early."],["너 일찍 왔네.","나 일찍 왔어.","아직 일러."],"I came ____.","나 일찍 왔어.","early",["come early","early morning"]],
+    ["clean","깨끗한 / 청소하다",1,["The room is clean.","Clean your desk.","I like clean clothes."],["방이 깨끗해.","책상 치워.","난 깨끗한 옷이 좋아."],"The room is ____.","방이 깨끗해.","clean",["clean room","clean clothes"]],
+    ["dirty","더러운",1,["My shoes are dirty.","This table is dirty.","Don't touch dirty water."],["내 신발이 더러워.","이 테이블은 더러워.","더러운 물 만지지 마."],"My shoes are ____.","내 신발이 더러워.","dirty",["dirty shoes","dirty table"]],
+    ["sick","아픈",1,["I'm sick today.","She feels sick.","Are you sick?"],["나 오늘 아파.","그녀는 몸이 안 좋아.","아파?"],"I'm ____ today.","나 오늘 아파.","sick",["feel sick","get sick"]],
+    ["careful","조심하는",1,["Be careful.","I'm careful.","Please be careful."],["조심해.","나는 조심해.","제발 조심해."],"Be ____.","조심해.","careful",["be careful","careful driver"]],
+    ["quiet","조용한",1,["Please be quiet.","It's quiet here.","The room is quiet."],["조용히 해줘.","여기는 조용해.","방이 조용해."],"Please be ____.","조용히 해줘.","quiet",["be quiet","quiet room"]],
+    ["loud","시끄러운 / 큰 소리의",1,["It's too loud.","Your voice is loud.","The music is loud."],["너무 시끄러워.","네 목소리가 커.","음악 소리가 커."],"It's too ____.","너무 시끄러워.","loud",["too loud","loud voice"]],
+    ["help","도움 / 돕다",1,["I need help.","Can you help me?","Thanks for your help."],["도움이 필요해.","도와줄래?","도와줘서 고마워."],"I need ____.","도움이 필요해.","help",["need help","help me"]],
+    ["wait","기다리다",1,["Please wait.","Wait for me.","I can't wait."],["기다려 주세요.","나 기다려.","기다릴 수 없어."],"Please ____.","기다려 주세요.","wait",["wait here","wait for me"]],
+    ["find","찾다",1,["I can't find it.","Find your bag.","Did you find it?"],["그걸 못 찾겠어.","가방 찾아.","찾았어?"],"I can't ____ it.","그걸 못 찾겠어.","find",["find it","find a place"]],
+    ["need","필요하다",1,["I need water.","Do you need help?","We need time."],["물 필요해.","도움 필요해?","우리 시간이 필요해."],"I ____ water.","물 필요해.","need",["need help","need time"]],
+    ["bring","가져오다",1,["Bring your bag.","Can you bring water?","I brought lunch."],["가방 가져와.","물 가져올래?","나 점심 가져왔어."],"Can you ____ water?","물 가져올래?","bring",["bring water","bring your bag"]],
+    ["take","가져가다 / 타다",1,["Take a seat.","Take this one.","I take the bus."],["앉아.","이걸 가져가.","나는 버스를 타."],"____ a seat.","앉아.","take",["take a seat","take the bus"]],
+    ["give","주다",1,["Give me a minute.","Can you give it to me?","I gave her water."],["잠깐만 줘.","그거 나한테 줄래?","그녀에게 물을 줬어."],"____ me a minute.","잠깐만 줘.","give",["give me","give it to me"]],
+    ["want","원하다",1,["I want juice.","Do you want this?","We want pizza."],["주스 원해.","이거 원해?","우리는 피자를 원해."],"I ____ juice.","주스 원해.","want",["want juice","want this"]],
+    ["water","물",1,["I want water.","Drink some water.","Can I have water?"],["물 주세요.","물 좀 마셔.","물 주실래요?"],"I want ____.","물 주세요.","water",["cold water","drink water"]],
+    ["milk","우유",1,["I like milk.","Buy some milk.","The milk is cold."],["나 우유 좋아해.","우유 좀 사.","우유가 차가워."],"I like ____.","나 우유 좋아해.","milk",["cold milk","glass of milk"]],
+    ["juice","주스",1,["I want juice.","Apple juice, please.","The juice is sweet."],["주스 마시고 싶어.","사과 주스 주세요.","주스가 달아."],"I want ____.","주스 마시고 싶어.","juice",["apple juice","orange juice"]],
+    ["rice","밥/쌀",1,["I eat rice.","More rice, please.","The rice is hot."],["나 밥 먹어.","밥 더 주세요.","밥이 뜨거워."],"I eat ____.","나 밥 먹어.","rice",["eat rice","cook rice"]],
+    ["bread","빵",1,["I want bread.","Fresh bread is good.","Pass the bread."],["빵 먹고 싶어.","갓 구운 빵이 좋아.","빵 좀 건네줘."],"I want ____.","빵 먹고 싶어.","bread",["fresh bread","slice of bread"]],
+    ["apple","사과",1,["I eat an apple.","The apple is red.","I like apples."],["나 사과 먹어.","사과가 빨개.","나 사과 좋아해."],"I eat an ____.","나 사과 먹어.","apple",["red apple","green apple"]],
+    ["banana","바나나",1,["I like bananas.","The banana is yellow.","Eat a banana."],["나 바나나 좋아해.","바나나가 노래.","바나나 먹어."],"The ____ is yellow.","바나나가 노래.","banana",["ripe banana","eat a banana"]],
+    ["egg","달걀",1,["I eat eggs.","Two eggs, please.","The egg is fresh."],["나 달걀 먹어.","달걀 두 개 주세요.","달걀이 신선해."],"I eat ____.","나 달걀 먹어.","eggs",["fried egg","boiled egg"]],
+    ["chicken","치킨/닭",1,["I like chicken.","Fried chicken is good.","We eat chicken."],["나 치킨 좋아해.","후라이드 치킨 맛있어.","우리 치킨 먹어."],"I like ____.","나 치킨 좋아해.","chicken",["fried chicken","chicken soup"]],
+    ["snack","간식",1,["I want a snack.","Have a snack.","This snack is good."],["간식 먹고 싶어.","간식 먹어.","이 간식 맛있어."],"I want a ____.","간식 먹고 싶어.","snack",["have a snack","light snack"]],
+    ["coffee","커피",1,["I drink coffee.","Hot coffee, please.","I love coffee."],["나 커피 마셔.","따뜻한 커피 주세요.","나 커피 사랑해."],"I drink ____.","나 커피 마셔.","coffee",["hot coffee","cup of coffee"]],
+    ["tea","차",1,["I drink tea.","Green tea is good.","Hot tea, please."],["나 차 마셔.","녹차가 좋아.","따뜻한 차 주세요."],"I drink ____.","나 차 마셔.","tea",["green tea","cup of tea"]],
+    ["soup","수프/국",1,["I eat soup.","The soup is hot.","I want soup."],["나 국 먹어.","국이 뜨거워.","수프 먹고 싶어."],"The ____ is hot.","국이 뜨거워.","soup",["hot soup","bowl of soup"]],
+    ["cheese","치즈",1,["I like cheese.","Add some cheese.","The cheese is good."],["나 치즈 좋아해.","치즈 좀 넣어.","치즈가 맛있어."],"I like ____.","나 치즈 좋아해.","cheese",["add cheese","cheese pizza"]],
+    ["sugar","설탕",1,["Add sugar, please.","No sugar for me.","The sugar is sweet."],["설탕 넣어 주세요.","난 설탕 빼고.","설탕은 달아."],"Add ____, please.","설탕 넣어 주세요.","sugar",["add sugar","no sugar"]],
+    ["salt","소금",1,["Pass the salt.","Too much salt.","Add a little salt."],["소금 좀 줘.","소금이 너무 많아.","소금 조금 넣어."],"Pass the ____.","소금 좀 줘.","salt",["add salt","too much salt"]],
+    ["fruit","과일",1,["I eat fruit.","Fruit is healthy.","Buy some fruit."],["나 과일 먹어.","과일은 건강에 좋아.","과일 좀 사."],"I eat ____.","나 과일 먹어.","fruit",["fresh fruit","eat fruit"]],
+    ["noodle","면",1,["I love noodles.","Hot noodles, please.","The noodles are good."],["나 면 사랑해.","뜨거운 면 주세요.","면이 맛있어."],"I love ____.","나 면 사랑해.","noodles",["instant noodles","hot noodles"]],
+    ["meat","고기",1,["I eat meat.","The meat is good.","I like meat."],["나 고기 먹어.","고기가 맛있어.","나 고기 좋아해."],"I eat ____.","나 고기 먹어.","meat",["red meat","eat meat"]],
+    ["candy","사탕",1,["I want candy.","The candy is sweet.","Kids love candy."],["사탕 먹고 싶어.","사탕이 달아.","애들은 사탕을 좋아해."],"I want ____.","사탕 먹고 싶어.","candy",["sweet candy","piece of candy"]],
+    ["cake","케이크",1,["I love cake.","The cake is sweet.","Eat some cake."],["나 케이크 사랑해.","케이크가 달아.","케이크 좀 먹어."],"I love ____.","나 케이크 사랑해.","cake",["birthday cake","piece of cake"]],
+    ["happy","행복한",1,["I'm happy.","She looks happy.","Are you happy?"],["나 행복해.","그녀는 행복해 보여.","행복해?"],"She looks ____.","그녀는 행복해 보여.","happy",["so happy","very happy"]],
+    ["sad","슬픈",1,["I feel sad.","Don't be sad.","She looks sad."],["나 슬퍼.","슬퍼하지 마.","그녀는 슬퍼 보여."],"I feel ____.","나 슬퍼.","sad",["so sad","feel sad"]],
+    ["tired","피곤한",1,["I'm very tired.","You look tired.","I'm tired today."],["나 너무 피곤해.","피곤해 보여.","오늘 피곤해."],"You look ____.","피곤해 보여.","tired",["so tired","really tired"]],
+    ["hungry","배고픈",1,["I'm so hungry.","Are you hungry?","We're hungry now."],["나 너무 배고파.","배고파?","우리 지금 배고파."],"I'm so ____.","나 너무 배고파.","hungry",["really hungry","so hungry"]],
+    ["thirsty","목마른",1,["I'm thirsty.","Are you thirsty?","I feel thirsty."],["나 목말라.","목말라?","목이 말라."],"I'm ____.","나 목말라.","thirsty",["so thirsty","feel thirsty"]],
+    ["scared","무서운",1,["I'm scared.","Don't be scared.","She looks scared."],["나 무서워.","무서워하지 마.","그녀는 무서워 보여."],"I'm ____.","나 무서워.","scared",["so scared","feel scared"]],
+    ["angry","화난",1,["I'm angry.","Don't be angry.","He looks angry."],["나 화났어.","화내지 마.","그는 화나 보여."],"I'm ____.","나 화났어.","angry",["so angry","get angry"]],
+    ["bored","지루한",1,["I'm bored.","This is boring.","Are you bored?"],["나 지루해.","이거 지루해.","지루해?"],"I'm ____.","나 지루해.","bored",["so bored","get bored"]],
+    ["excited","신난",1,["I'm excited!","She is excited.","We're so excited."],["나 신나!","그녀는 신났어.","우리 너무 신나."],"I'm ____!","나 신나!","excited",["so excited","get excited"]],
+    ["sleepy","졸린",1,["I'm sleepy.","She looks sleepy.","I feel sleepy."],["나 졸려.","그녀는 졸려 보여.","졸려."],"I'm ____.","나 졸려.","sleepy",["so sleepy","feel sleepy"]],
+    ["glad","기쁜",1,["I'm glad.","I'm glad to see you.","She's glad."],["나 기뻐.","만나서 기뻐.","그녀는 기뻐."],"I'm ____ to see you.","만나서 기뻐.","glad",["so glad","glad to"]],
+    ["afraid","두려운",1,["I'm afraid.","Don't be afraid.","He's afraid of dogs."],["나 무서워.","두려워하지 마.","그는 개를 무서워해."],"I'm ____.","나 무서워.","afraid",["afraid of","so afraid"]],
+    ["nervous","긴장한",2,["I'm nervous.","She looks nervous.","Don't be nervous."],["나 긴장돼.","그녀는 긴장해 보여.","긴장하지 마."],"I'm ____.","나 긴장돼.","nervous",["so nervous","feel nervous"]],
+    ["worried","걱정하는",2,["I'm worried.","Don't be worried.","She looks worried."],["나 걱정돼.","걱정하지 마.","그녀는 걱정스러워 보여."],"I'm ____.","나 걱정돼.","worried",["worried about","so worried"]],
+    ["proud","자랑스러운",2,["I'm proud of you.","She's proud.","We're proud."],["네가 자랑스러워.","그녀는 자랑스러워해.","우리는 자랑스러워."],"I'm ____ of you.","네가 자랑스러워.","proud",["proud of","so proud"]],
+    ["open","열다",1,["Please open the door.","Can you open it?","Open your book."],["문을 열어 주세요.","열어줄래?","책을 펴."],"Please ____ the door.","문을 열어 주세요.","open",["open the door","open it"]],
+    ["close","닫다",1,["Close the door.","Please close it.","Close your eyes."],["문 닫아.","닫아 주세요.","눈 감아."],"____ the door.","문 닫아.","close",["close the door","close it"]],
+    ["eat","먹다",1,["Let's eat.","I eat lunch.","Eat your food."],["먹자.","나 점심 먹어.","밥 먹어."],"Let's ____.","먹자.","eat",["eat lunch","eat food"]],
+    ["drink","마시다",1,["Drink water.","I drink milk.","Let's drink tea."],["물 마셔.","나 우유 마셔.","차 마시자."],"____ water.","물 마셔.","drink",["drink water","drink milk"]],
+    ["run","달리다",1,["I can run fast.","Let's run.","Don't run here."],["나 빨리 달릴 수 있어.","달리자.","여기서 뛰지 마."],"I can ____ fast.","나 빨리 달릴 수 있어.","run",["run fast","go for a run"]],
+    ["walk","걷다",1,["Let's walk.","I walk to school.","Walk slowly."],["걷자.","나 학교에 걸어가.","천천히 걸어."],"I ____ to school.","나 학교에 걸어가.","walk",["walk to school","take a walk"]],
+    ["jump","점프하다",1,["I can jump high.","Let's jump.","Don't jump."],["나 높이 뛸 수 있어.","점프하자.","뛰지 마."],"I can ____ high.","나 높이 뛸 수 있어.","jump",["jump high","jump up"]],
+    ["read","읽다",1,["I read a book.","Let's read.","Read it aloud."],["나 책 읽어.","읽자.","소리 내어 읽어."],"I ____ a book.","나 책 읽어.","read",["read a book","read aloud"]],
+    ["write","쓰다",1,["I write a letter.","Write your name.","Let's write."],["나 편지 써.","이름을 써.","쓰자."],"Write your ____.","이름을 써.","name",["write a letter","write down"]],
+    ["draw","그리다",1,["I draw a cat.","Let's draw.","Draw a picture."],["나 고양이 그려.","그리자.","그림을 그려."],"I ____ a cat.","나 고양이 그려.","draw",["draw a picture","draw a line"]],
+    ["play","놀다/하다",1,["Let's play.","I play soccer.","Kids play outside."],["놀자.","나 축구 해.","애들이 밖에서 놀아."],"Let's ____.","놀자.","play",["play soccer","play games"]],
+    ["sleep","자다",1,["I sleep at night.","Let's sleep.","The baby is sleeping."],["나 밤에 자.","자자.","아기가 자고 있어."],"I ____ at night.","나 밤에 자.","sleep",["go to sleep","sleep well"]],
+    ["wash","씻다",1,["Wash your hands.","I wash my face.","Let's wash the car."],["손 씻어.","나 세수해.","차 닦자."],"Wash your ____.","손 씻어.","hands",["wash hands","wash up"]],
+    ["sit","앉다",1,["Please sit down.","Sit here.","Let's sit."],["앉으세요.","여기 앉아.","앉자."],"Please ____ down.","앉으세요.","sit",["sit down","sit here"]],
+    ["stand","서다",1,["Stand up, please.","Don't stand here.","Let's stand."],["일어서 주세요.","여기 서 있지 마.","서자."],"____ up, please.","일어서 주세요.","stand",["stand up","stand here"]],
+    ["stop","멈추다",1,["Stop now.","Please stop.","Don't stop."],["지금 멈춰.","멈춰 주세요.","멈추지 마."],"____ now.","지금 멈춰.","stop",["stop now","stop it"]],
+    ["go","가다",1,["Let's go.","I go home.","Go now."],["가자.","나 집에 가.","지금 가."],"Let's ____.","가자.","go",["go home","go now"]],
+    ["come","오다",1,["Come here.","Please come in.","Come with me."],["이리 와.","들어오세요.","나랑 같이 가."],"____ here.","이리 와.","come",["come here","come in"]],
+    ["look","보다",1,["Look at this.","Look here.","Don't look."],["이거 봐.","여기 봐.","보지 마."],"____ at this.","이거 봐.","look",["look at","look here"]],
+    ["listen","듣다",1,["Listen to me.","Please listen.","Listen carefully."],["내 말 들어.","들어 주세요.","잘 들어."],"____ to me.","내 말 들어.","listen",["listen to","listen carefully"]],
+    ["talk","말하다",1,["Let's talk.","I talk to her.","Don't talk now."],["얘기하자.","나 그녀랑 얘기해.","지금 말하지 마."],"Let's ____.","얘기하자.","talk",["talk to","talk about"]],
+    ["smile","웃다",1,["Please smile.","She has a nice smile.","Smile for the photo."],["웃어요.","그녀는 미소가 예뻐.","사진 찍게 웃어."],"Please ____.","웃어요.","smile",["big smile","smile at"]],
+    ["cook","요리하다",1,["I cook dinner.","Let's cook.","She can cook well."],["나 저녁 요리해.","요리하자.","그녀는 요리를 잘해."],"I ____ dinner.","나 저녁 요리해.","cook",["cook dinner","cook well"]],
+    ["buy","사다",1,["I buy milk.","Let's buy it.","Buy some bread."],["나 우유 사.","그거 사자.","빵 좀 사."],"I ____ milk.","나 우유 사.","buy",["buy food","buy it"]],
+    ["sing","노래하다",1,["I love to sing.","Let's sing.","She sings well."],["나 노래하는 거 좋아해.","노래하자.","그녀는 노래를 잘해."],"Let's ____.","노래하자.","sing",["sing a song","sing well"]],
+    ["dance","춤추다",1,["Let's dance.","I can dance.","She loves to dance."],["춤추자.","나 춤출 수 있어.","그녀는 춤추는 걸 좋아해."],"Let's ____.","춤추자.","dance",["dance well","love to dance"]],
+    ["turn","돌리다/돌다",1,["Turn left.","Turn it off.","Turn the page."],["왼쪽으로 돌아.","꺼.","페이지 넘겨."],"____ left.","왼쪽으로 돌아.","turn",["turn off","turn left"]],
+    ["door","문",1,["Open the door.","Close the door.","The door is open."],["문 열어.","문 닫아.","문이 열려 있어."],"Open the ____.","문 열어.","door",["open the door","front door"]],
+    ["bag","가방",1,["This is my bag.","Where is my bag?","Carry the bag."],["이거 내 가방이야.","내 가방 어디 있어?","가방 들어."],"This is my ____.","이거 내 가방이야.","bag",["my bag","school bag"]],
+    ["book","책",1,["I read a book.","Open your book.","This book is good."],["나 책 읽어.","책 펴.","이 책 좋아."],"I read a ____.","나 책 읽어.","book",["read a book","good book"]],
+    ["pencil","연필",1,["I have a pencil.","Use a pencil.","Where is my pencil?"],["나 연필 있어.","연필 써.","내 연필 어디 있어?"],"I have a ____.","나 연필 있어.","pencil",["a pencil","sharp pencil"]],
+    ["phone","전화/폰",1,["This is my phone.","Use the phone.","Where is my phone?"],["이거 내 폰이야.","전화 써.","내 폰 어디 있어?"],"This is my ____.","이거 내 폰이야.","phone",["my phone","call on the phone"]],
+    ["cup","컵",1,["A cup of tea.","This is my cup.","Fill the cup."],["차 한 잔.","이거 내 컵이야.","컵 채워."],"A ____ of tea.","차 한 잔.","cup",["a cup of","my cup"]],
+    ["chair","의자",1,["Sit on the chair.","This chair is soft.","Pull up a chair."],["의자에 앉아.","이 의자 푹신해.","의자 끌어와."],"Sit on the ____.","의자에 앉아.","chair",["sit on a chair","soft chair"]],
+    ["table","탁자/식탁",1,["Put it on the table.","Clean the table.","We sit at the table."],["탁자 위에 놔.","탁자 닦아.","우리 식탁에 앉아."],"Put it on the ____.","탁자 위에 놔.","table",["on the table","clean the table"]],
+    ["bed","침대",1,["I sleep in my bed.","Make your bed.","The bed is soft."],["나 침대에서 자.","침대 정리해.","침대가 푹신해."],"I sleep in my ____.","나 침대에서 자.","bed",["go to bed","make the bed"]],
+    ["ball","공",1,["Throw the ball.","Kick the ball.","This is my ball."],["공 던져.","공 차.","이거 내 공이야."],"Throw the ____.","공 던져.","ball",["throw the ball","kick the ball"]],
+    ["toy","장난감",1,["This is my toy.","Put away the toys.","The kids love toys."],["이거 내 장난감이야.","장난감 치워.","애들은 장난감을 좋아해."],"This is my ____.","이거 내 장난감이야.","toy",["my toy","favorite toy"]],
+    ["key","열쇠",1,["Where is my key?","This is my key.","I lost my key."],["내 열쇠 어디 있어?","이거 내 열쇠야.","열쇠 잃어버렸어."],"Where is my ____?","내 열쇠 어디 있어?","key",["my key","car key"]],
+    ["clock","시계",1,["Look at the clock.","The clock is slow.","Set the clock."],["시계 봐.","시계가 느려.","시계 맞춰."],"Look at the ____.","시계 봐.","clock",["look at the clock","wall clock"]],
+    ["window","창문",1,["Open the window.","Close the window.","Look out the window."],["창문 열어.","창문 닫아.","창밖을 봐."],"Open the ____.","창문 열어.","window",["open the window","by the window"]],
+    ["box","상자",1,["Open the box.","Put it in the box.","The box is heavy."],["상자 열어.","상자에 넣어.","상자가 무거워."],"Open the ____.","상자 열어.","box",["open the box","big box"]],
+    ["pen","펜",1,["Use a pen.","This is my pen.","I need a pen."],["펜 써.","이거 내 펜이야.","펜이 필요해."],"Use a ____.","펜 써.","pen",["a pen","blue pen"]],
+    ["cap","모자",1,["Wear a cap.","Nice cap.","Take off your cap."],["모자 써.","모자 멋지다.","모자 벗어."],"Wear a ____.","모자 써.","cap",["wear a cap","baseball cap"]],
+    ["shoe","신발",1,["Put on your shoes.","Nice shoes.","Tie your shoes."],["신발 신어.","신발 멋지다.","신발 끈 묶어."],"Put on your ____.","신발 신어.","shoes",["put on shoes","tie shoes"]],
+    ["car","자동차",1,["This is my car.","Get in the car.","The car is fast."],["이거 내 차야.","차에 타.","차가 빨라."],"Get in the ____.","차에 타.","car",["my car","drive a car"]],
+    ["light","불/빛",1,["Turn on the light.","Turn off the light.","The light is bright."],["불 켜.","불 꺼.","빛이 밝아."],"Turn on the ____.","불 켜.","light",["turn on the light","bright light"]],
+    ["money","돈",1,["I have money.","Save your money.","I need money."],["나 돈 있어.","돈 아껴.","돈이 필요해."],"I have ____.","나 돈 있어.","money",["save money","spend money"]],
+    ["mom","엄마",1,["This is my mom.","I love my mom.","Mom is home."],["이분이 우리 엄마야.","나 엄마 사랑해.","엄마 집에 있어."],"This is my ____.","이분이 우리 엄마야.","mom",["my mom","love mom"]],
+    ["dad","아빠",1,["This is my dad.","I love my dad.","Dad is at work."],["이분이 우리 아빠야.","나 아빠 사랑해.","아빠 일하셔."],"This is my ____.","이분이 우리 아빠야.","dad",["my dad","love dad"]],
+    ["friend","친구",1,["He is my friend.","I have many friends.","Be my friend."],["걔는 내 친구야.","나 친구 많아.","내 친구 해."],"He is my ____.","걔는 내 친구야.","friend",["best friend","good friend"]],
+    ["teacher","선생님",1,["She is my teacher.","Ask the teacher.","The teacher is kind."],["그분이 우리 선생님이야.","선생님께 물어봐.","선생님이 친절해."],"She is my ____.","그분이 우리 선생님이야.","teacher",["my teacher","ask the teacher"]],
+    ["brother","형/오빠/남동생",1,["He is my brother.","I have one brother.","My brother is tall."],["걔는 내 형이야.","나 형 한 명 있어.","우리 형은 키가 커."],"He is my ____.","걔는 내 형이야.","brother",["my brother","big brother"]],
+    ["sister","누나/언니/여동생",1,["She is my sister.","I have two sisters.","My sister is nice."],["걔는 내 누나야.","나 누나 둘 있어.","우리 누나는 착해."],"She is my ____.","걔는 내 누나야.","sister",["my sister","little sister"]],
+    ["doctor","의사",1,["See a doctor.","She is a doctor.","The doctor is busy."],["의사한테 가봐.","그녀는 의사야.","의사 선생님 바빠."],"See a ____.","의사한테 가봐.","doctor",["see a doctor","good doctor"]],
+    ["baby","아기",1,["The baby is cute.","The baby is sleeping.","Hold the baby."],["아기가 귀여워.","아기가 자고 있어.","아기 안아."],"The ____ is cute.","아기가 귀여워.","baby",["cute baby","hold the baby"]],
+    ["boy","소년",1,["The boy is tall.","That boy is my friend.","A little boy."],["그 소년은 키가 커.","저 남자애는 내 친구야.","어린 남자애."],"The ____ is tall.","그 소년은 키가 커.","boy",["little boy","young boy"]],
+    ["girl","소녀",1,["The girl is kind.","That girl is my sister.","A little girl."],["그 소녀는 친절해.","저 여자애는 내 동생이야.","어린 여자애."],"The ____ is kind.","그 소녀는 친절해.","girl",["little girl","young girl"]],
+    ["man","남자",1,["The man is tall.","Who is that man?","A kind man."],["그 남자는 키가 커.","저 남자 누구야?","친절한 남자."],"The ____ is tall.","그 남자는 키가 커.","man",["a man","old man"]],
+    ["woman","여자",1,["The woman is nice.","Who is that woman?","A kind woman."],["그 여자는 좋은 사람이야.","저 여자 누구야?","친절한 여자."],"The ____ is nice.","그 여자는 좋은 사람이야.","woman",["a woman","young woman"]],
+    ["family","가족",1,["I love my family.","This is my family.","A big family."],["나 가족 사랑해.","이게 우리 가족이야.","대가족."],"I love my ____.","나 가족 사랑해.","family",["my family","big family"]],
+    ["home","집",1,["I go home.","I'm at home.","Come to my home."],["나 집에 가.","나 집에 있어.","우리 집에 와."],"I go ____.","나 집에 가.","home",["go home","at home"]],
+    ["school","학교",1,["I go to school.","School is fun.","After school."],["나 학교에 가.","학교 재밌어.","방과 후에."],"I go to ____.","나 학교에 가.","school",["go to school","after school"]],
+    ["room","방",1,["Clean your room.","This is my room.","The room is big."],["방 청소해.","이건 내 방이야.","방이 커."],"This is my ____.","이건 내 방이야.","room",["my room","clean the room"]],
+    ["store","가게",1,["Go to the store.","The store is open.","Buy it at the store."],["가게에 가.","가게 열었어.","가게에서 사."],"Go to the ____.","가게에 가.","store",["go to the store","open store"]],
+    ["park","공원",1,["Let's go to the park.","The park is nice.","We play at the park."],["공원에 가자.","공원이 좋아.","우리 공원에서 놀아."],"Let's go to the ____.","공원에 가자.","park",["go to the park","at the park"]],
+    ["bathroom","화장실",1,["Where is the bathroom?","I need the bathroom.","The bathroom is clean."],["화장실 어디예요?","화장실 가야 해.","화장실이 깨끗해."],"Where is the ____?","화장실 어디예요?","bathroom",["use the bathroom","clean bathroom"]],
+    ["kitchen","부엌",1,["Mom is in the kitchen.","Clean the kitchen.","The kitchen is small."],["엄마 부엌에 있어.","부엌 청소해.","부엌이 작아."],"Mom is in the ____.","엄마 부엌에 있어.","kitchen",["in the kitchen","clean kitchen"]],
+    ["hospital","병원",1,["Go to the hospital.","She is at the hospital.","The hospital is big."],["병원에 가.","그녀는 병원에 있어.","병원이 커."],"Go to the ____.","병원에 가.","hospital",["go to the hospital","big hospital"]],
+    ["shop","상점",1,["Let's go shopping.","The shop is closed.","A small shop."],["쇼핑하러 가자.","가게 문 닫았어.","작은 가게."],"The ____ is closed.","가게 문 닫았어.","shop",["small shop","coffee shop"]],
+    ["city","도시",1,["I live in the city.","The city is big.","A busy city."],["나 도시에 살아.","도시가 커.","바쁜 도시."],"I live in the ____.","나 도시에 살아.","city",["big city","busy city"]],
+    ["road","길/도로",1,["Cross the road.","The road is long.","A narrow road."],["길 건너.","길이 길어.","좁은 길."],"Cross the ____.","길 건너.","road",["cross the road","long road"]],
+    ["station","역",1,["Go to the station.","The station is near.","Meet at the station."],["역에 가.","역이 가까워.","역에서 만나."],"Go to the ____.","역에 가.","station",["go to the station","near the station"]],
+    ["big","큰",1,["It's big.","A big house.","The dog is big."],["그거 커.","큰 집.","그 개 커."],"A ____ house.","큰 집.","big",["big house","so big"]],
+    ["small","작은",1,["It's small.","A small room.","The cat is small."],["그거 작아.","작은 방.","그 고양이 작아."],"A ____ room.","작은 방.","small",["small room","very small"]],
+    ["good","좋은",1,["It's good.","A good idea.","Good job!"],["좋아.","좋은 생각.","잘했어!"],"A ____ idea.","좋은 생각.","good",["good idea","so good"]],
+    ["bad","나쁜",1,["It's bad.","A bad day.","That's bad news."],["나빠.","안 좋은 날.","안 좋은 소식이야."],"A ____ day.","안 좋은 날.","bad",["bad day","so bad"]],
+    ["fast","빠른",1,["He runs fast.","A fast car.","Too fast."],["걔 빨리 달려.","빠른 차.","너무 빨라."],"A ____ car.","빠른 차.","fast",["run fast","so fast"]],
+    ["slow","느린",1,["It's slow.","A slow train.","Walk slow."],["느려.","느린 기차.","천천히 걸어."],"A ____ train.","느린 기차.","slow",["go slow","so slow"]],
+    ["easy","쉬운",1,["It's easy.","An easy test.","Too easy."],["쉬워.","쉬운 시험.","너무 쉬워."],"An ____ test.","쉬운 시험.","easy",["so easy","easy test"]],
+    ["hard","어려운/단단한",1,["It's hard.","A hard test.","Work hard."],["어려워.","어려운 시험.","열심히 일해."],"A ____ test.","어려운 시험.","hard",["work hard","so hard"]],
+    ["new","새로운",1,["A new phone.","It's new.","My new shoes."],["새 폰.","새거야.","내 새 신발."],"A ____ phone.","새 폰.","new",["new phone","brand new"]],
+    ["old","오래된/늙은",1,["An old book.","It's old.","My old car."],["오래된 책.","오래됐어.","내 낡은 차."],"An ____ book.","오래된 책.","old",["old book","get old"]],
+    ["long","긴",1,["A long day.","It's too long.","Long hair."],["긴 하루.","너무 길어.","긴 머리."],"A ____ day.","긴 하루.","long",["long day","too long"]],
+    ["short","짧은",1,["A short break.","It's short.","Short hair."],["짧은 휴식.","짧아.","짧은 머리."],"A ____ break.","짧은 휴식.","short",["short break","too short"]],
+    ["nice","좋은/멋진",1,["Nice to meet you.","A nice day.","That's nice."],["만나서 반가워.","좋은 날.","멋지다."],"A ____ day.","좋은 날.","nice",["nice day","so nice"]],
+    ["warm","따뜻한",1,["It's warm today.","Warm water.","A warm coat."],["오늘 따뜻해.","따뜻한 물.","따뜻한 코트."],"It's ____ today.","오늘 따뜻해.","warm",["warm water","stay warm"]],
+    ["cute","귀여운",1,["The cat is cute.","So cute!","A cute baby."],["고양이가 귀여워.","너무 귀여워!","귀여운 아기."],"The cat is ____.","고양이가 귀여워.","cute",["so cute","cute baby"]],
+    ["funny","웃긴",1,["That's funny.","A funny story.","He's so funny."],["그거 웃겨.","웃긴 이야기.","걔 진짜 웃겨."],"That's ____.","그거 웃겨.","funny",["so funny","funny story"]],
+    ["pretty","예쁜",1,["She is pretty.","A pretty flower.","So pretty!"],["그녀는 예뻐.","예쁜 꽃.","너무 예뻐!"],"A ____ flower.","예쁜 꽃.","pretty",["so pretty","pretty flower"]],
+    ["free","자유로운/한가한",1,["I'm free today.","Are you free?","It's free."],["오늘 한가해.","시간 돼?","공짜야."],"I'm ____ today.","오늘 한가해.","free",["free time","it's free"]],
+    ["right","맞는/오른쪽",1,["You're right.","Turn right.","That's right."],["네 말이 맞아.","오른쪽으로 돌아.","맞아."],"You're ____.","네 말이 맞아.","right",["that's right","turn right"]],
+    ["wrong","틀린",1,["That's wrong.","The wrong answer.","Something is wrong."],["그건 틀려.","틀린 답.","뭔가 잘못됐어."],"That's ____.","그건 틀려.","wrong",["wrong answer","go wrong"]],
+    ["like","좋아하다",1,["I like it.","Do you like it?","I like dogs."],["나 그거 좋아해.","그거 좋아해?","나 개 좋아해."],"I ____ it.","나 그거 좋아해.","like",["I like","like it"]],
+    ["have","가지다",1,["I have a pen.","Do you have it?","I have time."],["나 펜 있어.","그거 있어?","나 시간 있어."],"I ____ a pen.","나 펜 있어.","have",["I have","have time"]],
+    ["see","보다",1,["I see it.","Do you see?","See you later."],["보여.","보여?","나중에 봐."],"I ____ it.","보여.","see",["I see","see you"]],
+    ["know","알다",1,["I know.","Do you know?","I don't know."],["알아.","알아?","몰라."],"I ____.","알아.","know",["I know","you know"]],
+    ["think","생각하다",1,["I think so.","What do you think?","I think it's good."],["그런 것 같아.","어떻게 생각해?","좋은 것 같아."],"I ____ so.","그런 것 같아.","think",["I think","think so"]],
+    ["say","말하다",1,["What did you say?","Say it again.","Don't say that."],["뭐라고 했어?","다시 말해.","그렇게 말하지 마."],"____ it again.","다시 말해.","say",["say it","say again"]],
+    ["make","만들다",1,["I make lunch.","Make a wish.","Let's make it."],["나 점심 만들어.","소원 빌어.","만들자."],"I ____ lunch.","나 점심 만들어.","make",["make lunch","make it"]],
+    ["use","사용하다",1,["Use a pen.","Can I use it?","Use both hands."],["펜 써.","이거 써도 돼?","두 손 다 써."],"____ a pen.","펜 써.","use",["use it","can I use"]],
+    ["call","부르다/전화하다",1,["Call me later.","Call your mom.","I'll call you."],["나중에 전화해.","엄마한테 전화해.","전화할게."],"____ me later.","나중에 전화해.","call",["call me","call you"]],
+    ["ask","묻다",1,["Ask the teacher.","Can I ask you?","Just ask."],["선생님께 물어봐.","물어봐도 돼?","그냥 물어봐."],"____ the teacher.","선생님께 물어봐.","ask",["ask the teacher","just ask"]],
+    ["show","보여주다",1,["Show me.","Show your hands.","I'll show you."],["보여줘.","손 보여줘.","보여줄게."],"____ me.","보여줘.","show",["show me","show you"]],
+    ["start","시작하다",1,["Let's start.","Start now.","The show starts."],["시작하자.","지금 시작해.","공연 시작해."],"Let's ____.","시작하자.","start",["start now","let's start"]],
+    ["finish","끝내다",1,["I finish my work.","Finish your food.","Let's finish."],["나 일 끝내.","밥 다 먹어.","끝내자."],"Finish your ____.","밥 다 먹어.","food",["finish work","finish food"]],
+    ["love","사랑하다",1,["I love you.","I love this song.","She loves cats."],["사랑해.","이 노래 너무 좋아.","그녀는 고양이를 좋아해."],"I ____ you.","사랑해.","love",["I love","love it"]],
+    ["dog","개",1,["I have a dog.","The dog is big.","Walk the dog."],["나 개 키워.","개가 커.","개 산책시켜."],"I have a ____.","나 개 키워.","dog",["a dog","walk the dog"]],
+    ["cat","고양이",1,["The cat is cute.","I love cats.","The cat sleeps."],["고양이 귀여워.","나 고양이 좋아해.","고양이가 자."],"The ____ is cute.","고양이 귀여워.","cat",["a cat","cute cat"]],
+    ["bird","새",1,["The bird sings.","A small bird.","Birds fly."],["새가 노래해.","작은 새.","새들이 날아."],"The ____ sings.","새가 노래해.","bird",["a bird","small bird"]],
+    ["fish","물고기",1,["I see a fish.","Fish swim.","I like fish."],["물고기 보여.","물고기가 헤엄쳐.","나 생선 좋아해."],"I see a ____.","물고기 보여.","fish",["a fish","catch fish"]],
+    ["rabbit","토끼",1,["The rabbit is fast.","A white rabbit.","Rabbits hop."],["토끼가 빨라.","하얀 토끼.","토끼가 깡충 뛰어."],"A white ____.","하얀 토끼.","rabbit",["a rabbit","white rabbit"]],
+    ["horse","말",1,["The horse runs.","Ride a horse.","A big horse."],["말이 달려.","말을 타.","큰 말."],"The ____ runs.","말이 달려.","horse",["ride a horse","big horse"]],
+    ["duck","오리",1,["The duck swims.","A little duck.","Ducks quack."],["오리가 헤엄쳐.","작은 오리.","오리가 꽥꽥거려."],"The ____ swims.","오리가 헤엄쳐.","duck",["a duck","little duck"]],
+    ["bear","곰",1,["The bear is big.","A brown bear.","Bears are strong."],["곰이 커.","갈색 곰.","곰은 힘이 세."],"The ____ is big.","곰이 커.","bear",["big bear","brown bear"]],
+    ["sun","해/태양",1,["The sun is bright.","Look at the sun.","The sun is hot."],["해가 밝아.","해를 봐.","해가 뜨거워."],"The ____ is bright.","해가 밝아.","sun",["the sun","in the sun"]],
+    ["moon","달",1,["The moon is bright.","Look at the moon.","A full moon."],["달이 밝아.","달을 봐.","보름달."],"The ____ is bright.","달이 밝아.","moon",["the moon","full moon"]],
+    ["rain","비",1,["It's raining.","I like rain.","Heavy rain."],["비 와.","나 비 좋아해.","폭우."],"I like ____.","나 비 좋아해.","rain",["heavy rain","in the rain"]],
+    ["snow","눈",1,["It's snowing.","White snow.","Play in the snow."],["눈 와.","하얀 눈.","눈에서 놀아."],"White ____.","하얀 눈.","snow",["white snow","in the snow"]],
+    ["wind","바람",1,["The wind is strong.","Cold wind.","Feel the wind."],["바람이 세.","찬 바람.","바람을 느껴."],"The ____ is strong.","바람이 세.","wind",["cold wind","strong wind"]],
+    ["sky","하늘",1,["The sky is blue.","Look at the sky.","A clear sky."],["하늘이 파래.","하늘을 봐.","맑은 하늘."],"The ____ is blue.","하늘이 파래.","sky",["blue sky","clear sky"]],
+    ["tree","나무",1,["A big tree.","The tree is tall.","Climb the tree."],["큰 나무.","나무가 커.","나무에 올라가."],"A big ____.","큰 나무.","tree",["big tree","tall tree"]],
+    ["flower","꽃",1,["A pretty flower.","Smell the flower.","Flowers bloom."],["예쁜 꽃.","꽃 냄새 맡아.","꽃이 펴."],"A pretty ____.","예쁜 꽃.","flower",["pretty flower","red flower"]],
+    ["rainbow","무지개",1,["Look, a rainbow!","A bright rainbow.","I see a rainbow."],["봐, 무지개야!","선명한 무지개.","무지개 보여."],"Look, a ____!","봐, 무지개야!","rainbow",["a rainbow","see a rainbow"]],
+    ["star","별",1,["Look at the stars.","A bright star.","Stars at night."],["별 봐.","밝은 별.","밤하늘 별."],"A bright ____.","밝은 별.","star",["bright star","see stars"]],
+    ["red","빨강",1,["A red apple.","I like red.","Her dress is red."],["빨간 사과.","나 빨강 좋아해.","그녀 드레스가 빨개."],"A ____ apple.","빨간 사과.","red",["red apple","wear red"]],
+    ["blue","파랑",1,["The sky is blue.","A blue car.","I like blue."],["하늘이 파래.","파란 차.","나 파랑 좋아해."],"The sky is ____.","하늘이 파래.","blue",["blue sky","light blue"]],
+    ["green","초록",1,["Green grass.","A green light.","I like green."],["초록 잔디.","초록불.","나 초록 좋아해."],"____ grass.","초록 잔디.","green",["green light","green grass"]],
+    ["yellow","노랑",1,["A yellow banana.","The sun is yellow.","I like yellow."],["노란 바나나.","해는 노래.","나 노랑 좋아해."],"A ____ banana.","노란 바나나.","yellow",["yellow banana","bright yellow"]],
+    ["white","하양",1,["White snow.","A white shirt.","I like white."],["하얀 눈.","하얀 셔츠.","나 하양 좋아해."],"____ snow.","하얀 눈.","white",["white snow","white shirt"]],
+    ["black","검정",1,["A black cat.","Black shoes.","I like black."],["검은 고양이.","검은 신발.","나 검정 좋아해."],"A ____ cat.","검은 고양이.","black",["black cat","black shoes"]],
+    ["today","오늘",1,["It's hot today.","Today is Monday.","See you today."],["오늘 더워.","오늘은 월요일이야.","오늘 봐."],"It's hot ____.","오늘 더워.","today",["today is","see you today"]],
+    ["tomorrow","내일",1,["See you tomorrow.","Tomorrow is Friday.","Do it tomorrow."],["내일 봐.","내일은 금요일.","내일 해."],"See you ____.","내일 봐.","tomorrow",["tomorrow is","see you tomorrow"]],
+    ["morning","아침",1,["Good morning.","In the morning.","Every morning."],["좋은 아침.","아침에.","매일 아침."],"Good ____.","좋은 아침.","morning",["good morning","in the morning"]],
+    ["night","밤",1,["Good night.","At night.","A dark night."],["잘 자.","밤에.","어두운 밤."],"Good ____.","잘 자.","night",["good night","at night"]],
+    ["time","시간",1,["What time is it?","I have time.","It's time to go."],["몇 시야?","나 시간 있어.","갈 시간이야."],"What ____ is it?","몇 시야?","time",["on time","have time"]],
+    ["day","날/하루",1,["Have a good day.","A long day.","Every day."],["좋은 하루 보내.","긴 하루.","매일."],"Have a good ____.","좋은 하루 보내.","day",["good day","every day"]],
+    ["week","주",1,["This week.","A busy week.","See you next week."],["이번 주.","바쁜 주.","다음 주에 봐."],"This ____.","이번 주.","week",["this week","next week"]],
+    ["class","수업",1,["Math class.","Class starts now.","I have class."],["수학 수업.","수업 시작해.","나 수업 있어."],"Math ____.","수학 수업.","class",["math class","take a class"]],
+    ["test","시험",1,["A hard test.","I have a test.","Pass the test."],["어려운 시험.","나 시험 있어.","시험 통과해."],"A hard ____.","어려운 시험.","test",["hard test","pass the test"]],
+    ["homework","숙제",1,["Do your homework.","I have homework.","Finish your homework."],["숙제 해.","나 숙제 있어.","숙제 끝내."],"Do your ____.","숙제 해.","homework",["do homework","finish homework"]],
+    ["hand","손",1,["Wash your hands.","Raise your hand.","Hold my hand."],["손 씻어.","손 들어.","내 손 잡아."],"Wash your ____s.","손 씻어.","hand",["wash hands","raise your hand"]],
+    ["eye","눈",1,["Close your eyes.","Open your eyes.","Big eyes."],["눈 감아.","눈 떠.","큰 눈."],"Close your ____s.","눈 감아.","eye",["close your eyes","big eyes"]],
+    ["face","얼굴",1,["Wash your face.","A happy face.","Her face is red."],["세수해.","행복한 얼굴.","그녀 얼굴이 빨개."],"Wash your ____.","세수해.","face",["wash your face","happy face"]],
+    ["foot","발",1,["My foot hurts.","On foot.","Big feet."],["발이 아파.","걸어서.","큰 발."],"My ____ hurts.","발이 아파.","foot",["on foot","my foot"]],
+    ["head","머리",1,["My head hurts.","Nod your head.","Use your head."],["머리가 아파.","고개 끄덕여.","머리 좀 써."],"My ____ hurts.","머리가 아파.","head",["my head","use your head"]],
+    ["name","이름",1,["What's your name?","My name is Sam.","Write your name."],["이름이 뭐야?","내 이름은 샘이야.","이름 써."],"What's your ____?","이름이 뭐야?","name",["your name","my name"]],
+    ["song","노래",1,["A nice song.","Sing a song.","I love this song."],["좋은 노래.","노래 불러.","이 노래 너무 좋아."],"Sing a ____.","노래 불러.","song",["a song","sing a song"]],
+    ["game","게임",1,["Let's play a game.","A fun game.","Win the game."],["게임하자.","재밌는 게임.","게임 이겨."],"Let's play a ____.","게임하자.","game",["play a game","fun game"]],
+    ["picture","그림/사진",1,["Draw a picture.","Take a picture.","A nice picture."],["그림 그려.","사진 찍어.","멋진 사진."],"Take a ____.","사진 찍어.","picture",["take a picture","draw a picture"]],
+    ["letter","편지/글자",1,["Write a letter.","I got a letter.","The letter A."],["편지 써.","편지 받았어.","글자 A."],"Write a ____.","편지 써.","letter",["write a letter","got a letter"]],
+    ["color","색",1,["My favorite color.","What color is it?","A bright color."],["내가 좋아하는 색.","무슨 색이야?","밝은 색."],"What ____ is it?","무슨 색이야?","color",["favorite color","bright color"]],
+    ["number","숫자",1,["My phone number.","A big number.","Count the numbers."],["내 전화번호.","큰 숫자.","숫자 세."],"My phone ____.","내 전화번호.","number",["phone number","big number"]],
+    ["place","장소",1,["A nice place.","This place is busy.","Save my place."],["좋은 곳.","여기 붐벼.","내 자리 맡아줘."],"A nice ____.","좋은 곳.","place",["nice place","this place"]],
+    ["thing","것/물건",1,["What's that thing?","A small thing.","One more thing."],["저게 뭐야?","작은 것.","하나 더."],"What's that ____?","저게 뭐야?","thing",["one thing","small thing"]],
+    ["idea","생각/아이디어",1,["A good idea.","I have an idea.","No idea."],["좋은 생각.","나 생각 있어.","몰라."],"A good ____.","좋은 생각.","idea",["good idea","have an idea"]],
+    ["question","질문",1,["A good question.","Ask a question.","I have a question."],["좋은 질문.","질문해.","질문 있어."],"Ask a ____.","질문해.","question",["ask a question","good question"]],
+    ["answer","답",1,["The right answer.","Give an answer.","I know the answer."],["정답.","답을 줘.","답 알아."],"The right ____.","정답.","answer",["right answer","give an answer"]],
+    ["problem","문제",1,["No problem.","A big problem.","Solve the problem."],["문제없어.","큰 문제.","문제를 풀어."],"No ____.","문제없어.","problem",["no problem","big problem"]],
+    ["story","이야기",1,["Tell me a story.","A funny story.","A long story."],["이야기 해줘.","웃긴 이야기.","긴 이야기."],"Tell me a ____.","이야기 해줘.","story",["tell a story","funny story"]],
+    ["gift","선물",1,["A nice gift.","Open the gift.","Thanks for the gift."],["좋은 선물.","선물 열어.","선물 고마워."],"A nice ____.","좋은 선물.","gift",["nice gift","open the gift"]],
+    ["smart","똑똑한",1,["She is smart.","A smart kid.","So smart!"],["그녀는 똑똑해.","똑똑한 아이.","정말 똑똑해!"],"She is ____.","그녀는 똑똑해.","smart",["so smart","smart kid"]],
+    ["kind","친절한",1,["She is kind.","A kind person.","Be kind."],["그녀는 친절해.","친절한 사람.","친절하게 대해."],"She is ____.","그녀는 친절해.","kind",["be kind","kind person"]],
+    ["strong","강한",1,["He is strong.","A strong man.","Stay strong."],["그는 힘이 세.","힘센 사람.","힘내."],"He is ____.","그는 힘이 세.","strong",["so strong","strong man"]],
+    ["tall","키 큰",1,["He is tall.","A tall tree.","So tall!"],["그는 키가 커.","큰 나무.","엄청 크다!"],"He is ____.","그는 키가 커.","tall",["so tall","tall tree"]],
+    ["dark","어두운",1,["It's dark.","A dark room.","Dark outside."],["어두워.","어두운 방.","밖이 어두워."],"It's ____.","어두워.","dark",["dark room","get dark"]],
+    ["bright","밝은",1,["The light is bright.","A bright day.","So bright!"],["불이 밝아.","화창한 날.","너무 밝아!"],"The light is ____.","불이 밝아.","bright",["so bright","bright light"]]
+  ],
+  mid:[
+["receipt","영수증",2,["Can I get a receipt?","Keep the receipt.","I lost my receipt."],["영수증 받을 수 있을까요?","영수증 보관하세요.","영수증을 잃어버렸어요."],"Can I get a ____?","영수증 받을 수 있을까요?","receipt",["get a receipt","keep the receipt"]],
+    ["refund","환불",2,["Can I get a refund?","I need a refund.","The refund was approved."],["환불 받을 수 있을까요?","환불이 필요해요.","환불이 승인됐어요."],"Can I get a ____?","환불 받을 수 있을까요?","refund",["get a refund","refund policy"]],
+    ["exchange","교환하다 / 교환",2,["Can I exchange this?","I need an exchange.","They exchange items here."],["이거 교환할 수 있나요?","교환이 필요해요.","여기서 물건을 교환해요."],"Can I ____ this?","이거 교환할 수 있나요?","exchange",["exchange this","exchange an item"]],
+    ["reservation","예약",2,["I have a reservation.","Can I make a reservation?","The reservation is under Kim."],["예약했어요.","예약할 수 있을까요?","예약은 김으로 되어 있어요."],"I have a ____.","예약했어요.","reservation",["make a reservation","have a reservation"]],
+    ["appointment","예약 / 약속",2,["I have an appointment.","Can I change my appointment?","The appointment is at three."],["예약이 있어요.","예약을 바꿀 수 있나요?","예약은 3시예요."],"I have an ____.","예약이 있어요.","appointment",["make an appointment","change an appointment"]],
+    ["delay","지연 / 지연되다",2,["There is a delay.","My flight was delayed.","Sorry for the delay."],["지연이 있어요.","비행기가 지연됐어요.","늦어서 죄송해요."],"There is a ____.","지연이 있어요.","delay",["flight delay","sorry for the delay"]],
+    ["aisle","통로 / 진열대",2,["It's in aisle five.","Which aisle is rice in?","Walk down this aisle."],["5번 통로에 있어요.","쌀은 어느 통로에 있어요?","이 통로로 내려가세요."],"It's in ____ five.","5번 통로에 있어요.","aisle",["aisle five","grocery aisle"]],
+    ["checkout","계산대 / 결제",2,["Go to checkout.","The checkout line is long.","Pay at checkout."],["계산대로 가세요.","계산 줄이 길어요.","계산대에서 결제하세요."],"Go to ____.","계산대로 가세요.","checkout",["checkout line","pay at checkout"]],
+    ["confirm","확인하다",2,["Can you confirm it?","I need to confirm the time.","Please confirm your name."],["그거 확인해 주실래요?","시간을 확인해야 해요.","이름을 확인해 주세요."],"Can you ____ it?","그거 확인해 주실래요?","confirm",["confirm it","confirm the time"]],
+    ["cancel","취소하다",2,["I need to cancel.","Can I cancel my order?","They canceled the meeting."],["취소해야 해요.","주문을 취소할 수 있나요?","그들이 회의를 취소했어요."],"I need to ____.","취소해야 해요.","cancel",["cancel an order","cancel a meeting"]],
+    ["reschedule","일정을 변경하다",2,["Can we reschedule?","I need to reschedule my appointment.","Let's reschedule it."],["일정을 바꿀 수 있을까요?","예약 일정을 바꿔야 해요.","그거 일정 바꾸자."],"Can we ____?","일정을 바꿀 수 있을까요?","reschedule",["reschedule it","reschedule an appointment"]],
+    ["recommend","추천하다",2,["What do you recommend?","Can you recommend a dish?","I recommend this one."],["뭐 추천하세요?","음식 하나 추천해 주실래요?","이걸 추천해요."],"What do you ____?","뭐 추천하세요?","recommend",["recommend a dish","recommend this"]],
+    ["prescription","처방전",2,["I have a prescription.","Do I need a prescription?","The prescription is ready."],["처방전이 있어요.","처방전이 필요한가요?","처방전이 준비됐어요."],"I have a ____.","처방전이 있어요.","prescription",["need a prescription","fill a prescription"]],
+    ["allergy","알레르기",2,["I have a food allergy.","Do you have any allergies?","This allergy is serious."],["음식 알레르기가 있어요.","알레르기 있으세요?","이 알레르기는 심각해요."],"I have a food ____.","음식 알레르기가 있어요.","allergy",["food allergy","serious allergy"]],
+    ["discount","할인",2,["Is there a discount?","Can I use this discount?","The discount ends today."],["할인이 있나요?","이 할인 쓸 수 있나요?","할인은 오늘 끝나요."],"Is there a ____?","할인이 있나요?","discount",["student discount","use a discount"]],
+    ["fill out","작성하다",2,["Please fill out this form.","I need to fill out the form.","Can you fill this out?"],["이 양식을 작성해 주세요.","양식을 작성해야 해요.","이거 작성해 줄래요?"],"Please ____ this form.","이 양식을 작성해 주세요.","fill out",["fill out a form","fill this out"]],
+    ["pick up","찾아가다 / 태우다",2,["I need to pick up my order.","Can you pick me up?","Pick up the package."],["주문한 걸 찾아가야 해요.","나 데리러 와줄래?","소포를 찾아가세요."],"I need to ____ my order.","주문한 걸 찾아가야 해요.","pick up",["pick up an order","pick me up"]],
+    ["drop off","맡기다 / 내려주다",2,["I need to drop off a package.","Can you drop me off?","Drop it off here."],["소포를 맡겨야 해요.","나 내려줄래?","여기에 맡기세요."],"I need to ____ a package.","소포를 맡겨야 해요.","drop off",["drop off a package","drop me off"]],
+    ["look for","찾다",2,["I'm looking for shoes.","What are you looking for?","Let's look for a seat."],["신발을 찾고 있어요.","무엇을 찾고 있나요?","자리를 찾아보자."],"I'm ____ shoes.","신발을 찾고 있어요.","looking for",["look for shoes","look for a seat"]],
+    ["deal with","처리하다 / 다루다",2,["I'll deal with it.","How do you deal with stress?","We dealt with the problem."],["내가 처리할게.","스트레스를 어떻게 다뤄?","우리는 문제를 처리했어요."],"I'll ____ it.","내가 처리할게.","deal with",["deal with it","deal with stress"]],
+    ["run out of","~이 다 떨어지다",2,["We ran out of milk.","Don't run out of time.","I ran out of money."],["우유가 다 떨어졌어.","시간 다 쓰지 마.","돈이 다 떨어졌어."],"We ran ____ of milk.","우유가 다 떨어졌어.","out",["run out of time","run out of money"]],
+    ["make sure","꼭 ~하다/확인하다",2,["Make sure you call me.","Make sure it's locked.","I'll make sure."],["꼭 전화해.","잠겼는지 확인해.","내가 확인할게."],"Make ____ you call me.","꼭 전화해.","sure",["make sure of","just make sure"]],
+    ["schedule","일정",2,["What's your schedule?","It's a busy schedule.","Check the schedule."],["일정이 어떻게 돼?","바쁜 일정이야.","일정 확인해."],"What's your ____?","일정이 어떻게 돼?","schedule",["busy schedule","tight schedule"]],
+    ["figure out","알아내다",2,["I'll figure it out.","Let's figure this out.","Can you figure it out?"],["내가 알아낼게.","이거 같이 알아보자.","알아낼 수 있어?"],"I'll figure it ____.","내가 알아낼게.","out",["figure out how","figure it out"]],
+    ["available","이용 가능한",2,["Is it available?","I'm available now.","No rooms available."],["이거 돼요?","지금 시간 돼요.","빈 방이 없어요."],"Is it ____?","이거 돼요?","available",["not available","available now"]],
+    ["turn on","켜다",2,["Turn on the light.","Can you turn it on?","Turn on the TV."],["불 켜.","켜줄래?","TV 켜."],"Turn ____ the light.","불 켜.","on",["turn on","turn it on"]],
+    ["turn off","끄다",2,["Turn off the light.","Turn it off.","Turn off your phone."],["불 꺼.","꺼.","폰 꺼."],"Turn ____ the light.","불 꺼.","off",["turn off","turn it off"]],
+    ["give up","포기하다",2,["Don't give up.","I won't give up.","She gave up."],["포기하지 마.","나 포기 안 해.","그녀는 포기했어."],"Don't give ____.","포기하지 마.","up",["give up","never give up"]],
+    ["get up","일어나다",2,["I get up early.","Get up now.","Hard to get up."],["나 일찍 일어나.","지금 일어나.","일어나기 힘들어."],"I get ____ early.","나 일찍 일어나.","up",["get up early","get up now"]],
+    ["wait for","~을 기다리다",2,["Wait for me.","I'm waiting for the bus.","Don't wait for me."],["날 기다려.","버스 기다려.","날 기다리지 마."],"Wait ____ me.","날 기다려.","for",["wait for","waiting for"]],
+    ["take care of","돌보다",2,["Take care of yourself.","I take care of my dog.","Who takes care of it?"],["몸 잘 챙겨.","나 개를 돌봐.","누가 그걸 돌봐?"],"Take care ____ yourself.","몸 잘 챙겨.","of",["take care of","care for"]],
+    ["on time","제시간에",2,["Be on time.","The bus is on time.","Arrive on time."],["제시간에 와.","버스 제시간에 와.","정시에 도착해."],"Be ____ time.","제시간에 와.","on",["on time","right on time"]],
+    ["in charge","담당인",2,["Who's in charge?","I'm in charge here.","She's in charge."],["누가 담당이에요?","제가 여기 담당이에요.","그녀가 담당이야."],"Who's in ____?","누가 담당이에요?","charge",["in charge of","take charge"]],
+    ["by the way","그런데",2,["By the way, where are you?","Oh, by the way.","By the way, thanks."],["그런데 어디야?","아, 그런데.","그런데, 고마워."],"____ the way, thanks.","그런데, 고마워.","by",["by the way"]],
+    ["right away","즉시",2,["I'll do it right away.","Come right away.","She left right away."],["바로 할게.","바로 와.","그녀는 바로 떠났어."],"I'll do it right ____.","바로 할게.","away",["right away","do it right away"]],
+    ["at least","적어도",2,["At least try.","It costs at least ten.","At least we're safe."],["적어도 시도는 해봐.","적어도 10이야.","적어도 우린 안전해."],"At ____ try.","적어도 시도는 해봐.","least",["at least","at least once"]],
+    ["instead of","~대신에",2,["Tea instead of coffee.","Walk instead of drive.","Instead of waiting, go."],["커피 대신 차.","운전 대신 걸어.","기다리는 대신 가."],"Tea ____ of coffee.","커피 대신 차.","instead",["instead of"]],
+    ["a few","약간의",2,["A few minutes.","Just a few.","A few people."],["몇 분.","조금만.","몇 명."],"A ____ minutes.","몇 분.","few",["a few","quite a few"]],
+    ["manage","해내다/관리하다",2,["I can manage.","How do you manage?","She manages the team."],["나 할 수 있어.","어떻게 해내?","그녀가 팀을 관리해."],"I can ____.","나 할 수 있어.","manage",["manage to","manage it"]],
+    ["decision","결정",2,["It's your decision.","Make a decision.","A hard decision."],["네가 결정해.","결정을 내려.","어려운 결정."],"Make a ____.","결정을 내려.","decision",["make a decision","hard decision"]],
+    ["advice","조언",2,["Give me advice.","Good advice.","I need advice."],["조언 좀 해줘.","좋은 조언.","조언이 필요해."],"Give me ____.","조언 좀 해줘.","advice",["give advice","good advice"]],
+    ["hand in","제출하다",2,["Hand in your work.","Hand it in now.","I handed in the form."],["과제 제출해.","지금 제출해.","양식을 제출했어."],"Hand ____ your work.","과제 제출해.","in",["hand in","hand it in"]],
+    ["show up","나타나다",2,["He didn't show up.","Show up on time.","She showed up late."],["걔 안 왔어.","제시간에 와.","그녀는 늦게 왔어."],"He didn't show ____.","걔 안 왔어.","up",["show up","show up late"]],
+    ["end up","결국 ~하게 되다",2,["We ended up walking.","Don't end up late.","I ended up here."],["결국 걸어갔어.","결국 늦지 마.","결국 여기 왔어."],"We ended ____ walking.","결국 걸어갔어.","up",["end up","end up doing"]],
+    ["point out","지적하다",2,["Let me point out.","She pointed out the error.","Point it out."],["짚어볼게.","그녀가 오류를 지적했어.","그거 짚어줘."],"Let me point ____.","짚어볼게.","out",["point out","point it out"]],
+    ["set up","설치하다/마련하다",2,["Set up the meeting.","I'll set it up.","Set up the tent."],["회의 잡아.","내가 준비할게.","텐트 쳐."],"Set ____ the meeting.","회의 잡아.","up",["set up","set it up"]],
+    ["on purpose","일부러",2,["I didn't do it on purpose.","He did it on purpose.","Not on purpose."],["일부러 그런 거 아니야.","걔 일부러 그랬어.","일부러는 아니야."],"I didn't do it on ____.","일부러 그런 거 아니야.","purpose",["on purpose"]],
+    ["get along","잘 지내다",2,["We get along well.","Do you get along?","They don't get along."],["우리 잘 지내.","잘 지내?","걔네 사이 안 좋아."],"We get ____ well.","우리 잘 지내.","along",["get along","get along with"]]
+  ],
+  high:[
+["efficient","효율적인",3,["This is more efficient.","We need an efficient plan.","She works efficiently."],["이게 더 효율적이에요.","효율적인 계획이 필요해요.","그녀는 효율적으로 일해요."],"This is more ____.","이게 더 효율적이에요.","efficient",["efficient plan","work efficiently"]],
+    ["reliable","믿을 만한",3,["This source is reliable.","He's very reliable.","We need reliable data."],["이 출처는 믿을 만해요.","그는 아주 믿을 만해요.","믿을 만한 데이터가 필요해요."],"This source is ____.","이 출처는 믿을 만해요.","reliable",["reliable source","reliable data"]],
+    ["inconsistent","일관성 없는",3,["The results are inconsistent.","His schedule is inconsistent.","That answer feels inconsistent."],["결과가 일관성이 없어요.","그의 일정은 들쭉날쭉해요.","그 답은 앞뒤가 안 맞는 느낌이에요."],"The results are ____.","결과가 일관성이 없어요.","inconsistent",["inconsistent results","inconsistent schedule"]],
+    ["clarify","명확히 하다",3,["Can you clarify that?","Let me clarify my point.","We should clarify the rules."],["그걸 명확히 해 주실래요?","제 요점을 명확히 할게요.","규칙을 명확히 해야 해요."],"Can you ____ that?","그걸 명확히 해 주실래요?","clarify",["clarify that","clarify the rules"]],
+    ["prioritize","우선순위를 두다",3,["We should prioritize safety.","Prioritize the urgent tasks.","I need to prioritize better."],["안전을 우선해야 해요.","긴급한 일을 우선하세요.","우선순위를 더 잘 정해야 해요."],"We should ____ safety.","안전을 우선해야 해요.","prioritize",["prioritize safety","prioritize tasks"]],
+    ["assumption","가정 / 추측",3,["That's a risky assumption.","My assumption was wrong.","Don't make that assumption."],["그건 위험한 가정이에요.","제 추측이 틀렸어요.","그런 가정은 하지 마세요."],"That's a risky ____.","그건 위험한 가정이에요.","assumption",["risky assumption","make an assumption"]],
+    ["perspective","관점",3,["I see your perspective.","From my perspective, it's fair.","That changed my perspective."],["네 관점을 이해해요.","제 관점에서는 공정해요.","그게 제 관점을 바꿨어요."],"I see your ____.","네 관점을 이해해요.","perspective",["my perspective","change perspective"]],
+    ["compromise","타협하다 / 타협",3,["Can we compromise?","This is a fair compromise.","They compromised on the price."],["타협할 수 있을까요?","이건 공정한 타협이에요.","그들은 가격에서 타협했어요."],"Can we ____?","타협할 수 있을까요?","compromise",["fair compromise","compromise on price"]],
+    ["feasible","실현 가능한",3,["That plan seems feasible.","Is this feasible by Friday?","We need a feasible option."],["그 계획은 가능해 보여요.","금요일까지 가능할까요?","가능한 선택지가 필요해요."],"That plan seems ____.","그 계획은 가능해 보여요.","feasible",["feasible plan","feasible option"]],
+    ["subtle","미묘한",3,["There's a subtle difference.","The change is subtle.","That was a subtle hint."],["미묘한 차이가 있어요.","변화가 미묘해요.","그건 은근한 힌트였어요."],"There's a ____ difference.","미묘한 차이가 있어요.","subtle",["subtle difference","subtle hint"]],
+    ["hassle","번거로운 일",3,["It's a hassle.","That sounds like a hassle.","Avoid the extra hassle."],["그거 번거로워요.","그거 번거로워 보이네요.","추가 번거로움은 피하세요."],"It's a ____.","그거 번거로워요.","hassle",["extra hassle","such a hassle"]],
+    ["nuanced","뉘앙스가 있는 / 섬세한",3,["It's a nuanced issue.","Her answer was nuanced.","We need a nuanced approach."],["그건 미묘한 문제예요.","그녀의 답은 섬세했어요.","섬세한 접근이 필요해요."],"It's a ____ issue.","그건 미묘한 문제예요.","nuanced",["nuanced issue","nuanced answer"]],
+    ["skeptical","회의적인",3,["I'm skeptical about it.","She sounded skeptical.","They were skeptical at first."],["그것에 대해 회의적이에요.","그녀는 회의적으로 들렸어요.","그들은 처음엔 회의적이었어요."],"I'm ____ about it.","그것에 대해 회의적이에요.","skeptical",["skeptical about","sound skeptical"]],
+    ["tentative","잠정적인 / 머뭇거리는",3,["This is a tentative plan.","The date is tentative.","He gave a tentative answer."],["이건 잠정적인 계획이에요.","날짜는 잠정적이에요.","그는 조심스러운 답을 했어요."],"This is a ____ plan.","이건 잠정적인 계획이에요.","tentative",["tentative plan","tentative date"]],
+    ["concise","간결한",3,["Keep it concise.","Her summary was concise.","I need a concise answer."],["간결하게 해 주세요.","그녀의 요약은 간결했어요.","간결한 답이 필요해요."],"Keep it ____.","간결하게 해 주세요.","concise",["concise answer","keep it concise"]],
+    ["follow through","끝까지 해내다",3,["You need to follow through.","Did they follow through?","I always follow through."],["끝까지 해내야 해요.","그들이 끝까지 했나요?","저는 항상 끝까지 해내요."],"You need to ____.","끝까지 해내야 해요.","follow through",["follow through","follow through on it"]],
+    ["bring up","꺼내다 / 언급하다",3,["Don't bring it up now.","Can I bring up one issue?","She brought up the budget."],["지금 그 얘기 꺼내지 마세요.","문제 하나 꺼내도 될까요?","그녀가 예산 얘기를 꺼냈어요."],"Don't ____ it now.","지금 그 얘기 꺼내지 마세요.","bring up",["bring up an issue","bring it up"]],
+    ["on the fence","결정을 못 한",3,["I'm on the fence.","She's still on the fence.","We're on the fence about it."],["저는 아직 결정 못 했어요.","그녀는 아직 고민 중이에요.","우리는 그걸 두고 고민 중이에요."],"I'm ____.","저는 아직 결정 못 했어요.","on the fence",["be on the fence","still on the fence"]],
+    ["off the cuff","즉석에서",3,["He answered off the cuff.","Don't decide off the cuff.","It was an off-the-cuff comment."],["그는 즉석에서 답했어요.","즉석에서 결정하지 마세요.","그건 즉흥적인 말이었어요."],"He answered ____.","그는 즉석에서 답했어요.","off the cuff",["off the cuff","off-the-cuff comment"]],
+    ["take into account","고려하다",3,["Take the cost into account.","We should take that into account.","Did you take traffic into account?"],["비용을 고려하세요.","그걸 고려해야 해요.","교통 상황을 고려했나요?"],"We should ____.","그걸 고려해야 해요.","take that into account",["take into account","take cost into account"]],
+    ["reluctant","꺼리는/망설이는",3,["He was reluctant to go.","I'm reluctant to agree.","She seemed reluctant."],["그는 가기를 꺼렸어.","동의하기 망설여져.","그녀는 망설이는 것 같았어."],"He was ____ to go.","그는 가기를 꺼렸어.","reluctant",["reluctant to","somewhat reluctant"]],
+    ["overwhelmed","압도된/벅찬",3,["I feel overwhelmed.","She was overwhelmed with work.","Don't get overwhelmed."],["벅차게 느껴져.","그녀는 일에 치였어.","너무 부담 갖지 마."],"I feel ____.","벅차게 느껴져.","overwhelmed",["overwhelmed with","feel overwhelmed"]],
+    ["come up with","생각해내다",3,["Come up with a plan.","I came up with an idea.","Can you come up with one?"],["계획을 생각해내.","아이디어가 떠올랐어.","하나 생각해낼 수 있어?"],"I came ____ with an idea.","아이디어가 떠올랐어.","up",["come up with a plan","come up with ideas"]],
+    ["tedious","지루한/따분한",3,["It's a tedious task.","The meeting was tedious.","Such tedious work."],["지루한 일이야.","회의가 따분했어.","정말 따분한 작업이야."],"It's a ____ task.","지루한 일이야.","tedious",["tedious task","tedious process"]],
+    ["keep up with","~을 따라잡다",3,["I can't keep up with the news.","Keep up with the others.","Hard to keep up with him."],["뉴스를 못 따라가겠어.","다른 사람들 따라가.","그를 따라잡기 힘들어."],"I can't keep ____ with the news.","뉴스를 못 따라가겠어.","up",["keep up with","hard to keep up"]],
+    ["meticulous","꼼꼼한",3,["He's meticulous.","Meticulous work.","She's meticulous about details."],["그는 꼼꼼해.","꼼꼼한 작업.","그녀는 세부사항에 꼼꼼해."],"He's ____.","그는 꼼꼼해.","meticulous",["meticulous work","meticulous about"]],
+    ["ambivalent","양가적인",3,["I'm ambivalent about it.","She felt ambivalent.","An ambivalent answer."],["그것에 대해 마음이 복잡해.","그녀는 양가감정을 느꼈어.","애매한 대답."],"I'm ____ about it.","그것에 대해 마음이 복잡해.","ambivalent",["ambivalent about","feel ambivalent"]],
+    ["handle","처리하다/다루다",3,["I can handle it.","Handle with care.","How do you handle this?"],["내가 처리할 수 있어.","조심히 다뤄.","이거 어떻게 처리해?"],"I can ____ it.","내가 처리할 수 있어.","handle",["handle it","handle with care"]],
+    ["nuance","뉘앙스/미묘한 차이",3,["A slight nuance.","The nuance matters.","Miss the nuance."],["미묘한 차이.","뉘앙스가 중요해.","뉘앙스를 놓치다."],"A slight ____.","미묘한 차이.","nuance",["subtle nuance","miss the nuance"]],
+    ["inevitable","불가피한",3,["It was inevitable.","An inevitable change.","Change is inevitable."],["불가피했어.","피할 수 없는 변화.","변화는 불가피해."],"It was ____.","불가피했어.","inevitable",["inevitable change","seem inevitable"]],
+    ["straightforward","간단명료한",3,["It's straightforward.","A straightforward answer.","Keep it straightforward."],["간단명료해.","명쾌한 대답.","간단하게 해."],"It's ____.","간단명료해.","straightforward",["straightforward answer","keep it straightforward"]],
+    ["cope with","~에 대처하다",3,["How do you cope with stress?","I can cope with it.","Hard to cope with."],["스트레스를 어떻게 견뎌?","나 견딜 수 있어.","견디기 힘들어."],"How do you cope ____ stress?","스트레스를 어떻게 견뎌?","with",["cope with","cope with stress"]],
+    ["anticipate","예상하다",3,["I anticipate problems.","We didn't anticipate this.","Anticipate the result."],["문제를 예상해.","이건 예상 못 했어.","결과를 예상해."],"I ____ problems.","문제를 예상해.","anticipate",["anticipate problems","as anticipated"]],
+    ["thorough","철저한",3,["A thorough check.","Be thorough.","A thorough review."],["철저한 점검.","철저히 해.","꼼꼼한 검토."],"A ____ check.","철저한 점검.","thorough",["thorough check","be thorough"]],
+    ["resilient","회복력 있는",3,["She is resilient.","A resilient team.","Stay resilient."],["그녀는 회복력이 강해.","강인한 팀.","꿋꿋해."],"She is ____.","그녀는 회복력이 강해.","resilient",["resilient team","stay resilient"]]
+  ]
+};
+function starterExtraWords(key){
+  return (STARTER_EXTRA_ROWS[key]||[]).map(r=>({
+    word:r[0], ko:r[1], diff:r[2],
+    examples:(r[3]||[]).map((en,i)=>({en:en, ko:(r[4]&&r[4][i])||""})),
+    blank:{en:r[5], ko:r[6], answer:r[7]},
+    colloc:r[8]||[]
+  }));
+}
+function vocabWordKey(w){ return String((w&&w.word)||"").toLowerCase().replace(/\s+/g," ").trim(); }
+function uniqueVocabWords(list){
+  const seen={};
+  return (list||[]).filter(w=>{ const k=vocabWordKey(w); if(!k||seen[k]) return false; seen[k]=1; return true; });
+}
+function shuffleVocab(list){
+  const a=(list||[]).slice();
+  for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function seedVocabWords(){
+  const full=[];
+  Object.values(SEED_VOCAB).forEach(sets=>sets.forEach(s=>s.forEach(w=>full.push(w))));
+  return full;
+}
+const VOCAB_SET_SIZE=12;
 function starterSet(){
   const lvl=state.lvl||1;
-  const band = lvl<=3 ? STARTER_VOCAB.low : lvl<=6 ? STARTER_VOCAB.mid : STARTER_VOCAB.high;
-  // 최근 본 단어 제외하고 셔플
-  let pool=band.filter(w=>!vocabSeenRecent.includes(String(w.word).toLowerCase()));
-  // band가 seen으로 거의 소진되면 다른 밴드 + 시드 풀에서 안 본 것 추가 (다양성 확보)
-  if(pool.length<8){
-    const others=[]; [STARTER_VOCAB.low,STARTER_VOCAB.mid,STARTER_VOCAB.high].forEach(arr=>arr.forEach(w=>others.push(w)));
-    Object.values(SEED_VOCAB).forEach(sets=>sets.forEach(s=>s.forEach(w=>others.push(w))));
-    const have=new Set(pool.map(p=>String(p.word).toLowerCase()));
-    const extra=others.filter(w=>!vocabSeenRecent.includes(String(w.word).toLowerCase()) && !have.has(String(w.word).toLowerCase()));
-    pool=pool.concat(extra);
+  const bandKey = lvl<=3 ? "low" : lvl<=6 ? "mid" : "high";
+  const band = (STARTER_VOCAB[bandKey]||[]).concat(starterExtraWords(bandKey));
+  const currentThemeSeeds = state.vocabTheme && SEED_VOCAB[state.vocabTheme.id]
+    ? SEED_VOCAB[state.vocabTheme.id].flat()
+    : [];
+  const all = uniqueVocabWords(band.concat(currentThemeSeeds).concat(seedVocabWords()));
+  const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
+  let pool=all.filter(w=>!recent.has(vocabWordKey(w)));
+  if(pool.length<VOCAB_SET_SIZE){
+    const already=new Set(pool.map(vocabWordKey));
+    const recycle=all.filter(w=>!already.has(vocabWordKey(w)));
+    const rotKey="speakingroom:vstarter:"+bandKey;
+    const offset=(hGet(rotKey,0)||0)%Math.max(1,recycle.length);
+    const rotated=recycle.slice(offset).concat(recycle.slice(0,offset));
+    hSet(rotKey, offset+VOCAB_SET_SIZE);
+    pool=pool.concat(rotated);
   }
-  let use=(pool.length>=3?pool:band).slice();
-  for(let i=use.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [use[i],use[j]]=[use[j],use[i]]; }
-  // 세션 내 같은 단어 중복 제거
-  const seen=new Set(); const uniq=[];
-  for(const w of use){ const k=String(w.word).toLowerCase(); if(!seen.has(k)){ seen.add(k); uniq.push(w); } }
-  return uniq.slice(0,5);
+  return shuffleVocab(uniqueVocabWords(pool)).slice(0,VOCAB_SET_SIZE);
 }
 function instantSet(){
-  const pool=[]; Object.values(SEED_VOCAB).forEach(sets=>sets.forEach(s=>s.forEach(w=>pool.push(w))));
-  for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
-  return pool.slice(0,5);
+  return shuffleVocab(uniqueVocabWords(seedVocabWords().concat(starterExtraWords("low"),starterExtraWords("mid"),starterExtraWords("high")))).slice(0,VOCAB_SET_SIZE);
+}
+function fillVocabSet(set){
+  const base=uniqueVocabWords(set||[]);
+  if(base.length>=VOCAB_SET_SIZE) return shuffleVocab(base).slice(0,VOCAB_SET_SIZE);
+  const have=new Set(base.map(vocabWordKey));
+  const extra=starterSet().filter(w=>!have.has(vocabWordKey(w)));
+  return uniqueVocabWords(base.concat(extra)).slice(0,VOCAB_SET_SIZE);
 }
 function startVocab(noResume){
+  if(noResume && typeof wpClearProgress==="function") wpClearProgress();
   if(!noResume && wpResumeData()){ return wpResume(); }   // 미완료 세트 있으면 이어하기
   state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
   markPractice({mode:"vocab", id:state.vocabTheme.id, emo:"📖", label:"단어"});
@@ -4332,26 +4677,13 @@ async function generateVocab(){
   let theme=state.vocabTheme; if(!theme){ theme=state.vocabTheme=nextVocabTheme(); }
   $("#vbModeTag").textContent="📖 "+(theme.emo||"")+" "+theme.t;
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
-  // 0) 모르는 단어(블록에서 한글로 말한 것 등 SRS 복습 대상) 우선 — 단어 카드 구조로 변환
-  const dueUnknown=srsDue(3).filter(x=>x.en && /[a-zA-Z]/.test(x.en) && x.ko).map(x=>{
-    const w=String(x.en).trim(), ko=String(x.ko).trim();
-    return { word:w, ko, diff:1, _fromSrs:true,
-      examples:[{en:w, ko}],
-      blank:{en:"____", ko, answer:w},
-      colloc:[] };
-  });
-  // 1) 단어 출처: STARTER_VOCAB(대형 풀)을 우선 사용해 다양성 확보.
-  //    AI 프리페치 세트는 "충분히 신선할 때만" 가끔 섞어줌 (옛 버그: bank가 항상 우선되어 같은 5개 반복)
-  let base = starterSet();
-  // base가 어떤 이유로 비면 AI bank 시도
-  if(!base || !base.length){ const s=takeFromBankFresh(theme.id); base = (s&&s.length)? s : starterSet(); }
-  // 모르는 단어를 앞쪽에 섞되 중복 제거 (최대 2개 + 일반 단어)
-  if(dueUnknown.length){
-    const seen=new Set(base.map(w=>String(w.word).toLowerCase()));
-    const inject=dueUnknown.filter(w=>!seen.has(String(w.word).toLowerCase())).slice(0,2);
-    base=[...inject, ...base].slice(0,5);
+  // 1) 프리페치된 세트 있으면 즉시 사용
+  let set=takeFromBankFresh(theme.id);
+  if(set && set.length){ vocabWords=fillVocabSet(set); vbIdx=0; markVocabSeen(vocabWords); showVocabCard(); }
+  else {
+    // 2) 캐시 없음 → 기다리지 말고 레벨맞춤 스타터를 0초에 띄움 (앱 끄지 않게)
+    vocabWords=starterSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard();
   }
-  vocabWords=base; vbIdx=0; markVocabSeen(vocabWords); showVocabCard();
   // 3) 백그라운드로 다음 세트들 미리 생성 (다음 진입은 즉시 AI 단어)
   prefetchVocab(theme);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
@@ -4359,7 +4691,7 @@ async function generateVocab(){
 }
 // 최근 본 단어 추적 (반복 방지) — localStorage 영속화로 앱 재시작에도 유지
 let vocabSeenRecent=(function(){ try{ return hGet("speakingroom:vseen",[])||[]; }catch(e){ return []; } })();
-function markVocabSeen(set){ try{ (set||[]).forEach(w=>{ if(w&&w.word){ vocabSeenRecent.push(String(w.word).toLowerCase()); } }); if(vocabSeenRecent.length>50) vocabSeenRecent=vocabSeenRecent.slice(-50); hSet("speakingroom:vseen", vocabSeenRecent); }catch(e){} }
+function markVocabSeen(set){ try{ (set||[]).forEach(w=>{ if(w&&w.word){ vocabSeenRecent.push(String(w.word).toLowerCase()); } }); if(vocabSeenRecent.length>60) vocabSeenRecent=vocabSeenRecent.slice(-60); hSet("speakingroom:vseen", vocabSeenRecent); }catch(e){} }
 function setIsStale(set){ if(!set||!set.length) return true; const fresh=set.filter(w=>w&&w.word&&!vocabSeenRecent.includes(String(w.word).toLowerCase())); return fresh.length < Math.ceil(set.length/2); }
 // bank에서 꺼내되, 최근 본 단어 위주면 버리고 다음 것 (최대 몇 번 시도)
 function takeFromBankFresh(themeId){
