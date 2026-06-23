@@ -1830,7 +1830,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.45.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.46.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6533,9 +6533,11 @@ function bleMaterialsForMode(mode){
 }
 // 스피킹 훈련용: 배운 블록의 한국어 상황을 프롬프트에 주입
 function bleSpeakingHint(){
-  const m=bleMaterialsForMode("speaking"); if(!m||!m.blocks.length) return "";
-  const ex=m.blocks.slice(0,8).map(x=>`- ${x.ko} (목표 블록: ${x.block})`).join("\n");
-  return `\nLEARNED-BLOCK FOCUS — The learner has studied these speaking blocks. About 70% of the time, create Korean situations where ONE of these blocks is the natural answer. 20% mix freely, 10% fresh.\n${ex}\n`;
+  try{
+    const m=bleMaterialsForMode("speaking"); if(!m||!m.blocks.length) return "";
+    const ex=m.blocks.slice(0,8).map(x=>`- ${x.ko} (목표 블록: ${x.block})`).join("\n");
+    return `\nLEARNED-BLOCK FOCUS — The learner has studied these speaking blocks. About 70% of the time, create Korean situations where ONE of these blocks is the natural answer. 20% mix freely, 10% fresh.\n${ex}\n`;
+  }catch(e){ return ""; }
 }
 // 스피드런용: 느린/최근 블록 우선 빠른 인출 문항
 function bleLightningItems(n){
@@ -10353,6 +10355,9 @@ function renderDailyCard(){
 // 오늘의 영어 블록 → 그 표현을 상황 속에서 직접 말하는 연습 (output 코치, dailyExpr가 자연스럽게 끌려나옴)
 function startDailyExprPractice(){
   try{
+    // output 코치 프롬프트(bleSpeakingHint)가 컨텍스트 캐시를 필요로 함 — 정상 경로와 동일하게 선준비
+    try{ bleCtxCacheLoad(); }catch(e){}
+    try{ bleUnlockedBlocks().forEach(b=>{ try{ bleEnsureContexts(b); }catch(e){} }); }catch(e){}
     state.mode="talk";
     state.engine="output";
     state.scn = dailyScenario();
