@@ -1830,7 +1830,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.46.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.47.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10306,22 +10306,24 @@ function profSkillStats(){
 }
 
 const DAILY_EXPRESSIONS=[
- {en:"I'd like to ...",ko:"~하고 싶어요"},{en:"I'm looking for ...",ko:"~ 찾고 있어요"},
- {en:"Where can I ...?",ko:"어디서 ~할 수 있나요?"},{en:"How much is it?",ko:"얼마예요?"},
- {en:"Is it possible to ...?",ko:"~ 가능할까요?"},{en:"Can you help me?",ko:"도와주실 수 있어요?"},
- {en:"What do you mean?",ko:"무슨 뜻이에요?"},{en:"I have a problem with ...",ko:"~에 문제가 있어요"},
- {en:"Let me check.",ko:"확인해 볼게요"},{en:"Can I have a look?",ko:"좀 봐도 될까요?"},
- {en:"Where is the ...?",ko:"~는 어디예요?"},{en:"What time is ...?",ko:"~는 몇 시예요?"},
- {en:"Is there a ... nearby?",ko:"근처에 ~ 있어요?"},{en:"I'll take this one.",ko:"이걸로 할게요"},
- {en:"Can you recommend ...?",ko:"~ 추천해 주실 수 있어요?"},{en:"It doesn't work.",ko:"이거 안 돼요"},
- {en:"I don't understand.",ko:"이해 못 했어요"},{en:"One more, please.",ko:"하나 더 주세요"}
+ "id_like_to_001","looking_for_013","where_can_i_006","how_much_010",
+ "help_me_014","what_mean_034","problem_with_036","can_i_have_018",
+ "what_time_016","is_there_012","ill_take_042","recommend_041",
+ "not_working_020","dont_understand_009","one_moment_025","pay_by_card_023",
+ "excuse_me_024","how_long_031","what_should_i_044","refund_035",
+ "can_i_change_028","how_do_i_015"
 ];
 function dailyExpr(){
   const today=DAYN(); let d=hGet("speakingroom:daily",null);
-  // 튜토에서 이미 배운 5블록은 '오늘의 영어 블록'에서 제외 (옛 캐시 정리)
-  const TUTORIAL_BLOCKS=["Can I get ...?","Do you have ...?","I need help with ...","Could you ...?","I think ...","Can I get...","Do you have...","I need...","Could you...","I think..."];
-  if(d && d.en && TUTORIAL_BLOCKS.some(b=>d.en.replace(/[.\s]/g,"")===b.replace(/[.\s]/g,""))) d=null;
-  if(!d || d.date!==today){ const idx=today%DAILY_EXPRESSIONS.length; const e=DAILY_EXPRESSIONS[idx]; d={date:today, en:e.en, ko:e.ko}; hSet("speakingroom:daily",d); avSeen(e.en,e.ko); }
+  // 저장된 게 옛 형식(pid 없음)이거나 튜토 5블록이면 폐기하고 새로 뽑기
+  const TUTOR=["can_i_get_002","do_you_have_005","i_need_004","could_you_003","i_think_022"];
+  if(d && (!d.pid || TUTOR.indexOf(d.pid)>=0)) d=null;
+  if(!d || d.date!==today){
+    const pid=DAILY_EXPRESSIONS[today%DAILY_EXPRESSIONS.length];
+    const p=CORE_PHRASES.find(x=>x.id===pid) || CORE_PHRASES[0];
+    d={date:today, pid:p.id, en:p.phrase, ko:p.ko};
+    hSet("speakingroom:daily",d); avSeen(p.phrase, p.ko);
+  }
   try{ if(d&&d.en) reuseAdd(d.en, d.ko||"", "daily", "daily:"+today); }catch(e){}
   return d;
 }
@@ -10350,7 +10352,7 @@ function renderDailyCard(){
     </div>
     <button class="bh-go" id="bhGo">오늘 표현 연습하기 →</button>
   </div>`;
-  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ startDailyExprPractice(); }catch(e){} };
+  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ const dd=dailyExpr(); startChunkTraining(dd.pid); }catch(e){} };
 }
 // 오늘의 영어 블록 → 그 표현을 상황 속에서 직접 말하는 연습 (output 코치, dailyExpr가 자연스럽게 끌려나옴)
 function startDailyExprPractice(){
