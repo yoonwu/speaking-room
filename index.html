@@ -1815,7 +1815,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.30.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.31.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9631,14 +9631,14 @@ const FIRSTRUN_BLOCKS=[
   { id:"could_you", block:"Could you...", ko:"~해 주시겠어요?",
     items:[
       {situation:"도와달라고 정중히 부탁해보세요.", answer:"Could you help me?", key:"help"},
-      {situation:"다시 말해달라고 부탁해보세요.", answer:"Could you say that again?", key:"again"},
       {situation:"천천히 말해달라고 부탁해보세요.", answer:"Could you speak slowly?", key:"slowly"},
+      {situation:"기다려달라고 부탁해보세요.", answer:"Could you wait?", key:"wait"},
     ]},
   { id:"i_think", block:"I think...", ko:"제 생각엔 ~",
     items:[
       {situation:"\"이거 좋은 것 같아요\"라고 말해보세요.", answer:"I think this is good.", key:"good"},
+      {situation:"\"이거 괜찮은 것 같아요\"라고 말해보세요.", answer:"I think this is okay.", key:"okay"},
       {situation:"\"맞는 것 같아요\"라고 말해보세요.", answer:"I think so.", key:"think"},
-      {situation:"\"괜찮은 것 같아요\"라고 말해보세요.", answer:"I think it's okay.", key:"okay"},
     ]},
 ];
 // 랜덤 믹스 3개 — 5블록 중 골라 꺼내기 (쉬운 난이도 + 관사 패턴 통일)
