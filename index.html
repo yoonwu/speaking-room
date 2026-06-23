@@ -1420,6 +1420,48 @@ body{background:var(--paper)!important;color:var(--text)}
 .blpz-stepbadge{display:block;text-align:center;margin-bottom:14px}
 .blpz-stepbadge span{font-size:11.5px;font-weight:900;letter-spacing:.04em;color:#fff;background:#F0664A;border-radius:99px;padding:4px 13px}
 .blpz-in{width:100%;margin-top:10px;padding:13px;border:1.5px solid #FF8568;border-radius:13px;background:#fff;color:#3A2D27;font-size:16px}
+.blpz.blpz-dense{max-width:920px;width:100%;padding:18px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:14px;align-items:stretch}
+.blpz.blpz-dense .blpz-coach{grid-column:1/-1;margin-bottom:0}
+.blpz-main{display:flex;flex-direction:column;min-width:0}
+.blpz.blpz-dense .blpz-card{padding:18px 16px}
+.blpz.blpz-dense .blpz-micwrap{margin:14px 0 8px}
+.blpz.blpz-dense .blpz-micring{width:108px;height:108px}
+.blpz.blpz-dense .blpz-mic{width:78px;height:78px}
+.ble-context-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 0}
+.ble-context-strip span{background:rgba(255,255,255,.72);border:1px solid #FBE0D2;border-radius:13px;padding:9px 8px;text-align:center;font-size:11.5px;color:#A68173;font-weight:800;line-height:1.35}
+.ble-context-strip b{display:block;color:#3A2D27;font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ble-side{background:rgba(255,255,255,.72);border:1px solid #FBE0D2;border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;box-shadow:0 8px 20px -16px rgba(214,120,70,.42)}
+.ble-side-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ble-side-head b{font-size:15px;font-weight:900;color:#3A2D27}
+.ble-side-head span{font-size:11px;font-weight:900;color:#F0664A;background:#FFE5D8;border-radius:99px;padding:4px 9px;white-space:nowrap}
+.ble-toolgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.ble-tool{border:1px solid #F6D6C5;background:#FFF8F2;border-radius:15px;padding:10px 9px;text-align:left;cursor:pointer;color:#5A463C;min-height:58px}
+.ble-tool b{display:block;font-size:13.5px;font-weight:900;color:#3A2D27;margin-bottom:3px}
+.ble-tool span{display:block;font-size:11px;font-weight:700;color:#A68173;line-height:1.3}
+.ble-tool.primary{background:linear-gradient(135deg,#FF8568,#F0664A);border-color:#F0664A;color:#fff}
+.ble-tool.primary b,.ble-tool.primary span{color:#fff}
+.ble-mini{background:#FFF8F2;border:1px solid #F6D6C5;border-radius:15px;padding:11px 12px}
+.ble-mini .t{font-size:11px;font-weight:900;color:#B0958A;margin-bottom:6px}
+.ble-mini .v{font-size:13px;font-weight:800;color:#3A2D27;line-height:1.45}
+.ble-chipbox{display:flex;flex-wrap:wrap;gap:6px}
+.ble-chipword{border:none;background:#FFE9DD;color:#8A4B35;border-radius:99px;padding:6px 9px;font-size:11.5px;font-weight:900;cursor:pointer}
+.ble-competitors{display:flex;flex-wrap:wrap;gap:6px}
+.ble-competitors i{font-style:normal;border:1px solid #F6D6C5;background:#fff;border-radius:99px;padding:5px 8px;font-size:11px;font-weight:800;color:#8A6F62}
+.ble-aftertools{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:10px}
+.ble-aftertools button{border:1px solid #FBD6C4;background:#fff;color:#8A6F62;border-radius:99px;padding:8px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.ble-learn-dense{flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(260px,.95fr);gap:14px;align-items:stretch}
+.ble-learn-main,.ble-learn-side{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:0 10px 22px -18px rgba(214,120,70,.38)}
+.ble-learn-main{display:flex;flex-direction:column;justify-content:center;text-align:center}
+.ble-learn-side{display:flex;flex-direction:column;gap:10px}
+.ble-placegrid{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:14px}
+.ble-placegrid span{background:var(--mist);border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:12px;font-weight:800;color:var(--muted)}
+@media (max-width:760px){
+  .blpz.blpz-dense{display:flex;flex-direction:column;max-width:460px;padding:16px}
+  .ble-context-strip{grid-template-columns:1fr 1fr}
+  .ble-context-strip span:last-child{grid-column:1/-1}
+  .ble-toolgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ble-learn-dense{display:flex;flex-direction:column}
+}
 
 
 /* ===== 모드 허브 시트 (스피킹 훈련장 / 청크) ===== */
@@ -1708,11 +1750,11 @@ body{background:var(--paper)!important;color:var(--text)}
             </button>
           </div>
           <div class="inputrow">
-            <button class="mic" id="micBtn" title="눌러서 말하기" aria-label="말하기">
+            <button class="mic" id="micBtn" title="터치해서 말하기" aria-label="말하기">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
             </button>
             <div class="txtwrap">
-              <textarea id="msg" rows="1" placeholder="영어로 답해보세요 — 또는 🎤 눌러서 말하기"></textarea>
+              <textarea id="msg" rows="1" placeholder="영어로 답해보세요 — 또는 🎤 터치해서 말하기"></textarea>
             </div>
             <button class="send" id="sendBtn" disabled aria-label="보내기">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>
@@ -5397,7 +5439,7 @@ function renderVoUse(w){
       <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">이 상황을 영어로 — <span style="color:var(--jade)">${escapeHtml(w.word)}</span> 꼭 쓰기</div>
       <div style="font-size:26px;font-weight:700;color:var(--text);line-height:1.55">${escapeHtml(sit.ko)}</div>
     </div>
-    <div class="mbstatus" id="voStatus">🎤 눌러서 영어로 말해보세요</div>
+    <div class="mbstatus" id="voStatus">🎤 터치해서 말하기</div>
     <div class="mbmicwrap">
       <button class="mbside" id="voHint2"><span class="ic">💡</span>힌트</button>
       <button class="mbmic" id="voUseMic" aria-label="말하기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>
@@ -5944,6 +5986,174 @@ function stopAzureSTT(){ if(mediaRec && mediaRec.state!=="inactive"){ mediaRec.s
 // 상태
 let drillTarget="", drillRecording=false, drillChunks=[], drillMR=null;
 
+const PRON_KO_WORDS={
+  apple:"애어쁠", water:"워러", towel:"타월", receipt:"리씨잇", referral:"리퍼럴", prescription:"프리스크립션",
+  can:"캔", i:"아이", get:"겟", some:"썸", a:"어", an:"앤", the:"더", please:"플리즈",
+  do:"두", you:"유", have:"해브", could:"쿠드", would:"우드", should:"슈드", did:"디드",
+  help:"헬프", check:"첵", bill:"빌", room:"룸", size:"싸이즈", refund:"리펀드", appointment:"어포인먼트",
+  reservation:"레저베이션", available:"어베일러블", looking:"루킹", look:"룩", for:"퍼", need:"니드",
+  think:"씽크", because:"비커즈", today:"투데이", tomorrow:"투마로우", coffee:"커피", tea:"티",
+  taxi:"택시", airport:"에어포트", hospital:"하스피털", hotel:"호우텔", school:"스쿨", shopping:"샤핑",
+  menu:"메뉴", account:"어카운트", card:"카드", cash:"캐쉬", change:"체인지", order:"오더",
+  medicine:"메디슨", dosage:"도우시지", flight:"플라이트", gate:"게이트", meeting:"미팅",
+  file:"파일", slowly:"슬로울리", again:"어겐", speak:"스피크", speaking:"스피킹", more:"모어", less:"레스",
+  sweet:"스윗", salty:"쏠티", cold:"코울드", wrong:"롱", way:"웨이", problem:"프라블럼",
+  this:"디스", that:"댓", it:"잇", is:"이즈",
+  "i'm":"아임", im:"아임", "i'd":"아이드", cant:"캔트", "don't":"돈트", dont:"돈트"
+};
+function pronKoWord(raw){
+  let w=String(raw||"").toLowerCase().replace(/[’]/g,"'").replace(/[^a-z']/g,"");
+  if(!w) return "";
+  if(PRON_KO_WORDS[w]) return PRON_KO_WORDS[w];
+  if(w.endsWith("'s") && PRON_KO_WORDS[w.slice(0,-2)]) return PRON_KO_WORDS[w.slice(0,-2)]+"즈";
+  let s=w;
+  [
+    [/tion$/g,"션"], [/sion$/g,"전"], [/ture$/g,"처"], [/sure$/g,"셔"], [/ough/g,"오우"],
+    [/eigh/g,"에이"], [/igh/g,"아이"], [/ph/g,"프"], [/sh/g,"쉬"], [/ch/g,"취"], [/th/g,"쓰"],
+    [/ck/g,"크"], [/ng/g,"응"], [/qu/g,"쿠"], [/oo/g,"우"], [/ee/g,"이"], [/ea/g,"이"],
+    [/ai/g,"에이"], [/ay/g,"에이"], [/oa/g,"오우"], [/ow/g,"아우"], [/ou/g,"아우"],
+    [/oi/g,"오이"], [/oy/g,"오이"], [/er$/g,"어"], [/or$/g,"어"], [/ar$/g,"아r"],
+    [/le$/g,"을"], [/ed$/g,"드"], [/es$/g,"즈"], [/s$/g,"스"]
+  ].forEach(([re,v])=>{ s=s.replace(re,v); });
+  const map={a:"애",b:"브",c:"크",d:"드",e:"에",f:"프",g:"그",h:"흐",i:"이",j:"즈",k:"크",l:"을",m:"음",n:"은",o:"오",p:"프",q:"크",r:"어r",s:"스",t:"트",u:"어",v:"브",w:"우",x:"크스",y:"이",z:"즈"};
+  let out="";
+  for(const ch of s){ out += /[가-힣]/.test(ch) ? ch : (map[ch]||""); }
+  return out.replace(/으([아애에이오우어])/g,"$1").replace(/([가-힣])\1{2,}/g,"$1$1").trim();
+}
+function pronKoText(text){
+  let s=String(text||"").toLowerCase().replace(/[“”]/g,"").replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
+  if(!s || !/[a-z]/.test(s)) return "";
+  [
+    ["can i","캐나이"], ["could you","쿠쥬"], ["would you","우쥬"], ["did you","디쥬"],
+    ["do you","두유"], ["i am","아이 앰"], ["i'm","아임"], ["i'd","아이드"],
+    ["going to","고너"], ["want to","워너"], ["have to","해프 투"], ["looking for","루킹 퍼"]
+  ].forEach(([p,v])=>{ s=s.replace(new RegExp("\\b"+p.replace(/[']/g,"'")+"\\b","g"), " "+v+" "); });
+  const out=s.split(/\s+/).map(tok=>/[가-힣]/.test(tok)?tok:pronKoWord(tok)).filter(Boolean).join(" ");
+  return out ? out+"~" : "";
+}
+function pronKoHtml(text, label){
+  const ko=pronKoText(text);
+  return ko ? `<div style="background:rgba(255,133,104,.10);border:1px solid rgba(255,133,104,.24);border-radius:12px;padding:8px 10px;margin-top:8px;text-align:left"><div style="font-size:11px;color:#C08763;font-weight:900">${escapeHtml(label||"내 발음 한글")}</div><div style="font-size:17px;color:#3A2D27;font-weight:900;letter-spacing:.01em;margin-top:2px">${escapeHtml(ko)}</div></div>` : "";
+}
+const PRON_STRESS_WEAK=new Set(("i me my mine you your yours he him his she her hers it its we us our ours they them their theirs a an the this that these those to of in on at for from with by about as and or but if so is are am was were be been being do does did can could would should will may might must have has had some any please there here").split(" "));
+const PRON_PHRASE_UNITS={
+  "can i":{ko:"캐나이",weak:true},"could you":{ko:"쿠쥬",weak:true},"would you":{ko:"우쥬",weak:true},"did you":{ko:"디쥬",weak:true},"do you":{ko:"두유",weak:true},
+  "i am":{ko:"아이 앰",weak:true},"i'm":{ko:"아임",weak:true},"i'd":{ko:"아이드",weak:true},"going to":{ko:"고너",weak:false},"want to":{ko:"워너",weak:false},
+  "have to":{ko:"해프 투",weak:false},"looking for":{ko:"루킹 포",weak:false}
+};
+function pronNormWord(w){ return String(w||"").toLowerCase().replace(/[’‘]/g,"'").replace(/[^a-z']/g,""); }
+function pronWordTokens(text){ return String(text||"").match(/[A-Za-z]+(?:'[A-Za-z]+)?|[^A-Za-z]+/g)||[]; }
+function pronStrongWord(w){
+  const n=pronNormWord(w);
+  if(!n || n.length<2) return false;
+  return !PRON_STRESS_WEAK.has(n);
+}
+function pronStressEnHtml(text){
+  return pronWordTokens(text).map(tok=>{
+    if(!/[A-Za-z]/.test(tok)) return escapeHtml(tok);
+    return pronStrongWord(tok) ? `<span class="pron-stress-hit">ˈ${escapeHtml(tok)}</span>` : escapeHtml(tok);
+  }).join("");
+}
+function pronKoStressHtml(text){
+  const words=(String(text||"").toLowerCase().replace(/[’‘]/g,"'").match(/[a-z]+(?:'[a-z]+)?/g)||[]);
+  if(!words.length) return "";
+  const out=[];
+  for(let i=0;i<words.length;i++){
+    const one=words[i], two=(words[i]+" "+(words[i+1]||"")).trim();
+    const ph=PRON_PHRASE_UNITS[two] || PRON_PHRASE_UNITS[one];
+    if(ph){
+      out.push(ph.weak?escapeHtml(ph.ko):`<span class="pron-stress-hit">ˈ${escapeHtml(ph.ko)}</span>`);
+      if(PRON_PHRASE_UNITS[two]) i++;
+      continue;
+    }
+    const ko=pronKoWord(one);
+    if(ko) out.push(pronStrongWord(one)?`<span class="pron-stress-hit">ˈ${escapeHtml(ko)}</span>`:escapeHtml(ko));
+  }
+  return out.length ? out.join(" ")+"~" : "";
+}
+function pronStudyInnerHtml(text, label){
+  const ko=pronKoText(text);
+  if(!ko) return "";
+  const en=pronStressEnHtml(text);
+  const kos=pronKoStressHtml(text)||escapeHtml(ko);
+  return `${label?`<span class="pron-label">${escapeHtml(label)}</span>`:""}<span class="pron-stress-row"><b>영어 강세</b><span class="pron-en-line">${en}</span></span><span class="pron-stress-row"><b>한글 강세</b><span class="pron-ko-line">${kos}</span></span>`;
+}
+function pronStudyCardHtml(text, label){
+  const inner=pronStudyInnerHtml(text,label||"발음/강세");
+  return inner ? `<div class="pron-study-card" style="background:rgba(255,133,104,.10);border:1px solid rgba(255,133,104,.24);border-radius:12px;padding:8px 10px;margin-top:8px;text-align:left">${inner}</div>` : "";
+}
+function pronKoHtml(text, label){ return pronStudyCardHtml(text,label); }
+const PRON_KO_AUTO_SELECTOR=[
+  ".ans-en",".exen",".vmine-en",".ble-exline",".ble-opt",".wp-line",".dict-ex",".dict-term",
+  ".blk-target",".blk-chip",".blk-alts .ae",".phword",".phsight",".phl",".sc-en",".lp-line",
+  ".ph > span",".expl-block .ph",".chk-en",".hub-tx i",".turn.coach .bubble",".ask-a","#pinnedQText"
+].join(",");
+let _pronKoAutoObs=null, _pronKoAutoTimer=null;
+function pronKoAutoStyle(){
+  if(document.getElementById("pronKoAutoStyle")) return;
+  const st=document.createElement("style");
+  st.id="pronKoAutoStyle";
+  st.textContent=`
+    .pron-ko-auto{display:block;margin-top:4px;font-family:var(--sans);font-size:12.5px;font-weight:900;line-height:1.35;color:#C08763;letter-spacing:.01em}
+    button .pron-ko-auto{font-size:11.5px;color:#B98572;margin-top:3px}
+    .ans-en .pron-ko-auto,.dict-term .pron-ko-auto,.phword .pron-ko-auto{font-size:13px;color:#E2674A}
+    .turn.coach .bubble .pron-ko-auto{margin-top:8px;color:#8A6F62;background:rgba(255,255,255,.45);border-radius:10px;padding:6px 8px}
+    .pron-label{display:block;font-size:11px;color:#C08763;font-weight:900;margin-bottom:4px}
+    .pron-stress-row{display:flex;gap:7px;align-items:flex-start;margin-top:3px;line-height:1.35}
+    .pron-stress-row>b{flex:0 0 auto;font-size:10.5px;color:#B98572;background:rgba(255,133,104,.12);border-radius:999px;padding:2px 6px}
+    .pron-en-line{font-family:var(--serif);font-size:13px;color:#3A2D27}
+    .pron-ko-line{font-family:var(--sans);font-size:14px;color:#3A2D27;font-weight:900}
+    .pron-stress-hit{color:#E2674A;font-weight:1000;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
+  `;
+  document.head.appendChild(st);
+}
+function pronKoAutoText(el){
+  const c=el.cloneNode(true);
+  c.querySelectorAll&&c.querySelectorAll(".pron-ko-auto,svg").forEach(x=>x.remove());
+  if(!(c.matches&&c.matches("button"))) c.querySelectorAll&&c.querySelectorAll("button").forEach(x=>x.remove());
+  return String(c.textContent||"").replace(/\s+/g," ").trim();
+}
+function pronKoAutoOk(text){
+  const words=String(text||"").match(/[A-Za-z][A-Za-z']*/g)||[];
+  if(!words.length) return false;
+  const letters=words.join("");
+  if(letters.length<2 && !/^[AaIi]$/.test(letters)) return false;
+  if(words.length===1 && /^[A-Z]{2,5}$/.test(words[0])) return false;
+  return !!pronKoText(text);
+}
+function pronKoAutoMount(el){
+  if(!el || el.nodeType!==1 || el.closest(".pron-ko-auto,script,style,textarea,input,select,[data-no-pronko]")) return;
+  if(Array.from(el.children||[]).some(c=>c.classList&&c.classList.contains("pron-ko-auto"))) return;
+  const txt=pronKoAutoText(el);
+  if(!pronKoAutoOk(txt)) return;
+  const ko=pronKoText(txt);
+  if(!ko) return;
+  const node=document.createElement(el.tagName==="SPAN"?"span":"div");
+  node.className="pron-ko-auto";
+  node.innerHTML=pronStudyInnerHtml(txt,"");
+  el.appendChild(node);
+}
+function pronKoAutoScan(root){
+  if(!root || root.nodeType!==1) return;
+  pronKoAutoStyle();
+  const nodes=[];
+  if(root.matches&&root.matches(PRON_KO_AUTO_SELECTOR)) nodes.push(root);
+  if(root.querySelectorAll) root.querySelectorAll(PRON_KO_AUTO_SELECTOR).forEach(n=>nodes.push(n));
+  nodes.slice(0,600).forEach(pronKoAutoMount);
+}
+function pronKoAutoStart(){
+  if(_pronKoAutoObs || !document.body) return;
+  pronKoAutoScan(document.body);
+  _pronKoAutoObs=new MutationObserver(muts=>{
+    if(_pronKoAutoTimer) return;
+    _pronKoAutoTimer=setTimeout(()=>{
+      _pronKoAutoTimer=null;
+      muts.forEach(m=>m.addedNodes&&m.addedNodes.forEach(pronKoAutoScan));
+    },80);
+  });
+  _pronKoAutoObs.observe(document.body,{childList:true,subtree:true});
+}
+
 function openDrill(text, koText){
   drillTarget=text;
   const existing=$("#drillModal"); if(existing) existing.remove();
@@ -5956,7 +6166,7 @@ function openDrill(text, koText){
       <div id="drillWord" style="font-family:var(--serif);font-size:28px;font-weight:500;color:var(--text);margin-bottom:4px">${escapeHtml(text)}</div>
       <div style="font-size:14px;color:var(--muted);margin-bottom:20px">${escapeHtml(koText||"")}</div>
       <button id="drillListen" style="width:100%;padding:13px;border-radius:14px;background:var(--mist);color:var(--text);border:none;font-size:15px;font-weight:700;margin-bottom:10px">🔊 원어민 발음 듣기</button>
-      <button id="drillSpeak" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;border:none;font-size:15px;font-weight:800">🎤 눌러서 말하기</button>
+      <button id="drillSpeak" style="width:100%;padding:14px;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#ffffff;border:none;font-size:15px;font-weight:800">🎤 터치해서 말하기</button>
       <div id="drillResult" style="margin-top:16px;min-height:60px"></div>
       <button id="drillClose" style="width:100%;margin-top:12px;padding:13px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px">닫기</button>
     </div>`;
@@ -6023,12 +6233,14 @@ function renderDrillResult(data){
   if(!pa){
     const st=data?.RecognitionStatus||"(상태없음)";
     const heard=data?.DisplayText||n?.Display||"";
+    const heardKo=pronKoHtml(heard, "들린 소리 한글");
     let msg;
     if(st==="Success"||heard){ msg=`인식은 됐는데 점수가 안 왔어요.<br>들린 말: "${escapeHtml(heard||"?")}"`; }
     else if(/NoMatch|Silence|InitialSilence/i.test(st)){ msg=`소리가 잘 안 잡혔어요 🔇<br>마이크 가까이서 또렷하게 다시 말해보세요.`; }
     else { msg=`상태: ${escapeHtml(st)}`; }
     const raw=(window._lastPronounceRaw||"").slice(0,700);
     r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px;line-height:1.6">${msg}</div>
+      ${heardKo}
       <details style="margin-top:12px"><summary style="font-size:12px;color:var(--muted);cursor:pointer">🔧 진단 정보 (개발용)</summary>
       <pre style="white-space:pre-wrap;word-break:break-all;font-size:10.5px;color:#8b948c;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;max-height:160px;overflow:auto">${escapeHtml(raw||"(빈 응답)")}</pre>
       <button id="copyRaw" style="margin-top:6px;width:100%;padding:8px;border-radius:8px;background:var(--mist);color:var(--text);border:1px solid var(--line);font-size:12px">📋 진단 정보 복사</button></details>`;
@@ -6049,6 +6261,8 @@ function renderDrillResult(data){
     const wc=ws>=80?"#FF8568":ws>=60?"#e6ad4a":"#e0533f";
     return `<span style="color:${wc};font-family:var(--serif);font-size:17px;margin:0 3px" title="${ws}점">${escapeHtml(w.Word)}</span>`;
   }).join(" ");
+  const heardText=(data?.DisplayText||n?.Display||n?.Lexical||words.map(w=>w.Word).join(" ")).replace(/[.?!,]$/,"").trim();
+  const heardKo=pronKoHtml(heardText, "내 발음 한글");
   // XP 지급 — 80점 이상이면 확실히 보상
   const xp = overall>=80 ? Math.max(5, Math.round(overall/10)) : Math.round(overall/10);
   if(xp>0) awardXP("phonics",xp,"발음 드릴","drill:"+(drillTarget||""));
@@ -6072,6 +6286,7 @@ function renderDrillResult(data){
       </div>
     </div>
     ${wordHtml?`<div style="text-align:center;line-height:2;margin-bottom:8px">${wordHtml}</div>`:""}
+    ${heardKo}
     <div style="font-size:11.5px;color:var(--muted);text-align:center">초록=잘함 · 노랑=보통 · 빨강=연습 더 필요 · +${xp}XP 획득!</div>`;
 }
 
@@ -7056,13 +7271,14 @@ function bleRender(){
   else if(it.type==="discriminate") body=bleViewDiscriminate(it);
   else { body=bleViewRetrieve(it); isPeach=true; }   // situation / mixed / speed
   const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:${isPeach?"920px":"460px"};margin-left:auto;margin-right:auto">
       <button id="bleExit" style="background:${headBg};border:1px solid ${headTrack};color:${headTx};font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 나가기</button>
       <div style="flex:1;margin:0 10px;height:8px;border-radius:99px;background:${headTrack};overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
       <div style="font-size:12px;font-weight:800;color:${headTx}">${bleSession.idx+1}/${bleSession.items.length}</div>
     </div>`;
   const ss=$("#sprintScroll"); ss.style.background=isPeach?"#EAE3DD":""; 
-  ss.innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
+  const arenaMax=isPeach?"min(960px, calc(100vw - 24px))":"520px";
+  ss.innerHTML=`<div class="arena arena2" style="max-width:${arenaMax};margin:0 auto">${head}${body}</div>`;
   ss.scrollTop=0;
   $("#bleExit").onclick=()=>goToSetup();
   bleT0=Date.now(); bleSpoke=0;
@@ -7074,40 +7290,165 @@ function bleRender(){
 }
 const BLE_PHASE_LABEL={understand:"1. 이해하기",pattern:"2. 패턴 익히기",pattern_fill:"3. 빈칸 — 목적어",block_fill:"3. 빈칸 — 블록",situation:"4. 상황 인출",discriminate:"5. 블록 구별",mixed:"6. 혼합 인출",speed:"7. 속도 인출"};
 function blePhaseTag(t){ return `<div style="text-align:center;margin-bottom:12px"><span style="font-size:11.5px;font-weight:800;color:var(--jade);background:rgba(255,133,104,.14);border-radius:99px;padding:4px 12px">${BLE_PHASE_LABEL[t]||""}</span></div>`; }
+function bleModeLabel(t){
+  if(t==="speed") return "5초 속도 인출";
+  if(t==="mixed") return "누적 블록 혼합";
+  if(t==="situation") return "상황 인출";
+  return BLE_PHASE_LABEL[t]||"블록 영어";
+}
+function bleSpeakAt(text, rate){
+  text=String(text||"").trim();
+  if(!text) return;
+  if(!TTS||!SSU){ try{speakEn(text);}catch(e){} return; }
+  if(/[\uac00-\ud7a3]/.test(text) && typeof speakSmart==="function"){ speakSmart(text); return; }
+  TTS.cancel();
+  const u=new SSU(text);
+  if(typeof voiceA!=="undefined" && voiceA) u.voice=voiceA;
+  u.lang="en-US"; u.rate=rate||0.95;
+  TTS.speak(u);
+}
+function blePracticeWords(it){
+  const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  const core=new Set(bleCoreWords(b));
+  const src=ex.object||ex.en||"";
+  const seen=new Set(), out=[];
+  bleContentWords(src).forEach(w=>{
+    if(core.has(w)||seen.has(w)||w.length<2) return;
+    seen.add(w); out.push(w);
+  });
+  return out.slice(0,7);
+}
+function bleCompetitorBlocks(it){
+  const b=(it&&it.block)||{};
+  const base=(!it.deep&&bleSession&&bleSession.startedIds&&bleSession.startedIds.length)?bleSession.startedIds:bleUnlockedBlocks().map(x=>x.id);
+  const ids=[...(b.contrast||[]), ...base].filter(id=>id&&id!==b.id&&BLE_BY_ID[id]);
+  return [...new Set(ids)].slice(0,4).map(id=>BLE_BY_ID[id]);
+}
+function bleFocusPanel(it){
+  const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  const words=blePracticeWords(it);
+  const competitors=bleCompetitorBlocks(it);
+  const safeEn=escapeAttr(ex.en||"");
+  const safeKo=escapeAttr(ex.ko||"");
+  const hint=bleSituationHint(b);
+  return `<aside class="ble-side">
+    <div class="ble-side-head"><b>집중 도구</b><span>${escapeHtml(bleModeLabel(it.type))}</span></div>
+    <div class="ble-toolgrid">
+      <button class="ble-tool primary" data-ble-drill="${safeEn}" data-ble-ko="${safeKo}"><b>말해보기</b><span>발음 점수까지 확인</span></button>
+      <button class="ble-tool" data-ble-ai="1"><b>AI에게 물어보기</b><span>이 상황을 어떻게 생각할지</span></button>
+      <button class="ble-tool" data-ble-say="${safeEn}" data-rate="0.62"><b>느리게</b><span>정답 발음 천천히</span></button>
+      <button class="ble-tool" data-ble-say="${safeEn}" data-rate="0.95"><b>보통</b><span>자연 속도 듣기</span></button>
+      <button class="ble-tool" data-ble-say="${safeEn}" data-rate="1.18"><b>빠르게</b><span>실전 속도 적응</span></button>
+      <button class="ble-tool" data-ble-say="${safeEn}" data-rate="0.82"><b>발음듣기</b><span>소리 먼저 잡기</span></button>
+    </div>
+    <div class="ble-mini"><div class="t">상황 판단</div><div class="v">${escapeHtml(hint)}</div></div>
+    ${words.length?`<div class="ble-mini"><div class="t">핵심 단어 탭해서 보기</div><div class="ble-chipbox">${words.map(w=>`<button class="ble-chipword" data-ble-word="${escapeAttr(w)}">${escapeHtml(w)}</button>`).join("")}</div></div>`:""}
+    ${competitors.length?`<div class="ble-mini"><div class="t">헷갈릴 수 있는 블록</div><div class="ble-competitors">${competitors.map(x=>`<i>${escapeHtml(x.block)}</i>`).join("")}</div></div>`:""}
+  </aside>`;
+}
+function bleAnswerTools(answer, ko){
+  const safe=escapeAttr(answer||"");
+  const safeKo=escapeAttr(ko||"");
+  return `<div class="ble-aftertools">
+    <button data-ble-say="${safe}" data-rate="0.62">느리게</button>
+    <button data-ble-say="${safe}" data-rate="0.95">보통</button>
+    <button data-ble-say="${safe}" data-rate="1.18">빠르게</button>
+    <button data-ble-drill="${safe}" data-ble-ko="${safeKo}">말해보기</button>
+    <button data-ble-ai="1" data-ble-reveal="1">AI 질문</button>
+  </div>`;
+}
+function bleAskForItem(it, reveal){
+  const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  openAskAI(reveal&&b.block?b.block:"상황 영어", reveal?((ex.ko||"")+" / "+(ex.en||"")):(ex.ko||""));
+  setTimeout(()=>{ const inp=$("#askInput"); if(inp && !inp.value) inp.value=reveal?"왜 이 블록을 쓰는지 짧게 설명해줘":"이 상황에서 어떤 점을 먼저 생각하면 돼?"; },120);
+}
+function bleWireFocusTools(it){
+  document.querySelectorAll("[data-ble-say]").forEach(btn=>{
+    btn.onclick=()=>bleSpeakAt(btn.dataset.bleSay, parseFloat(btn.dataset.rate||"0.95"));
+  });
+  document.querySelectorAll("[data-ble-drill]").forEach(btn=>{
+    btn.onclick=()=>openDrill(btn.dataset.bleDrill||((it.ex&&it.ex.en)||""), btn.dataset.bleKo||((it.ex&&it.ex.ko)||""));
+  });
+  document.querySelectorAll("[data-ble-ai]").forEach(btn=>{
+    btn.onclick=()=>bleAskForItem(it, btn.dataset.bleReveal==="1");
+  });
+  document.querySelectorAll("[data-ble-word]").forEach(btn=>{
+    btn.onclick=()=>dictShow(btn, btn.dataset.bleWord);
+  });
+}
 
 // PHASE 1: 이해
 function bleViewUnderstand(it){
   const b=it.block;
-  const places=bleAllEx(b).map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,7).join(" · ");
+  const places=bleAllEx(b).map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);
+  const exs=bleSampleExamples(b,2);
+  const first=exs[0]||{ko:b.meaningKo,en:b.block};
   return `${blePhaseTag("understand")}
    <div class="ar2-scene">
-    <div style="text-align:center">
+    <div class="ble-learn-dense">
+     <div class="ble-learn-main">
       <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">오늘의 블록</div>
       <div style="font-family:var(--serif);font-size:32px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div>
       <div style="font-size:16px;color:var(--text);margin-top:10px">${escapeHtml(b.meaningKo)}</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:14px;background:var(--mist);border-radius:12px;padding:10px 14px;display:inline-block">📍 언제? ${escapeHtml(places)}</div>
+      <div class="ble-placegrid">${places.map(p=>`<span>${escapeHtml(p)}</span>`).join("")}</div>
+     </div>
+     <div class="ble-learn-side">
+      <div class="ble-side-head"><b>바로 써먹기</b><span>처음 배우기</span></div>
+      <div class="ble-toolgrid">
+        <button class="ble-tool" data-ble-say="${escapeAttr(first.en)}" data-rate="0.62"><b>느리게 듣기</b><span>블록 리듬 잡기</span></button>
+        <button class="ble-tool" data-ble-say="${escapeAttr(first.en)}" data-rate="0.95"><b>보통 속도</b><span>자연스럽게 듣기</span></button>
+        <button class="ble-tool primary" data-ble-drill="${escapeAttr(first.en)}" data-ble-ko="${escapeAttr(first.ko)}"><b>말해보기</b><span>입으로 한 번 확인</span></button>
+        <button class="ble-tool" data-ble-ai="1" data-ble-reveal="1"><b>AI에게 물어보기</b><span>언제 쓰는지 질문</span></button>
+      </div>
+      ${exs.map(e=>`<button class="ble-exline" data-ble-say="${escapeAttr(e.en)}" data-rate="0.95"><span style="font-family:var(--serif);font-size:17px;color:var(--text)">${escapeHtml(e.en)}</span><span style="display:block;font-size:12.5px;color:var(--muted);margin-top:2px">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
+     </div>
     </div>
    </div>
    <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">알겠어요 →</button></div>`;
 }
-function bleWireUnderstand(it){ $("#bleNext").onclick=()=>{
+function bleWireUnderstand(it){
+  const first=bleSampleExamples(it.block,1)[0]||{ko:it.block.meaningKo,en:it.block.block};
+  bleWireFocusTools({type:"understand", block:it.block, ex:first});
+  $("#bleNext").onclick=()=>{
     // 세트 인트로: 블록 소개 기록
     if(it.block){ bleBlockState(it.block.id); const s=bleGetState(); if(s[it.block.id]){ if(!s[it.block.id].introducedAt) s[it.block.id].introducedAt=Date.now(); bleSaveState(s); } }
     bleSession.idx++; bleRender();
-  }; }
+  };
+}
 
 // PHASE 2: 패턴 (예문 3개, 들어보기)
 function bleViewPattern(it){
   const b=it.block; const exs=bleSampleExamples(b,3);
+  const first=exs[0]||{ko:b.meaningKo,en:b.block};
   return `${blePhaseTag("pattern")}
    <div class="ar2-scene">
-    <div style="text-align:center;margin-bottom:8px"><div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">이렇게 써요 (눌러서 듣기)</div></div>
-    ${exs.map(e=>`<button class="ble-exline" data-say="${escapeAttr(e.en)}"><span style="font-family:var(--serif);font-size:18px;color:var(--text)">${escapeHtml(e.en)}</span><span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
+    <div class="ble-learn-dense">
+      <div class="ble-learn-main">
+        <div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--jade)">${escapeHtml(b.block)}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">상황이 바뀌어도 같은 블록을 꺼내는 연습</div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:9px">
+          ${exs.map(e=>`<button class="ble-exline" data-ble-say="${escapeAttr(e.en)}" data-rate="0.95"><span style="font-family:var(--serif);font-size:18px;color:var(--text)">${escapeHtml(e.en)}</span><span style="display:block;font-size:13px;color:var(--muted);margin-top:2px">${escapeHtml(e.ko)} 🔊</span></button>`).join("")}
+        </div>
+      </div>
+      <div class="ble-learn-side">
+        <div class="ble-side-head"><b>소리로 고정</b><span>패턴 익히기</span></div>
+        <div class="ble-toolgrid">
+          <button class="ble-tool" data-ble-say="${escapeAttr(first.en)}" data-rate="0.62"><b>느리게</b><span>입모양 먼저</span></button>
+          <button class="ble-tool" data-ble-say="${escapeAttr(first.en)}" data-rate="0.95"><b>보통</b><span>원래 리듬</span></button>
+          <button class="ble-tool" data-ble-say="${escapeAttr(first.en)}" data-rate="1.18"><b>빠르게</b><span>실전 속도</span></button>
+          <button class="ble-tool primary" data-ble-drill="${escapeAttr(first.en)}" data-ble-ko="${escapeAttr(first.ko)}"><b>말해보기</b><span>발음 체크</span></button>
+          <button class="ble-tool" data-ble-ai="1" data-ble-reveal="1"><b>AI 질문</b><span>비슷한 표현 비교</span></button>
+          <button class="ble-tool" data-ble-say="${escapeAttr(b.block)}" data-rate="0.8"><b>블록만 듣기</b><span>첫 덩어리 고정</span></button>
+        </div>
+        <div class="ble-mini"><div class="t">다음 단계</div><div class="v">예문을 외우는 게 아니라, 한국어 상황만 보고 이 블록을 꺼내는 단계로 넘어갑니다.</div></div>
+      </div>
+    </div>
    </div>
    <div class="ar2-ctrl"><button id="bleNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">연습하기 →</button></div>`;
 }
 function bleWirePattern(it){
-  document.querySelectorAll(".ble-exline").forEach(b=>{ b.onclick=()=>speakEn(b.dataset.say); });
+  const first=bleSampleExamples(it.block,1)[0]||{ko:it.block.meaningKo,en:it.block.block};
+  bleWireFocusTools({type:"pattern", block:it.block, ex:first});
   $("#bleNext").onclick=()=>{ bleSession.idx++; bleRender(); };
 }
 
@@ -7222,26 +7563,35 @@ function bleViewRetrieve(it){
   const isSpeed=it.type==="speed";
   const emo = ex.emoji || ({restaurant:"🍽",cafe:"☕",hotel:"🏨",hospital:"🏥",school:"🏫",shopping:"🛍",airport:"✈️",taxi:"🚕",office:"🏢",bank:"🏦"})[ex.situation] || "💬";
   const coachMsg = it.type==="mixed"?"상황을 보고 맞는 블록을 골라 말해볼까요?" : it.type==="speed"?"빠르게! 상황만 보고 바로 말해보세요 ⚡" : "상황만 보고 영어로 말해볼까요?";
-  return `<div class="blpz">
+  const place=bleContextLabel(ex);
+  return `<div class="blpz blpz-dense">
     ${isSpeed?`<div class="blpz-timer" id="bleTimer">⏱ ${it.limit}초</div>`:""}
     <div class="blpz-coach">
       <div class="blpz-fox">🦊</div>
       <div class="blpz-bubble">${coachMsg}</div>
     </div>
-    <div class="blpz-card">
-      <div class="blpz-tip">${it.type==="mixed"?"블록명 없이 선택하기":"상황 → 블록 선택 → 말하기"}</div>
-      <div class="blpz-emo">${emo}</div>
-      <div class="blpz-ko">${escapeHtml(ex.ko)}</div>
+    <div class="blpz-main">
+      <div class="blpz-card">
+        <div class="blpz-tip">${it.type==="mixed"?"블록명 없이 선택하기":"상황 → 블록 선택 → 말하기"}</div>
+        <div class="blpz-emo">${emo}</div>
+        <div class="blpz-ko">${escapeHtml(ex.ko)}</div>
+      </div>
+      <div class="ble-context-strip">
+        <span>장소<b>${escapeHtml(place)}</b></span>
+        <span>훈련<b>${escapeHtml(bleModeLabel(it.type))}</b></span>
+        <span>목표<b>5초 안에 입으로</b></span>
+      </div>
+      <div class="blpz-micwrap">
+        <div class="blpz-micring"><button id="bleMic" class="blpz-mic">🎤</button></div>
+      </div>
+      <div class="blpz-miclbl" id="bleMicLbl">터치해서 말하기</div>
+      <div class="blpz-stat" id="bleStat"></div>
+      <div class="blpz-foot">
+        <button id="bleHint">💡 힌트</button>
+        <button id="bleType">⌨️ 글로 쓰기</button>
+      </div>
     </div>
-    <div class="blpz-micwrap">
-      <div class="blpz-micring"><button id="bleMic" class="blpz-mic">🎤</button></div>
-    </div>
-    <div class="blpz-miclbl" id="bleMicLbl">눌러서 바로 말하기</div>
-    <div class="blpz-stat" id="bleStat"></div>
-    <div class="blpz-foot">
-      <button id="bleHint">💡 힌트</button>
-      <button id="bleType">⌨️ 글로 쓰기</button>
-    </div>
+    ${bleFocusPanel(it)}
   </div>`;
 }
 function bleWireRetrieve(it){
@@ -7265,6 +7615,7 @@ function bleWireRetrieve(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
   $("#bleHint").onclick=()=>{ bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); };
+  bleWireFocusTools(it);
 }
 async function bleFinishRetrieve(it, heard){
   if(it._finished) return;
@@ -7285,9 +7636,11 @@ async function bleFinishRetrieve(it, heard){
       : (j.shortFeedbackKo||"한 번 더 연습해볼게요");
     // 내가 말한 내용(STT) 표시 — 발음 문제인지 단어 문제인지 확인용
     const heardBlock = heard && heard.trim()
-      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div></div>`
+      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div>${pronKoHtml(heard, "내 발음 한글")}</div>`
       : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
-    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(j.naturalAnswer||ex.en)}</div>${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    const ans=j.naturalAnswer||ex.en;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${bleAnswerTools(ans, ex.ko)}${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    bleWireFocusTools(it);
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
   const lbl2=$("#bleMicLbl"); if(lbl2) lbl2.textContent="";
@@ -7603,13 +7956,14 @@ function bleDeepRender(){
   else if(it.type==="repair_fill") { body=bleViewRepairFill(it); isPeach=true; }
   else { body=bleViewRetrieve(it); isPeach=true; }
   const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
-  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
+  const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:${isPeach?"920px":"460px"};margin-left:auto;margin-right:auto">
       <button id="bleExit" style="background:${headBg};border:1px solid ${headTrack};color:${headTx};font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 끝내기</button>
       <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#F0664A">${bleDeep.outputMode?`🗣️ 영어로 꺼내기 · ${Math.min(doneN+1,bleDeep.limit||10)}/${bleDeep.limit||10}`:`🔁 본격 학습 · ${doneN}문제`}</div>
       <div style="width:64px;text-align:right">${rk?`<span style="font-size:10.5px;font-weight:800;color:#fff;background:${rc};border-radius:99px;padding:3px 8px">${rk}</span>`:""}</div>
     </div>`;
   const ss=$("#sprintScroll"); ss.style.background=isPeach?"#EAE3DD":"";
-  ss.innerHTML=`<div class="arena arena2" style="max-width:520px;margin:0 auto">${head}${body}</div>`;
+  const arenaMax=isPeach?"min(960px, calc(100vw - 24px))":"520px";
+  ss.innerHTML=`<div class="arena arena2" style="max-width:${arenaMax};margin:0 auto">${head}${body}</div>`;
   ss.scrollTop=0;
   $("#bleExit").onclick=()=>bleDeepSummary();
   bleT0=Date.now(); bleSpoke=0;
@@ -7637,9 +7991,11 @@ async function bleFinishRetrieveDeep(it, heard){
       : isHit?`의미는 통했어요. 다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로!`
       : (j.shortFeedbackKo||"");
     const heardBlock = heard && heard.trim()
-      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div></div>`
+      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div>${pronKoHtml(heard, "내 발음 한글")}</div>`
       : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
-    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(j.naturalAnswer||ex.en)}</div>${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    const ans=j.naturalAnswer||ex.en;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${bleAnswerTools(ans, ex.ko)}${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    bleWireFocusTools(it);
   }
   // 한글로 말한 단어(=모르는 단어) → 단어공부 DB로
   if(j.unknownWords && j.unknownWords.length){
@@ -7692,6 +8048,7 @@ function bleWireRetrieveDeep(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer){clearInterval(timer);timer=null;} bleFinishRetrieveDeep(it, v); } });
   };
   $("#bleHint").onclick=()=>{ if(it.type==="repair_fill"){ bleShowHintToast('💡 <b>'+escapeHtml(ex.en)+'</b>'); speakEn(ex.en); } else { bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); } };
+  bleWireFocusTools(it);
 }
 // Deep 블록구별 (P6 대조 피드백)
 function bleWireDiscriminateDeep(it){
@@ -7785,7 +8142,7 @@ function bleViewRepairFill(it){
       <div style="font-family:var(--serif);font-size:21px;color:#3A2D27;font-weight:700;margin-top:6px">${escapeHtml(showBlank)}</div>
     </div>
     <div class="blpz-micwrap"><div class="blpz-micring"><button id="bleMic" class="blpz-mic">🎤</button></div></div>
-    <div class="blpz-miclbl" id="bleMicLbl">눌러서 말하기</div>
+    <div class="blpz-miclbl" id="bleMicLbl">터치해서 말하기</div>
     <div class="blpz-stat" id="bleStat"></div>
     <div class="blpz-foot"><button id="bleHint">💡 정답 보기</button><button id="bleType">⌨️ 글로 쓰기</button></div>
   </div>`;
@@ -8559,7 +8916,7 @@ function spNext(){
       <div class="sc-hint">⚡ 영어로 외쳐서 공격! (3초 안에)</div>
       <div class="sc-ko">${escapeHtml(it.ko)}</div>
      </div>
-     <div id="spStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-top:12px">🎤 눌러서 바로 말하기</div>
+     <div id="spStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-top:12px">🎤 터치해서 말하기</div>
     </div>
     <div class="ar2-ctrl">
      <button id="spMicBtn" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 공격!</button>
@@ -8890,7 +9247,7 @@ function blRender(){
       <div class="sc-hint">${teach?'한국어 → 영어로 말해보세요':'이 상황을 영어로'}</div>
       <div class="sc-ko">${escapeHtml(it.ko)}</div>
      </div>
-     <div id="blStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-top:12px">🎤 눌러서 바로 말하기</div>
+     <div id="blStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-top:12px">🎤 터치해서 말하기</div>
     </div>
     <div class="ar2-ctrl">
      <button id="blMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
@@ -9009,7 +9366,7 @@ function ctNext(){
       <div class="sc-hint">한국어 → 영어로 말해보세요</div>
       <div class="sc-ko">${escapeHtml(it.ko)}</div>
     </div>
-    <div id="ctStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px">🎤 눌러서 바로 말하기</div>
+    <div id="ctStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px">🎤 터치해서 말하기</div>
     <button id="ctMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
    </div>`;
   ctT0=Date.now(); ctSpoke=0;
@@ -9345,7 +9702,7 @@ let phAttempts=0;
 function phScoreFx(res, st, target){
   if(!res || res.score==null){
     const heard=res&&res.heard;
-    st.innerHTML = heard ? `<span style="color:#ef4444;font-weight:800">"${escapeHtml(heard)}"로 들렸어요 — 다시 해볼까? 🎤</span>`
+    st.innerHTML = heard ? `<span style="color:#ef4444;font-weight:800">"${escapeHtml(heard)}"로 들렸어요 — 다시 해볼까? 🎤</span>${pronKoHtml(heard, "들린 소리 한글")}`
                          : `<span style="color:#ef4444;font-weight:800">🔇 소리가 안 잡혔어요. 마이크 가까이서 또렷하게!</span>`;
     return;
   }
@@ -9377,7 +9734,7 @@ function phScoreFx(res, st, target){
   phAttempts++; if(pass && phAttempts===3) awardXP("phonics",5,"3번 통과 보너스!");
   st.innerHTML=`<div style="font-size:24px;font-weight:900;color:${col}">${sc}점 <span style="font-size:16px">${pass?"⭐".repeat(stars):"💪"}</span>${xp?` <span style="font-size:14px;color:var(--muted)">+${xp}XP</span>`:""}</div>
     <div style="font-size:14px;color:#475569;font-weight:800;margin-top:3px">${msg}</div>
-    ${res.heard?`<div style="font-size:12px;color:#94a3b8;margin-top:3px">들린 발음: "${escapeHtml(res.heard)}"</div>`:""}`;
+    ${res.heard?`<div style="font-size:12px;color:#94a3b8;margin-top:3px">들린 발음: "${escapeHtml(res.heard)}"</div>${pronKoHtml(res.heard, "들린 소리 한글")}`:""}`;
 }
 function burstStars(n){
   const host=$("#phonics"); if(!host) return;
@@ -9737,7 +10094,7 @@ function firstRunRender(){
        <div style="font-size:19px;font-weight:900;color:#F0664A;font-family:var(--serif)">${escapeHtml(it.answer)}</div>
      </div>`:`<div style="text-align:center;font-size:12px;color:#B0958A;margin-bottom:14px">💪 이번엔 안 보고 말해볼까요?</div>`}
     <div id="frStat" style="text-align:center;font-size:13px;color:#8A6F62;min-height:20px;font-weight:700"></div>
-    <div class="auto-actions"><button class="auto-mic" id="frMic">🎤 눌러서 말하기</button></div>
+    <div class="auto-actions"><button class="auto-mic" id="frMic">🎤 터치해서 말하기</button></div>
     <button id="frType" style="width:100%;margin-top:9px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
     <div id="frTypeWrap"></div>
   </div>`;
@@ -9868,7 +10225,7 @@ function dailyRoomRender(){
     <div style="text-align:center;font-size:12px;color:#B0958A;margin-bottom:14px">💪 안 보고 직접 말해보세요</div>
     <div id="drStaff" style="min-height:0"></div>
     <div id="drStat" style="text-align:center;font-size:13px;color:#8A6F62;min-height:20px;font-weight:700"></div>
-    <div class="auto-actions"><button class="auto-mic" id="drMic">🎤 눌러서 말하기</button></div>
+    <div class="auto-actions"><button class="auto-mic" id="drMic">🎤 터치해서 말하기</button></div>
     <button id="drType" style="width:100%;margin-top:9px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
     <div id="drTypeWrap"></div>
   </div>`;
@@ -10024,7 +10381,7 @@ function autoDrillRender(recallMode){
     ${answerHtml}
     <div class="auto-stat" id="autoStat">상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.</div>
     <div class="auto-actions">
-      <button class="auto-mic" id="autoMic">🎤 바로 말하기</button>
+      <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
       <button class="auto-sub" id="autoType">⌨️ 입력</button>
       <button class="auto-sub" id="autoShow">정답 보기</button>
     </div>
@@ -10464,14 +10821,22 @@ function routineDoneCount(){
 }
 function renderHero(){
   const hz=$("#heroZone"); if(!hz) return;
-  const p=getProf(); const li=levelInfo(p.xp);
+  const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
   const done=routineDoneCount(), auto=autoChunkCount();
   hz.innerHTML=`<div class="learn-statbar" title="내 학습 상태">
     <div class="learn-stat"><span>🧱</span><b>Lv.${li.level}</b><span>내 레벨</span></div>
+    <div class="learn-stat"><span>⚡</span><b>${li.inLevel}/${li.need}</b><span>XP</span></div>
     <div class="learn-stat"><span>🔁</span><b>${done}/4</b><span>오늘 전적</span></div>
-    <div class="learn-stat"><span>⚡</span><b>${auto}</b><span>자동화</span></div>
+    <div class="learn-stat"><span>⚙️</span><b>${auto}</b><span>자동화</span></div>
     <div class="learn-stat"><span>🔥</span><b>${streak}일</b><span>연속</span></div>
+  </div>
+  <div class="home-xp-mini" style="margin:10px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,133,104,.10);border:1px solid rgba(255,133,104,.22)">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;font-weight:900;color:var(--text)">
+      <span>프로필 Lv.${li.level}</span>
+      <span style="color:var(--muted)">${li.inLevel} / ${li.need} XP · 총 ${p.xp||0} XP</span>
+    </div>
+    <div style="height:7px;border-radius:99px;background:rgba(255,255,255,.55);overflow:hidden;margin-top:7px"><i style="display:block;height:100%;width:${Math.round(pct*100)}%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A)"></i></div>
   </div>`;
 }
 // 🎉 레벨업 풀스크린 축포
@@ -11367,6 +11732,7 @@ document.addEventListener("pointerdown", unlockTTS, {once:true});
 document.addEventListener("touchstart", unlockTTS, {once:true});
 
 autoSize();
+pronKoAutoStart();
 </script>
 
   <!-- 개발자 스킵 버튼 -->
