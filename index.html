@@ -1738,8 +1738,17 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.17.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
-const APP_BUILD = "2026-06-20";
+const APP_VERSION = "v3.18.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_BUILD = "2026-06-23";
+// 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
+try{
+  if(localStorage.getItem("speakingroom:vocab_reset_v318")!=="1"){
+    localStorage.removeItem("speakingroom:wp_progress");   // 갇힌 이어하기 세트
+    localStorage.removeItem("speakingroom:vbank");          // 같은 단어만 쌓인 AI 캐시
+    localStorage.removeItem("speakingroom:vseen");          // 최근 본 단어 기록 초기화(새 풀로 시작)
+    localStorage.setItem("speakingroom:vocab_reset_v318","1");
+  }
+}catch(e){}
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
 /* ============================================================ */
@@ -4331,9 +4340,11 @@ async function generateVocab(){
       blank:{en:"____", ko, answer:w},
       colloc:[] };
   });
-  // 1) 프리페치된 세트 있으면 즉시 사용
-  let set=takeFromBankFresh(theme.id);
-  let base = (set && set.length) ? set : starterSet();
+  // 1) 단어 출처: STARTER_VOCAB(대형 풀)을 우선 사용해 다양성 확보.
+  //    AI 프리페치 세트는 "충분히 신선할 때만" 가끔 섞어줌 (옛 버그: bank가 항상 우선되어 같은 5개 반복)
+  let base = starterSet();
+  // base가 어떤 이유로 비면 AI bank 시도
+  if(!base || !base.length){ const s=takeFromBankFresh(theme.id); base = (s&&s.length)? s : starterSet(); }
   // 모르는 단어를 앞쪽에 섞되 중복 제거 (최대 2개 + 일반 단어)
   if(dueUnknown.length){
     const seen=new Set(base.map(w=>String(w.word).toLowerCase()));
@@ -4446,8 +4457,16 @@ function wpResumeData(){
   try{ const d=hGet(WP_PROG_KEY,null); if(!d||!d.queue||!d.queue.length) return null;
     if(d.pos>=d.queue.length) return null;
     if((d.lvl||1)!==(state.lvl||1)) return null;   // 레벨 바뀌면 무효
-    // 24시간 지나면 무효
-    if(Date.now()-(d.savedAt||0) > 86400000) return null;
+    // 6시간 지나면 무효 (옛 세트 무한 복원 방지 — 짧게)
+    if(Date.now()-(d.savedAt||0) > 21600000) return null;
+    // 저장된 세트의 단어가 대부분 '이미 최근 본 단어'면 이어하기 무효 → 새 단어 뽑게
+    try{
+      const words=[...new Set(d.queue.map(q=>q&&q.word&&q.word.word).filter(Boolean).map(w=>String(w).toLowerCase()))];
+      if(words.length){
+        const fresh=words.filter(w=>!vocabSeenRecent.includes(w));
+        if(fresh.length < Math.ceil(words.length/2)) return null;
+      }
+    }catch(e){}
     return d;
   }catch(e){ return null; }
 }
