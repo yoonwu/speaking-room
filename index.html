@@ -1746,7 +1746,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.13.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.14.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -9059,7 +9059,7 @@ function onbRender(){
     <div class="onb-foot">
       ${last?`
         <button class="onb-btn primary" id="onbStart">시작하기</button>
-        <button class="onb-btn sec" id="onbLater">나중에 다시 보기</button>
+        <button class="onb-btn sec" id="onbNeverShow">다시 보지 않기</button>
       `:`
         <div class="onb-foot-row">
           ${onbIdx>0?`<button class="onb-btn ghost" id="onbBack">‹ 이전</button>`:""}
@@ -9070,8 +9070,8 @@ function onbRender(){
   const skip=$("#onbSkip"); if(skip) skip.onclick=onbClose;
   const next=$("#onbNext"); if(next) next.onclick=()=>{ onbIdx++; onbRender(); };
   const back=$("#onbBack"); if(back) back.onclick=()=>{ onbIdx--; onbRender(); };
-  const start=$("#onbStart"); if(start) start.onclick=onbComplete;
-  const later=$("#onbLater"); if(later) later.onclick=onbClose;
+  const start=$("#onbStart"); if(start) start.onclick=onbClose;          // 닫기만 (다음에 또 나옴)
+  const never=$("#onbNeverShow"); if(never) never.onclick=onbComplete;    // 완료 저장 (다시 안 나옴)
 }
 function openOnboarding(){ onbIdx=0; $("#onbOv").classList.add("show"); onbRender(); }
 function onbClose(){ $("#onbOv").classList.remove("show"); }   // 완료 표시 안 함
