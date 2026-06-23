@@ -1494,36 +1494,24 @@ body{background:var(--paper)!important;color:var(--text)}
         <button class="eng" id="vocabCard">
           <span class="help-q" data-tut="vocab">?</span>
           <span class="eng-emo">💬</span>
-          <span class="eng-tx"><b>단어</b><i>블록을 더 잘 쓰기 위한 단어</i></span>
+          <span class="eng-tx"><b>단어</b><i>말하기에 필요한 재료를 익혀요</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng" id="chunkCard">
           <span class="eng-emo">🧱</span>
-          <span class="eng-tx"><b>블록 영어</b><i>말하기 블록 익히기</i></span>
+          <span class="eng-tx"><b>블록영어</b><i>자주 쓰는 말 덩어리를 배워요</i></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-out" id="engOut">
           <span class="help-q" data-tut="output">?</span>
           <span class="eng-emo">⚔️</span>
-          <span class="eng-tx"><b>스피킹 훈련장</b><i>꺼내기 · 실전회화</i></span>
+          <span class="eng-tx"><b>스피킹 훈련장</b><i>영어로 꺼내기 · 스피드런 · 실전회화</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <button class="eng" id="engSprint">
-          <span class="help-q" data-tut="sprint">?</span>
-          <span class="eng-emo">⚡</span>
-          <span class="eng-tx"><b>스피드런</b><i>빠르게 · 많이 말하기</i></span>
-          <span class="eng-ar">›</span>
-        </button>
-        <button class="eng" id="boosterCard">
-          <span class="help-q" data-tut="booster">?</span>
-          <span class="eng-emo">🎧</span>
-          <span class="eng-tx"><b>연음 부스터</b><i>wudja · wanna 알아듣기</i></span>
-          <span class="eng-ar">›</span>
-        </button>
-        <button class="eng eng-in" id="engIn">
+        <button class="eng eng-in" id="engListen">
           <span class="help-q" data-tut="listen">?</span>
           <span class="eng-emo">👂</span>
-          <span class="eng-tx"><b>리스닝 동굴</b><i>귀끩기 · 듣고 따라하기</i></span>
+          <span class="eng-tx"><b>듣기 훈련장</b><i>상황 듣기 · 연음 부스터</i></span>
           <span class="eng-ar">›</span>
         </button>
         </div>
@@ -1750,7 +1738,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.15.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.16.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -7728,22 +7716,51 @@ function openSpeakHub(){
    <div class="hub-sheet">
      <div class="hub-grab"></div>
      <div class="hub-title">⚔️ 스피킹 훈련장</div>
-     <div class="hub-sub">어떤 방식으로 말해볼까요?</div>
+     <div class="hub-sub">배운 블록을 말로 써봐요</div>
      <button class="hub-opt" data-go="out">
        <span class="hub-emo">⚔️</span>
-       <span class="hub-tx"><b>영어로 꺼내기</b><i>배운 블록을 상황에 맞게 영어로 말해요</i></span>
+       <span class="hub-tx"><b>영어로 꺼내기</b><i>상황을 보고 배운 블록으로 말해요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
+     <button class="hub-opt" data-go="sprint">
+       <span class="hub-emo">⚡</span>
+       <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
      <button class="hub-opt" data-go="real">
        <span class="hub-emo">🌎</span>
-       <span class="hub-tx"><b>실전회화</b><i>AI와 실제 상황으로 대화하기</i></span>
+       <span class="hub-tx"><b>실전회화</b><i>AI와 실제 상황처럼 대화해요</i></span>
        <span class="hub-ar">›</span>
      </button>
    </div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="out") startOutputEngine(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="out") startOutputEngine(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function openListenHub(){
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="listenHub";
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet">
+     <div class="hub-grab"></div>
+     <div class="hub-title">👂 듣기 훈련장</div>
+     <div class="hub-sub">영어가 들리게 소리를 익혀요</div>
+     <button class="hub-opt" data-go="listen">
+       <span class="hub-emo">👂</span>
+       <span class="hub-tx"><b>상황 듣기</b><i>실제 상황 대화를 듣고 이해해요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
+     <button class="hub-opt" data-go="booster">
+       <span class="hub-emo">🎧</span>
+       <span class="hub-tx"><b>연음 부스터</b><i>붙어 들리는 영어 소리를 익혀요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="listen") startMainTraining(); else startBooster(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openLegacyChunkHubBasic(){
@@ -8638,14 +8655,12 @@ function applyAgeUI(){
   // 아이 모드: 더 밝고 통통한 월드 (학습 설명은 유지)
   const setupEl=$("#setup"); if(setupEl){ setupEl.classList.toggle("kidworld", kid); }
   if(kid){
-    setTit("#engIn","리스닝 동굴");   setSub("#engIn","귀뚫기 · 쉬운 소리 듣기");
-    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","꺼내기 · 친구에게 말하기");
-    setTit("#engReal","어린이 마을"); setSub("#engReal","교실·놀이터·친구");
+    setTit("#engListen","듣기 훈련장"); setSub("#engListen","상황 듣기 · 연음 부스터");
+    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","영어로 꺼내기 · 스피드런 · 실전회화");
     if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="사운드 아카데미 (여기부터!)"; }
   } else {
-    setTit("#engIn","리스닝 동굴");   setSub("#engIn","연음 부스터 · 블록이 어떻게 들리는지");
-    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","배운 블록을 한국어 상황에서 꺼내기");
-    setTit("#engReal","모험 월드맵"); setSub("#engReal","배운 블록을 실전 대화에서 써먹기");
+    setTit("#engListen","듣기 훈련장"); setSub("#engListen","상황 듣기 · 연음 부스터");
+    setTit("#engOut","스피킹 훈련장"); setSub("#engOut","영어로 꺼내기 · 스피드런 · 실전회화");
     if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="발음 교정 아카데미"; }
   }
   const dc=$("#dailyCard"); if(dc) dc.style.display=kid?"none":"";
@@ -9021,10 +9036,24 @@ function xpToast(amount,label,lvUp){
 /* ===================== 🚀 첫 실행 온보딩 ===================== */
 const ONB_PAGES=[
   { ico:"🗣️", title:"이 앱은 뭐하는 앱인가요?",
-    html:`이 앱은 단어를 많이 외우는 앱이 아닙니다.<br><br><b>실제 상황에서 영어가 입으로 나오게</b> 만드는 앱입니다.<br><br>카페에서 주문하고, 호텔에서 요청하고,<br>고객센터에 문의하고, 학교·병원에서<br>필요한 말을 꺼내는 훈련을 합니다.`,
+    html:`이 앱은 단어를 많이 외우는 앱이 아닙니다.<br><br><b>실제 상황에서 영어가 입으로 나오게</b> 만드는 앱입니다.<br><br>카페에서 주문하고, 호텔에서 요청하고,<br>병원이나 학교에서<br>필요한 말을 꺼내는 훈련을 합니다.`,
     extra:`<div class="onb-slogan">외우는 영어보다,<br>입에서 나오는 영어.</div>` },
   { ico:"📚", title:"공부 순서",
-    html:`처음에는 <b>단어</b>와 <b>블록영어</b>를 먼저 공부합니다.<br><br>단어는 <b>재료</b>, 블록영어는 <b>말하기 공식</b>이에요.`,
+    html:`공부는 이렇게 이어집니다.`,
+    extra:`<div class="onb-flow">
+        <div class="fl-item">📖 단어</div><div class="fl-ar">↓</div>
+        <div class="fl-item core">🧱 블록영어</div><div class="fl-ar">↓</div>
+        <div class="fl-item">⚔️ 스피킹 훈련장</div><div class="fl-ar">↓</div>
+        <div class="fl-item">👂 듣기 훈련장</div>
+      </div>
+      <div class="onb-text" style="font-size:13.5px;text-align:left;line-height:1.9">
+        <b>단어</b>는 재료입니다.<br>
+        <b>블록영어</b>는 말하기 공식입니다.<br>
+        <b>스피킹 훈련장</b>은 배운 표현을 직접 말하는 곳입니다.<br>
+        <b>듣기 훈련장</b>은 실제 영어 소리를 익히는 곳입니다.
+      </div>` },
+  { ico:"🧱", title:"블록영어가 중심입니다",
+    html:`영어는 단어 하나씩 조립하는 것보다,<br><b>자주 쓰는 말 덩어리</b>를 통째로 꺼내는 것이 중요합니다.`,
     extra:`<div class="onb-blocks">
         <div class="onb-blk">Can I get...</div>
         <div class="onb-blk">Do you have...</div>
@@ -9032,31 +9061,16 @@ const ONB_PAGES=[
         <div class="onb-blk">Could you...</div>
         <div class="onb-blk">I think...</div>
       </div>
-      <div class="onb-flow">
-        <div class="fl-item">📖 단어</div><div class="fl-ar">↓</div>
-        <div class="fl-item core">🧱 블록영어</div><div class="fl-ar">↓</div>
-        <div class="fl-item">⚔️ 스피킹 훈련장</div><div class="fl-ar">↓</div>
-        <div class="fl-item">⚡ 스피드런</div><div class="fl-ar">↓</div>
-        <div class="fl-item">🌎 실전회화</div>
-      </div>` },
-  { ico:"🧱", title:"블록영어가 핵심입니다",
-    html:`단어 하나씩 말하는 것보다,<br><b>자주 쓰는 말 덩어리</b>를 통째로 꺼내는 게 중요합니다.`,
-    extra:`<div class="onb-blocks">
-        <div class="onb-blk">Can I get some water?</div>
-        <div class="onb-blk">Can I get a receipt?</div>
-        <div class="onb-blk">Can I get another towel?</div>
-      </div>
-      <div class="onb-text" style="font-size:14px">블록영어에서 배운 표현은 스피킹 훈련장과 스피드런에서 <b>계속 다시 나옵니다.</b></div>
+      <div class="onb-text" style="font-size:14px">블록영어에서 배운 표현은 <b>스피킹 훈련장에서 계속 다시 나옵니다.</b></div>
       <div class="onb-key">상황 → 블록 선택 → 말하기</div>` },
-  { ico:"🎯", title:"오늘은 이렇게 시작하세요",
-    html:`처음이라면 이 순서로 해보세요.`,
+  { ico:"🎯", title:"스피킹과 듣기 훈련",
+    html:`<b>스피킹 훈련장</b>에는 3가지가 있습니다.`,
     extra:`<div class="onb-steps">
-        <div class="onb-step"><span class="sn">1</span><span class="st">단어 5개</span></div>
-        <div class="onb-step"><span class="sn">2</span><span class="st">블록영어 기본 5개</span></div>
-        <div class="onb-step"><span class="sn">3</span><span class="st">스피킹 훈련장 3문제</span></div>
-        <div class="onb-step"><span class="sn">4</span><span class="st">스피드런 1회</span></div>
+        <div class="onb-step"><span class="sn">⚔️</span><span class="st">영어로 꺼내기 — 상황 보고 블록으로 말하기</span></div>
+        <div class="onb-step"><span class="sn">⚡</span><span class="st">스피드런 — 제한시간 안에 빠르게</span></div>
+        <div class="onb-step"><span class="sn">🌎</span><span class="st">실전회화 — AI와 실제처럼 대화</span></div>
       </div>
-      <div class="onb-text" style="font-size:14px">처음부터 완벽할 필요 없습니다.<br>틀린 표현은 <b>다시 나오고</b>, 느린 표현은 <b>더 빠르게</b> 연습하게 됩니다.</div>` }
+      <div class="onb-text" style="font-size:14px"><b>듣기 훈련장</b>에서는 상황 듣기와 연음 부스터로 영어 소리를 익힙니다.</div>` }
 ];
 let onbIdx=0;
 function onbRender(){
@@ -9106,8 +9120,8 @@ const TUTORIALS={
     howKid:["귀로 듣기 👂","입으로 따라 하기 👄","별 받기 ⭐"],
     success:"발음이 좋아질수록 별이 늘어요.",
     msg:"영어는 소리에서 시작해요."},
-  listen:{icon:"🎧", title:"리스닝 동굴",
-    goal:"귀를 먼저 트이게 해요.",
+  listen:{icon:"🎧", title:"듣기 훈련장",
+    goal:"실제 영어 소리를 익혀요.",
     how:["집중해서 듣기","들린 걸 고르기","틀려도 괜찮아요"],
     howKid:["귀 쫑긋 듣기 👂","들린 거 고르기","틀려도 OK 😊"],
     success:"매일 조금씩 더 들려요.",
@@ -9375,11 +9389,9 @@ async function checkForUpdate(){
   }catch(e){}
 }
 { const e1=$("#engOut"); if(e1) e1.onclick=openSpeakHub; }
-{ const e2=$("#engIn"); if(e2) e2.onclick=startMainTraining; }
+{ const e2=$("#engListen"); if(e2) e2.onclick=openListenHub; }
 { const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
 { const ck=$("#chunkCard"); if(ck) ck.onclick=bleOpenHub; }
-{ const bc=$("#boosterCard"); if(bc) bc.onclick=startBooster; }
-{ const sp=$("#engSprint"); if(sp) sp.onclick=openSprintPicker; }
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 { const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
 { const tg=$("#ageToggle"); if(tg) tg.querySelectorAll("button").forEach(b=>{ b.onclick=()=>setAge(b.dataset.age); }); }
