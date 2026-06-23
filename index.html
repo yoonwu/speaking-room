@@ -1830,7 +1830,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.41.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.42.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10304,14 +10304,15 @@ function profSkillStats(){
 }
 
 const DAILY_EXPRESSIONS=[
- {en:"I'd like to ...",ko:"~하고 싶어요"},{en:"Could you ...?",ko:"~해 주시겠어요?"},
- {en:"Do you have ...?",ko:"~ 있나요?"},{en:"Can I get ...?",ko:"~ 받을 수 있을까요?"},
- {en:"I'm looking for ...",ko:"~ 찾고 있어요"},{en:"I need help with ...",ko:"~ 도움이 필요해요"},
- {en:"Could you say that again?",ko:"다시 말씀해 주시겠어요?"},{en:"How much is it?",ko:"얼마예요?"},
- {en:"Where can I ...?",ko:"어디서 ~할 수 있나요?"},{en:"Is it possible to ...?",ko:"~ 가능할까요?"},
- {en:"Can you help me?",ko:"도와주실 수 있어요?"},{en:"What do you mean?",ko:"무슨 뜻이에요?"},
- {en:"I have a problem with ...",ko:"~에 문제가 있어요"},{en:"Could you speak more slowly?",ko:"좀 천천히 말해 주시겠어요?"},
- {en:"Let me check.",ko:"확인해 볼게요"}
+ {en:"I'd like to ...",ko:"~하고 싶어요"},{en:"I'm looking for ...",ko:"~ 찾고 있어요"},
+ {en:"Where can I ...?",ko:"어디서 ~할 수 있나요?"},{en:"How much is it?",ko:"얼마예요?"},
+ {en:"Is it possible to ...?",ko:"~ 가능할까요?"},{en:"Can you help me?",ko:"도와주실 수 있어요?"},
+ {en:"What do you mean?",ko:"무슨 뜻이에요?"},{en:"I have a problem with ...",ko:"~에 문제가 있어요"},
+ {en:"Let me check.",ko:"확인해 볼게요"},{en:"Can I have a look?",ko:"좀 봐도 될까요?"},
+ {en:"Where is the ...?",ko:"~는 어디예요?"},{en:"What time is ...?",ko:"~는 몇 시예요?"},
+ {en:"Is there a ... nearby?",ko:"근처에 ~ 있어요?"},{en:"I'll take this one.",ko:"이걸로 할게요"},
+ {en:"Can you recommend ...?",ko:"~ 추천해 주실 수 있어요?"},{en:"It doesn't work.",ko:"이거 안 돼요"},
+ {en:"I don't understand.",ko:"이해 못 했어요"},{en:"One more, please.",ko:"하나 더 주세요"}
 ];
 function dailyExpr(){
   const today=DAYN(); let d=hGet("speakingroom:daily",null);
