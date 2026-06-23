@@ -1,12 +1,12 @@
 {
-  "name": "스피킹 룸",
-  "short_name": "스피킹룸",
-  "description": "모험처럼 영어가 트이는 생존 스피킹 트레이너",
+  "name": "3초영어",
+  "short_name": "3초영어",
+  "description": "아는 영어 말고, 나오는 영어",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0e100f",
-  "theme_color": "#0e100f",
+  "background_color": "#fdf6f0",
+  "theme_color": "#E8755A",
   "orientation": "portrait",
   "icons": [
     {
