@@ -1830,7 +1830,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.42.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.43.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10316,6 +10316,9 @@ const DAILY_EXPRESSIONS=[
 ];
 function dailyExpr(){
   const today=DAYN(); let d=hGet("speakingroom:daily",null);
+  // 튜토에서 이미 배운 5블록은 '오늘의 영어 블록'에서 제외 (옛 캐시 정리)
+  const TUTORIAL_BLOCKS=["Can I get ...?","Do you have ...?","I need help with ...","Could you ...?","I think ...","Can I get...","Do you have...","I need...","Could you...","I think..."];
+  if(d && d.en && TUTORIAL_BLOCKS.some(b=>d.en.replace(/[.\s]/g,"")===b.replace(/[.\s]/g,""))) d=null;
   if(!d || d.date!==today){ const idx=today%DAILY_EXPRESSIONS.length; const e=DAILY_EXPRESSIONS[idx]; d={date:today, en:e.en, ko:e.ko}; hSet("speakingroom:daily",d); avSeen(e.en,e.ko); }
   try{ if(d&&d.en) reuseAdd(d.en, d.ko||"", "daily", "daily:"+today); }catch(e){}
   return d;
