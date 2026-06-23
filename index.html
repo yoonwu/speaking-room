@@ -1815,7 +1815,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.25.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.26.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10185,8 +10185,14 @@ function routineReviewCount(){
 function todayRoutineSteps(){
   const q=questGet(), c=q.c||{};
   const due=routineReviewCount();
+  // 블록 5개(Set 1) 클리어 여부 — 처음 하는 사람한텐 복습 대신 기본 블록부터
+  let gateReady=false;
+  try{ gateReady=bleDeepGateReady(bleActiveSet()); }catch(e){}
+  const firstStep = gateReady
+    ? {id:"routineReview", emo:"🔁", t:"복습 먼저", d:due?`만기 표현 ${due}개 · 약 2분`:"약한 표현 점검 · 약 2분", done:(c.vocab||0)>0 || (c.chunk||0)>0, run:startRoutineReview}
+    : {id:"routineFirstBlocks", emo:"🧱", t:"기본 블록 배우기", d:"먼저 기본 블록 5개를 배워요 · 약 5분", done:false, run:()=>{ try{ bleStartSetIntro(bleActiveSet().id); }catch(e){ bleOpenHub(); } }};
   return [
-    {id:"routineReview", emo:"🔁", t:"복습 먼저", d:due?`만기 표현 ${due}개 · 약 2분`:"약한 표현 점검 · 약 2분", done:(c.vocab||0)>0 || (c.chunk||0)>0, run:startRoutineReview},
+    firstStep,
     {id:"routineBlock", emo:"🧱", t:"새 블록", d:"1개 배우기 · 약 4분", done:(c.chunk||0)>=1, run:()=>bleOpenHub()},
     {id:"routineSpeak", emo:"⚡", t:"자동화 드릴", d:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
     {id:"routineListen", emo:"👂", t:"듣기 드릴", d:"3문장 듣기 · 약 2분", done:(c.listen||0)>=1, run:()=>openListenHub()}
