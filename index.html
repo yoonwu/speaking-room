@@ -84,36 +84,44 @@
 .combo-pop{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:30;font-size:40px;font-weight:900;color:#ffb454;text-shadow:0 4px 14px rgba(0,0,0,.5);pointer-events:none;animation:comboPop .8s cubic-bezier(.18,1.5,.4,1) forwards}
 @keyframes comboPop{0%{transform:translate(-50%,10px) scale(.5);opacity:0}40%{transform:translate(-50%,-6px) scale(1.15);opacity:1}100%{transform:translate(-50%,-40px) scale(1);opacity:0}}
 /* ===== 🚀 첫 실행 온보딩 (복숭아 소르베) ===== */
-.onb-ov{position:fixed;inset:0;z-index:400;display:none;flex-direction:column;background:linear-gradient(180deg,#FFF1E6,#FFE8DB)}
+.onb-ov{position:fixed;inset:0;z-index:400;display:none;flex-direction:column;background:#FFF1E6}
 .onb-ov.show{display:flex}
-.onb-top{display:flex;align-items:center;justify-content:flex-end;padding:16px 18px 0}
-.onb-skip{background:none;border:none;color:#B0958A;font-size:13px;font-weight:700;cursor:pointer;padding:6px 10px}
-.onb-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 30px;max-width:460px;margin:0 auto;width:100%}
-.onb-ico{font-size:62px;margin-bottom:18px;filter:drop-shadow(0 8px 16px rgba(240,102,74,.3))}
-.onb-title{font-size:23px;font-weight:900;color:#3A2D27;margin-bottom:16px;line-height:1.3}
-.onb-text{font-size:15px;color:#5A463C;line-height:1.75;font-weight:500}
+.onb-hero{position:relative;flex:none;overflow:hidden;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:0 0 36px 36px;padding:calc(18px + env(safe-area-inset-top)) 22px 24px;display:flex;flex-direction:column;align-items:center;gap:15px;box-shadow:0 18px 40px -20px rgba(240,102,74,.6)}
+.onb-hero-top{position:relative;z-index:1;width:100%;display:flex;align-items:center;justify-content:space-between}
+.onb-step-no{font-size:12.5px;font-weight:800;color:rgba(255,255,255,.92);letter-spacing:.05em}
+.onb-skip{background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;padding:7px 14px;border-radius:99px}
+.onb-badge{position:relative;z-index:1;width:98px;height:98px;border-radius:50%;background:rgba(255,255,255,.96);display:grid;place-items:center;font-size:53px;line-height:1;box-shadow:0 14px 28px -8px rgba(150,45,25,.45);margin-top:6px}
+.onb-hero .onb-dots{position:relative;z-index:1;display:flex;gap:7px;padding:0}
+.onb-dot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.5);transition:all .25s}
+.onb-dot.on{width:24px;background:#fff}
+.onb-blob{position:absolute;border-radius:50%;background:rgba(255,255,255,.13);pointer-events:none}
+.onb-blob.b1{width:160px;height:160px;top:-54px;right:-44px}
+.onb-blob.b2{width:96px;height:96px;bottom:6px;left:-32px}
+.onb-sheet{flex:1;min-height:0;display:flex;flex-direction:column;padding:6px 24px calc(16px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;width:100%}
+.onb-content{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;gap:16px;text-align:center;padding:16px 0;scrollbar-width:none;-ms-overflow-style:none}
+.onb-content::-webkit-scrollbar{display:none}
+.onb-ico{display:none}
+.onb-title{font-size:24px;font-weight:900;color:#3A2D27;line-height:1.3}
+.onb-text{font-size:15px;color:#6E574B;line-height:1.7;font-weight:500}
 .onb-text b{color:#F0664A;font-weight:800}
-.onb-slogan{margin-top:20px;background:#fff;border:1px solid #FBD6C4;border-radius:16px;padding:15px 20px;font-size:17px;font-weight:800;color:#F0664A;line-height:1.5}
-.onb-blocks{margin:16px 0;display:flex;flex-direction:column;gap:7px}
-.onb-blk{background:#fff;border:1px solid #FBE0D2;border-radius:11px;padding:9px 15px;font-family:var(--serif);font-size:16px;color:#3A2D27}
-.onb-flow{margin:14px 0;display:flex;flex-direction:column;align-items:center;gap:3px}
-.onb-flow .fl-item{background:#fff;border:1px solid #FBE0D2;border-radius:10px;padding:7px 16px;font-size:14px;font-weight:700;color:#5A463C;min-width:140px}
-.onb-flow .fl-item.core{background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;border:none;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)}
-.onb-flow .fl-ar{color:#E0A98A;font-size:13px;font-weight:900}
-.onb-key{margin-top:18px;background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;border-radius:14px;padding:14px 18px;font-size:17px;font-weight:900;box-shadow:0 10px 22px -10px rgba(240,102,74,.5)}
-.onb-steps{margin:14px 0;text-align:left;width:100%}
-.onb-step{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #FBE0D2;border-radius:13px;padding:12px 16px;margin-bottom:8px}
-.onb-step .sn{width:26px;height:26px;flex:none;border-radius:50%;background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:900}
-.onb-step .st{font-size:15px;color:#3A2D27;font-weight:700}
-.onb-dots{display:flex;justify-content:center;gap:8px;padding:10px 0}
-.onb-dot{width:8px;height:8px;border-radius:99px;background:#FBD6C4;transition:all .2s}
-.onb-dot.on{width:22px;background:#F0664A}
-.onb-foot{padding:14px 24px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;max-width:460px;margin:0 auto;width:100%}
+.onb-slogan{background:linear-gradient(135deg,#FFF0E8,#FFE3D5);border:1px solid #FBD6C4;border-radius:18px;padding:18px 20px;font-size:18px;font-weight:800;color:#F0664A;line-height:1.5}
+.onb-blocks{display:flex;flex-direction:column;gap:9px}
+.onb-blk{background:#fff;border:1px solid #FBE0D2;border-radius:13px;padding:12px 16px;font-family:var(--serif);font-size:17px;color:#3A2D27;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)}
+.onb-flow{display:flex;flex-direction:column;align-items:center;gap:6px}
+.onb-flow .fl-item{width:100%;background:#fff;border:1px solid #FBE0D2;border-radius:14px;padding:13px 16px;font-size:15px;font-weight:800;color:#5A463C;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)}
+.onb-flow .fl-item.core{background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;border:none;box-shadow:0 8px 18px -8px rgba(240,102,74,.55)}
+.onb-flow .fl-ar{color:#E0A98A;font-size:14px;font-weight:900;line-height:1}
+.onb-key{background:linear-gradient(135deg,#FF9576,#F0664A);color:#fff;border-radius:16px;padding:15px 18px;font-size:17px;font-weight:900;box-shadow:0 10px 22px -10px rgba(240,102,74,.5)}
+.onb-steps{display:flex;flex-direction:column;gap:9px;text-align:left;width:100%}
+.onb-step{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #FBE0D2;border-radius:15px;padding:13px 15px;box-shadow:0 4px 12px -8px rgba(214,120,70,.4)}
+.onb-step .sn{width:34px;height:34px;flex:none;border-radius:11px;background:linear-gradient(135deg,#FFE0D2,#FFCDB8);display:grid;place-items:center;font-size:18px}
+.onb-step .st{font-size:14.5px;color:#3A2D27;font-weight:700;line-height:1.4}
+.onb-foot{flex:none;display:flex;flex-direction:column;gap:10px;padding-top:12px}
 .onb-foot-row{display:flex;gap:10px}
 .onb-btn{flex:1;border:none;cursor:pointer;border-radius:16px;padding:16px;font-size:16px;font-weight:800;transition:transform .1s}
 .onb-btn:active{transform:scale(.97)}
 .onb-btn.primary{background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;box-shadow:0 12px 24px -10px rgba(240,102,74,.5)}
-.onb-btn.ghost{background:#fff;border:1px solid #FBD6C4;color:#8A6F62;flex:0 0 auto;padding:16px 20px}
+.onb-btn.ghost{background:#fff;border:1px solid #FBD6C4;color:#8A6F62;flex:0 0 auto;padding:16px 18px}
 .onb-btn.sec{background:#fff;border:1px solid #FBD6C4;color:#8A6F62}
 
 /* ===== 📖 튜토리얼 오버레이 ===== */
@@ -1738,15 +1746,15 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.19.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.20.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
-  if(localStorage.getItem("speakingroom:vocab_reset_v319")!=="1"){
+  if(localStorage.getItem("speakingroom:vocab_reset_v3200")!=="1"){
     localStorage.removeItem("speakingroom:wp_progress");   // 갇힌 이어하기 세트
     localStorage.removeItem("speakingroom:vbank");          // 같은 단어만 쌓인 AI 캐시
     localStorage.removeItem("speakingroom:vseen");          // 최근 본 단어 기록 초기화(새 풀로 시작)
-    localStorage.setItem("speakingroom:vocab_reset_v319","1");
+    localStorage.setItem("speakingroom:vocab_reset_v3200","1");
   }
 }catch(e){}
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
@@ -3977,15 +3985,18 @@ function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
   const recent=(vocabSeenRecent||[]).slice(-40);
   const avoidLine = recent.length ? ("AVOID these recently used words (do NOT generate any of them): "+recent.join(", ")+". Generate fresh, different words.") : "";
+  const freqLine=commonFreqPromptLine(theme);
   return [
 "Create a vocabulary set for a Korean learner. Loose theme context: "+theme.topic+".",
 grammarRule(),
 vocabWordLevelRule(),
 "CRITICAL: The WORD DIFFICULTY above OVERRIDES the theme. The theme is only loose inspiration — do NOT pick the same predictable theme words every time (e.g. for cafe do not always pick 'refill/decaf/order'). At higher levels pick genuinely harder, less obvious words even within the theme. Lv.1 and Lv.10 on the SAME theme MUST produce clearly different difficulty words.",
 avoidLine,
+freqLine,
+"Use the frequency bank as the main source for new vocabulary. Do not keep falling back to the same tiny theme words; the app has 5000 ordered common words available.",
 levelHint(),
 levelCap(),
-"Pick 5 genuinely useful words/expressions AT THIS DIFFICULTY. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit, and EACH a complete grammatical sentence (real sentence with correct articles/verbs, never a word-pile). Also 2 collocations. Variety seed "+seed+".",
+"Pick 12 genuinely useful words/expressions AT THIS DIFFICULTY. Every 'word' must be a DIFFERENT answer target. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit, and EACH a complete grammatical sentence (real sentence with correct articles/verbs, never a word-pile). Also 2 collocations. Variety seed "+seed+".",
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'. The 'answer' MUST equal the target 'word' (do not test a different word in the blank).",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
   ].filter(Boolean).join("\n");
@@ -4608,6 +4619,30 @@ const STARTER_EXTRA_ROWS={
     ["resilient","회복력 있는",3,["She is resilient.","A resilient team.","Stay resilient."],["그녀는 회복력이 강해.","강인한 팀.","꿋꿋해."],"She is ____.","그녀는 회복력이 강해.","resilient",["resilient team","stay resilient"]]
   ]
 };
+// Frequency source: OpenSubtitles 2018 English frequency list, filtered through Google 10000 no-swears; kept in spoken/dialogue usage-frequency order.
+const COMMON_FREQ_WORDS=["you","i","the","to","a","it","and","that","of","is","in","what","we","me","this","he","for","my","on","have","your","do","was","no","not","be","are","don","know","can","with","but","all","so","just","there","here","they","like","get","she","go","if","right","out","about","up","at","him","now","oh","one","come","well","her","how","yeah","will","got","want","think","as","see","did","good","who","why","from","let","his","yes","when","going","time","an","okay","back","look","us","would","them","where","were","take","then","had","or","been","our","gonna","tell","really","man","some","say","hey","could","by","need","something","has","too","more","way","down","make","very","never","only","people","over","because","little","please","love","should","mean","said","sorry","give","off","am","thank","any","two","even","much","doing","sure","thing","these","help","first","into","anything","still","find","life","nothing","sir","day","work","their","uh","again","maybe","must","before","other","wait","stop","call","after","won","talk","away","than","thought","home","night","put","great","those","last","better","everything","told","new","things","always","keep","long","years","leave","does","money","around","name","place","ever","feel","guys","father","guy","made","old","which","big","lot","done","hello","nice","believe","girl","someone","fine","thanks","wanted","kind","coming","house","every","ok","through","being","course","stay","left","dad","enough","happened","came","may","mother","wrong","world","bad","might","three","today","listen","another","understand","hear","remember","ask","own","same","show","else","kill","talking","found","next","getting","care","car","looking","son","try","woman","went","hi","dead","many","mind","friend","best","mom","morning","trying","boy","together","yourself","job","saw","family","real","without","baby","room","already","move","most","seen","live","miss","actually","both","heard","once","ready","head","called","used","idea","knew","hold","happy","door","such","brother","also","pretty","bit","took","haven","yet","men","whole","start","use","while","since","wife","days","guess","tomorrow","matter","meet","bring","tonight","everyone","run","wanna","hard","ah","alone","myself","school","gone","um","end","saying","phone","play","looks","problem","few","friends","gotta","ago","open","anyone","killed","hope","face","until","lost","police","excuse","turn","business","case","wants","says","true","die","heart","soon","each","worry","later","year","watch","music","hand","having","probably","beautiful","doctor","sit","eat","thinking","young","second","working","water","person","part","kids","late","stuff","exactly","under","death","minute","pay","crazy","forget","everybody","kid","change","gave","happen","five","drink","far","knows","its","whatever","eyes","shut","hit","taking","easy","times","check","hands","minutes","deal","different","means","point","inside","makes","asked","somebody","mine","making","body","afraid","sleep","chance","dear","quite","four","anyway","close","party","fun","against","word","comes","important","set","shall","story","number","daughter","least","waiting","hurt","wish","moment","fight","week","husband","girls","rest","married","fire","game","nobody","mr","children","side","stand","read","though","cut","started","sister","supposed","between","child","goes","hours","speak","women","behind","almost","truth","blood","able","lady","anymore","playing","gets","shot","reason","trouble","break","war","city","walk","town","trust","met","office","question","brought","yours","welcome","high","wow","couple","half","died","cool","free","either","seems","power","bye","buy","telling","honey","tried","front","team","answer","gun","boys","line","send","news","stupid","bed","full","months","save","sometimes","become","along","hate","food","outside","light","l","needs","dog","country","clear","order","em","fact","lord","captain","six","hot","funny","black","alive","pick","feeling","living","cause","ahead","lose","king","plan","dinner","sort","leaving","running","boss","promise","taken","safe","ma","book","sent","white","hour","anybody","small","perfect","lives","special","parents","s","john","himself","perhaps","sounds","serious","sick","company","ha","scared","uncle","poor","red","past","earth","possible","shoot","touch","sound","top","asking","win","glad","control","human","drive","hair","jack","luck","murder","happens","air","ten","daddy","finally","fast","cold","seem","laughing","words","hospital","street","hang","dance","meeting","till","others","catch","follow","sense","lie","evening","master","known","dream","write","million","voice","sweet","rather","felt","sign","lucky","somewhere","bet","o","jesus","longer","calling","worked","quiet","looked","less","pull","beat","careful","coffee","return","secret","weeks","date","seeing","fall","given","fault","straight","takes","song","future","loved","changed","road","calm","wonderful","mad","turned","drop","ladies","learn","step","absolutely","early","explain","clean","piece","yesterday","throw","picture","land","feet","wonder","questions","speaking","worth","dude","giving","president","eye","quick","moving","figure","state","strong","sam","none","amazing","ones","works","act","needed","weird","law","worried","report","missing","choice","happening","chief","wedding","strange","general","pain","decided","ya","pass","tired","class","officer","kept","wake","worse","busy","eh","mistake","kiss","court","building","finish","during","age","ship","caught","meant","sell","dark","watching","system","suppose","evidence","movie","ride","t","completely","mouth","totally","birthday","tv","born","imagine","information","instead","definitely","security","certainly","film","month","lying","unless","train","seven","wear","clothes","michael","hotel","christmas","attack","round","expect","sing","terrible","george","bag","history","blue","near","broke","station","seriously","forever","david","frank","except","thinks","message","entire","joe","table","talked","across","rock","lovely","handle","middle","buddy","paid","protect","using","floor","ran","spend","situation","ring","anywhere","dangerous","bill","york","army","lead","bought","finished","fair","sun","letter","fool","attention","club","simple","interesting","space","test","box","group","single","sitting","marriage","join","fear","d","peace","forgot","force","short","normal","charlie","present","enjoy","mike","crime","horse","ground","american","count","area","charge","honor","lunch","miles","radio","ball","surprise","paper","key","boat","quickly","gold","bar","fish","mark","tom","wearing","accident","government","eight","fell","cover","certain","interested","deep","star","sea","agree","problems","detective","prison","major","stick","offer","difficult","smart","personal","record","stopped","hide","whether","bank","trip","relax","america","public","list","afternoon","brain","fix","proud","tea","service","forward","angry","park","soul","fighting","peter","rich","agent","blow","paul","dress","mary","missed","scene","killing","standing","saved","mm","respect","killer","ice","mess","tough","feels","church","sad","cell","drunk","share","camera","within","card","fly","ben","girlfriend","laugh","smell","broken","honest","often","starting","calls","y","spent","third","english","visit","judge","window","hungry","dare","relationship","moved","prove","private","wall","seat","position","realize","lt","especially","machine","walking","art","pleasure","college","french","involved","cry","became","lived","impossible","obviously","neither","accept","besides","queen","teacher","sake","loves","carry","teach","apartment","upset","green","la","liked","cute","evil","professor","contact","joke","cop","huge","holy","store","jail","likes","lawyer","doubt","continue","appreciate","cat","shop","driving","congratulations","wrote","village","quit","field","james","wine","decision","south","sleeping","slow","island","glass","beginning","cash","dying","hundred","whose","difference","plane","push","continues","singing","eating","north","mrs","tree","gift","truck","putting","bear","board","grab","beer","stuck","magic","support","rules","partner","reach","wind","max","immediately","seconds","thousand","gives","experience","cheers","victim","upon","computer","christ","planet","promised","bus","henry","dirty","search","staying","dreams","arrest","holding","suddenly","usually","lots","shoes","er","jump","rid","yo","knock","harry","grow","worst","river","patient","kitchen","fat","passed","m","final","summer","bob","listening","escape","everywhere","moon","arms","turns","address","match","grand","nervous","de","choose","themselves","decide","mate","drinking","press","bother","foot","blame","drugs","type","rings","mission","named","heaven","picked","paris","race","risk","books","further","danny","action","allowed","orders","learned","price","arrived","nick","otherwise","pictures","fit","smoke","favor","played","notice","awesome","smile","director","guard","begin","spot","surprised","innocent","herself","london","feelings","enemy","battle","ourselves","alex","dollars","allow","nine","gay","department","guilty","apart","earlier","duty","jim","suit","bell","west","legs","hero","destroy","stage","bunch","according","chicken","bigger","low","helping","admit","closed","names","witness","arm","steal","jimmy","kick","twice","cross","ways","indeed","gas","keeping","energy","pregnant","waste","helped","fired","favorite","tony","taste","locked","places","writing","adam","brothers","starts","prince","form","sold","silly","mention","build","throat","hole","figured","track","lock","leg","above","steve","seemed","breakfast","engine","written","complete","video","however","pressure","fresh","weapon","sky","study","burn","reading","crowd","treat","roll","double","spirit","danger","cost","empty","level","memory","itself","acting","interest","nose","plans","following","bathroom","built","closer","ray","sarah","band","apparently","excited","richard","losing","animals","flight","nature","raise","pop","client","bomb","neck","suspect","warm","extra","bottle","van","heavy","dogs","wild","simply","lee","animal","showed","billy","shooting","keeps","camp","guns","medical","shame","hoping","whom","bird","flowers","famous","beauty","driver","keys","rain","awful","large","local","deserve","stone","jane","grace","consider","weekend","wondering","lay","plenty","willing","pants","skin","excellent","beach","c","faith","responsible","military","opportunity","common","bottom","german","cook","walked","papers","justice","hall","commander","drug","main","knife","devil","necessary","although","princess","lights","flying","rose","knowing","clearly","hat","agreed","johnny","corner","code","note","tommy","due","correct","language","stars","faster","cars","folks","fellow","several","shows","leader","leaves","restaurant","east","blind","ghost","cup","gotten","tight","conversation","tells","lies","nor","pulled","hanging","speed","stories","health","advice","held","beyond","rule","hardly","possibly","inspector","trial","emergency","ought","eddie","somehow","hearing","states","account","spoke","file","understood","angel","tape","milk","powerful","weapons","practice","manager","vote","jake","national","career","minister","super","taught","robert","biggest","plays","natural","dancing","copy","plus","martin","cake","freedom","among","breath","operation","chris","crew","challenge","market","meat","towards","bringing","dropped","student","strength","size","color","monster","loud","photo","aw","nearly","sight","greatest","games","bridge","dressed","arrested","horrible","coach","planning","checked","breaking","noticed","fantastic","serve","ideas","investigation","center","older","pack","soldiers","doc","project","training","example","trick","prepared","science","united","travel","incredible","paying","character","teeth","criminal","charles","chinese","truly","survive","bobby","target","feed","nurse","e","fake","records","breathing","numbers","oil","suicide","belong","perfectly","amy","forgotten","remain","original","onto","concerned","credit","invited","discuss","research","easier","view","chair","strike","roger","fill","condition","mountain","dr","nowhere","sheriff","kim","turning","brown","recognize","heads","audience","society","finding","shirt","comfortable","meaning","guest","pieces","dry","letting","began","aye","jeff","female","release","ho","cards","pray","unfortunately","destroyed","ended","universe","prepare","opinion","movies","soldier","wash","program","heat","usual","ticket","stolen","prefer","aware","surely","male","base","matters","lift","lab","command","proof","cream","selling","believed","create","h","afford","sunday","total","dumb","france","birth","created","realized","british","noise","nuts","students","birds","social","brilliant","bodies","tie","opened","ours","bucks","kevin","ugly","ryan","focus","dan","opens","exist","followed","england","draw","purpose","letters","daniel","opening","bullet","anna","lately","stayed","falling","season","ends","suggest","joy","distance","responsibility","whenever","issue","thousands","process","sword","shower","weak","lonely","happiness","eric","tiny","desk","pool","property","forced","settle","weight","received","gang","bite","friday","interview","kinda","surgery","horses","mayor","babe","ancient","thomas","saturday","staff","lines","unit","fan","gentleman","introduce","fate","split","recently","expected","add","ordered","slowly","alarm","member","signed","enter","spanish","garden","brings","brave","pig","model","finger","medicine","access","failed","flat","easily","discovered","based","screw","weather","fingers","san","scott","path","soft","harm","style","community","sees","basically","al","signal","spare","speech","covered","shake","loose","snow","russian","lake","bright","roof","sending","paint","remind","pal","naked","post","sugar","heading","streets","damage","silence","doors","pete","ed","success","wet","amount","members","kate","manage","safety","returned","harder","fbi","block","showing","fancy","chef","contract","dig","chest","drinks","dave","buried","brian","trade","journey","stomach","changes","details","thoughts","divorce","funeral","maria","football","reality","theory","gate","william","spread","japanese","sudden","coat","cheese","larry","spring","page","ears","simon","castle","hidden","storm","cos","personally","artist","hill","exciting","permission","jerry","expensive","tickets","forest","barely","eggs","lesson","lover","bread","andy","subject","legal","growing","ill","jason","mood","owner","caused","points","dating","loss","secretary","revenge","santa","likely","rent","connection","assistant","reasons","painting","trees","doctors","rush","foreign","rough","century","nights","pair","runs","pocket","farm","matt","bike","obvious","ate","grew","professional","tim","parts","alan","university","square","europe","genius","cases","winter","tongue","memories","da","buying","cancer","clock","ocean","dna","tour","lisa","rights","including","competition","smith","planned","emily","boring","victims","mentioned","bones","plant","bless","warning","re","crash","bedroom","lower","silver","defense","results","toilet","event","complicated","shape","priest","royal","cheap","romantic","invite","fortune","tears","avoid","reached","higher","familiar","telephone","burning","filled","kelly","alice","airport","jobs","grown","walter","rachel","giant","insurance","woods","n","pleased","period","political","player","stops","secrets","laura","repeat","photos","finds","statement","younger","china","humans","delicious","particular","proper","rome","belongs","attacked","bath","hired","site","knowledge","b","led","guests","celebrate","map","horn","eventually","powers","assume","glasses","rise","fixed","request","officers","pounds","data","carefully","per","depends","jury","positive","attorney","direction","families","forces","location","walls","grant","saving","speaks","fought","meal","deliver","answers","changing","temple","scary","millions","offered","regular","carrying","official","jacket","switch","grave","chase","role","odd","faces","becomes","closes","badly","tall","confused","affair","television","shock","raised","pizza","image","golden","patients","watched","committed","sexual","suffer","arthur","wherever","plate","appear","chocolate","mercy","shots","lucy","dealing","trap","charges","phil","bang","poison","drove","headed","babies","yellow","soup","mystery","picking","sat","wound","traffic","courage","hunt","indian","rat","terms","italian","emma","checking","disease","managed","winner","council","appointment","monday","crack","threat","jenny","physical","nation","source","chose","healthy","carl","victory","rick","stood","annie","palace","below","shopping","neighborhood","march","lips","midnight","advantage","pure","india","aside","mail","dawn","effect","spell","wood","enemies","gary","vacation","violence","leo","modern","luke","firm","prime","touched","talent","piano","license","cooking","concern","moves","available","factory","gods","value","central","union","mirror","studio","media","taxi","dies","iron","hearts","desire","rob","claire","fred","songs","washington","monkey","pride","pills","miracle","swim","christian","bleeding","hook","protection","treatment","ear","carter","metal","grateful","extremely","treasure","rescue","capable","passing","result","suffering","sisters","laid","governor","guards","louis","text","literally","remove","becoming","performance","stronger","rate","deeply","desert","vehicle","illegal","pulling","throwing","josh","ted","zero","dean","curious","sean","candy","bone","tied","edge","load","susan","mountains","boom","former","holiday","riding","hundreds","sue","bags","appears","arrive","remains","decent","issues","tip","fail","bride","penny","claim","friendship","desperate","flower","dramatic","refuse","solve","theme","loving","properly","dragon","mostly","chuck","directly","surface","false","cast","junior","hunting","silent","thou","egg","germany","punch","africa","intelligence","winning","falls","popular","witch","convinced","champagne","dust","kyle","fallen","stranger","presence","tear","internet","therefore","technology","tires","wise","clark","americans","notes","smoking","ls","april","wolf","precious","rooms","coast","treated","material","released","uniform","considered","rice","exchange","steps","blake","beast","cow","files","signs","drag","cab","hung","carried","ordinary","successful","eve","mistakes","houses","japan","creature","fourth","separate","cleaning","california","lf","ll","shift","elizabeth","chicago","exact","karen","goal","expert","served","direct","score","row","marks","twenty","receive","series","section","pilot","jackson","darkness","thy","sale","destiny","cure","spoken","armed","rare","helen","grade","juice","wide","tower","solution","schedule","explosion","wheel","cigarette","julie","fruit","victor","talks","sacrifice","range","button","reports","prisoner","pie","effort","youth","pot","taylor","garage","parking","chances","circumstances","sin","gordon","progress","unusual","county","campaign","vision","reporter","equipment","moments","mass","alien","helps","route","defend","trace","nasty","tests","magazine","rocks","dump","searching","connected","pushed","merry","zone","senior","closing","freeze","emperor","incident","snake","mexico","actor","newspaper","sentence","greg","leading","friendly","jones","chosen","engaged","julia","charming","anger","spending","learning","spy","sharp","shadow","warrant","kingdom","ricky","jamie","squad","shoulder","wave","amanda","kinds","fishing","attitude","negative","screen","workers","bored","cameras","similar","understanding","chain","bull","fully","robin","collect","gorgeous","morgan","passion","writer","empire","international","hire","puts","leads","id","sons","estate","customers","device","troops","design","movement","thunder","object","pen","politics","despite","alcohol","climb","clients","conference","provide","seek","witnesses","earn","trash","valley","fashion","howard","episode","prize","previously","sports","wanting","debt","wishes","wire","thee","circle","approach","stock","facts","remembered","percent","normally","tail","joined","education","library","wings","thrown","tank","authority","current","failure","nightmare","hitting","glory","studying","barry","agency","apple","border","rope","duck","reputation","confidence","yard","lack","actual","skills","films","mental","salt","flesh","anne","secure","highly","federal","sand","emotional","setting","senator","services","fed","reward","theater","johnson","commit","patrick","entirely","extraordinary","ships","opposite","parties","stands","terry","chat","events","bay","slip","disappointed","settled","begins","andrew","alert","detail","pink","accepted","background","garbage","panic","minds","belt","blowing","hollywood","agreement","jackie","pushing","ability","tiger","culture","saint","jesse","task","solid","doll","intend","district","pa","custody","ignore","naturally","useful","attempt","abandoned","cutting","guarantee","gather","policy","violent","childhood","bow","chick","sara","disaster","revolution","online","f","heavily","perform","thin","mac","crown","identity","virgin","impressive","windows","potential","guitar","committee","dozen","delivery","advance","stan","teaching","hunter","latest","swing","capital","counting","drew","dirt","marie","hits","doug","deny","urgent","threatened","behavior","mixed","stays","assure","explanation","wins","unique","billion","duke","production","slave","agents","carol","lets","mask","sally","massive","species","loan","struggle","dish","trusted","channel","stopping","asks","jean","swimming","daily","basement","linda","quarter","bound","navy","article","guide","accused","transfer","quality","roman","greater","vegas","shoe","title","punishment","los","clicks","fever","flash","impressed","bruce","prisoners","sides","bowl","katie","supply","sensitive","hopefully","rolling","roy","dollar","tone","voices","g","demand","museum","unknown","drama","adult","todd","warned","steady","kills","lou","particularly","sandwich","laws","joint","package","trained","thursday","boots","possibility","albert","civil","june","baseball","express","tuesday","parker","lion","joseph","refused","shine","assault","hong","jokes","breaks","argue","trail","option","recall","mighty","collection","oliver","wilson","accent","believes","decisions","mobile","customer","sec","charity","considering","donna","protecting","flag","italy","balance","creatures","nuclear","wallet","vincent","entered","impression","angela","jay","degrees","favour","reaction","network","jessica","version","concert","gear","singer","diamond","defeat","steven","lane","blast","anytime","partners","ages","charlotte","ceremony","league","bars","orange","specific","conditions","plastic","crisis","fifth","term","self","offering","suffered","reported","commissioner","rip","mysterious","entrance","tunnel","designed","neighbor","justin","crimes","costs","el","teddy","kong","messages","enjoying","afterwards","comfort","mason","gym","kitty","arranged","suits","pee","stress","cave","wing","jordan","arrange","noble","tricks","betty","launch","legend","mix","golf","imagination","fox","kissing","butter","tax","gross","edward","texas","marcus","classic","shown","bat","print","champion","bills","therapy","lifetime","throughout","nathan","toward","sauce","experiment","margaret","describe","ross","grass","cheat","attend","homework","lewis","cap","tyler","bible","catherine","steel","burns","j","generation","cabin","financial","industry","bond","sheep","scientists","deck","fans","script","brand","degree","painful","religion","cats","stephen","influence","fuel","drawing","rabbit","exercise","attractive","virus","torture","blessed","plain","rebecca","recent","barbara","sacred","removed","jewish","robot","crystal","confirm","mile","division","scratch","walks","ending","russia","contest","valuable","distant","motion","electricity","centre","jeremy","seal","standard","ellen","surrounded","struck","inform","gentle","status","purse","prints","players","charged","delivered","kenny","buck","construction","confirmed","trigger","cells","ali","exit","response","cancel","argument","principal","turkey","lucas","clinic","greetings","neighbors","vice","toy","everyday","generous","gain","holly","enjoyed","jungle","link","underground","mistress","teams","product","beef","religious","presents","identify","chip","surveillance","carlos","vampire","routine","uses","michelle","systems","temperature","waves","tribe","brad","deputy","headquarters","equal","phones","ken","related","tracks","oscar","makeup","bug","spirits","nerve","stake","port","miller","units","proceed","landing","fields","recording","loaded","tokyo","davis","costume","wayne","injured","ian","pet","cage","spain","seats","pattern","visiting","jews","answering","concentrate","citizens","aim","nancy","affairs","thick","sport","basic","electric","pleasant","cliff","nail","russell","environment","western","average","ease","judy","satisfied","documents","anniversary","beth","election","warrior","r","forth","banks","placed","timing","stones","complex","frozen","replace","prayer","skip","angeles","tune","actions","officially","martha","machines","smaller","determined","booth","pour","berlin","cleared","packed","wrap","randy","behalf","reasonable","trunk","homes","festival","tradition","cigarettes","le","beside","harvey","beings","bishop","dealer","defendant","backup","ann","nearby","effects","jonathan","dennis","benefit","adventure","p","territory","ve","dylan","unlike","owns","boxes","thus","clay","developed","pipe","gray","goods","favourite","salad","atmosphere","eva","mouse","downtown","francisco","heroes","pit","paradise","organization","hills","exam","fairy","earl","comment","activity","frame","knight","testing","shelter","flow","jennifer","holes","prevent","anthony","cooper","figures","boston","sample","strip","slightly","produce","annoying","judgment","laundry","ron","souls","existence","belly","tries","foster","returning","answered","ward","plants","actress","chairman","individual","hopes","tattoo","fence","sink","punk","confident","limit","st","wednesday","gifts","na","precisely","lawyers","greek","merely","underwear","hoped","earned","reveal","appeared","derek","personality","batman","virginia","wives","colour","worker","pope","instructions","intelligent","traveling","x","impact","relief","host","footage","odds","patrol","circus","mud","captured","lessons","occasion","sets","pulse","ad","diamonds","matthew","cloud","francis","angels","classes","signature","blah","monitor","options","claims","pat","britain","countries","vic","rats","smooth","resist","companies","fantasy","passport","pitch","hammer","casey","holds","jacob","noon","helicopter","dishes","spin","charm","apply","discover","previous","kit","authorities","photograph","sales","fifty","beneath","clouds","represent","deaf","facing","offense","citizen","snap","hood","twelve","interests","liz","informed","humanity","producer","accounts","extreme","cia","ii","pays","profile","oxygen","gene","shed","minor","ex","theatre","scientific","lovers","chaos","rocket","math","august","chips","intense","grey","terrorist","angle","invitation","gambling","respond","thirty","procedure","absolute","investigate","tragedy","stable","session","capture","attacks","stretch","bush","dates","unable","gates","mars","artists","increase","bottles","highest","meanwhile","wheels","commercial","engagement","louise","worthy","scale","beats","williams","threatening","exists","academy","acts","hop","judges","furniture","shared","ralph","consequences","engineer","schools","caroline","shark","transport","population","succeed","studies","destruction","keith","protected","monsters","joining","lightning","shell","fascinating","chamber","romance","instance","jumping","groups","studied","walker","pin","drill","ye","experienced","necklace","junk","cole","stanley","southern","blocks","emotions","begun","liver","serving","matches","surgeon","granted","jazz","july","supplies","deeper","typical","remote","daughters","latin","teachers","sandy","strategy","parent","album","compared","helpful","powder","sync","passes","joan","fort","choices","pole","scientist","fighter","highway","blade","alpha","diet","jet","liberty","philip","moral","award","ashley","random","intention","julian","active","tools","driven","trauma","safely","alexander","knee","novel","conversations","waters","invisible","internal","peaceful","drives","talented","li","aid","elephant","core","serial","painted","divine","jam","goat","opera","florida","resistance","dressing","attached","aaron","brief","eternal","required","victoria","fabulous","twins","characters","cooked","ln","ruth","arts","naughty","tend","diane","tap","soap","development","images","global","string","sharing","corn","craig","fits","tent","forms","votes","harold","propose","monica","constantly","granny","abuse","relatives","survival","gloves","tracking","u","bend","review","connect","separated","elder","diana","salary","areas","pro","maintain","solved","wealth","possession","plates","recorded","upper","counts","tale","profit","colleague","warehouse","shore","miami","fifteen","visitors","bo","net","owen","cities","causing","lemon","appeal","marshall","critical","creating","scotland","enormous","testimony","praise","indians","commission","nicole","fraud","branch","covering","occurred","beans","raw","muscle","pages","relationships","management","assignment","blonde","exposed","canada","dont","von","comedy","marco","stroke","buildings","facility","appropriate","remarkable","transferred","drawn","clicking","symbol","motor","employees","ambassador","mothers","feeding","checks","bears","cookies","toys","levels","differently","magnificent","tube","leaders","superior","pan","expression","currently","deadly","bee","tooth","potatoes","wicked","resources","native","centuries","karl","poetry","multiple","cable","shortly","buzz","socks","september","colors","basketball","promises","explained","appearance","musical","sends","slide","ultimate","pork","communication","payment","structure","lazy","actors","magical","colleagues","madness","roads","entry","injury","burden","racing","manner","bits","norman","mount","battery","pound","visited","motel","cinema","reception","fridge","brick","lap","wars","recommend","brush","nelson","pill","concept","w","delay","quarters","korea","janet","mall","soil","complaint","sail","baker","description","badge","measure","hip","function","harris","foundation","labor","homeless","proved","log","meetings","combat","poem","polish","handed","mia","weed","raymond","tons","satellite","jersey","eagle","privacy","chapter","treating","wisdom","flip","entering","barn","farmer","clan","budget","pub","temporary","effective","wendy","juan","lamb","plot","proposal","sticks","searched","rage","sydney","basis","recover","twist","neil","item","catholic","retired","kings","inner","cents","affect","forbidden","patch","drops","necessarily","provided","meters","returns","fires","humor","rocky","introduced","creative","soviet","various","added","discovery","cowboy","suspected","suggested","dive","radar","amber","vast","owned","cookie","finest","pump","valentine","counter","sorts","coin","warren","marine","illness","bid","require","moscow","largest","washing","achieve","causes","k","mo","nest","palm","logan","constant","medication","gravity","abroad","christine","rising","analysis","cuts","employee","damaged","solar","height","yards","chemical","preparing","advanced","fund","web","phase","suggesting","fleet","irish","editor","october","assumed","mel","region","amongst","discussion","engines","operate","sunshine","horror","tested","contrary","roses","poker","wrapped","korean","graham","mi","fu","focused","rounds","entertainment","gathered","lincoln","crossing","blanket","nut","travis","pockets","limited","paintings","intended","computers","tennis","needle","chicks","traditional","independent","leslie","lauren","repair","brandon","executive","colin","recognized","holmes","regarding","european","method","tool","demands","permit","daisy","spider","northern","rangers","zoo","antonio","passengers","con","australia","technique","gently","operations","planes","bunny","skill","sealed","massage","raising","menu","diary","wagon","mexican","casino","bacon","diego","dutch","promotion","click","burst","permanent","spencer","recovered","registered","sunny","packing","scenes","admitted","completed","conduct","prayers","sheet","avenue","reverse","newspapers","ford","investment","potato","grows","inspired","ruby","tag","ram","requires","bugs","leonard","jill","ranch","safer","worn","lands","heather","ash","leather","grounds","assuming","nails","dana","conspiracy","thanksgiving","pierre","guardian","yen","terror","tire","boats","parade","adults","steam","closely","pearl","soccer","adrian","priority","donald","root","larger","november","boot","conflict","cherry","concerns","celebration","cattle","fairly","fee","radiation","holidays","register","shadows","specifically","ideal","turtle","candidate","lance","types","immediate","identified","di","hunger","closest","combination","gabriel","develop","severe","en","organized","franklin","pm","yang","halloween","vulnerable","continued","vital","bureau","harper","retreat","pillow","troy","ace","cart","chan","ham","announce","galaxy","voted","jewelry","luggage","oops","lighter","masters","alliance","clothing","denied","alike","relative","photographs","approve","produced","christina","physically","stations","spiritual","inch","limits","unexpected","arrival","basket","sheets","christopher","shield","instant","objects","directed","scan","electronic","republic","overnight","counsel","explains","lean","tracy","gossip","economy","worlds","clara","tissue","et","supreme","bingo","mitchell","excitement","document","broad","vietnam","vessel","lit","dale","mario","foul","deaths","elements","puppy","handled","announcement","cotton","deposit","taxes","injuries","advise","gig","lecture","posted","lo","include","revealed","infected","assistance","solo","determine","terrorists","elsewhere","lamp","practical","marked","rubber","purple","operating","suite","personnel","beam","poet","samples","arrow","carpet","allen","floating","corrected","located","journalist","operator","rely","singh","arrives","leon","walt","eastern","remaining","anderson","lip","acid","si","december","anonymous","inn","oldest","breast","sixth","error","reporting","egypt","islands","roommate","visitor","described","inches","commitment","protest","theft","andrea","communicate","fathers","flame","medal","silk","photographer","cemetery","rear","banana","dated","bin","efforts","content","del","rap","debate","era","ton","liquid","murphy","application","profession","bench","symptoms","scout","keen","aircraft","formed","hon","aggressive","pale","significant","duncan","clubs","visual","embassy","defence","cabinet","display","fame","twin","vault","watson","quote","penalty","bargain","pepper","speaker","compare","helmet","copies","envelope","perry","african","arrangements","discussed","assigned","rosa","oven","tin","sonic","collar","mere","belief","storage","climbing","melissa","fears","sum","dedicated","ladder","alternative","raid","dining","ms","corporate","folk","jon","replaced","bailey","un","duties","existed","surprising","chess","requested","cruise","primary","rhythm","drum","models","motorcycle","adopted","barrel","cargo","planets","trailer","cannon","tables","lawrence","tapes","sandra","teenage","kent","risks","ties","items","grip","relations","skirt","frog","lloyd","claimed","perfume","instrumental","association","january","israel","eleven","gallery","activities","iraq","fist","stuffed","improve","creation","infection","strikes","tension","certificate","curtis","bold","threats","twisted","suspended","affected","whale","dial","cameron","martial","controlled","lung","coal","imperial","pam","signing","congress","villa","candles","filling","comic","recovery","volunteer","tech","positions","cindy","narrow","stuart","perspective","faced","pierce","observe","cycle","handling","conclusion","designer","importance","spots","communist","pacific","filed","cam","deals","pos","persons","executed","brakes","blank","tender","kurt","turner","tub","slight","addition","campus","graduate","genuine","ceiling","somewhat","established","attempted","generations","gathering","warriors","electrical","collins","couples","depend","institute","principle","therapist","compete","worship","residence","democracy","joel","published","myth","kennedy","execution","formal","strictly","tanks","technical","rod","meets","shepherd","brazil","brutal","switched","chi","deer","brooklyn","dresses","overcome","inspiration","benjamin","suggestion","destination","bass","picnic","idol","trucks","rank","yu","blocked","strict","formula","clerk","disturbed","cafe","consciousness","val","min","bare","hans","arrangement","ministry","locate","examine","trains","candle","prior","stream","passage","reaching","organ","directions","outer","morris","luxury","v","funds","sunset","strings","engineering","element","balloon","ty","broadcast","spray","handy","nations","behaviour","pace","concrete","allah","vegetables","euros","rolls","genetic","scheme","performed","plug","rejected","respected","protocol","muscles","kidney","finishing","products","im","wu","invasion","endless","discipline","absence","philosophy","nicholas","reed","connections","privilege","controls","airplane","values","consent","puzzle","disagree","winds","wizard","ranger","celebrity","stores","farmers","convenient","bonus","entitled","porter","wrist","originally","coins","drain","physics","sector","income","laser","boxing","accurate","thumb","bald","sharon","convicted","roots","shares","bernard","harrison","blues","lobby","recipe","las","winston","generally","seeking","declare","missile","ensure","pointed","hockey","bubble","contacts","maximum","circles","author","wallace","receiving","tips","reporters","associate","laptop","rainbow","seed","mature","kay","expenses","discussing","meals","performing","remained","adams","retirement","platform","beds","writes","mill","dealt","manhattan","fatal","copper","owners","length","lesbian","enterprise","tournament","travelling","website","ja","flood","harbor","auction","bachelor","scheduled","allows","cocktail","pointing","butler","methods","reference","georgia","collapse","alfred","ana","minimum","chairs","included","carmen","civilization","prices","depression","tide","bra","password","th","kirk","static","hawaii","murray","offers","phrase","sources","approval","collected","fur","jan","legally","benefits","arnold","domestic","hack","muslim","loads","nurses","glenn","rebel","clearing","survivors","reply","orbit","austin","toe","sympathy","intel","growth","encounter","passenger","hats","column","economic","tales","follows","spreading","hamilton","exclusive","decades","bowling","buttons","confusion","collecting","lions","douglas","february","elvis","forty","sleeps","brass","email","proven","covers","rarely","programme","dee","contacted","chemistry","assured","applied","elected","subjects","label","shakespeare","tan","phoenix","companion","lottery","worm","publicity","butterfly","dialogue","cal","tremendous","establish","intimate","se","atlantic","contains","thompson","presentation","den","wells","chen","accomplished","politicians","logic","afghanistan","exception","ultimately","compromise","majority","journal","signals","bent","dock","essential","campbell","climate","experiments","ink","magazines","rivers","administration","precise","lawn","via","jeans","resort","announced","capacity","opponent","chains","minus","seattle","instrument","healing","convention","messenger","explore","versus","survivor","ruled","madison","experts","bicycle","pregnancy","declared","drums","wooden","cloth","pond","robbie","assist","presented","civilian","fighters","customs","florence","seventh","ou","avoiding","isaac","rolled","championship","household","float","chad","ballet","officials","nearest","que","corps","pirates","reservation","fog","flu","hint","autumn","bracelet","contain","simpson","sperm","materials","lindsay","standards","receipt","regards","homeland","targets","leaf","jar","proposed","savage","caring","approximately","carries","creek","cleaner","unlikely","situations","colony","sells","chambers","volume","reads","seeds","engage","stewart","mutual","lighting","scores","savings","stephanie","educated","complaints","offensive","harvest","qualified","cape","buffalo","triple","palmer","armor","poverty","leadership","cakes","bean","occupied","correctly","hugh","marc","draft","factor","portrait","suggests","font","blair","pencil","coordinates","reserve","jeffrey","shirts","ta","auto","logical","eliminate","beverly","carbon","cancelled","independence","medium","asian","quest","represents","memorial","bearing","watches","cooperation","earthquake","sailing","involve","houston","asia","spectacular","reliable","breach","sophisticated","echo","indicate","vehicles","manual","elegant","compound","serves","pursue","revolutionary","wa","tribal","cleveland","depth","aids","occur","camping","stamp","kathy","approved","crucial","annual","dallas","bon","reunion","graduated","sub","hospitals","legacy","shops","samuel","mines","orleans","literature","transmission","panel","sole","sequence","sexually","hugo","anxiety","mode","communications","welfare","dice","locks","settlement","advertising","devoted","principles","circuit","nickname","dot","scenario","choir","isolated","equally","statements","shaw","courtesy","hobby","luis","experiences","fiction","pastor","dolls","pose","importantly","industrial","musician","labour","evolution","ba","cent","calendar","regard","fold","suitable","movements","differences","trading","strongly","fluid","scholarship","translation","cricket","shuttle","picks","videos","initial","yea","divided","linked","laboratory","classified","cultural","measures","update","cottage","amateur","hawk","shorts","ni","representative","dip","marilyn","es","flush","cuba","increased","toxic","broadway","rally","bloom","corporation","buys","disorder","barnes","evans","specialist","burke","prescription","referring","knives","graduation","grid","regardless","lodge","edgar","software","marina","queens","oak","trips","sofa","conscious","olive","psychological","robinson","belle","landscape","dam","rehab","switzerland","agenda","projects","floors","mainly","biological","pad","swiss","opposed","harvard","parliament","topic","offices","loop","drivers","blond","races","salmon","bizarre","rico","reaches","heights","possibilities","wax","travels","confidential","pursuit","cd","spies","exams","invention","explaining","replacement","erik","springs","chelsea","integrity","dash","senate","beautifully","roberts","slim","choosing","promising","objective","joyce","attract","prep","restore","dozens","betting","visits","database","achieved","sucking","encourage","grades","gps","patterns","relevant","hudson","expense","occasionally","identical","gained","venice","classical","consistent","clip","insects","failing","organic","charging","mug","fountain","observation","abortion","railroad","legitimate","fork","du","ciao","jade","griffin","digital","milan","jr","cooler","metres","harmony","difficulty","bands","dried","maker","supporting","brake","features","photography","inappropriate","vacuum","throws","residents","substance","potter","investigator","thread","gap","institution","marsh","chapel","accidents","fabric","railway","dame","custom","pension","possess","poster","developing","feature","cope","wrestling","rio","reduce","mercedes","guaranteed","poland","theories","tumor","automatic","unnecessary","voting","stadium","visible","easter","jeep","dj","les","garcia","tracked","pledge","fisher","salvation","maintenance","tobacco","divide","discount","yoga","reduced","pressing","tops","variety","ignored","helena","writers","grain","essentially","individuals","subtle","interviews","cord","sites","vienna","issued","origin","unto","superintendent","ol","challenges","corruption","sullivan","ski","flavor","fastest","housing","canal","robots","shade","orchestra","guidance","hence","jose","purchase","ireland","elite","craft","cult","profits","shelf","kai","allowing","chart","weekends","submit","supervisor","resident","opportunities","knights","jerusalem","counted","instruments","triumph","frequency","resume","satisfaction","historical","creates","costumes","swedish","depending","freely","globe","peak","hollow","concentration","invest","radical","protective","stunning","breed","controlling","pasta","execute","architect","delta","preserve","dose","codes","instantly","bolt","habits","assembly","magnetic","joshua","sorted","assets","outstanding","essence","nam","restaurants","disco","abilities","mice","bennett","anchor","interior","moore","urge","surrounding","strain","tomato","bonds","greece","ceo","arabic","examination","participate","cups","additional","responsibilities","ridge","intent","corners","whereas","promoted","maiden","comments","batteries","seas","canyon","casual","rack","expectations","adjust","decade","pine","wires","finance","demonstration","appointed","views","violin","lifestyle","realm","fitting","inspection","nursing","carlo","tourist","conviction","lounge"];
+const COMMON_FREQ_SKIP=new Set("the of and to in a is that for it as was with be by on not he i this are or his from at which but have an had they you were their one all we can her has there been if more when will would who so no out up said what about than into them could only other new some these two may then do first any my now such like our over man me even most made after also did many before must through back years where much your way well down should because each just those people mr how too little state good very make world still own see work long get here between both life being under never day same another know while last might us great old year off come since against go came right used take three she him hers herself himself we me mine your yours yourself yourselves ourselves themselves them theirs it its itself these those who whom whose what which when where why how yes nope yep yeah okay ok oh uh um don ll ve re im ive youre hes shes theyre didn doesn isn wasn weren haven hasn hadn wouldn couldn shouldn won cant gonna wanna gotta ain john mary david michael james robert william thomas george paul mark peter keith patrick johnson ben jane susan linda anna maria jason alex simon bruce kerry laura nancy sean greg larry scott".split(" "));
+function commonFreqWindow(){
+  const lvl=state.lvl||1;
+  const ranges = lvl<=2 ? [0,1200] : lvl<=4 ? [250,2200] : lvl<=6 ? [900,3600] : lvl<=8 ? [1600,5000] : [2400,5000];
+  const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
+  const slice=COMMON_FREQ_WORDS.slice(ranges[0], ranges[1]).filter(w=>!recent.has(w));
+  return slice.length>=160 ? slice : COMMON_FREQ_WORDS.filter(w=>!recent.has(w));
+}
+function commonFreqPromptWords(theme){
+  const pool=commonFreqWindow().filter(w=>!COMMON_FREQ_SKIP.has(w));
+  if(!pool.length) return [];
+  const step=Math.max(1, Math.floor(pool.length/220));
+  const offset=(Math.random()*step)|0;
+  const out=[];
+  for(let i=offset;i<pool.length&&out.length<220;i+=step) out.push(pool[i]);
+  return out;
+}
+function commonFreqPromptLine(theme){
+  const words=commonFreqPromptWords(theme);
+  if(!words.length) return "";
+  return "COMMON FREQUENCY BANK: These are from a 5000-word English frequency bank ordered by real spoken/dialogue usage. Choose practical content words or short expressions from this bank, preferring earlier/higher-frequency words when possible. Avoid pure grammar/function words, names, brands, abbreviations, web terms, and contraction fragments such as don/ll/ve/re unless the full phrase is useful. Candidate slice: "+words.join(", ")+".";
+}
 function starterExtraWords(key){
   return (STARTER_EXTRA_ROWS[key]||[]).map(r=>({
     word:r[0], ko:r[1], diff:r[2],
@@ -4704,7 +4739,7 @@ async function _oldGenerateVocab(){
   const seed=Math.floor(Math.random()*100000);
   const sys=[
 "Create a vocabulary set for a Korean learner (level: "+state.level+"). Theme: "+state.vocabTheme.topic+".",
-"Pick 5 genuinely useful everyday words or short expressions. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way, e.g. not all 'Can I get'). This teaches the word across varied contexts so it isn't bound to one phrase. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
+"Pick 12 genuinely useful everyday words or short expressions. Every 'word' must be a DIFFERENT answer target. For EACH word give 3 example sentences that use the word — but each example MUST use a DIFFERENT sentence frame or structure (do NOT start them all the same way, e.g. not all 'Can I get'). This teaches the word across varied contexts so it isn't bound to one phrase. Also give 2 common collocations. Keep sentences short and natural. Variety seed "+seed+".",
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase (e.g. 'to clean'), and 'ko' MUST be its KOREAN meaning (e.g. '청소하다'). NEVER swap them. All 'en' fields are English, all 'ko' fields are Korean. Also include a 'blank' field: ONE of the 3 example sentences chosen as a fill-in-the-blank, written with the target word replaced by '____'.",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is the word difficulty 1 (easy/common) 2 (medium) or 3 (advanced).'
   ].join("\n");
@@ -4725,7 +4760,7 @@ function showVocabCard(){
    한 단어 → 여러 빈칸 문장(다른 상황) → 정답 인출 → SRS
    ============================================================ */
 let wpQueue=[], wpPos=0, wpT0=0, wpStats={correct:0, total:0}, wpSeenWord={};
-// 단어의 빈칸 문장들 만들기 (examples를 빈칸으로 변환 + blank 포함, 최대 4)
+// 단어의 빈칸 문장 만들기 (한 세트에서는 정답 하나당 한 문제만)
 function wpBlanksFor(w){
   const out=[]; const word=w.word||"";
   const mkBlank=(en,ko)=>{
@@ -4734,9 +4769,13 @@ function wpBlanksFor(w){
     if(re.test(en)) return {en:en.replace(re,"[ ___ ]"), ko:ko||w.ko||"", answer:word};
     return null;
   };
-  if(w.blank && w.blank.en){ out.push({en:w.blank.en.replace(/_{2,}/,"[ ___ ]"), ko:w.blank.ko||w.ko||"", answer:w.blank.answer||word}); }
+  // answer가 "out", "door"처럼 목표 표현의 조각이면 같은 단어 반복처럼 느껴져서 제외
+  if(w.blank && w.blank.en && normAns(w.blank.answer||word)===normAns(word)){
+    out.push({en:w.blank.en.replace(/_{2,}/,"[ ___ ]"), ko:w.blank.ko||w.ko||"", answer:w.blank.answer||word});
+  }
   (w.examples||[]).forEach(e=>{ const b=mkBlank(e.en, e.ko); if(b && !out.some(x=>x.en===b.en)) out.push(b); });
-  return out.slice(0,4);
+  if(!out.length && word){ out.push({en:"[ ___ ]", ko:w.ko||"", answer:word}); }
+  return out.slice(0,1);
 }
 // 🌎 AI 멀티컨텍스트 빈칸 생성 — 같은 단어를 친구/가족/식당/병원 등 다양한 상황으로
 let wpCtxCache={};   // word -> [{en,ko,answer,ctx}]
@@ -4774,6 +4813,60 @@ function wpInterleave(items){
   }
   return out;
 }
+const WP_SYNONYM_HINTS={
+  hungry:["starving","peckish","need food"], tired:["sleepy","exhausted","worn out"], water:["drink","cold water"], happy:["glad","pleased"], open:["unlock","open up"],
+  cold:["chilly","cool"], hot:["warm","too warm"], busy:["occupied","tied up"], ready:["prepared","all set"], late:["delayed","behind schedule"], early:["ahead of time"],
+  clean:["tidy","neat"], dirty:["messy","unclean"], sick:["ill","not well"], careful:["cautious","watchful"], quiet:["silent","calm"], loud:["noisy"],
+  help:["assist","support"], wait:["hold on","stay here"], find:["look for","search for"], need:["require","have to have"], bring:["carry","take along"],
+  take:["grab","pick up"], give:["hand","pass"], want:["would like","wish for"], receipt:["proof of purchase"], refund:["money back","reimbursement"],
+  exchange:["swap","trade"], reservation:["booking"], appointment:["booking","scheduled visit"], delay:["holdup","late arrival"], aisle:["row","passage"],
+  checkout:["register","cashier"], confirm:["verify","check"], cancel:["call off"], reschedule:["move the time","change the date"], recommend:["suggest"],
+  prescription:["doctor's note"], allergy:["sensitivity"], discount:["sale","price cut"], "fill out":["complete","write in"], "pick up":["collect"],
+  "drop off":["leave","deliver"], "look for":["search for","try to find"], "deal with":["handle","manage"], efficient:["effective","productive"],
+  reliable:["dependable","trustworthy"], inconsistent:["uneven","not steady"], clarify:["explain","make clear"], prioritize:["rank","put first"],
+  assumption:["guess","belief"], perspective:["viewpoint","point of view"], compromise:["meet halfway"], feasible:["possible","doable"], subtle:["slight","not obvious"],
+  hassle:["trouble","bother"], nuanced:["subtle","detailed"], skeptical:["doubtful","not convinced"], tentative:["provisional","not final"], concise:["brief","short"],
+  "follow through":["finish it","carry it out"], "bring up":["mention","raise"], "on the fence":["undecided"], "off the cuff":["without preparation"],
+  "take into account":["consider","factor in"], "for real":["seriously","really"], "no way":["seriously?","impossible"], "thats great":["sounds great","awesome"],
+  "i get it":["I understand","got it"], "kind of":["sort of","a little"]
+};
+function wpHintSynonyms(w){
+  const key=normAns(w.word);
+  const direct=WP_SYNONYM_HINTS[key]||[];
+  const colloc=(w.colloc||[]).filter(Boolean);
+  const out=[]; direct.concat(colloc).forEach(x=>{
+    const s=String(x||"").trim(); const k=normAns(s);
+    if(s && k!==key && !out.some(v=>normAns(v)===k)) out.push(s);
+  });
+  return out.slice(0,5);
+}
+function wpHintSimilarSentences(w, currentBlank){
+  const target=w.word||"";
+  const rows=[];
+  (w.examples||[]).forEach(e=>{
+    if(!e||!e.en) return;
+    const re=new RegExp("\\b"+target.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+    const blanked=re.test(e.en) ? e.en.replace(re,"[ ___ ]") : e.en;
+    if(currentBlank && blanked===currentBlank.en) return;
+    if(!rows.some(x=>x.en===blanked)) rows.push({en:blanked, full:re.test(e.en)?e.en:blanked, ko:e.ko||""});
+  });
+  return rows.slice(0,3);
+}
+function wpRenderHintPanel(q, spellHtml){
+  const panel=$("#wpHintPanel"); if(!panel) return;
+  const syn=wpHintSynonyms(q.word);
+  const sims=wpHintSimilarSentences(q.word, q.blank);
+  panel.style.display="block";
+  panel.innerHTML=`
+    <div style="font-size:13px;font-weight:900;color:var(--text);margin-bottom:8px">💡 힌트 보기</div>
+    <div style="font-size:13.5px;color:var(--text);line-height:1.55;background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:9px">
+      ${spellHtml}
+      ${q.word.ko?`<div style="margin-top:6px;color:var(--muted)">뜻: ${escapeHtml(q.word.ko)}</div>`:""}
+    </div>
+    ${syn.length?`<div style="font-size:12px;font-weight:800;color:var(--muted);margin:8px 0 6px">동의어 · 비슷한 말</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px">${syn.map(s=>`<span style="font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 11px;color:var(--text)">${escapeHtml(s)}</span>`).join("")}</div>`:""}
+    ${sims.length?`<div style="font-size:12px;font-weight:800;color:var(--muted);margin:8px 0 6px">비슷한 문장</div>${sims.map(s=>`<button class="wp-line" data-say="${escapeAttr(s.full)}"><span style="display:block">${escapeHtml(s.en)}</span>${s.ko?`<span style="display:block;font-size:13px;color:var(--muted);margin-top:3px;font-family:var(--sans)">${escapeHtml(s.ko)}</span>`:""}</button>`).join("")}`:""}`;
+  panel.querySelectorAll(".wp-line").forEach(b=>{ b.onclick=()=>{ const t=b.dataset.say; if(t) speakEn(t); }; });
+}
 // ===== 단어 학습 이어하기 (중간에 꺼져도 복원) =====
 const WP_PROG_KEY="speakingroom:wp_progress";
 function wpSaveProgress(){
@@ -4781,12 +4874,13 @@ function wpSaveProgress(){
     if(!wpQueue || !wpQueue.length || wpPos>=wpQueue.length){ wpClearProgress(); return; }
     // 큐를 직렬화 (word 전체 + blank)
     const slim=wpQueue.map(q=>({word:q.word, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _ctx:q._ctx||null}));
-    hSet(WP_PROG_KEY, {queue:slim, pos:wpPos, stats:wpStats, theme:state.vocabTheme||null, lvl:(state.lvl||1), savedAt:Date.now()});
+    hSet(WP_PROG_KEY, {schema:2, queue:slim, pos:wpPos, stats:wpStats, theme:state.vocabTheme||null, lvl:(state.lvl||1), savedAt:Date.now()});
   }catch(e){}
 }
 function wpClearProgress(){ try{ hSet(WP_PROG_KEY, null); }catch(e){} }
 function wpResumeData(){
   try{ const d=hGet(WP_PROG_KEY,null); if(!d||!d.queue||!d.queue.length) return null;
+    if(d.schema!==2) return null;
     if(d.pos>=d.queue.length) return null;
     if((d.lvl||1)!==(state.lvl||1)) return null;   // 레벨 바뀌면 무효
     // 6시간 지나면 무효 (옛 세트 무한 복원 방지 — 짧게)
@@ -4815,30 +4909,16 @@ function wpResume(){
   wpNext();
 }
 function wpStart(words){
-  const ws=(words||[]).filter(w=>w&&w.word).slice(0,5);
+  const ws=uniqueVocabWords(words||[]).filter(w=>w&&w.word).slice(0,VOCAB_SET_SIZE);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
-  // 각 단어의 빈칸들을 모아서 → 같은 단어 연속 안 나오게 인터리브
-  let all=[]; ws.forEach(w=>{ const blanks=wpBlanksFor(w); blanks.forEach((b,i)=>{ all.push({word:w, blank:b, idxInWord:i, totalInWord:blanks.length}); }); });
-  wpQueue=wpInterleave(all);
+  // 한 세트 안에서는 한 단어를 맞히면 다시 내지 않는다. 예문 확장은 결과 카드에서만 보여준다.
+  const usedAnswers=new Set();
+  let all=[]; ws.forEach(w=>{ const b=wpBlanksFor(w)[0]; const ak=b?normAns(b.answer):""; if(b && ak && !usedAnswers.has(ak)){ usedAnswers.add(ak); all.push({word:w, blank:b, idxInWord:0, totalInWord:1}); } });
+  wpQueue=shuffleVocab(all);
   wpSeenWord={};   // 단어별 첫 등장 여부 (새 표현 vs 다른 상황 라벨용)
   wpPos=0; wpStats={correct:0,total:0};
   wpSaveProgress();
   wpNext();
-  // 백그라운드: AI 6상황 확장 → 큐 뒷부분에 분산 삽입
-  ws.forEach(async w=>{
-    const items=await wpExpandWord(w);
-    if(items && items.length){
-      const existing=new Set(wpQueue.filter(q=>q.word.word===w.word).map(q=>normAns(q.blank.en)));
-      items.forEach(it=>{ const norm=normAns(it.en); if(!existing.has(norm)){ existing.add(norm);
-        const item={word:w, blank:{en:it.en.replace(/_{2,}/,"[ ___ ]"), ko:it.ko, answer:it.answer, ctx:it.ctx}, idxInWord:99, totalInWord:0, _ctx:it.ctx};
-        // 현재 위치보다 뒤, 같은 단어 직후가 아닌 랜덤 위치에 삽입
-        let pos=wpPos+2+((Math.random()* (wpQueue.length-wpPos))|0);
-        pos=Math.min(wpQueue.length, Math.max(wpPos+2, pos));
-        if(wpQueue[pos-1] && wpQueue[pos-1].word.word===w.word) pos++;
-        wpQueue.splice(pos,0,item);
-      } });
-    }
-  });
 }
 function wpNext(){
   if(wpPos>=wpQueue.length) return wpDone();
@@ -4867,6 +4947,7 @@ function wpAsk(q){
         <div class="wp-q-en">${enHtml}</div>
       </div>
       <div class="wp-speech" id="wpStatus">🎤 아래 버튼을 눌러 말해보세요</div>
+      <div id="wpHintPanel" class="mbcard" style="display:none;text-align:left;padding:13px 15px;margin-top:10px"></div>
     </div>
     <div class="wp-dock">
       <button class="wp-mic" id="wpMic" aria-label="말하기">
@@ -4874,10 +4955,11 @@ function wpAsk(q){
         <span>말하기</span>
       </button>
       <div class="wp-dock-row">
-        <button class="wp-act" id="wpHint"><span class="wp-act-ic">💡</span><span class="wp-act-tx">힌트</span></button>
+        <button class="wp-act" id="wpHint"><span class="wp-act-ic">💡</span><span class="wp-act-tx">힌트 보기</span></button>
         <button class="wp-act" id="wpKbd"><span class="wp-act-ic">⌨️</span><span class="wp-act-tx">입력</span></button>
       </div>
       <input id="wpInput" type="text" autocomplete="off" placeholder="빈칸 단어 입력 후 Enter" class="mbkbd" style="display:none">
+      <button class="wp-back-voice" id="wpHintMini" style="display:none">💡 힌트 보기</button>
       <button class="wp-back-voice" id="wpBackVoice" style="display:none">← 말하기로 돌아가기</button>
       <button class="wp-giveup" id="wpGiveup">모르겠어요 — 정답 보기</button>
     </div>`;
@@ -4885,16 +4967,19 @@ function wpAsk(q){
   wpT0=Date.now();
   const status=$("#wpStatus"), inp=$("#wpInput");
   let hintN=0;
-  $("#wpHint").onclick=()=>{ const a=q.blank.answer; const total=a.replace(/\s/g,"").length; hintN++;
+  const showHint=()=>{ const a=q.blank.answer; const total=a.replace(/\s/g,"").length; hintN++;
     q._hintUsed=true;   // 힌트 사용 표시 (정답 처리 방지용)
-    if(hintN>=total){ status.innerHTML="힌트: <b>"+escapeHtml(a)+"</b> (전체 공개)"; q._answerShown=true; }
+    if(hintN>=total){ const html="힌트: <b>"+escapeHtml(a)+"</b> (전체 공개)"; status.innerHTML=html; q._answerShown=true; wpRenderHintPanel(q, html); }
     else {
       // 스펠링 1개씩 공개, 나머지는 _
       let shown=0, out="";
       for(const ch of a){ if(/\s/.test(ch)){ out+=" "; continue; } if(shown<hintN){ out+=ch; shown++; } else out+="_"; }
-      status.innerHTML="힌트 ("+hintN+"/"+total+"): <b style=\"letter-spacing:3px\">"+escapeHtml(out)+"</b>";
+      const html="힌트 ("+hintN+"/"+total+"): <b style=\"letter-spacing:3px\">"+escapeHtml(out)+"</b>";
+      status.innerHTML=html; wpRenderHintPanel(q, html);
     }
   };
+  $("#wpHint").onclick=showHint;
+  $("#wpHintMini").onclick=showHint;
   // 라이브 음성 인식 (interim results 실시간 표시)
   let liveRecog=null;
   try{ liveRecog = new(window.webkitSpeechRecognition || window.SpeechRecognition); }catch(e){}
@@ -4923,21 +5008,23 @@ function wpAsk(q){
   $("#wpKbd").onclick=()=>{
     // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
     const dock=card.querySelector(".wp-dock");
-    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), give=$("#wpGiveup"), back=$("#wpBackVoice");
+    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), give=$("#wpGiveup"), back=$("#wpBackVoice"), mini=$("#wpHintMini");
     if(mic) mic.style.display="none";
     if(row) row.style.display="none";
     inp.style.display="block";
+    if(mini) mini.style.display="block";
     if(back) back.style.display="block";
     // 입력칸+돌아가기+정답보기를 dock 맨 위로
-    if(dock && give && back){ dock.insertBefore(inp, dock.firstChild); dock.insertBefore(back, inp.nextSibling); dock.insertBefore(give, back.nextSibling); }
+    if(dock && give && back){ dock.insertBefore(inp, dock.firstChild); if(mini) dock.insertBefore(mini, inp.nextSibling); dock.insertBefore(back, mini?mini.nextSibling:inp.nextSibling); dock.insertBefore(give, back.nextSibling); }
     inp.focus();
     setTimeout(()=>{ try{ inp.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} }, 320);
   };
   // ← 말하기/힌트 화면으로 복귀
   $("#wpBackVoice").onclick=()=>{
-    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), back=$("#wpBackVoice");
+    const mic=$("#wpMic"), row=card.querySelector(".wp-dock-row"), back=$("#wpBackVoice"), mini=$("#wpHintMini");
     try{ inp.blur(); }catch(e){}
     inp.style.display="none"; inp.value="";
+    if(mini) mini.style.display="none";
     if(back) back.style.display="none";
     if(mic) mic.style.display="";
     if(row) row.style.display="";
@@ -4969,22 +5056,16 @@ function wpSubmit(q, answer){
   const ans=normAns(answer), target=normAns(q.blank.answer);
   const correct = !!answer && wpMatch(ans, target);
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
-  // ❌ 틀렸지만 포기 안 함 → 정답 공개하지 말고 같은 화면에서 다시 (맞출 때까지)
+  // ❌ 틀리면 같은 화면에 붙잡아두지 않고, 새 단어를 더 본 뒤 한 번만 재등장시킨다.
   if(answer && !correct){
     flashResult(false);
     srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
     q._wrongCount=(q._wrongCount||0)+1;
-    const status=$("#wpStatus");
-    if(status){
-      // 3번 이상 틀리면 스펠링 1글자씩 누적 공개
-      let hint="";
-      if(q._wrongCount>=3){ const a=q.blank.answer; const n=q._wrongCount-2; let shown=0,out=""; for(const ch of a){ if(/\s/.test(ch)){out+=" ";continue;} if(shown<n){out+=ch;shown++;}else out+="_"; } hint=` · 힌트: '${out}'`; q._hintUsed=true; }
-      status.innerHTML=`<span style="color:#f87171;font-weight:800">"${escapeHtml(answer)}" — 아니에요 😅 다시 말해보세요${hint}</span>`;
-      status.style.color="";
-    }
-    // 마이크 버튼 다시 활성화
-    const mic=$("#wpMic"); if(mic){ mic.disabled=false; mic.style.opacity="1"; mic.classList.remove("live"); }
-    return;   // 화면 전환 없음
+    wpStats.total++;
+    if(!q._retryNow) wpRescheduleFail(q);
+    try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
+    wpResult(q, answer, false, elapsed, false);
+    return;
   }
   // 💡 정답을 다 보고(전체 공개) 맞힌 경우 → 정답 처리 X, 복습 대기로
   if(answer && correct && q._answerShown){
@@ -5012,13 +5093,23 @@ function wpSubmit(q, answer){
   wpResult(q, answer, correct, elapsed, gaveUp);
 }
 function wpRescheduleFail(q){
-  // 실패한 빈칸을 3~4문제 후, 10~12문제 후 다시 (간격 반복), 같은 단어 연속 방지
-  const mk=()=>({word:{word:q.word.word,ko:q.word.ko}, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _retry:true, _ctx:q._ctx});
-  const ins=(base)=>{ let p=Math.min(wpQueue.length, wpPos+base);
-    if(wpQueue[p-1] && wpQueue[p-1].word.word===q.word.word) p++;
-    if(wpQueue[p] && wpQueue[p].word.word===q.word.word) p++;
-    wpQueue.splice(Math.min(wpQueue.length,p),0,mk()); };
-  ins(4); ins(11);
+  // 오답은 한 번만, 남은 새 단어 60~70% 뒤쪽에 넣는다. "새 단어 흐름"을 먼저 살린다.
+  const target=normAns(q.word&&q.word.word);
+  if(!target) return;
+  if(wpQueue.slice(wpPos+1).some(x=>x&&x._retryNow&&normAns(x.word&&x.word.word)===target)) return;
+  const mk=()=>({word:{word:q.word.word,ko:q.word.ko}, blank:q.blank, idxInWord:q.idxInWord, totalInWord:q.totalInWord, _retryNow:true, _ctx:q._ctx});
+  const rest=wpQueue.slice(wpPos+1);
+  const freshLeft=rest.filter(x=>x&&!x._retryNow).length;
+  const freshBefore=Math.min(8, Math.max(5, Math.ceil(freshLeft*0.65)));
+  let seenFresh=0, p=wpQueue.length;
+  for(let i=wpPos+1;i<wpQueue.length;i++){
+    if(!wpQueue[i]._retryNow) seenFresh++;
+    if(seenFresh>=freshBefore){ p=i+1; break; }
+  }
+  while(p<wpQueue.length && (wpQueue[p]&&wpQueue[p]._retryNow)) p++;
+  if(wpQueue[p-1] && normAns(wpQueue[p-1].word&&wpQueue[p-1].word.word)===target) p++;
+  if(wpQueue[p] && normAns(wpQueue[p].word&&wpQueue[p].word.word)===target) p++;
+  wpQueue.splice(Math.min(wpQueue.length,p),0,mk());
 }
 function wpResult(q, answer, correct, elapsed, gaveUp){
   const a=q.blank.answer; const full=q.blank.en.replace("[ ___ ]", a);
@@ -5027,13 +5118,13 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
   card.innerHTML=`
     <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
     <div class="mbcard" style="padding:28px 22px;text-align:center">
-      ${(answer&&correct)?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${gaveUp?"정답을 확인하세요":""}</div>`}
+      ${(answer&&correct)?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
       <div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:6px">정답</div>
       <div style="font-family:var(--serif);font-size:38px;color:var(--jade);font-weight:700;line-height:1.2">${escapeHtml(a)}</div>
       <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${tappableEn(full)}</div>
       <div style="font-size:16px;color:var(--muted);margin-top:10px">${escapeHtml(q.blank.ko)}</div>
       <button class="ans-replay" id="wpSay" style="margin-top:14px;color:var(--jade);font-size:15px;font-weight:700">🔊 듣기</button>
-      ${gaveUp?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 잠시 후 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
+      ${(!correct)?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
     <!-- 🎧 발음 3속도 -->
     <div class="mbcard" style="padding:14px 18px;margin-top:10px">
@@ -5085,7 +5176,7 @@ function wpDone(){
   const st=srsStats();
   $("#vbBody").innerHTML=`
     <div class="rv-done" style="max-width:460px"><div class="em">📝</div><h2>단어 인출 완료!</h2>
-    <p>같은 단어를 <b>여러 상황</b>에서 직접 꺼내봤어요.<br>"안다"가 아니라 <b>"쓸 수 있다"</b> — 이게 진짜 실력이에요.</p>
+    <p>서로 다른 단어를 직접 꺼내봤어요.<br>"안다"가 아니라 <b>"쓸 수 있다"</b> — 이게 진짜 실력이에요.</p>
     <div style="display:flex;gap:9px;justify-content:center;margin:8px 0 20px">
       <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:var(--jade)">${rate}%</div><div style="font-size:11px;color:var(--muted)">인출 정답률</div></div>
       <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:var(--text)">${wpStats.correct}/${wpStats.total}</div><div style="font-size:11px;color:var(--muted)">맞힌 횟수</div></div>
@@ -5096,7 +5187,7 @@ function wpDone(){
       <button class="blk-next" id="wpAgain">계속 ↻</button>
     </div></div>`;
   $("#wpHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
-  $("#wpAgain").onclick=generateVocab;
+  $("#wpAgain").onclick=()=>{ state.vocabTheme=nextVocabTheme(); generateVocab(); };
 }
 
 /* ============================================================
@@ -9176,7 +9267,7 @@ function startVocabCoach(){
   showTutorial("vocab", false, ()=>{
     lsBoosterMode=false; state.engine="input";
     state.mode="vocab"; state.vocabTheme=nextVocabTheme();
-    startVocab();
+    startVocab(true);
   });
 }
 // 습득 지표 (점수 아님): 능동 어휘 · 연속일 · 평균 인출속도
@@ -9499,7 +9590,7 @@ function resumeLast(last){
   if(!last) return;
   if(last.mode==="talk"){ const s=SCENARIOS.find(x=>x.id===last.id); if(s){ state.mode="talk"; state.scn=s; startSession(); return; } }
   if(last.mode==="listen"){ const t=TOPICS.find(x=>x.id===last.id); if(t){ state.mode="listen"; state.topic=t; startListening(); return; } }
-  if(last.mode==="vocab"){ const v=VOCAB_THEMES.find(x=>x.id===last.id); if(v){ state.mode="vocab"; state.vocabTheme=v; startVocab(); return; } }
+  if(last.mode==="vocab"){ const v=VOCAB_THEMES.find(x=>x.id===last.id); if(v){ state.mode="vocab"; state.vocabTheme=v; startVocab(true); return; } }
   if(last.mode==="block"){ state.mode="block"; startStudy(); return; }
 }
 
@@ -9661,11 +9752,8 @@ const ONB_PAGES=[
         <div class="fl-item">⚔️ 스피킹 훈련장</div><div class="fl-ar">↓</div>
         <div class="fl-item">👂 듣기 훈련장</div>
       </div>
-      <div class="onb-text" style="font-size:13.5px;text-align:left;line-height:1.9">
-        <b>단어</b>는 재료입니다.<br>
-        <b>블록영어</b>는 말하기 공식입니다.<br>
-        <b>스피킹 훈련장</b>은 배운 표현을 직접 말하는 곳입니다.<br>
-        <b>듣기 훈련장</b>은 실제 영어 소리를 익히는 곳입니다.
+      <div class="onb-text" style="font-size:13px;text-align:center;line-height:1.7;color:#9C8378">
+        <b>단어</b>(재료) → <b>블록영어</b>(공식) → <b>말하기</b> → <b>듣기</b><br>순서대로 쌓으면 실전에서 입이 트여요.
       </div>` },
   { ico:"🧱", title:"블록영어가 중심입니다",
     html:`영어는 단어 하나씩 조립하는 것보다,<br><b>자주 쓰는 말 덩어리</b>를 통째로 꺼내는 것이 중요합니다.`,
@@ -9693,24 +9781,29 @@ function onbRender(){
   const dots=ONB_PAGES.map((_,i)=>`<div class="onb-dot ${i===onbIdx?'on':''}"></div>`).join("");
   const ov=$("#onbOv");
   ov.innerHTML=`
-    <div class="onb-top"><button class="onb-skip" id="onbSkip">건너뛰기</button></div>
-    <div class="onb-body">
-      <div class="onb-ico">${p.ico}</div>
-      <div class="onb-title">${p.title}</div>
-      <div class="onb-text">${p.html}</div>
-      ${p.extra||""}
+    <div class="onb-hero">
+      <div class="onb-hero-top"><span class="onb-step-no">${onbIdx+1} / ${ONB_PAGES.length}</span><button class="onb-skip" id="onbSkip">건너뛰기</button></div>
+      <div class="onb-badge">${p.ico}</div>
+      <div class="onb-dots">${dots}</div>
+      <span class="onb-blob b1"></span><span class="onb-blob b2"></span>
     </div>
-    <div class="onb-dots">${dots}</div>
-    <div class="onb-foot">
-      ${last?`
-        <button class="onb-btn primary" id="onbStart">시작하기</button>
-        <button class="onb-btn sec" id="onbNeverShow">다시 보지 않기</button>
-      `:`
-        <div class="onb-foot-row">
-          ${onbIdx>0?`<button class="onb-btn ghost" id="onbBack">‹ 이전</button>`:""}
-          <button class="onb-btn primary" id="onbNext">다음 →</button>
-        </div>
-      `}
+    <div class="onb-sheet">
+      <div class="onb-content">
+        <div class="onb-title">${p.title}</div>
+        <div class="onb-text">${p.html}</div>
+        ${p.extra||""}
+      </div>
+      <div class="onb-foot">
+        ${last?`
+          <button class="onb-btn primary" id="onbStart">시작하기 🚀</button>
+          <button class="onb-btn sec" id="onbNeverShow">다시 보지 않기</button>
+        `:`
+          <div class="onb-foot-row">
+            ${onbIdx>0?`<button class="onb-btn ghost" id="onbBack">‹</button>`:""}
+            <button class="onb-btn primary" id="onbNext">다음 →</button>
+          </div>
+        `}
+      </div>
     </div>`;
   const skip=$("#onbSkip"); if(skip) skip.onclick=onbClose;
   const next=$("#onbNext"); if(next) next.onclick=()=>{ onbIdx++; onbRender(); };
@@ -10015,7 +10108,7 @@ $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
 $("#profScrim").onclick=(e)=>{ if(e.target.id==="profScrim") closeProfile(); };
 { const eb=$("#evalBtn"); if(eb) eb.onclick=endAndEvaluate; }
 
-$("#startBtn").onclick=()=>{ if(state.mode==="talk") startSession(); else if(state.mode==="listen") startListening(); else if(state.mode==="vocab") startVocab(); };
+$("#startBtn").onclick=()=>{ if(state.mode==="talk") startSession(); else if(state.mode==="listen") startListening(); else if(state.mode==="vocab") startVocab(true); };
 $("#blkBack").onclick=goToSetup;
 $("#vbBack").onclick=goToSetup;
 { const fb=$("#floodBtn"); if(fb) fb.onclick=()=>{ if(!fb.disabled) startFlood(); }; }
