@@ -1746,7 +1746,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.12.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.13.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-20";
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
@@ -6616,6 +6616,8 @@ function bleDeepStart(){
 }
 function bleDeepRender(){
   if(!bleDeep) return goToSetup();
+  // output 모드: 문제 수 제한 도달 시 요약
+  if(bleDeep.outputMode && bleDeep.results.length>=(bleDeep.limit||10)){ return bleDeepSummary(); }
   // 다시 풀어야 할 게 있으면 우선, 없으면 새 문제
   const retryIdx=bleDeep.requeue.findIndex(x=>(x.delayUntil||0)<=bleDeep.count && (bleUnlockedBlocks().length<=1 || !bleDeep.history.slice(-bleEffectiveGap(bleUnlockedBlocks())).includes(x.block.id)));
   let it = retryIdx>=0 ? bleDeep.requeue.splice(retryIdx,1)[0] : bleDeepNextItem();
@@ -6633,7 +6635,7 @@ function bleDeepRender(){
   const headBg=isPeach?"#fff":"var(--mist)", headTx=isPeach?"#B0958A":"var(--muted)", headTrack=isPeach?"#FBD6C4":"var(--mist)";
   const head=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;max-width:460px;margin-left:auto;margin-right:auto">
       <button id="bleExit" style="background:${headBg};border:1px solid ${headTrack};color:${headTx};font-weight:900;border-radius:12px;padding:7px 13px;cursor:pointer">‹ 끝내기</button>
-      <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#F0664A">🔁 본격 학습 · ${doneN}문제</div>
+      <div style="flex:1;text-align:center;font-size:12px;font-weight:800;color:#F0664A">${bleDeep.outputMode?`🗣️ 영어로 꺼내기 · ${Math.min(doneN+1,bleDeep.limit||10)}/${bleDeep.limit||10}`:`🔁 본격 학습 · ${doneN}문제`}</div>
       <div style="width:64px;text-align:right">${rk?`<span style="font-size:10.5px;font-weight:800;color:#fff;background:${rc};border-radius:99px;padding:3px 8px">${rk}</span>`:""}</div>
     </div>`;
   const ss=$("#sprintScroll"); ss.style.background=isPeach?"#EAE3DD":"";
@@ -6816,6 +6818,8 @@ function bleDeepSummary(){
   { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleDeep?bleDeep.results:[];
   if(!res.length){ goToSetup(); return; }
+  // ===== 영어로 꺼내기 전용 요약 =====
+  if(bleDeep && bleDeep.outputMode){ return bleOutputSummary(res); }
   const byId={};
   res.forEach(r=>{ const o=byId[r.id]=byId[r.id]||{perfect:0,hit:0,miss:0,slow:0,newCtx:[],commNotBlock:[]};
     if(r.result==="PERFECT")o.perfect++; else if(r.result==="HIT")o.hit++; else o.miss++;
@@ -6873,6 +6877,65 @@ function bleDeepSummary(){
   </div>`;
   $("#bleDeepMore").onclick=()=>bleDeepStart();
   $("#bleDeepHome").onclick=()=>goToSetup();
+}
+
+// 영어로 꺼내기 세션 종료 요약 — 의미 전달 vs 목표 블록 분리
+function bleOutputSummary(res){
+  TTS&&TTS.cancel();
+  const total=res.length;
+  const commN=res.filter(r=>r.comm).length;
+  const targetN=res.filter(r=>r.target).length;
+  const byId={};
+  res.forEach(r=>{ const o=byId[r.id]=byId[r.id]||{target:0,comm:0,miss:0,slow:0};
+    if(r.target)o.target++; if(r.comm)o.comm++;
+    if(!r.target)o.miss++;
+    if(r.target&&!r.fast)o.slow++;
+  });
+  // 잘 꺼낸 블록: 목표 성공이 실패보다 많음
+  const wellDone=Object.keys(byId).filter(id=>byId[id].target>0 && byId[id].target>=byId[id].miss).map(id=>BLE_BY_ID[id]?.block).filter(Boolean);
+  // 약한 블록: 목표 못 쓴 게 더 많음
+  const weak=Object.keys(byId).filter(id=>byId[id].miss>0 && byId[id].miss>byId[id].target).map(id=>BLE_BY_ID[id]?.block).filter(Boolean);
+  const slow=Object.keys(byId).filter(id=>byId[id].slow>0).map(id=>BLE_BY_ID[id]?.block).filter(Boolean);
+  // 헷갈린 블록 쌍
+  const confused=[];
+  res.forEach(r=>{ if(r.confusedWith && BLE_BY_ID[r.confusedWith] && BLE_BY_ID[r.id]) confused.push(`${BLE_BY_ID[r.id].block} vs ${BLE_BY_ID[r.confusedWith].block}`); });
+  // 추천 다음 훈련
+  let recBlock = weak[0] || (confused.length?null:slow[0]) || null;
+  let rec;
+  if(weak.length) rec=`스피드런에서 <b style="color:#e0533f">${escapeHtml(weak[0])}</b> 연습`;
+  else if(confused.length) rec=`<b style="color:#C06CC0">${escapeHtml([...new Set(confused)][0])}</b> 구별 연습`;
+  else if(slow.length) rec=`스피드런에서 <b style="color:#E0A300">${escapeHtml(slow[0])}</b> 빠르게 말하기`;
+  else rec="잘했어요! 스피드런으로 속도를 올려봐요";
+  try{ awardXP("output", targetN*6, "영어로 꺼내기", "bleoutput"); }catch(e){}
+  const bigStat=(label,n,color)=>`<div style="flex:1;text-align:center"><div style="font-size:11px;color:var(--muted);font-weight:700">${label}</div><div style="font-size:26px;font-weight:900;color:${color}">${n}<span style="font-size:15px;color:var(--muted)"> / ${total}</span></div></div>`;
+  const row=(label,val,color)=> val? `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)"><span style="font-size:13px;color:var(--muted)">${label}</span><span style="font-size:14px;font-weight:700;color:${color||'var(--text)'};text-align:right;max-width:62%">${val}</span></div>`:"";
+  $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
+    <div class="em">🗣️</div><h2>오늘의 영어로 꺼내기 완료</h2>
+    <p style="font-size:13px;color:var(--muted)">총 ${total}문제</p>
+    <div style="display:flex;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0">
+      ${bigStat("의미 전달", commN, "#19a06b")}
+      <div style="width:1px;background:var(--line)"></div>
+      ${bigStat("목표 블록", targetN, "#F0664A")}
+    </div>
+    <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
+      ${row("잘 꺼낸 블록", [...new Set(wellDone)].map(escapeHtml).join(", ")||"—", "var(--jade)")}
+      ${confused.length?row("헷갈린 블록", [...new Set(confused)].slice(0,3).map(escapeHtml).join("<br>"), "#C06CC0"):""}
+      ${row("다시 연습할 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#e0533f")}
+      ${row("느렸던 블록", [...new Set(slow)].map(escapeHtml).join(", ")||"—", "#E0A300")}
+    </div>
+    <div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:14px;padding:12px 15px;margin-bottom:12px;text-align:left">
+      <div style="font-size:12px;font-weight:900;color:#C08763">💡 추천 다음 훈련</div>
+      <div style="font-size:14px;color:#4A372F;font-weight:600;margin-top:3px">${rec}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
+      <button class="sh-next" id="outAgain" style="margin:0">다시 연습하기 →</button>
+      <button class="rv-stop" id="outSpeed" style="background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;border:none">⚡ 스피드런으로 가기</button>
+      <button class="rv-stop" id="outReview">블록영어 복습하기</button>
+    </div>
+  </div>`;
+  $("#outAgain").onclick=()=>bleDeepStartOutput();
+  $("#outSpeed").onclick=()=>{ if(typeof openSprintPicker==="function") openSprintPicker(); else goToSetup(); };
+  $("#outReview").onclick=()=>{ if(typeof bleOpenHub==="function") bleOpenHub(); else goToSetup(); };
 }
 
 function bleOpenHub(){
@@ -7652,7 +7715,7 @@ function openSpeakHub(){
      <div class="hub-sub">어떤 방식으로 말해볼까요?</div>
      <button class="hub-opt" data-go="out">
        <span class="hub-emo">⚔️</span>
-       <span class="hub-tx"><b>영어로 꺼내기</b><i>한국어 상황을 보고 영어로 말하기</i></span>
+       <span class="hub-tx"><b>영어로 꺼내기</b><i>배운 블록을 상황에 맞게 영어로 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
      <button class="hub-opt" data-go="real">
@@ -8388,11 +8451,38 @@ function startBooster(){
 }
 // 🗣️ 꺼내기 Engine — 한국어 상황 먼저, 힌트 없이 영어로
 function startOutputEngine(){
+  // "영어로 꺼내기" = 블록영어 Deep Practice 엔진을 구동하는 구조화 학습.
+  // 배운 BLE 블록을 targetBlock으로, bleJudge로 채점(의미/블록 분리), 약점·혼동·속도 추적, 유형 다양화.
+  const set=bleActiveSet();
+  if(!bleDeepGateReady(set)){
+    // 아직 블록 5개 미완료 → 블록영어 Set 1로 안내
+    openModal({
+      title:"먼저 블록을 배워요",
+      msg:"먼저 블록영어에서 기본 블록 5개를 배워야 해요.\n그다음 여기서 영어로 꺼내는 연습을 할 수 있어요.",
+      okText:"블록영어 배우러 가기",
+      onOk:()=>{ bleStartSetIntro(set.id); }
+    });
+    return;
+  }
   showTutorial("output", false, ()=>{
-    state.engine="output"; state.mode="talk";
-    state.scn={ id:"output", t:"꺼내기", emo:"🗣️", role:"an output coach", ctx:"retrieval practice" };
-    startSession();
+    state.engine="output";
+    bleDeepStartOutput();
   });
+}
+// 영어로 꺼내기 전용 진입: Deep 엔진을 output 모드(10문제 고정)로 구동
+function bleDeepStartOutput(){
+  const set=bleActiveSet();
+  if(!bleDeepGateReady(set)){ bleStartSetIntro(set.id); return; }
+  bleCheckSetIntro(set);
+  const limit = kidMode()? 7 : 10;
+  bleDeep={ queue:[], results:[], count:0, requeue:[], history:[], lastTypeByBlock:{}, outputMode:true, limit };
+  bleCtxCacheLoad();
+  bleUnlockedBlocks().forEach(b=>bleEnsureContexts(b));
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  bleDeepRender();
 }
 // 🌎 실전상황 Engine — 생존 시뮬레이션
 const SURVIVAL=[
