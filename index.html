@@ -1830,7 +1830,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.43.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.44.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10346,9 +10346,9 @@ function renderDailyCard(){
       <span class="bh-dot">·</span>
       <span>실전 준비까지 <b>${toReady}번</b></span>
     </div>
-    <button class="bh-go" id="bhGo">블록 배우러 가기 →</button>
+    <button class="bh-go" id="bhGo">오늘 표현 연습하기 →</button>
   </div>`;
-  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ bleOpenHub(); }catch(e){} };
+  const go=$("#bhGo"); if(go) go.onclick=()=>{ try{ startVocabCoach(); }catch(e){} };
 }
 function renderAcqStats(){
   const box=$("#acqStats"); if(!box) return;
