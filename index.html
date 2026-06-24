@@ -2278,6 +2278,46 @@ function levelCap(){
   if(v<=4) return "Keep every sentence short and simple (5-6 words), everyday only, at most ONE simple connector. Do not over-elaborate.";
   return "";
 }
+// 🧱 실전회화에서 '학습한 블록을 의미상 실제로 썼는지' AI가 판정하게 하는 지시 + 파싱
+function convoLearnedBlockList(){
+  // 실전회화 사용 판정 대상: 소개된(introduced) BLE 블록 + 학습한 CORE_PHRASES
+  const out=[];
+  try{
+    const s=bleGetState();
+    BLE_BLOCKS.forEach(b=>{ if(s[b.id]&&s[b.id].introducedAt) out.push({id:"ble:"+b.id, pattern:b.block}); });
+  }catch(e){}
+  try{
+    const learned=(typeof blGetLearned==="function")?blGetLearned():[];
+    CORE_PHRASES.forEach(p=>{ if(learned.indexOf(p.id)>=0) out.push({id:"core:"+p.id, pattern:p.phrase}); });
+  }catch(e){}
+  // 중복 패턴 제거
+  const seen={}, uniq=[];
+  out.forEach(x=>{ const k=x.pattern.toLowerCase(); if(!seen[k]){ seen[k]=1; uniq.push(x); } });
+  return uniq.slice(0,40);
+}
+function usedBlocksDirective(){
+  const list=convoLearnedBlockList();
+  if(!list.length) return "";
+  const lines=list.map(x=>`${x.id} = "${x.pattern}"`).join("; ");
+  return [
+"BLOCK-USAGE TAG (internal, required): The learner is practicing these target blocks: "+lines+".",
+"At the VERY END of your reply, append one hidden tag on its own line listing which of these blocks the LEARNER actually used in THEIR most recent message — judged by MEANING/FUNCTION, not exact words. A paraphrase, tense change, or polite variant of the same function COUNTS (e.g. \"Could I have a coffee\" counts as the \"Can I get...?\" block). Only count a block if the learner genuinely produced that function in their own words.",
+"Format EXACTLY: ⟦USED:id1,id2⟧ using the ids above (e.g. ⟦USED:ble:can_i_get,core:where_can_i_006⟧). If they used none, output ⟦USED:⟧. Never explain the tag, never mention it, put nothing after it."
+  ].join("\n");
+}
+function stripUsedMarker(txt){
+  // 응답에서 USED 마커를 떼어내고 {clean, ids} 반환 (괄호 변형도 방어)
+  let s=String(txt||"");
+  const m=s.match(/[⟦\[【]\s*USED\s*:\s*([^⟧\]】]*)[⟧\]】]/i);
+  let ids=null;
+  if(m){ ids=m[1].split(",").map(x=>x.trim()).filter(Boolean); }
+  // 마커(및 변형) 제거 + 혹시 모를 잔여 USED: 라인 제거
+  const clean=s
+    .replace(/[⟦\[【]\s*USED\s*:[^⟧\]】]*[⟧\]】]/gi,"")
+    .replace(/^\s*USED\s*:.*$/gim,"")
+    .replace(/\s+$/,"").trim();
+  return { clean, ids };
+}
 function scnDesc(){
   if(state.scn && state.scn.id==="custom") return state.custom;
   return state.scn ? state.scn.ctx : "";
@@ -2377,7 +2417,8 @@ levelCap(),
 "When it fits naturally, reuse one expression from the retrieval queue in a new personal-life question, but never reveal it before the learner tries.",
 reusePromptHint(),
 "- Be warm and low-pressure. Only ONE improvement per turn — never pile on corrections.",
-"- Reply in English. You may add a tiny Korean gloss in parentheses only for a genuinely hard word."
+"- Reply in English. You may add a tiny Korean gloss in parentheses only for a genuinely hard word.",
+usedBlocksDirective()
     ].join("\n");
   }
   return [
@@ -2391,7 +2432,8 @@ levelCap(),
 "- Stay fully in character. React naturally to whatever they say, even if their English is broken — understand their intent and keep things flowing.",
 "- "+levelLine(),
 "- Usually end with a natural follow-up question so they have something to respond to.",
-"- Never correct their grammar and never switch to Korean. Just talk like a real person would."
+"- Never correct their grammar and never switch to Korean. Just talk like a real person would.",
+usedBlocksDirective()
   ].join("\n");
 }
 
@@ -2644,6 +2686,46 @@ async function startSession(){
 }
 
 // 🗣 실전회화: 사용자 발화에서 학습 블록을 자연스럽게 썼는지 감지 → SRS 강화
+// 🧱 AI가 의미 기반으로 판정한 usedBlocks ids로 실전회화 사용 기록 (substring 부정확성 탈출)
+function convoRecordUsedBlocks(ids, userText){
+  if(!Array.isArray(ids) || !ids.length) return;
+  const ctxId="real:"+((state.scn&&state.scn.id)||"conversation");
+  let bleUsed=[], coreUsed=[];
+  // BLE 블록
+  try{
+    const s=bleGetState();
+    ids.forEach(raw=>{
+      if(raw.indexOf("ble:")!==0) return;
+      const id=raw.slice(4);
+      const st=s[id]; if(!st || !st.introducedAt) return;          // 소개 안 된 블록은 무시
+      if(bleUsed.indexOf(id)>=0) return;
+      st.realConversationSuccessCount=(st.realConversationSuccessCount||0)+1;
+      st.lastSeenAt=bleNow();
+      st.contextsUsed=st.contextsUsed||[];
+      if(st.contextsUsed.indexOf(ctxId)<0) st.contextsUsed.push(ctxId);
+      st.consecFails=0;
+      st.stage=bleComputeStage(st);
+      s[id]=st; bleUsed.push(id);
+      // ledger에도 실전 사용 이벤트 (source=conversation → usedInConversationCount 증가)
+      try{ ledgerRecordExpressionEvent({blockId:id, source:"conversation", context:(state.scn&&state.scn.id)||"conversation", communicationSuccess:true, targetBlockSuccess:true}); }catch(e){}
+    });
+    if(bleUsed.length) bleSaveState(s);
+  }catch(e){}
+  // CORE_PHRASES 블록 → REAL WORLD 승급 + SRS 강화
+  try{
+    ids.forEach(raw=>{
+      if(raw.indexOf("core:")!==0) return;
+      const id=raw.slice(5);
+      if(coreUsed.indexOf(id)>=0) return;
+      const p=CORE_PHRASES.find(x=>x.id===id); if(!p) return;
+      if((typeof blGetLearned==="function") && blGetLearned().indexOf(id)<0) return;
+      try{ blMarkReal(id); }catch(e){}
+      try{ srsPass(p.phrase, p.ko||"", (state.scn&&state.scn.id)||"convo"); }catch(e){}
+      coreUsed.push(id);
+    });
+  }catch(e){}
+  if(bleUsed.length||coreUsed.length){ try{ refreshRvBanner&&refreshRvBanner(); }catch(e){} }
+}
 function convoTrackBlocks(userText){
   const t=" "+String(userText||"").toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ")+" ";
   if(t.trim().length<3) return;
@@ -2695,16 +2777,24 @@ async function sendMessage(){
   addMeTurn(text);
   state.convo.push({role:"user", text});
   questBump("talk");
-  // 🗣 블록 사용 감지 — 학습한 블록을 자연스럽게 썼으면 SRS 강화 (실전회화에서만)
-  if(state.engine==="survival"){ try{ convoTrackBlocks(text); }catch(e){} }
+  // 🗣 블록 사용 감지는 AI 응답을 받은 뒤 의미 기반으로 처리 (substring 선제호출 제거)
   setBusy(true); showTyping();
   try{
     const msgs = state.convo.map(t=>({role:t.role, content:t.text}));
     const data = await callClaude(rolePrompt(), msgs);
-    const txt = extractText(data);
+    const raw = extractText(data);
+    const { clean, ids } = stripUsedMarker(raw);
+    const txt = clean;
     hideTyping();
     state.convo.push({role:"assistant", text:txt});
     addCoachTurn(txt);
+    // 🧱 블록 사용 판정: AI가 의미 기반으로 준 ids가 있으면 그걸 신뢰, 없으면 substring 폴백
+    if(state.engine==="survival"){
+      try{
+        if(ids!==null){ convoRecordUsedBlocks(ids, text); }
+        else { convoTrackBlocks(text); }
+      }catch(e){ try{ convoTrackBlocks(text); }catch(e2){} }
+    }
   }catch(e){
     hideTyping(); addCoachTurn("(연결 오류 — 다시 시도해 주세요.)");
   }
@@ -10204,14 +10294,20 @@ function ledgerMigrateOnce(){
 function ledgerStats(){
   const l=ledgerGet(); const expr=Object.values(l.expressions||{}), words=Object.values(l.words||{}), lis=Object.values(l.listening||{});
   expr.forEach(ledgerRefreshExpression);
+  const ready=expr.filter(x=>["conversation_ready","mastered"].includes(x.status)).length;
+  const fiveCtx=expr.filter(x=>(x.contextsUsed||[]).length>=5).length;
+  const fast3=expr.filter(x=>(x.fastRecallSuccessCount||0)>=3 || (x.bestStartDelayMs!=null&&x.bestStartDelayMs<=3000)).length;
+  const conversation=expr.filter(x=>(x.usedInConversationCount||0)>0).length;
+  const heard=lis.filter(x=>(x.understoodCount||0)>0).length;
+  const weak=expr.filter(x=>x.weak).length;
+  const usableWords=words.filter(x=>["usable","mastered"].includes(x.status)).length;
+  const active=expr.filter(x=>["practicing","context_ready","speed_ready"].includes(x.status)).length;
+  const needsContext=expr.filter(x=>x.introduced && (x.contextsUsed||[]).length<Math.min(5,x.contextsTarget||5)).length;
   return {
-    ready:expr.filter(x=>["conversation_ready","mastered"].includes(x.status)).length,
-    fiveCtx:expr.filter(x=>(x.contextsUsed||[]).length>=5).length,
-    fast3:expr.filter(x=>(x.fastRecallSuccessCount||0)>=3 || (x.bestStartDelayMs!=null&&x.bestStartDelayMs<=3000)).length,
-    conversation:expr.filter(x=>(x.usedInConversationCount||0)>0).length,
-    heard:lis.filter(x=>(x.understoodCount||0)>0).length,
-    weak:expr.filter(x=>x.weak).length,
-    usableWords:words.filter(x=>["usable","mastered"].includes(x.status)).length
+    ready, fiveCtx, fast3, conversation, heard, weak, usableWords,
+    // profSkillStats 등이 읽는 별칭 (키 불일치 버그 방지)
+    automaticExpressions:fast3, activeExpressions:active, masteredWords:usableWords,
+    listeningUnderstood:heard, needsContext, conversationExpressions:conversation, readyExpressions:ready
   };
 }
 function ledgerDueExpressions(limit){
