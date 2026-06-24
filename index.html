@@ -8497,7 +8497,7 @@ const CORE_PHRASES=[
  {id:"ask_question_039",phrase:"Can I ask a question?",ko:"질문 하나 해도 돼요?",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴에 대해 질문해도 돼요?",en:"Can I ask a question about the menu?"},{ko:"질문 하나 해도 돼요?",en:"Can I ask a question?"},{ko:"뭐 좀 물어봐도 돼요?",en:"Can I ask you something?"},{ko:"체크아웃 관련 물어봐도 돼요?",en:"Can I ask about checkout?"},{ko:"하나만 더 물어봐도 돼요?",en:"Can I ask one more thing?"}]},
  {id:"thank_you_help_040",phrase:"Thank you for your help.",ko:"도와주셔서 감사해요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","government","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"도와주셔서 감사해요.",en:"Thank you for your help."},{ko:"감사합니다, 선생님.",en:"Thank you, doctor."},{ko:"시간 내주셔서 감사해요.",en:"Thank you for your time."},{ko:"도와주셔서 감사해요.",en:"Thanks for your help."},{ko:"도와주셔서 감사해요.",en:"Thank you for helping me."}]},
  {id:"recommend_041",phrase:"Could you recommend...?",ko:"추천해 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"메뉴 추천해 주시겠어요?",en:"Could you recommend a dish?"},{ko:"전문의 추천해 주시겠어요?",en:"Could you recommend a specialist?"},{ko:"수업 추천해 주시겠어요?",en:"Could you recommend a class?"},{ko:"근처에 좋은 곳 추천해 주시겠어요?",en:"Could you recommend a place nearby?"},{ko:"요금제 추천해 주시겠어요?",en:"Could you recommend a plan?"}]},
- {id:"ill_take_042",phrase:"I'll take this one.",ko:"이걸로 할게요",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"이걸로 할게요.",en:"I'll take this one."},{ko:"오전 시간으로 할게요.",en:"I'll take the morning slot."},{ko:"그 옵션으로 할게요.",en:"I'll take that option."},{ko:"이 방으로 할게요.",en:"I'll take the room."},{ko:"기본 요금제로 할게요.",en:"I'll take the basic plan."}]},
+ {id:"ill_take_042",phrase:"I'll take this one.",ko:"이걸로 할게요",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"이걸로 할게요.",en:"I'll take this one."},{ko:"오전 시간으로 할게요.",en:"I'll take the morning slot."},{ko:"그 옵션으로 할게요.",en:"I'll take that option."},{ko:"이 방으로 할게요.",en:"I'll take the room."},{ko:"기본 요금제로 할게요.",en:"I'll take the basic plan."}]},
  {id:"can_you_call_043",phrase:"Can you call...?",ko:"~ 불러/전화해 주시겠어요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"매니저 불러 주시겠어요?",en:"Can you call the manager?"},{ko:"간호사 불러 주시겠어요?",en:"Can you call a nurse?"},{ko:"제 아이 선생님께 전화해 주시겠어요?",en:"Can you call my child's teacher?"},{ko:"택시 불러 주시겠어요?",en:"Can you call a taxi?"},{ko:"다시 전화해 주시겠어요?",en:"Can you call me back?"}]},
  {id:"what_should_i_044",phrase:"What should I do?",ko:"어떻게 해야 하죠?",level:2,tags:["restaurant","hospital","school","hotel","support","government","banking","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"주문하려면 어떻게 해야 해요?",en:"What should I do to order?"},{ko:"이제 어떻게 해야 하죠?",en:"What should I do now?"},{ko:"다음에 뭘 해야 하죠?",en:"What should I do next?"},{ko:"열쇠는 어떻게 해야 하죠?",en:"What should I do with the key?"},{ko:"고치려면 어떻게 해야 하죠?",en:"What should I do to fix it?"}]},
  {id:"receipt_045",phrase:"Can I have a receipt?",ko:"영수증 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"보험용 영수증 주시겠어요?",en:"Can I have a receipt for insurance?"},{ko:"수업료 영수증 주시겠어요?",en:"Can I have a receipt for the fee?"},{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"영수증 이메일로 주시겠어요?",en:"Can I have a receipt by email?"}]},
@@ -11079,11 +11079,11 @@ function profSkillStats(){
 }
 
 const DAILY_EXPRESSIONS=[
- "id_like_to_001","looking_for_013","where_can_i_006","how_much_010",
- "help_me_014","what_mean_034","problem_with_036","can_i_have_018",
- "what_time_016","is_there_012","ill_take_042","recommend_041",
- "not_working_020","dont_understand_009","one_moment_025","pay_by_card_023",
- "excuse_me_024","how_long_031","what_should_i_044","refund_035",
+ "where_can_i_006","how_much_010","help_me_014","can_i_have_018",
+ "what_time_016","dont_understand_009","one_moment_025","excuse_me_024",
+ "id_like_to_001","looking_for_013","what_mean_034","problem_with_036",
+ "is_there_012","ill_take_042","recommend_041","not_working_020",
+ "pay_by_card_023","how_long_031","what_should_i_044","refund_035",
  "can_i_change_028","how_do_i_015"
 ];
 function dailyExpr(){
