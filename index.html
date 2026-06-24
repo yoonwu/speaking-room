@@ -1910,7 +1910,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.57.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.57.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2889,6 +2889,23 @@ let lsPrefetch=null;      // 미리 받아둔 다음 문장 {en,ko}
 let lsPrefetching=false;  // 중복 프리페치 방지
 let lsRecent=[];          // 최근 출제한 영어 문장 (반복 방지)
 function lsRecord(en){ if(!en) return; lsRecent.push(en); if(lsRecent.length>25) lsRecent=lsRecent.slice(-25); }
+function lsLedgerMark(kind){
+  try{
+    if(!lsItem || !lsItem.en) return;
+    const bid=lsItem.block && typeof BLE_BY_ID!=="undefined" && BLE_BY_ID[lsItem.block] ? lsItem.block : null;
+    const rel=lsItem.blockText||lsItem.block||"";
+    ledgerRecordListeningEvent({
+      text:lsItem.en,
+      ko:lsItem.ko||"",
+      context:lsItem.context||lsItem.situation||lsItem.topic||"",
+      blockId:bid,
+      relatedExpressionId: rel ? ledgerExprId(rel,bid||rel) : null,
+      heard:kind==="heard",
+      understood:kind==="understood",
+      eventType:kind
+    });
+  }catch(e){}
+}
 function lsIsDup(en){ if(!en) return false; const n=en.toLowerCase().replace(/[^a-z ]/g,"").trim(); return lsRecent.some(x=>x.toLowerCase().replace(/[^a-z ]/g,"").trim()===n); }
 
 // 백그라운드로 다음 문장 1개 미리 생성 (대기 0초 만들기)
@@ -2977,7 +2994,7 @@ async function lsGenerate(){
   lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
   // 1) 미리 받아둔 게 있으면 즉시 출제 (대기 0초)
   if(lsPrefetch && !lsIsDup(lsPrefetch.en)){
-    lsItem=lsPrefetch; lsPrefetch=null; lsCount++; lsRecord(lsItem.en);
+    lsItem=lsPrefetch; lsPrefetch=null; lsCount++; lsRecord(lsItem.en); lsLedgerMark("heard");
     renderListenPlay();
     lsPrefetchNext();   // 그 다음 문장 또 백그라운드 생성
     return;
@@ -2986,7 +3003,7 @@ async function lsGenerate(){
   // 2) 첫 문장 — 기다리지 말고 배운 블록/예문에서 즉시 띄우고, AI는 백그라운드
   const instant=listenInstantSentence();
   if(instant && instant.en && !lsIsDup(instant.en)){
-    lsItem=instant; lsCount++; lsRecord(lsItem.en);
+    lsItem=instant; lsCount++; lsRecord(lsItem.en); lsLedgerMark("heard");
     renderListenPlay();
     lsPrefetchNext();   // 다음 문장은 AI로 미리
     return;
@@ -3001,7 +3018,7 @@ async function lsGenerate(){
     }
     lsItem=it;
     if(!lsItem || !lsItem.en) throw new Error("empty");
-    lsCount++; lsRecord(lsItem.en);
+    lsCount++; lsRecord(lsItem.en); lsLedgerMark("heard");
     renderListenPlay();
     lsPrefetchNext();   // 바로 다음 문장 미리 준비
   }catch(e){
@@ -3166,6 +3183,7 @@ function lsCheckAnswer(){
     // 🎧 들은 블록/표현을 SRS 강화 + 세션 추적 (학습 루프 연결)
     try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
     try{ profRecordListenPerfect(lsItem.en, lsItem.ko); }catch(e){}
+    lsLedgerMark("understood");
     renderListenCorrect();
   } else {
     lsRunAnalysis();
@@ -3511,6 +3529,22 @@ levelCap(),
   try{ if(loData.target) reuseAdd(loData.target, "", "output-target", sitKo); if(fb.native) reuseAdd(fb.native, "", "output-feedback", sitKo); }catch(e){}
   if(loData.target){ if(addReviewItem(loData.target, sitKo, "chunk")){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); } }
   // Active Vocabulary: 의사소통 성공 시 이 상황을 인출 컨텍스트로 기록
+  try{
+    if(loData.target){
+      ledgerRecordExpressionEvent({
+        label:loData.target,
+        source:"output_training",
+        context:sitKo,
+        communicationSuccess:!!fb.communicated,
+        targetBlockSuccess:!!fb.communicated,
+        naturalnessScore:fb.communicated?75:20,
+        startDelayMs:Math.round(elapsed*1000),
+        userAnswer:answer,
+        suggestedAnswer:fb.native||loData.target,
+        weakReasons:fb.communicated?[]:["meaning missing"]
+      });
+    }
+  }catch(e){}
   let becameActive=false;
   if(fb.communicated && answer && loData.target){
     becameActive = avRetrieve(loData.target, "", "lo:"+(sitKo||loRound).slice(0,24));
@@ -6720,6 +6754,30 @@ function bleRecord(id, opts){
   s[id]=stt; bleSaveState(s);
   // 복습 스케줄: 타겟 블록 성공만 간격을 늘린다. 의미만 통하면 곧 다시.
   bleScheduleNext(id, targetBlockSuccess, fast && targetBlockSuccess);
+  try{
+    const b=typeof BLE_BY_ID!=="undefined" ? BLE_BY_ID[id] : null;
+    if(b){
+      ledgerRecordExpressionEvent({
+        expressionId:ledgerExprId(b.block,id),
+        blockId:id,
+        label:b.block,
+        pattern:b.block,
+        family:b.func,
+        source:opts.source || (opts.listen?"listening":(opts.real?"conversation":(opts.speedAttempt?"speedrun":"block_english"))),
+        context:contextKey||situation,
+        eventType:opts.eventType||"attempt",
+        introduced:!!opts.introduced,
+        communicationSuccess,
+        targetBlockSuccess,
+        naturalnessScore:targetBlockSuccess?90:(communicationSuccess?65:20),
+        startDelayMs:ms,
+        userAnswer:opts.userAnswer||opts.heard||"",
+        suggestedAnswer:opts.suggestedAnswer||opts.naturalAnswer||b.block,
+        confusedWith:opts.confusedWith,
+        weakReasons:opts.weakReasons || (!targetBlockSuccess&&communicationSuccess?["avoids target block"]:(result==="MISS"?["missed expression"]:[]))
+      });
+    }
+  }catch(e){}
 }
 // 단계 계산 (P9 엄격 게이트)
 function bleComputeStage(st){
@@ -7592,7 +7650,7 @@ function bleWireDiscriminate(it){
       const ansLine=`<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:8px">${escapeHtml(ex.en)}</div>`;
       fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(rightB.block)} 가 맞아요</span>`)+ansLine;
       speakEn(ex.en);
-      bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true, confusedWith: ok?null:picked});
+      bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true, source:"block_discrimination", suggestedAnswer:ex.en, confusedWith: ok?null:picked});
       bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith: ok?null:picked});
       // 미니 혼합 테스트: 소개 시도 기록 + 약점 표시
       if(it.miniTest){
@@ -7706,6 +7764,10 @@ async function bleFinishRetrieve(it, heard){
     mixed,
     hidden:it.type==="situation",
     speedAttempt:it.type==="speed",
+    source:"block_retrieval",
+    userAnswer:heard,
+    suggestedAnswer:j.naturalAnswer||ex.en,
+    naturalAnswer:j.naturalAnswer||ex.en,
     confusedWith:j.confusedWith
   });
   bleSession.results.push({id:b.id, type:it.type, result:j.result, ok:correct, comm:j.communicationSuccess, target:j.targetBlockSuccess, fast, ms, blockUsed:j.targetBlockSuccess, heard, naturalAnswer:j.naturalAnswer||ex.en, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith:j.confusedWith});
@@ -8047,7 +8109,7 @@ async function bleFinishRetrieveDeep(it, heard){
     if(named.length && stat){ stat.innerHTML+=`<div style="font-size:12px;color:#C08763;margin-top:6px">📝 모르는 단어로 저장: ${named.map(w=>escapeHtml(w.ko)+"="+escapeHtml(w.en)).join(", ")} — 단어 학습에 나와요</div>`; }
   }
   speakEn(j.naturalAnswer||ex.en);
-  bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, confusedWith:j.confusedWith});
+  bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, source:"output_training", userAnswer:heard, suggestedAnswer:j.naturalAnswer||ex.en, naturalAnswer:j.naturalAnswer||ex.en, confusedWith:j.confusedWith});
   try{
     const nat=j.naturalAnswer||ex.en;
     const ctx=bleContextKey(ex)||bleContextLabel(ex);
@@ -8102,7 +8164,7 @@ function bleWireDiscriminateDeep(it){
       if(!ok && wrong){ contrast+=`<div style="font-size:12.5px;color:#8A6F62;margin-top:6px;line-height:1.5"><b style="color:#F0664A">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
       fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
-      bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, confusedWith: ok?null:picked});
+      bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, source:"block_discrimination", suggestedAnswer:it.ex.en, confusedWith: ok?null:picked});
       try{ reuseAdd(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", "ble-discriminate", bleContextKey(it.ex)||bleContextLabel(it.ex)); reuseRecord(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", bleContextKey(it.ex)||bleContextLabel(it.ex), ok); }catch(e){}
       bleDeep.results.push({id:ans, type:"discriminate", result: ok?"PERFECT":"MISS", comm:ok, target:ok, confusedWith: ok?null:picked, fast, ms, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), reason:"confusion"});
       if(!ok) bleDeep.requeue.push({type:"situation", block:right, ex:it.ex, deep:true, reason:"confusion", delayUntil:bleDeep.count+bleEffectiveGap(bleUnlockedBlocks())});
@@ -8844,6 +8906,10 @@ function srsPass(en, ko, ctx){
   if(ctx){ it.ctx=it.ctx||{}; it.ctx[ctx]=(it.ctx[ctx]||0)+1; }
   it.due=EDAY()+ (SRS_INTERVAL_DAYS[it.stage]||1);
   it.lastT=Date.now(); o[k]=it; srsSave(o);
+  try{
+    if(ledgerIsSingleWord(en)) ledgerRecordWordEvent({text:en, ko, source:"srs", eventType:"recall_success", context:ctx, usedInSentence:!!ctx});
+    else ledgerRecordExpressionEvent({label:en, source:"srs", context:ctx, communicationSuccess:true, targetBlockSuccess:true, suggestedAnswer:en});
+  }catch(e){}
   try{ profRecordWordIfMastered(en, ko); }catch(e){}
 }
 // 실패 → 단계 하락, 복습 빨리
@@ -8855,6 +8921,10 @@ function srsFail(en, ko, ctx){
   if(ctx){ it.ctx=it.ctx||{}; }
   it.due=EDAY();   // 바로 다시
   it.lastT=Date.now(); o[k]=it; srsSave(o);
+  try{
+    if(ledgerIsSingleWord(en)) ledgerRecordWordEvent({text:en, ko, source:"srs", eventType:"recall_fail", context:ctx, weakReason:"srs fail"});
+    else ledgerRecordExpressionEvent({label:en, source:"srs", context:ctx, communicationSuccess:false, fail:true, weakReasons:["srs fail"]});
+  }catch(e){}
 }
 // 오늘 복습할 아이템 (due<=오늘, mastered 제외, 실패 많은 순)
 function srsDue(max){
@@ -8989,7 +9059,11 @@ function spPassItem(it, heard){
       situation:"lightning",
       ms:Math.round(elapsed*1000),
       mixed:true,
-      speedAttempt:true
+      speedAttempt:true,
+      source:"lightning",
+      userAnswer:heard,
+      suggestedAnswer:it.en,
+      naturalAnswer:it.en
     });
   }
   let gained=0;
@@ -9840,6 +9914,241 @@ function flashHint(t){ hint.textContent=t; hint.style.color="#b3771a"; clearTime
 const DAYN = ()=>{ const d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); };
 function hGet(k,def){ try{ const r=localStorage.getItem(k); return r?JSON.parse(r):def; }catch(e){ return def; } }
 function hSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+
+/* ============================================================
+   Internal Learning Ledger
+   Invisible unified record layer. It does not add a visible tab.
+   Existing engines stay source-of-truth; ledger summarizes and recommends.
+   ============================================================ */
+const LEDGER_KEY="speakingroom:learningLedger:v1";
+function ledgerBlank(){
+  return {version:1,updatedAt:null,words:{},expressions:{},listening:{},daily:{date:null,practicedWords:[],practicedExpressions:[],completedRoutineSteps:[],summary:{}}};
+}
+function ledgerToday(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function ledgerGet(){
+  let l=hGet(LEDGER_KEY,null);
+  if(!l||l.version!==1||typeof l!=="object") l=ledgerBlank();
+  l.words=l.words||{}; l.expressions=l.expressions||{}; l.listening=l.listening||{};
+  l.daily=l.daily||{}; if(l.daily.date!==ledgerToday()) l.daily={date:ledgerToday(),practicedWords:[],practicedExpressions:[],completedRoutineSteps:[],summary:{}};
+  l.daily.practicedWords=l.daily.practicedWords||[]; l.daily.practicedExpressions=l.daily.practicedExpressions||[]; l.daily.completedRoutineSteps=l.daily.completedRoutineSteps||[]; l.daily.summary=l.daily.summary||{};
+  return l;
+}
+function ledgerSave(l){ try{ l.updatedAt=Date.now(); hSet(LEDGER_KEY,l); }catch(e){ console.warn("Ledger save failed",e); } }
+function ledgerSafe(fn){ try{ return fn(); }catch(e){ console.warn("Ledger update failed",e); return null; } }
+function ledgerTextNorm(s){ return String(s||"").trim().replace(/\s+/g," "); }
+function ledgerKeyNorm(s){ return ledgerTextNorm(s).toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9가-힣']+/g,"_").replace(/^_+|_+$/g,"").slice(0,80); }
+function ledgerWordId(text){ return "word:"+ledgerKeyNorm(text); }
+function ledgerExprId(label, fallback){ return "expr:"+(ledgerKeyNorm(fallback||label)||"unknown"); }
+function ledgerListenId(text, context){ return "listen:"+ledgerKeyNorm(text)+"_"+ledgerKeyNorm(context||"general"); }
+function ledgerIsSingleWord(text){ return /^[a-zA-Z][a-zA-Z'-]*$/.test(String(text||"").trim()); }
+function ledgerCtxId(ctx){
+  const raw=String(ctx||"general").toLowerCase();
+  if(/카페|cafe|coffee/.test(raw)) return "cafe";
+  if(/호텔|hotel|room|towel|checkout|check out/.test(raw)) return "hotel";
+  if(/식당|restaurant|resto|menu|check|bill|spicy/.test(raw)) return "restaurant";
+  if(/공항|airport|flight|gate|boarding|luggage/.test(raw)) return "airport";
+  if(/쇼핑|shopping|store|refund|size|receipt|return/.test(raw)) return "shopping";
+  if(/병원|clinic|hospital|doctor|medicine|symptom|insurance/.test(raw)) return "hospital";
+  if(/학교|school|class|teacher|homework/.test(raw)) return "school";
+  if(/은행|bank|account|withdraw/.test(raw)) return "bank";
+  if(/고객|support|service|subscription|payment|app|password/.test(raw)) return "customer_support";
+  if(/택시|taxi|downtown/.test(raw)) return "transportation";
+  if(/회사|office|meeting|file|schedule/.test(raw)) return "work";
+  return ledgerKeyNorm(ctx||"general")||"general";
+}
+function ledgerPushUnique(arr,v,limit){ if(!v) return arr; arr=arr||[]; if(arr.indexOf(v)<0) arr.push(v); return limit?arr.slice(-limit):arr; }
+function ledgerInc(o,k,n){ o[k]=(Number(o[k])||0)+(n==null?1:n); }
+function ledgerAvg(cur,count,next){ if(typeof next!=="number"||!isFinite(next)||next<=0) return cur==null?null:cur; count=Math.max(0,Number(count)||0); return cur==null?Math.round(next):Math.round((cur*count+next)/(count+1)); }
+function ledgerNextReview(rec, ok, fast){
+  const base=Date.now();
+  if(!ok) return base+10*60*1000;
+  if(!fast) return base+24*60*60*1000;
+  return base+3*24*60*60*1000;
+}
+function ledgerEnsureWord(l,text,ko){
+  const clean=ledgerTextNorm(text); if(!clean) return null;
+  const id=ledgerWordId(clean);
+  const r=l.words[id]||{id,type:"word",text:clean,ko:ko||"",introduced:false,introducedAt:null,meaningSeenCount:0,meaningSuccessCount:0,meaningFailCount:0,recallSuccessCount:0,recallFailCount:0,usedInSentenceCount:0,usedInSpeakingCount:0,usedInConversationCount:0,heardInListeningCount:0,lastSeenAt:null,lastSuccessAt:null,lastFailAt:null,nextReviewAt:null,weak:false,weakReasons:[],mastery:0,status:"new"};
+  if(ko&&!r.ko) r.ko=ko; l.words[id]=r; return r;
+}
+function ledgerEnsureExpression(l,label,opts){
+  opts=opts||{}; label=ledgerTextNorm(label); if(!label) return null;
+  const id=opts.expressionId || ledgerExprId(label, opts.blockId||label);
+  const r=l.expressions[id]||{id,type:"expression",label,pattern:opts.pattern||label,family:opts.family||"",introduced:false,introducedAt:null,contextsTarget:5,contextsUsed:[],contextHistory:[],meaningSuccessCount:0,targetBlockSuccessCount:0,naturalnessSuccessCount:0,failCount:0,slowRecallCount:0,fastRecallSuccessCount:0,averageStartDelayMs:null,bestStartDelayMs:null,usedInOutputTrainingCount:0,usedInSpeedrunCount:0,usedInConversationCount:0,heardInListeningCount:0,confusedWith:[],avoidedByUserCount:0,suggestedSentences:[],lastSeenAt:null,lastSuccessAt:null,lastFailAt:null,nextReviewAt:null,weak:false,weakReasons:[],mastery:0,status:"new",recommendedNextMode:null};
+  r.label=r.label||label; if(opts.pattern) r.pattern=opts.pattern; if(opts.family) r.family=opts.family; l.expressions[id]=r; return r;
+}
+function ledgerEnsureListening(l,text,opts){
+  opts=opts||{}; text=ledgerTextNorm(text); if(!text) return null;
+  const id=opts.listeningId || ledgerListenId(text, opts.context);
+  const r=l.listening[id]||{id,type:"listening",text,relatedExpressionId:opts.relatedExpressionId||null,relatedWords:opts.relatedWords||[],context:ledgerCtxId(opts.context||""),heardCount:0,understoodCount:0,replayCount:0,transcriptOpenedCount:0,shadowingCount:0,shadowingSuccessCount:0,lastHeardAt:null,nextReviewAt:null,weak:false,mastery:0,status:"new"};
+  if(opts.relatedExpressionId) r.relatedExpressionId=opts.relatedExpressionId; l.listening[id]=r; return r;
+}
+function ledgerHasRecentUnrecoveredFail(r,now){
+  now=now||Date.now();
+  if(!r||!r.lastFailAt) return false;
+  if(r.lastSuccessAt && r.lastSuccessAt>=r.lastFailAt) return false;
+  return now-r.lastFailAt < 14*86400000;
+}
+function ledgerRecentFailPenalty(r,now){
+  now=now||Date.now();
+  if(!ledgerHasRecentUnrecoveredFail(r,now)) return 0;
+  const age=now-r.lastFailAt;
+  if(age<86400000) return 22;
+  if(age<3*86400000) return 14;
+  if(age<7*86400000) return 8;
+  return 4;
+}
+function ledgerRecentFailPriority(r,now){
+  now=now||Date.now();
+  if(!ledgerHasRecentUnrecoveredFail(r,now)) return 0;
+  const age=now-r.lastFailAt;
+  if(age<86400000) return 4;
+  if(age<3*86400000) return 3;
+  if(age<7*86400000) return 2;
+  return 1;
+}
+function ledgerExpressionMastery(r){
+  let score=0;
+  if(r.introduced) score+=10;
+  score+=Math.min(20,(r.meaningSuccessCount||0)*4);
+  score+=Math.min(20,(r.targetBlockSuccessCount||0)*5);
+  score+=Math.min(20,((r.contextsUsed||[]).length/Math.max(1,r.contextsTarget||5))*20);
+  score+=Math.min(15,(r.fastRecallSuccessCount||0)*5);
+  score+=Math.min(10,(r.usedInConversationCount||0)*5);
+  score+=Math.min(5,(r.heardInListeningCount||0)*2);
+  score-=Math.min(15,(r.failCount||0)*3);
+  score-=Math.min(10,(r.slowRecallCount||0)*2);
+  score-=Math.min(10,(r.avoidedByUserCount||0)*2);
+  score-=ledgerRecentFailPenalty(r);
+  return Math.max(0,Math.min(100,Math.round(score)));
+}
+function ledgerExpressionStatus(score){
+  if(score<10) return "new"; if(score<30) return "introduced"; if(score<50) return "practicing"; if(score<70) return "context_ready"; if(score<85) return "speed_ready"; if(score<95) return "conversation_ready"; return "mastered";
+}
+function ledgerExpressionNext(r){
+  if(r.weak || ledgerHasRecentUnrecoveredFail(r)) return "영어로 꺼내기";
+  if((r.contextsUsed||[]).length<Math.max(3,Math.min(5,r.contextsTarget||5))) return "영어로 꺼내기";
+  if((r.fastRecallSuccessCount||0)<3) return "스피드런";
+  if((r.usedInConversationCount||0)<1) return "실전회화";
+  if((r.heardInListeningCount||0)<1) return "상황 듣기";
+  if(r.status==="mastered") return "maintenance";
+  return "자동화 드릴";
+}
+function ledgerRefreshExpression(r){
+  r.mastery=ledgerExpressionMastery(r);
+  r.status=ledgerExpressionStatus(r.mastery);
+  r.weak=!!(ledgerHasRecentUnrecoveredFail(r) || (r.slowRecallCount||0)>1 || (r.avoidedByUserCount||0)>0 || (r.confusedWith||[]).length);
+  if(!r.weak) r.weakReasons=[];
+  r.recommendedNextMode=ledgerExpressionNext(r);
+}
+function ledgerWordMastery(r){
+  let score=0;
+  if(r.introduced) score+=10;
+  score+=Math.min(25,(r.meaningSuccessCount||0)*5);
+  score+=Math.min(20,(r.recallSuccessCount||0)*5);
+  score+=Math.min(25,(r.usedInSentenceCount||0)*8+(r.usedInSpeakingCount||0)*10);
+  score+=Math.min(10,(r.usedInConversationCount||0)*5);
+  score+=Math.min(5,(r.heardInListeningCount||0)*2);
+  score-=Math.min(20,((r.meaningFailCount||0)+(r.recallFailCount||0))*3);
+  return Math.max(0,Math.min(100,Math.round(score)));
+}
+function ledgerWordStatus(score,r){
+  if(score<10) return "new"; if(score<30) return "introduced"; if(score<50) return "practicing"; if(r.weak) return "weak"; if(score<75) return "usable"; return "mastered";
+}
+function ledgerRefreshWord(r){
+  r.mastery=ledgerWordMastery(r);
+  r.weak=!!((r.meaningFailCount||0)+(r.recallFailCount||0)>0 && (r.usedInSpeakingCount||0)===0);
+  r.status=ledgerWordStatus(r.mastery,r);
+}
+function ledgerRecordWordEvent(ev){
+  return ledgerSafe(()=>{ ev=ev||{}; const l=ledgerGet(); const r=ledgerEnsureWord(l, ev.text||ev.word||ev.en, ev.ko); if(!r) return null; const now=Date.now();
+    r.lastSeenAt=now; if(ev.eventType==="introduced"||ev.introduced){ r.introduced=true; r.introducedAt=r.introducedAt||now; ledgerInc(r,"meaningSeenCount"); }
+    if(ev.eventType==="meaning_success") ledgerInc(r,"meaningSuccessCount");
+    if(ev.eventType==="meaning_fail") ledgerInc(r,"meaningFailCount");
+    if(ev.eventType==="recall_success"||ev.success){ ledgerInc(r,"recallSuccessCount"); r.lastSuccessAt=now; r.nextReviewAt=ledgerNextReview(r,true,true); }
+    if(ev.eventType==="recall_fail"||ev.fail){ ledgerInc(r,"recallFailCount"); r.lastFailAt=now; r.nextReviewAt=ledgerNextReview(r,false,false); }
+    if(ev.usedInSentence) ledgerInc(r,"usedInSentenceCount");
+    if(ev.usedInSpeaking) ledgerInc(r,"usedInSpeakingCount");
+    if(ev.usedInConversation) ledgerInc(r,"usedInConversationCount");
+    if(ev.heardInListening) ledgerInc(r,"heardInListeningCount");
+    if(ev.weakReason) r.weakReasons=ledgerPushUnique(r.weakReasons, ev.weakReason, 12);
+    ledgerRefreshWord(r);
+    l.daily.practicedWords=ledgerPushUnique(l.daily.practicedWords, r.id, 200);
+    ledgerSave(l); return r; });
+}
+function ledgerRecordExpressionEvent(ev){
+  return ledgerSafe(()=>{ ev=ev||{}; const l=ledgerGet(); const block=ev.blockId&&typeof BLE_BY_ID!=="undefined"?BLE_BY_ID[ev.blockId]:null; const label=ev.label||ev.expression||ev.suggestedAnswer||ev.target||ev.userAnswer; const r=ledgerEnsureExpression(l,label,{expressionId:ev.expressionId||(ev.blockId?ledgerExprId(block?block.block:label,ev.blockId):null),blockId:ev.blockId,pattern:block?block.block:ev.pattern,family:block?block.func:ev.family}); if(!r) return null; const now=Date.now(); const ctx=ledgerCtxId(ev.context||ev.contextKey||ev.situation||"");
+    const passiveEvent=(ev.eventType==="suggested"||ev.eventType==="introduced"||ev.introduced) && ev.communicationSuccess==null && ev.targetBlockSuccess==null && !ev.fail;
+    r.lastSeenAt=now; if(ev.eventType==="introduced"||ev.introduced){ r.introduced=true; r.introducedAt=r.introducedAt||now; }
+    if(ev.source==="output_training") ledgerInc(r,"usedInOutputTrainingCount");
+    if(ev.source==="speedrun"||ev.source==="auto_drill") ledgerInc(r,"usedInSpeedrunCount");
+    if(ev.source==="conversation") ledgerInc(r,"usedInConversationCount");
+    if(ev.source==="listening") ledgerInc(r,"heardInListeningCount");
+    if(ev.communicationSuccess){ ledgerInc(r,"meaningSuccessCount"); r.lastSuccessAt=now; }
+    if(ev.targetBlockSuccess){ ledgerInc(r,"targetBlockSuccessCount"); r.contextsUsed=ledgerPushUnique(r.contextsUsed,ctx,12); }
+    if(ev.naturalnessScore>=70 || ev.naturalnessSuccess) ledgerInc(r,"naturalnessSuccessCount");
+    if(ev.startDelayMs!=null){ const c=(r.fastRecallSuccessCount||0)+(r.slowRecallCount||0); r.averageStartDelayMs=ledgerAvg(r.averageStartDelayMs,c,Number(ev.startDelayMs)); r.bestStartDelayMs=r.bestStartDelayMs==null?Number(ev.startDelayMs):Math.min(r.bestStartDelayMs,Number(ev.startDelayMs)); if(Number(ev.startDelayMs)<=3000) ledgerInc(r,"fastRecallSuccessCount"); else ledgerInc(r,"slowRecallCount"); }
+    if(ev.fail || ev.communicationSuccess===false){ ledgerInc(r,"failCount"); r.lastFailAt=now; }
+    if(ev.targetBlockSuccess===false && ev.communicationSuccess) { ledgerInc(r,"avoidedByUserCount"); r.weakReasons=ledgerPushUnique(r.weakReasons,"avoids target block",12); }
+    if(ev.confusedWith){ (Array.isArray(ev.confusedWith)?ev.confusedWith:[ev.confusedWith]).forEach(x=>{ if(x) r.confusedWith=ledgerPushUnique(r.confusedWith,String(x),12); }); }
+    if(ev.weakReasons){ (Array.isArray(ev.weakReasons)?ev.weakReasons:[ev.weakReasons]).forEach(x=>{ r.weakReasons=ledgerPushUnique(r.weakReasons,String(x),12); }); }
+    if(ev.suggestedAnswer) r.suggestedSentences=ledgerPushUnique(r.suggestedSentences,ledgerTextNorm(ev.suggestedAnswer),20);
+    if(ev.userAnswer) r.contextHistory=(r.contextHistory||[]).concat([{t:now,context:ctx,userAnswer:String(ev.userAnswer).slice(0,160),suggestedAnswer:String(ev.suggestedAnswer||"").slice(0,180),ok:!!ev.communicationSuccess}]).slice(-40);
+    if(passiveEvent) r.nextReviewAt=r.nextReviewAt||now+24*60*60*1000;
+    else r.nextReviewAt=ledgerNextReview(r, !!ev.targetBlockSuccess || !!ev.communicationSuccess, ev.startDelayMs!=null && ev.startDelayMs<=3000);
+    ledgerRefreshExpression(r);
+    if(!passiveEvent) l.daily.practicedExpressions=ledgerPushUnique(l.daily.practicedExpressions, r.id, 200);
+    ledgerSave(l); return r; });
+}
+function ledgerRecordListeningEvent(ev){
+  return ledgerSafe(()=>{ ev=ev||{}; const l=ledgerGet(); const related=ev.relatedExpressionId || (ev.blockId?ledgerExprId((typeof BLE_BY_ID!=="undefined"&&BLE_BY_ID[ev.blockId])?BLE_BY_ID[ev.blockId].block:ev.text,ev.blockId):null); const r=ledgerEnsureListening(l,ev.text||ev.en,{context:ev.context,relatedExpressionId:related,relatedWords:ev.relatedWords}); if(!r) return null; const now=Date.now();
+    if(ev.eventType==="heard"||ev.heard){ ledgerInc(r,"heardCount"); r.lastHeardAt=now; }
+    if(ev.understood||ev.eventType==="understood"){ ledgerInc(r,"understoodCount"); r.lastHeardAt=now; }
+    if(ev.replay) ledgerInc(r,"replayCount");
+    if(ev.transcriptOpened) ledgerInc(r,"transcriptOpenedCount");
+    if(ev.shadowing) ledgerInc(r,"shadowingCount");
+    if(ev.shadowingSuccess) ledgerInc(r,"shadowingSuccessCount");
+    r.weak=!!((r.heardCount||0)>0 && (r.understoodCount||0)===0);
+    r.mastery=Math.max(0,Math.min(100,Math.round(Math.min(40,(r.understoodCount||0)*10)+Math.min(30,(r.shadowingSuccessCount||0)*10)+Math.min(15,(r.heardCount||0)*3)-Math.min(20,(r.replayCount||0)*2))));
+    r.status=r.mastery>=70?"mastered":r.mastery>=40?"practicing":r.weak?"weak":"new";
+    r.nextReviewAt=now+(r.weak?10*60*1000:2*86400000);
+    if(related){ const ex=l.expressions[related]||ledgerEnsureExpression(l,ev.text,{expressionId:related}); if(ex){ ledgerInc(ex,"heardInListeningCount"); if((ex.targetBlockSuccessCount||0)===0) ex.recommendedNextMode="영어로 꺼내기"; ledgerRefreshExpression(ex); } }
+    ledgerSave(l); return r; });
+}
+function ledgerFindExpressionByLabel(label){
+  const l=ledgerGet(), k=ledgerKeyNorm(label);
+  return Object.values(l.expressions||{}).find(r=>ledgerKeyNorm(r.label)===k || ledgerKeyNorm(r.pattern)===k);
+}
+function ledgerRebuildFromLegacy(l){
+  const now=Date.now();
+  try{ Object.values(srsAll()).forEach(it=>{ if(!it||!it.en)return; if(ledgerIsSingleWord(it.en)){ const r=ledgerEnsureWord(l,it.en,it.ko); r.introduced=true; r.introducedAt=r.introducedAt||it.lastT||now; r.meaningSeenCount=Math.max(r.meaningSeenCount||0,1); r.recallSuccessCount=Math.max(r.recallSuccessCount||0,it.uses||0); r.recallFailCount=Math.max(r.recallFailCount||0,it.miss||0); r.nextReviewAt=(it.due!=null?it.due*86400000:null)||r.nextReviewAt; ledgerRefreshWord(r); } else { const r=ledgerEnsureExpression(l,it.en,{pattern:it.en}); r.introduced=true; r.introducedAt=r.introducedAt||it.lastT||now; r.meaningSuccessCount=Math.max(r.meaningSuccessCount||0,it.uses||0); r.failCount=Math.max(r.failCount||0,it.miss||0); ledgerRefreshExpression(r); } }); }catch(e){}
+  try{ const bs=bleGetState(); BLE_BLOCKS.forEach(b=>{ const st=bs[b.id]; if(!st)return; const r=ledgerEnsureExpression(l,b.block,{expressionId:ledgerExprId(b.block,b.id),blockId:b.id,pattern:b.block,family:b.func}); r.introduced=!!(st.introducedAt||st.successCount||st.failCount); r.introducedAt=r.introducedAt||st.introducedAt||st.lastSeenAt||now; (st.contextsUsed||[]).forEach(c=>{ r.contextsUsed=ledgerPushUnique(r.contextsUsed,ledgerCtxId(c),12); }); r.meaningSuccessCount=Math.max(r.meaningSuccessCount||0,(st.communicationSuccessCount||0)); r.targetBlockSuccessCount=Math.max(r.targetBlockSuccessCount||0,(st.successCount||0)); r.fastRecallSuccessCount=Math.max(r.fastRecallSuccessCount||0,(st.fastCount||0)); r.slowRecallCount=Math.max(r.slowRecallCount||0,(st.slowCount||0)); r.usedInSpeedrunCount=Math.max(r.usedInSpeedrunCount||0,(st.speedAttemptCount||0)); r.usedInConversationCount=Math.max(r.usedInConversationCount||0,(st.realConversationSuccessCount||0)); r.heardInListeningCount=Math.max(r.heardInListeningCount||0,(st.listeningSuccessCount||0)); r.failCount=Math.max(r.failCount||0,(st.failCount||0)); r.averageStartDelayMs=st.avgMs||r.averageStartDelayMs; r.nextReviewAt=st.nextReviewAt||r.nextReviewAt; Object.keys(st.confusedWith||{}).forEach(x=>r.confusedWith=ledgerPushUnique(r.confusedWith,x,12)); ledgerRefreshExpression(r); }); }catch(e){}
+  try{ reuseGet().forEach(it=>{ if(!it||!it.en)return; const r=ledgerEnsureExpression(l,it.en,{pattern:it.en}); r.suggestedSentences=ledgerPushUnique(r.suggestedSentences,it.en,20); (it.ctx||[]).forEach(c=>r.contextsUsed=ledgerPushUnique(r.contextsUsed,ledgerCtxId(c),12)); r.meaningSuccessCount=Math.max(r.meaningSuccessCount||0,it.success||0); r.failCount=Math.max(r.failCount||0,Math.max(0,(it.tries||0)-(it.success||0))); r.nextReviewAt=it.due||r.nextReviewAt; ledgerRefreshExpression(r); }); }catch(e){}
+}
+function ledgerMigrateOnce(){
+  ledgerSafe(()=>{ const l=ledgerGet(); if(l._migratedFromLegacy==="v1") return; ledgerRebuildFromLegacy(l); l._migratedFromLegacy="v1"; ledgerSave(l); });
+}
+function ledgerStats(){
+  const l=ledgerGet(); const expr=Object.values(l.expressions||{}), words=Object.values(l.words||{}), lis=Object.values(l.listening||{});
+  expr.forEach(ledgerRefreshExpression);
+  return {
+    ready:expr.filter(x=>["conversation_ready","mastered"].includes(x.status)).length,
+    fiveCtx:expr.filter(x=>(x.contextsUsed||[]).length>=5).length,
+    fast3:expr.filter(x=>(x.fastRecallSuccessCount||0)>=3 || (x.bestStartDelayMs!=null&&x.bestStartDelayMs<=3000)).length,
+    conversation:expr.filter(x=>(x.usedInConversationCount||0)>0).length,
+    heard:lis.filter(x=>(x.understoodCount||0)>0).length,
+    weak:expr.filter(x=>x.weak).length,
+    usableWords:words.filter(x=>["usable","mastered"].includes(x.status)).length
+  };
+}
+function ledgerDueExpressions(limit){
+  const now=Date.now();
+  return Object.values(ledgerGet().expressions||{}).filter(x=>x).map(x=>{ ledgerRefreshExpression(x); return x; }).filter(x=>x.nextReviewAt && x.nextReviewAt<=now && x.status!=="mastered").sort((a,b)=>ledgerRecentFailPriority(b,now)-ledgerRecentFailPriority(a,now) || (a.nextReviewAt||0)-(b.nextReviewAt||0) || (b.failCount||0)-(a.failCount||0)).slice(0,limit||5);
+}
+function ledgerNeedContext(limit){ return Object.values(ledgerGet().expressions||{}).filter(x=>x.introduced && (x.contextsUsed||[]).length<Math.min(5,x.contextsTarget||5)).sort((a,b)=>(a.contextsUsed||[]).length-(b.contextsUsed||[]).length).slice(0,limit||5); }
+function ledgerSlowExpressions(limit){ return Object.values(ledgerGet().expressions||{}).filter(x=>(x.slowRecallCount||0)>0 && (x.fastRecallSuccessCount||0)<3).sort((a,b)=>(b.slowRecallCount||0)-(a.slowRecallCount||0)).slice(0,limit||5); }
+function ledgerUnknownSpeakingWords(limit){ return Object.values(ledgerGet().words||{}).filter(x=>x.status!=="mastered" && ((x.usedInSpeakingCount||0)===0) && ((x.meaningSuccessCount||0)>0 || (x.recallSuccessCount||0)>0)).slice(0,limit||5); }
+window.debugLedger=function(){ return hGet(LEDGER_KEY,{}); };
 function homeGreeting(){ const h=new Date().getHours();
   if(h<5) return "늦은 밤이에요,"; if(h<11) return "좋은 아침이에요,";
   if(h<17) return "좋은 오후예요,"; if(h<22) return "좋은 저녁이에요,"; return "오늘도 수고했어요,"; }
@@ -9988,8 +10297,21 @@ function adLimits(){
   if(d<=36) return [6,5,4,3,3];
   return [5,4,3,2.5,2.5];
 }
+function ledgerBlocksForAuto(limit){
+  try{
+    const picked=[], seen=new Set();
+    [ledgerDueExpressions(12), ledgerSlowExpressions(12), ledgerNeedContext(12)].flat().forEach(r=>{
+      const id=r&&r.blockId;
+      if(id && typeof BLE_BY_ID!=="undefined" && BLE_BY_ID[id] && !seen.has(id)){
+        seen.add(id); picked.push({...BLE_BY_ID[id], state:(bleGetState()[id]||{})});
+      }
+    });
+    return picked.slice(0,limit||5);
+  }catch(e){ return []; }
+}
 function autoDrillBlocks(){
   const lists=[
+    ledgerBlocksForAuto(5),
     getDueReviewBlocks(),
     getWeakBlocks(),
     getSlowBlocks(),
@@ -10497,7 +10819,7 @@ function autoDrillFinish(heard, meta){
   const fast=initSec<=it.limit;
   const perfect=g.ok && fast;
   const result=g.ok ? "PERFECT" : "MISS";
-  bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true});
+  bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
   if(perfect){
@@ -10646,6 +10968,7 @@ function reuseAdd(en, ko, source, context){
   }
   if(context){ const sk=String(context).slice(0,60); if(sk && it.ctx.indexOf(sk)<0) it.ctx.push(sk); }
   reuseSave(q.sort((a,b)=>(a.due||0)-(b.due||0) || (b.createdAt||0)-(a.createdAt||0)));
+  try{ ledgerRecordExpressionEvent({label:raw, source:source||"reuse", context, eventType:"suggested", suggestedAnswer:raw}); }catch(e){}
   return true;
 }
 function reuseRecord(en, ko, context, ok){
@@ -10659,6 +10982,7 @@ function reuseRecord(en, ko, context, ok){
   const ctxLeft=Math.max(0, REUSE_GOAL_CONTEXTS-(it.ctx||[]).length);
   it.due = ctxLeft>0 ? Date.now()+Math.max(1,ctxLeft)*120000 : Date.now()+3*86400000;
   reuseSave(q.sort((a,b)=>(a.due||0)-(b.due||0) || (b.createdAt||0)-(a.createdAt||0)));
+  try{ ledgerRecordExpressionEvent({label:en, source:"reuse", context, communicationSuccess:!!ok, targetBlockSuccess:!!ok, suggestedAnswer:en, fail:!ok, weakReasons:ok?[]:["reuse fail"]}); }catch(e){}
   return true;
 }
 function reuseDue(max){
@@ -10703,6 +11027,7 @@ function profRecordWordIfMastered(en, ko){
   const cur=p.words[k]||{en:en, ko:ko||si.ko||"", rank:commonFreqRank(en), masteredAt:Date.now(), perfect:0};
   cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
   if(ko && !cur.ko) cur.ko=ko;
+  try{ ledgerRecordWordEvent({text:en, ko:ko||si.ko||"", source:"srs", eventType:"mastered", usedInSentence:true}); }catch(e){}
   p.words[k]=cur; skillProfSave(p); return true;
 }
 function profRecordListenPerfect(en, ko){
@@ -10711,6 +11036,7 @@ function profRecordListenPerfect(en, ko){
   const cur=p.listen[k]||{en:en, ko:ko||"", perfect:0, firstAt:Date.now()};
   cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
   if(ko && !cur.ko) cur.ko=ko;
+  try{ ledgerRecordListeningEvent({text:en, ko, understood:true, eventType:"understood"}); }catch(e){}
   p.listen[k]=cur; skillProfSave(p); return true;
 }
 function profRecordSpeakPerfect(en, ko, ctx){
@@ -10720,6 +11046,7 @@ function profRecordSpeakPerfect(en, ko, ctx){
   cur.perfect=(cur.perfect||0)+1; cur.lastAt=Date.now();
   if(ctx && cur.ctx.indexOf(ctx)<0) cur.ctx.push(ctx);
   if(ko && !cur.ko) cur.ko=ko;
+  try{ ledgerRecordExpressionEvent({label:en, source:"conversation", context:ctx, communicationSuccess:true, targetBlockSuccess:true, suggestedAnswer:en}); }catch(e){}
   p.speak[k]=cur; skillProfSave(p); return true;
 }
 function profLevelByCount(n, maxCount){
@@ -10735,14 +11062,15 @@ function profSkillStats(){
       if(it && it.stage==="mastered" && isSingleWordTarget(it.en)) wordKeys.add(skillKey(it.en));
     });
   }catch(e){}
-  const listenPerfect=Object.keys(p.listen||{}).length;
-  const speakPerfect=Object.keys(p.speak||{}).length;
-  const wordKnown=wordKeys.size;
+  const led=ledgerStats();
+  const listenPerfect=Math.max(Object.keys(p.listen||{}).length, led.listeningUnderstood||0);
+  const speakPerfect=Math.max(Object.keys(p.speak||{}).length, led.automaticExpressions||0);
+  const wordKnown=Math.max(wordKeys.size, led.masteredWords||0);
   const wordLevel=profLevelByCount(wordKnown,5000);
   const listenLevel=profLevelByCount(listenPerfect,1200);
   const speakLevel=profLevelByCount(speakPerfect,800);
   const overallLevel=Math.max(1, Math.min(60, Math.round(wordLevel*0.45+listenLevel*0.30+speakLevel*0.25)));
-  return {wordKnown, listenPerfect, speakPerfect, wordLevel, listenLevel, speakLevel, overallLevel};
+  return {wordKnown, listenPerfect, speakPerfect, wordLevel, listenLevel, speakLevel, overallLevel, automaticExpressions:led.automaticExpressions||0, activeExpressions:led.activeExpressions||0, needsContext:led.needsContext||0};
 }
 
 const DAILY_EXPRESSIONS=[
@@ -10810,12 +11138,13 @@ function renderAcqStats(){
   const box=$("#acqStats"); if(!box) return;
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
   // 🧱 블록 통계는 BLE를 기준으로 보여준다.
-  const ready=getReadyForRealBlocks().length;
+  const ready=Math.max(getReadyForRealBlocks().length, (ledgerStats().automaticExpressions||0));
   const skill=profSkillStats();
   const tiles=[
     {ic:"📚", v:"Lv."+skill.wordLevel, l:"단어", n:skill.wordKnown},
     {ic:"🎧", v:"Lv."+skill.listenLevel, l:"듣기", n:skill.listenPerfect},
-    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기", n:skill.speakPerfect}
+    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기", n:skill.speakPerfect},
+    {ic:"⚡", v:skill.automaticExpressions, l:"자동화 청크", n:0}
   ];
   box.innerHTML=`<div class="skillcard">
     <div class="skillcard-h">스킬 레벨${ready>0?` · 실전 준비 <b style="color:#19a06b">${ready}개</b>`:""}</div>
@@ -10973,7 +11302,7 @@ function renderHome(){
         <span style="font-size:20px;color:#ffd17a;font-weight:900">›</span></div>`;
       chestBanner.onclick=openChestFlow;
     } else { chestBanner.style.display="none"; } }
-  // renderQuestBox();  // 오늘의 루틴 — 제거 (오늘의 영어 블록이 메인)
+  renderQuestBox();
   renderDailyCard();
   // renderDailyRoomCard 제거 — 오늘의 방은 온보딩(firstRun 직후)으로 흡수
   try{ renderWeakHome(); }catch(e){}
@@ -11019,27 +11348,36 @@ function routineReviewCount(){
   try{ n+=srsDue(99).length; }catch(e){}
   try{ n+=reuseDue(99).length; }catch(e){}
   try{ n+=weakList(99).length; }catch(e){}
+  try{ n+=ledgerDueExpressions(99).length; }catch(e){}
   return Math.min(99,n);
 }
 function todayRoutineSteps(){
   const q=questGet(), c=q.c||{};
   const due=routineReviewCount();
+  let ledgerDue=[], contextNeed=[], slowNeed=[], unknownWords=[];
+  try{ ledgerDue=ledgerDueExpressions(5); }catch(e){}
+  try{ contextNeed=ledgerNeedContext(3); }catch(e){}
+  try{ slowNeed=ledgerSlowExpressions(3); }catch(e){}
+  try{ unknownWords=ledgerUnknownSpeakingWords(3); }catch(e){}
+  const focusExpr=(slowNeed[0]||contextNeed[0]||ledgerDue[0]||null);
+  const focusLabel=focusExpr ? (focusExpr.label||focusExpr.pattern||"핵심 블록") : "";
   // 블록 5개(Set 1) 클리어 여부 — 처음 하는 사람한텐 복습 대신 기본 블록부터
   let gateReady=false;
   try{ gateReady=bleDeepGateReady(bleActiveSet()); }catch(e){}
   const firstStep = gateReady
-    ? {id:"routineReview", emo:"🔁", t:"복습 먼저", d:due?`만기 표현 ${due}개 · 약 2분`:"약한 표현 점검 · 약 2분", done:(c.vocab||0)>0 || (c.chunk||0)>0, run:startRoutineReview}
+    ? {id:"routineReview", emo:"🔁", t:"복습 먼저", d:ledgerDue.length?`장부 복습 ${ledgerDue.length}개 · 약 2분`:(due?`만기 표현 ${due}개 · 약 2분`:"약한 표현 점검 · 약 2분"), done:(c.vocab||0)>0 || (c.chunk||0)>0, run:startRoutineReview}
     : {id:"routineFirstBlocks", emo:"🧱", t:"기본 블록 배우기", d:"먼저 기본 블록 5개를 배워요 · 약 5분", done:false, run:()=>{ try{ bleStartSetIntro(bleActiveSet().id); }catch(e){ bleOpenHub(); } }};
   return [
     firstStep,
-    {id:"routineBlock", emo:"🧱", t:"새 블록", d:"1개 배우기 · 약 4분", done:(c.chunk||0)>=1, run:()=>bleOpenHub()},
-    {id:"routineSpeak", emo:"⚡", t:"자동화 드릴", d:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
-    {id:"routineListen", emo:"👂", t:"듣기 드릴", d:"3문장 듣기 · 약 2분", done:(c.listen||0)>=1, run:()=>openListenHub()}
+    {id:"routineBlock", emo:"🧱", t:"새 블록", d:contextNeed.length?`${(contextNeed[0].label||"배운 블록")} 다른 상황 1개 추가 · 약 4분`:"1개 배우기 · 약 4분", done:(c.chunk||0)>=1, run:()=>bleOpenHub()},
+    {id:"routineSpeak", emo:"⚡", t:"자동화 드릴", d:focusExpr?`${focusLabel} · ${slowNeed.length?"3초 안에":"다른 상황에서"} 꺼내기`:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
+    {id:"routineListen", emo:"👂", t:"듣기 드릴", d:unknownWords.length?`${unknownWords[0].text||"약한 단어"} 들어간 문장 듣기 · 약 2분`:"3문장 듣기 · 약 2분", done:(c.listen||0)>=1, run:()=>openListenHub()}
   ];
 }
 function startRoutineReview(){
   try{ if(dueCount()>0) return startReview(); }catch(e){}
   try{ if(getDueReviewBlocks().length) return bleOpenHub(); }catch(e){}
+  try{ if(ledgerDueExpressions(1).length) return startAutoDrill(); }catch(e){}
   return startVocabCoach();
 }
 function startTodayRoutine(){
@@ -11428,7 +11766,7 @@ function renderProfile(){
   const {goals,meta}=questDefs(); const q=questGet();
   const qLine=Object.keys(goals).map(k=>`${meta[k].emo}${Math.min(goals[k],q.c[k]||0)}/${goals[k]}`).join("  ");
   const skill=profSkillStats();
-  const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["💎",skill.wordKnown,"완벽 단어"]];
+  const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["⚡",skill.automaticExpressions,"자동화 청크"],["💎",skill.wordKnown,"완벽 단어"]];
   let rwHtml="", nextSet=false;
   REWARDS.forEach(r=>{
     const done=li.level>=r.lv; const isNext=!done&&!nextSet; if(isNext) nextSet=true;
@@ -11452,6 +11790,8 @@ function renderProfile(){
         <span>📚 완벽 단어 ${skill.wordKnown}개</span>
         <span>🎧 완벽 듣기 ${skill.listenPerfect}개</span>
         <span>🗣️ 능동 말하기 ${skill.speakPerfect}개</span>
+        <span>⚡ 자동화 청크 ${skill.automaticExpressions}개</span>
+        <span>🔁 다른 상황 필요 ${skill.needsContext}개</span>
       </div>
       <div style="font-size:11.5px;color:var(--muted);margin-top:7px">실력 레벨은 XP가 아니라 실제로 완전히 맞힌/들은/꺼낸 항목 수로만 올라가요.</div>
     </div>
@@ -11572,6 +11912,7 @@ initRec();
 loadNotes();
 loadProgress();
 if(!state.vocabTheme) state.vocabTheme=nextVocabTheme();   // 단어 바로 시작 준비
+try{ ledgerMigrateOnce(); }catch(e){}
 renderHome();
 syncSetupFields();
 checkForUpdate();   // 폰/PC 자동 최신화
