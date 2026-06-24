@@ -1879,7 +1879,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.54.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.55.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6559,8 +6559,12 @@ const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
 // ===== 세트 기반 학습 (5블록 1세트) =====
 const BLE_SETS=(()=>{
   const names=["생존 기본 블록","요청·위치 블록","문제해결 블록","시간·가격 블록","상태 말하기 블록","허락·선호 블록","정중한 부탁 블록","내 행동 말하기 블록","계획·시도 블록","상황 설명 블록","반응·조언 블록","선택·정보 블록"];
-  const ids=BLE_BLOCKS.map(b=>b.id), out=[];
-  for(let i=0;i<ids.length;i+=5){ out.push({id:"survival_basic_"+(out.length+1), title:names[out.length]||("실전 블록 "+(out.length+1)), emo:"🧱", blocks:ids.slice(i,i+5)}); }
+  // 첫 세트 = 온보딩에서 배우는 3블록 (블록영어 탭이 온보딩과 이어지도록)
+  const ONBOARD_IDS=["can_i_get","do_you_have","where_is"];
+  const rest=BLE_BLOCKS.map(b=>b.id).filter(id=>ONBOARD_IDS.indexOf(id)<0);
+  const ordered=[...ONBOARD_IDS.filter(id=>BLE_BY_ID[id]), ...rest];
+  const out=[{id:"survival_basic_1", title:names[0], emo:"🧱", blocks:ONBOARD_IDS.filter(id=>BLE_BY_ID[id])}];
+  for(let i=ONBOARD_IDS.length;i<ordered.length;i+=5){ out.push({id:"survival_basic_"+(out.length+1), title:names[out.length]||("실전 블록 "+(out.length+1)), emo:"🧱", blocks:ordered.slice(i,i+5)}); }
   return out;
 })();
 const BLE_SET_STATE_KEY="speakingroom:ble_sets";
@@ -7304,7 +7308,7 @@ function bleRender(){
 const BLE_PHASE_LABEL={understand:"1. 이해하기",pattern:"2. 패턴 익히기",pattern_fill:"3. 빈칸 — 목적어",block_fill:"3. 빈칸 — 블록",situation:"4. 상황 인출",discriminate:"5. 블록 구별",mixed:"6. 혼합 인출",speed:"7. 속도 인출"};
 function blePhaseTag(t){ return `<div style="text-align:center;margin-bottom:12px"><span style="font-size:11.5px;font-weight:800;color:var(--jade);background:rgba(255,133,104,.14);border-radius:99px;padding:4px 12px">${BLE_PHASE_LABEL[t]||""}</span></div>`; }
 function bleModeLabel(t){
-  if(t==="speed") return "5초 속도 인출";
+  if(t==="speed") return "블록명 없이 인출";
   if(t==="mixed") return "누적 블록 혼합";
   if(t==="situation") return "상황 인출";
   return BLE_PHASE_LABEL[t]||"블록 영어";
@@ -7577,10 +7581,9 @@ function bleViewRetrieve(it){
   const ex=it.ex;
   const isSpeed=it.type==="speed";
   const emo = ex.emoji || ({restaurant:"🍽",cafe:"☕",hotel:"🏨",hospital:"🏥",school:"🏫",shopping:"🛍",airport:"✈️",taxi:"🚕",office:"🏢",bank:"🏦"})[ex.situation] || "💬";
-  const coachMsg = it.type==="mixed"?"상황을 보고 맞는 블록을 골라 말해볼까요?" : it.type==="speed"?"빠르게! 상황만 보고 바로 말해보세요 ⚡" : "상황만 보고 영어로 말해볼까요?";
+  const coachMsg = it.type==="mixed"?"상황을 보고 맞는 블록을 골라 말해볼까요?" : it.type==="speed"?"이번엔 블록명 없이! 상황만 보고 떠올려보세요" : "상황만 보고 영어로 말해볼까요?";
   const place=bleContextLabel(ex);
   return `<div class="blpz blpz-dense">
-    ${isSpeed?`<div class="blpz-timer" id="bleTimer">⏱ ${it.limit}초</div>`:""}
     <div class="blpz-coach">
       <div class="blpz-fox">🦊</div>
       <div class="blpz-bubble">${coachMsg}</div>
@@ -7612,14 +7615,8 @@ function bleViewRetrieve(it){
 function bleWireRetrieve(it){
   const ex=it.ex, b=it.block;
   let timer=null;
-  if(it.type==="speed" && it.limit){
-    let left=it.limit;
-    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초";
-      if(left<=0){ clearInterval(timer); timer=null;
-        if(qzRecording && qzMR && qzMR.state!=="inactive"){ try{ qzMR.stop(); }catch(e){} }
-        else if(!it._finished){ bleFinishRetrieve(it, ""); }
-      } }, 1000);
-  }
+  // 학습 단계에선 시간압박 제거 — 끝까지 생각해서 스스로 맞춰보는 게 더 중요 (speed라도 타이머 안 돌림)
+  // (게이트 충족용으로 type은 유지하되, 카운트다운/자동종료는 하지 않음)
   $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieve(it, t); }); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
@@ -8044,15 +8041,7 @@ async function bleFinishRetrieveDeep(it, heard){
 function bleWireRetrieveDeep(it){
   const ex=it.ex, b=it.block;
   let timer=null;
-  if(it.type==="speed" && it.limit){
-    let left=it.limit;
-    timer=setInterval(()=>{ left--; const t=$("#bleTimer"); if(t) t.textContent="⏱ "+left+"초";
-      if(left<=0){ clearInterval(timer); timer=null;
-        // 녹음 중이면 멈춰서 마이크 콜백이 마무리하게 함 (마이크 켜진 채 넘어가는 버그 방지)
-        if(qzRecording && qzMR && qzMR.state!=="inactive"){ try{ qzMR.stop(); }catch(e){} }
-        else if(!it._finished){ bleFinishRetrieveDeep(it, ""); }
-      } }, 1000);
-  }
+  // 학습 단계 시간압박 제거 — 끝까지 생각해서 스스로 맞춰보게 (speed라도 카운트다운 없음)
   $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieveDeep(it, t); }); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
@@ -10192,6 +10181,15 @@ function firstRunDone(){
   const said=firstRun.said;
   try{ awardXP("output", 30, "첫 시작", "firstrun:"+DAYN()); }catch(e){}
   try{ hSet("firstrun_done", true); }catch(e){}
+  // 온보딩에서 배운 3블록을 BLE에 '배운 상태(introducedAt)'로 등록 → 블록영어 탭에 자동 등장
+  try{
+    ["can_i_get","do_you_have","where_is"].forEach(id=>{ if(BLE_BY_ID[id]) bleBlockState(id); });
+    const s=bleGetState(); const now=Date.now();
+    ["can_i_get","do_you_have","where_is"].forEach(id=>{
+      if(s[id] && !s[id].introducedAt){ s[id].introducedAt=now; s[id].introAttemptCount=(s[id].introAttemptCount||0)+1; }
+    });
+    bleSaveState(s);
+  }catch(e){}
   const scroll=$("#sprintScroll");
   scroll.innerHTML=`<div class="auto-done" style="max-width:480px;text-align:center">
     <div style="font-size:54px;margin-bottom:6px">🎉</div>
