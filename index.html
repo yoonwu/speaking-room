@@ -6182,6 +6182,9 @@ function pronKoAutoStyle(){
     .pron-en-line{font-family:var(--serif);font-size:13px;color:#3A2D27}
     .pron-ko-line{font-family:var(--sans);font-size:14px;color:#3A2D27;font-weight:900}
     .pron-stress-hit{color:#E2674A;font-weight:1000;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
+    .pron-toggle{display:inline-block;margin-top:5px;padding:3px 10px;border:1px solid rgba(255,133,104,.32);background:rgba(255,133,104,.08);color:#C0653A;font-family:var(--sans);font-size:11px;font-weight:900;border-radius:999px;cursor:pointer;line-height:1.3}
+    .pron-ko-auto .pron-body{display:none}
+    .pron-ko-auto.pron-open .pron-body{display:block;margin-top:5px}
   `;
   document.head.appendChild(st);
 }
@@ -6207,8 +6210,10 @@ function pronKoAutoMount(el){
   const ko=pronKoText(txt);
   if(!ko) return;
   const node=document.createElement(el.tagName==="SPAN"?"span":"div");
-  node.className="pron-ko-auto";
-  node.innerHTML=pronStudyInnerHtml(txt,"");
+  node.className="pron-ko-auto pron-collapsed";
+  // 기본은 접힘: [발음·강세 보기] 버튼만 노출 → 누르면 영어/한글 강세 펼침 (집중 방해 방지)
+  const inner=pronStudyInnerHtml(txt,"");
+  node.innerHTML=`<button type="button" class="pron-toggle" onclick="(function(b){var w=b.parentNode;var open=w.classList.toggle('pron-open');b.textContent=open?'발음·강세 닫기':'🔉 발음·강세 보기';event.stopPropagation();})(this)">🔉 발음·강세 보기</button><span class="pron-body">${inner}</span>`;
   el.appendChild(node);
 }
 function pronKoAutoScan(root){
