@@ -2279,6 +2279,13 @@ function levelCap(){
   return "";
 }
 // 🧱 실전회화에서 '학습한 블록을 의미상 실제로 썼는지' AI가 판정하게 하는 지시 + 파싱
+function repairDirective(){
+  if(typeof state==="undefined" || !state.repairMode) return "";
+  return [
+"REALISTIC LISTENING: You're a real, slightly busy person — not a patient tutor. Occasionally (NOT every turn, maybe once or twice in the whole conversation, and only when their English is genuinely unclear, mumbled, or oddly phrased) act like you didn't fully catch it: say something natural like \"Sorry?\", \"Sorry, what was that?\", \"You mean...?\", or repeat back what you THINK they meant and ask them to confirm. This makes them rephrase and clarify (conversational repair).",
+"BUT: if they already said it clearly, just respond normally — do NOT fake confusion when their meaning was clear. Never do this more than twice total, and never on simple/clear utterances. Keep it feeling like a real interaction, not an obstacle course."
+  ].join("\n");
+}
 function targetBlocksDirective(){
   const tb=(typeof state!=="undefined" && state.targetBlocks)||null;
   if(!tb || !tb.length) return "";
@@ -2444,6 +2451,7 @@ levelCap(),
 "- Usually end with a natural follow-up question so they have something to respond to.",
 "- Never correct their grammar and never switch to Korean. Just talk like a real person would.",
 targetBlocksDirective(),
+repairDirective(),
 usedBlocksDirective()
   ].join("\n");
 }
@@ -11179,6 +11187,8 @@ function startSurvival(s, opts){
   state.scn={ id:s.id, t:s.t, emo:s.emo, role:s.role, ctx:s.ctx, emotion:s.emotion, pressure:s.pressure };
   // 🎯 오늘 블록 써먹기 모드: NPC가 이 블록들을 자연스럽게 끌어내도록 유도
   state.targetBlocks = Array.isArray(opts.targetBlocks)&&opts.targetBlocks.length ? opts.targetBlocks.slice(0,4) : null;
+  // 🗣️ non-cooperative partner: 세션당 한 번 확률 결정. 켜지면 NPC가 가끔 못 알아들은 척 되물어 repair 유도.
+  state.repairMode = Math.random() < 0.30;
   startSession();
 }
 function startVocabCoach(){
