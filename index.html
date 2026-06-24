@@ -25,7 +25,7 @@
   --amber:#E89A33; --amber-soft:#FFF1DF;
   --lav:#FF9E7A; --lav-soft:#FFE8DC;
   --text:#4A372F; --muted:#B0958A;
-  --serif:'Newsreader', Georgia, serif;
+  --serif:'Pretendard','SF Pro Display','Segoe UI',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   --sans:'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --soft:0 4px 16px -8px rgba(170,95,60,.18);
   --soft2:0 12px 30px -14px rgba(170,95,60,.24);
@@ -309,6 +309,8 @@ input,textarea{font-family:inherit}
 
 /* ---------- App shell ---------- */
 #app{display:flex; flex-direction:column; height:100vh; height:100svh; max-width:1100px; margin:0 auto; position:relative}
+body.survival-immersive{background:#19120e}
+body.survival-immersive #app{background:#19120e}
 
 /* ---------- Top bar ---------- */
 .topbar{
@@ -316,6 +318,10 @@ input,textarea{font-family:inherit}
   padding:14px 20px; border-bottom:1px solid var(--line);
   background:var(--surface);
 }
+body.survival-immersive .topbar{background:linear-gradient(180deg,rgba(31,23,18,.86),rgba(31,23,18,.58));border-bottom:1px solid rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(14px)}
+body.survival-immersive .brand h1,body.survival-immersive .brand h1 span{color:#fff}
+body.survival-immersive .ctx .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);color:#fff}
+body.survival-immersive .iconbtn{color:rgba(255,255,255,.84)}
 .brand{display:flex; align-items:center; gap:10px}
 .brand .dot{width:11px; height:11px; border-radius:50%; background:var(--jade); box-shadow:0 0 0 4px rgba(19,163,127,.15)}
 .brand h1{font-size:16px; font-weight:700; letter-spacing:-.02em}
@@ -630,9 +636,13 @@ input,textarea{font-family:inherit}
 .modal-ok:hover{background:var(--jade-deep)}
 
 /* ---------- Chat screen ---------- */
-.stage{flex:1; display:flex; min-height:0}
-.thread-wrap{flex:1; display:flex; flex-direction:column; min-width:0}
+.stage{flex:1; display:flex; min-height:0; position:relative; background:var(--paper)}
+.stage.survival-live{isolation:isolate;overflow:hidden;background:#1b130f}
+.stage.survival-live::before{content:"";position:absolute;inset:-12px;background-image:linear-gradient(180deg,rgba(20,12,8,.36),rgba(20,12,8,.08) 36%,rgba(20,12,8,.58)),var(--survival-bg);background-size:cover;background-position:center;filter:saturate(1.08) contrast(1.04);transform:scale(1.03);z-index:0}
+.stage.survival-live::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 16%,rgba(255,255,255,.18),transparent 32%),linear-gradient(90deg,rgba(0,0,0,.2),transparent 18%,transparent 82%,rgba(0,0,0,.22));z-index:0;pointer-events:none}
+.thread-wrap{flex:1; display:flex; flex-direction:column; min-width:0; position:relative; z-index:1}
 .thread{flex:1; overflow-y:auto; padding:22px 20px 14px; scroll-behavior:smooth}
+.stage.survival-live .thread{background:linear-gradient(180deg,rgba(255,241,231,.18),rgba(35,22,16,.1) 42%,rgba(35,22,16,.18));padding-top:24px}
 .thread-inner{max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:16px}
 .turn{display:flex; flex-direction:column; max-width:84%}
 .turn.coach{align-self:flex-start}
@@ -643,11 +653,14 @@ input,textarea{font-family:inherit}
 }
 .coach .bubble{
   background:var(--surface); border:1px solid var(--line); border-bottom-left-radius:5px;
-  font-family:var(--serif); color:var(--text);
+  font-family:var(--sans); font-weight:650; letter-spacing:-.005em; color:var(--text);
 }
 .me .bubble{
   background:var(--ink); color:#f4f5fb; border-bottom-right-radius:5px; font-weight:450;
 }
+.stage.survival-live .who{color:rgba(255,255,255,.82);text-shadow:0 1px 7px rgba(0,0,0,.42)}
+.stage.survival-live .coach .bubble{background:rgba(255,252,248,.92);border:1px solid rgba(255,255,255,.56);box-shadow:0 14px 34px -22px rgba(0,0,0,.58);backdrop-filter:blur(11px)}
+.stage.survival-live .me .bubble{background:rgba(34,27,24,.9);border:1px solid rgba(255,255,255,.15);box-shadow:0 14px 34px -24px rgba(0,0,0,.72);backdrop-filter:blur(8px)}
 .coach .bubble + .play{
   margin:6px 0 0 4px; font-size:11.5px; font-weight:600; color:var(--muted);
   display:inline-flex; align-items:center; gap:5px; align-self:flex-start;
@@ -688,6 +701,7 @@ input,textarea{font-family:inherit}
 
 /* ---------- Composer ---------- */
 .composer{border-top:1px solid var(--line); background:var(--surface); padding:12px 16px max(28px, calc(16px + env(safe-area-inset-bottom)))}
+.stage.survival-live .composer{background:linear-gradient(180deg,rgba(24,16,12,.2),rgba(24,16,12,.78));border-top:1px solid rgba(255,255,255,.18);backdrop-filter:blur(16px)}
 .composer-inner{max-width:640px; margin:0 auto}
 .quickrow{display:flex; gap:8px; margin-bottom:11px}
 .quick{
@@ -699,12 +713,14 @@ input,textarea{font-family:inherit}
 .quick.lav{color:var(--lav)} .quick.lav:hover{border-color:var(--lav); background:var(--lav-soft)}
 .quick.amber{color:#b3771a} .quick.amber:hover{border-color:var(--amber); background:var(--amber-soft)}
 .quick:disabled{opacity:.5; cursor:not-allowed}
+.stage.survival-live .quick{background:rgba(255,252,248,.88);border-color:rgba(255,255,255,.48);box-shadow:0 8px 22px -18px rgba(0,0,0,.8)}
 .inputrow{display:flex; align-items:flex-end; gap:10px}
 .txtwrap{flex:1; position:relative}
 #msg{
   width:100%; max-height:120px; min-height:48px; padding:13px 15px; border-radius:14px;
   border:1.5px solid var(--line); font-size:15.5px; line-height:1.45; resize:none;
 }
+.stage.survival-live #msg{background:rgba(255,252,248,.94);border-color:rgba(255,255,255,.5);box-shadow:0 10px 26px -22px rgba(0,0,0,.8)}
 #msg:focus{outline:none; border-color:var(--jade)}
 #msg::placeholder{color:#a3a7b8}
 .mic{
@@ -914,6 +930,15 @@ body{background:var(--paper); color:var(--text)}
 .mission-meta{font-size:12.5px; color:var(--muted); margin-bottom:15px}
 .mission-btn{width:100%; padding:15px; border:none; border-radius:16px; background:linear-gradient(120deg,#FF8568,#F0664A 55%,#1f9fe0); color:#ffffff; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; box-shadow:0 10px 26px -10px rgba(255,133,104,.5)}
 .mission-btn span{font-size:13px}
+.sv-thumb{width:84px;height:68px;border-radius:14px;overflow:hidden;flex:0 0 auto;background:#FFE6DA;border:1px solid rgba(255,133,104,.22);box-shadow:0 8px 18px -14px rgba(170,95,60,.5)}
+.sv-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.sv-emoji{width:48px;height:48px;border-radius:15px;background:rgba(255,133,104,.13);display:grid;place-items:center;font-size:24px;flex:0 0 auto}
+.sv-card-text{flex:1;min-width:0}
+.sv-visual{width:100%;height:156px;border-radius:18px;overflow:hidden;background:#FFE6DA;margin-bottom:12px;border:1px solid rgba(255,133,104,.22)}
+.sv-visual img{width:100%;height:100%;object-fit:cover;display:block}
+.sv-brief-kicker{font-size:11px;font-weight:950;color:#FF8568;letter-spacing:.04em;margin-bottom:7px}
+.sv-brief-title{font-size:18px;font-weight:950;color:var(--text);line-height:1.32;margin-bottom:6px}
+.sv-brief-meta{font-size:12.5px;color:var(--muted);line-height:1.5}
 .home-row{display:flex; gap:12px}
 .goal{flex:1; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:15px 17px}
 .goal-t{font-size:15px; font-weight:700; color:var(--text)}
@@ -1923,8 +1948,8 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.81.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
-const APP_BUILD = "2026-06-23";
+const APP_VERSION = "v3.82.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
   if(localStorage.getItem("speakingroom:vocab_reset_v3210")!=="1"){
@@ -2128,6 +2153,7 @@ const state = {
   studyPair:[],      // current 2 blocks being studied
   convo:[],          // {role:'user'|'assistant', text}
   notes:[],          // {en, ko}
+  convoMetrics:null, // 실전회화 미션/턴별 숨은 채점
   ttsOn:true,
   busy:false,
 };
@@ -2283,9 +2309,83 @@ function targetBlocksDirective(){
 "Create situations or ask things where one of these is the natural thing for them to say (e.g. if a block is \"Can I get...?\", set up a moment where they'd request something). Do NOT tell them which blocks to use, do NOT show the patterns, and never make it feel like a drill — keep it a real, flowing conversation. Just tilt the scene toward these functions."
   ].join("\n");
 }
+const CONVO_MISSION_LIBRARY={
+  cafe:{titleKo:"카페에서 원하는 주문 완료하기", success:["원하는 메뉴를 말한다","사이즈/온도/포장 여부에 답한다","결제나 마무리 확인까지 한다"], required:["item","size_or_temperature","for_here_or_to_go"], pressure:["사이즈를 되묻기","품절이라 대안 제시","포장 여부 확인"]},
+  resto:{titleKo:"식당에서 주문과 요청 처리하기", success:["메뉴를 주문한다","추가 요청/알레르기/계산 중 하나를 처리한다","직원의 확인 질문에 답한다"], required:["order","special_request","confirmation"], pressure:["추천을 물어보기","품절 메뉴 알리기","계산 방식을 묻기"]},
+  resto_book:{titleKo:"전화로 식당 예약 끝내기", success:["날짜와 시간을 말한다","인원수와 이름을 말한다","예약 확인을 받는다"], required:["date_time","party_size","name"], pressure:["시간이 없다고 대안 제시","이름 철자를 되묻기","전화 연결이 안 좋은 척하기"]},
+  grocery:{titleKo:"마트에서 물건 찾고 계산하기", success:["찾는 물건을 묻는다","위치/수량/가격 질문에 답한다","계산까지 마무리한다"], required:["item","location_or_quantity","checkout"], pressure:["다른 통로로 안내","멤버십/봉투 질문","품절 대안 제시"]},
+  clothes:{titleKo:"옷 가게에서 사이즈와 교환 해결하기", success:["찾는 옷/사이즈를 말한다","입어보기나 색상 질문에 답한다","구매/교환/반품 중 하나를 처리한다"], required:["item_size","try_on_or_color","purchase_or_return"], pressure:["다른 사이즈 제안","재고 확인","영수증 요구"]},
+  clinic:{titleKo:"병원에서 증상 설명하고 예약/진료 받기", success:["증상을 말한다","언제부터/정도/개인정보 질문에 답한다","예약/처방/다음 행동을 확인한다"], required:["symptom","duration_or_severity","appointment_or_next_step"], pressure:["증상을 더 구체적으로 묻기","보험/생년월일 확인","가능 시간이 제한됨"]},
+  pharmacy:{titleKo:"약국에서 증상에 맞는 약과 복용법 확인하기", success:["증상을 설명한다","알레르기/나이/복용 중인 약 질문에 답한다","복용법을 확인한다"], required:["symptom","safety_answer","dosage"], pressure:["안전 질문 여러 개","처방전 필요 여부","졸림 부작용 설명"]},
+  airport:{titleKo:"공항/입국심사 질문 통과하기", success:["목적/기간을 답한다","숙소/서류 정보를 말한다","추가 질문에 침착하게 답한다"], required:["purpose","duration","address_or_document"], pressure:["짧고 엄격한 질문","서류 재확인","예상 밖 후속 질문"]},
+  hotel:{titleKo:"호텔 체크인 문제 해결하기", success:["예약자 이름/문제를 말한다","예약번호/신분증/방 요청에 답한다","방 배정이나 대안을 확인한다"], required:["name_or_booking","problem","solution_confirmation"], pressure:["예약이 안 보인다고 말하기","신분증/예약번호 요구","다른 방 제안"]},
+  taxi:{titleKo:"택시에서 목적지와 요청 말하기", success:["목적지를 말한다","경로/요금/결제 질문에 답한다","도착지나 요청을 확인한다"], required:["destination","route_or_payment","confirmation"], pressure:["정확한 주소 요구","현금/카드 확인","교통 체증 대안 제시"]},
+  bank:{titleKo:"은행/관공서 업무 끝내기", success:["원하는 업무를 말한다","신분/주소/서류 질문에 답한다","다음 절차를 확인한다"], required:["request","identity_or_document","next_step"], pressure:["서류 부족 안내","수수료 설명","대기 줄 압박"]},
+  phone_cs:{titleKo:"고객센터 문제를 설명하고 해결 받기", success:["문제를 말한다","계정/주문/결제 정보를 확인한다","환불/수리/해결책을 요청하고 확인한다"], required:["problem","verification","requested_solution"], pressure:["본인 확인 질문","스크립트식 안내","한 번 못 알아듣기"]},
+  complaint:{titleKo:"환불/불만 상황 해결하기", success:["문제를 설명한다","영수증/날짜/상태 질문에 답한다","환불/교환/대안을 요청한다"], required:["problem","proof_or_date","requested_solution"], pressure:["정책상 어렵다고 말하기","매니저 확인","대안 제시"]},
+  sv_ms:{titleKo:"결제 실패 고객센터 통화 해결하기", success:["결제 문제를 설명한다","계정/카드 확인 질문에 답한다","재결제/구독 해결을 확인한다"], required:["payment_problem","account_verification","fix_confirmation"], pressure:["대기열 압박","본인 확인 스크립트","카드 정보 일부 재확인"]},
+  sv_clinic:{titleKo:"병원 접수/예약을 영어로 처리하기", success:["예약/접수 목적을 말한다","증상과 개인정보 질문에 답한다","가능 시간이나 다음 절차를 확인한다"], required:["appointment_need","symptom","personal_info_or_time"], pressure:["마감 임박","가능 시간이 적음","보험/생년월일 확인"]},
+  sv_school:{titleKo:"아이 학교 상담에서 걱정 말하기", success:["상담 목적을 말한다","아이 상태/걱정을 설명한다","다음 행동이나 연락 방법을 정한다"], required:["concern","child_detail","next_step"], pressure:["시간 제한","교사가 추가 예시 요구","짧게 정리 요구"]},
+  sv_bank:{titleKo:"은행에서 계좌 개설 절차 통과하기", success:["계좌 개설 의사를 말한다","신분/주소/계좌 종류 질문에 답한다","필요 서류와 다음 절차를 확인한다"], required:["account_request","identity_info","account_type_or_next_step"], pressure:["서류 엄격 확인","수수료 설명","대기 줄 압박"]},
+  sv_phone:{titleKo:"휴대폰 개통 조건 확인하고 결정하기", success:["원하는 요금제를 말한다","데이터/가격/신분증 질문에 답한다","개통 조건을 확인한다"], required:["plan_need","price_or_data","activation_confirmation"], pressure:["부가서비스 권유","서류 확인","가격 비교 질문"]},
+  sv_hotel:{titleKo:"호텔 체크인 문제를 해결하기", success:["예약 문제를 설명한다","예약번호/신분증/이름 질문에 답한다","방 배정이나 해결책을 확인한다"], required:["booking_problem","verification","solution_confirmation"], pressure:["예약이 안 보임","로비가 붐빔","대안 방 제시"]},
+  sv_parcel:{titleKo:"분실/지연 택배 문의 해결하기", success:["배송 문제를 설명한다","송장번호/주소 확인에 답한다","재배송/조사/환불 절차를 확인한다"], required:["delivery_problem","tracking_info","next_step"], pressure:["전화가 잘 안 들림","증거 요구","방어적인 상담원"]},
+  sv_pharm:{titleKo:"약국에서 안전하게 약 구매하기", success:["증상을 말한다","안전 질문에 답한다","복용법/주의사항을 확인한다"], required:["symptom","safety_answer","dosage_confirmation"], pressure:["추가 건강 질문","처방전 여부","부작용 설명"]},
+  sv_immig:{titleKo:"입국심사/관공서 질문 통과하기", success:["방문 목적을 답한다","기간/주소/서류 질문에 답한다","추가 질문에 짧고 명확히 답한다"], required:["purpose","duration_address","documents"], pressure:["엄격한 말투","예상 밖 후속 질문","짧게 답하라고 요구"]},
+  sv_net:{titleKo:"인터넷 문제 상담을 끝까지 해결하기", success:["인터넷 문제를 설명한다","문제 해결 단계 질문에 답한다","방문/수리/다음 절차를 잡는다"], required:["service_problem","troubleshooting_answer","repair_next_step"], pressure:["스크립트식 상담","실시간 조치 요구","연결이 끊기는 척하기"]}
+};
+const CONVO_ERROR_LABELS={
+  no_meaning:"뜻이 잘 안 통함",
+  missing_detail:"필수 정보 빠짐",
+  wrong_answer:"질문과 답이 어긋남",
+  block_avoid:"쓸 블록을 피함",
+  weak_block:"블록 선택이 약함",
+  slow_start:"말 시작이 느림",
+  korean_escape:"한국어로 도망감",
+  unnatural:"표현이 어색함",
+  pronunciation:"발음 확인 필요",
+  too_short:"답이 너무 짧음",
+  vocab_gap:"단어 부족"
+};
+function convoMission(){
+  const sc=(typeof state!=="undefined" && state.scn)||{};
+  const id=sc.id||"custom";
+  const base=CONVO_MISSION_LIBRARY[id] || CONVO_MISSION_LIBRARY[String(id).replace(/^sv_/,"")] || null;
+  if(base) return Object.assign({id}, base);
+  const title=(sc.t||"실전 상황")+" 끝까지 해결하기";
+  return {id, titleKo:title, success:["내가 원하는 것을 말한다","상대의 확인 질문에 답한다","마지막에 해결 여부를 확인한다"], required:["need","answer_followup","confirm_result"], pressure:["상대가 한 번 되묻기","추가 정보를 요구하기","대안을 제시하기"]};
+}
+function convoMissionDirective(){
+  if(typeof state==="undefined" || state.engine!=="survival") return "";
+  const m=convoMission();
+  return [
+"REAL MISSION MODE (hidden): This is not casual chat and not a quiz. The learner must solve a concrete real-life mission.",
+"Mission title in Korean: "+m.titleKo,
+"Success conditions: "+(m.success||[]).join(" / "),
+"Required information or actions to elicit/check: "+(m.required||[]).join(" / "),
+"Natural pressure events you may use: "+(m.pressure||[]).join(" / "),
+"Do NOT reveal this checklist. Drive the situation so the learner must notice what is missing and choose the right block/expression. If required info is missing, ask a realistic follow-up instead of solving it for them. Do not let the mission succeed too easily."
+  ].join("\n");
+}
+function convoTurnEvalDirective(){
+  if(typeof state==="undefined" || state.engine!=="survival") return "";
+  return [
+"HIDDEN TURN EVALUATION TAG (internal, required): After your visible in-character reply and after any USED tag, append exactly one hidden tag on its own line.",
+"Format EXACTLY with valid compact JSON: ⟦TURN_EVAL:{\"communication\":0,\"task\":0,\"completeness\":0,\"fluency\":0,\"blockChoice\":0,\"recovery\":0,\"missing\":[\"\"],\"errorReasons\":[\"\"],\"targetBlocks\":[\"\"],\"missionProgress\":0,\"solved\":false,\"nextTraining\":\"none\",\"suggestedEnglish\":\"\",\"noteKo\":\"\"}⟧",
+"Scores are 0-100. communication = did meaning get across; task = did they move the mission forward; completeness = did they include required details; fluency = did they respond without freezing; blockChoice = did they choose an appropriate learned block/function; recovery = did they clarify after confusion.",
+"Allowed errorReasons: no_meaning, missing_detail, wrong_answer, block_avoid, weak_block, slow_start, korean_escape, unnatural, pronunciation, too_short, vocab_gap. Use an empty array if none.",
+"Allowed nextTraining: block, auto, vocab, same_mission_retry, listening, none. Pick the one that would most improve the next attempt.",
+"The tag is for the app only. Never mention scores, JSON, tags, or the hidden evaluation in the visible reply."
+  ].join("\n");
+}
 function convoLearnedBlockList(){
   // 실전회화 사용 판정 대상: 소개된(introduced) BLE 블록 + 학습한 CORE_PHRASES
   const out=[];
+  try{
+    ((typeof state!=="undefined" && state.targetBlocks)||[]).forEach(x=>{
+      if(x&&x.id&&x.pattern) out.push({id:x.id, pattern:x.pattern});
+    });
+  }catch(e){}
   try{
     const s=bleGetState();
     BLE_BLOCKS.forEach(b=>{ if(s[b.id]&&s[b.id].introducedAt) out.push({id:"ble:"+b.id, pattern:b.block}); });
@@ -2306,21 +2406,28 @@ function usedBlocksDirective(){
   return [
 "BLOCK-USAGE TAG (internal, required): The learner is practicing these target blocks: "+lines+".",
 "At the VERY END of your reply, append one hidden tag on its own line listing which of these blocks the LEARNER actually used in THEIR most recent message — judged by MEANING/FUNCTION, not exact words. A paraphrase, tense change, or polite variant of the same function COUNTS (e.g. \"Could I have a coffee\" counts as the \"Can I get...?\" block). Only count a block if the learner genuinely produced that function in their own words.",
-"Format EXACTLY: ⟦USED:id1,id2⟧ using the ids above (e.g. ⟦USED:ble:can_i_get,core:where_can_i_006⟧). If they used none, output ⟦USED:⟧. Never explain the tag, never mention it, put nothing after it."
+"Format EXACTLY: ⟦USED:id1,id2⟧ using the ids above (e.g. ⟦USED:ble:can_i_get,core:where_can_i_006⟧). If they used none, output ⟦USED:⟧. Never explain the tag or mention it. If TURN_EVAL is also requested, put TURN_EVAL after USED."
   ].join("\n");
 }
 function stripUsedMarker(txt){
-  // 응답에서 USED 마커를 떼어내고 {clean, ids} 반환 (괄호 변형도 방어)
+  // 응답에서 USED/TURN_EVAL 마커를 떼어내고 {clean, ids, turnEval} 반환
   let s=String(txt||"");
   const m=s.match(/[⟦\[【]\s*USED\s*:\s*([^⟧\]】]*)[⟧\]】]/i);
   let ids=null;
   if(m){ ids=m[1].split(",").map(x=>x.trim()).filter(Boolean); }
-  // 마커(및 변형) 제거 + 혹시 모를 잔여 USED: 라인 제거
+  let turnEval=null;
+  const em=s.match(/⟦\s*TURN_EVAL\s*:\s*({[\s\S]*?})\s*⟧/i) || s.match(/^\s*TURN_EVAL\s*:\s*({[\s\S]*?})\s*$/im);
+  if(em){
+    try{ turnEval=parseJSON(em[1]); }catch(e){ turnEval=null; }
+  }
+  // 마커(및 변형) 제거 + 혹시 모를 잔여 메타 라인 제거
   const clean=s
+    .replace(/⟦\s*TURN_EVAL\s*:[\s\S]*?⟧/gi,"")
     .replace(/[⟦\[【]\s*USED\s*:[^⟧\]】]*[⟧\]】]/gi,"")
+    .replace(/^\s*TURN_EVAL\s*:.*$/gim,"")
     .replace(/^\s*USED\s*:.*$/gim,"")
     .replace(/\s+$/,"").trim();
-  return { clean, ids };
+  return { clean, ids, turnEval };
 }
 function scnDesc(){
   if(state.scn && state.scn.id==="custom") return state.custom;
@@ -2361,8 +2468,10 @@ speakingLearningLaw(),
 grammarRule(),
 "Situation: "+scnDesc(),
 "You play "+scnRole()+". Be natural, warm, and realistic — like a real café worker, clerk, receptionist, or friend. One thing at a time.",
+convoMissionDirective(),
 blocks ? ("The learner has studied these blocks (priority order — earlier = more important to surface). Gently create openings where these fit naturally:\n"+blocks) : "The learner is new — keep it very simple and encouraging.",
 reusePromptHint(),
+"MISSION PRESSURE: every 1-2 learner turns, check whether a required detail is still missing. If it is missing, ask for it naturally. If they answer vaguely, ask one clear follow-up. The mission only succeeds when the success conditions are actually satisfied.",
 "CRITICAL RULES (do NOT break):",
 "- This is NOT a quiz. NEVER say 'Please say Can I get...' or demand an exact phrase before they try.",
 "- Create realistic situations that INVITE a studied block, but ACCEPT any answer whose meaning is clear. 'Can I get water?', 'I'd like water', 'Water please' are ALL fine.",
@@ -2373,7 +2482,11 @@ reusePromptHint(),
 "- There have been "+ut+" learner turn(s). Have a natural back-and-forth; wrap up gracefully after the situation reaches a natural close.",
 npcLenRule(),
 levelHint(),
-levelCap()
+levelCap(),
+targetBlocksDirective(),
+repairDirective(),
+usedBlocksDirective(),
+convoTurnEvalDirective()
     ].join("\n");
   }
   if(state.scn && state.scn.id==="freetalk"){
@@ -2627,29 +2740,155 @@ function showTyping(){
 }
 function hideTyping(){ const t=$("#typing"); if(t) t.remove(); }
 function scrollDown(){ requestAnimationFrame(()=>{ thread.scrollTop=thread.scrollHeight; }); }
+function applySurvivalBackdrop(){
+  const art=(state.scn&&state.scn.art)||survivalArt(state.scn&&state.scn.id);
+  if(!art) return clearSurvivalBackdrop();
+  document.body.classList.add("survival-immersive");
+  stage.classList.add("survival-live");
+  stage.style.setProperty("--survival-bg", `url("${art}")`);
+}
+function clearSurvivalBackdrop(){
+  document.body.classList.remove("survival-immersive");
+  stage.classList.remove("survival-live");
+  stage.style.removeProperty("--survival-bg");
+}
+function convoStartMetrics(){
+  const m=convoMission(), sc=state.scn||{};
+  const targets=((state.targetBlocks||[]).map(x=>x&&x.id).filter(Boolean));
+  return {
+    scenarioId:sc.id||m.id||"custom",
+    scenarioTitle:sc.t||m.titleKo,
+    missionTitleKo:m.titleKo,
+    success:(m.success||[]).slice(),
+    required:(m.required||[]).slice(),
+    pressure:(m.pressure||[]).slice(),
+    targetBlocks:targets,
+    usedBlocks:[],
+    turns:[],
+    missing:{},
+    errorReasons:{},
+    progress:0,
+    solved:false,
+    startedAt:Date.now(),
+    final:null
+  };
+}
+function addMissionBrief(){
+  if(state.engine!=="survival") return;
+  const m=convoMission();
+  const art=(state.scn&&state.scn.art)||survivalArt(state.scn&&state.scn.id);
+  const artHtml=art?`<div class="sv-visual"><img src="${art}" alt=""></div>`:"";
+  const {wrap,bub}=turnEl("assistant");
+  wrap.classList.add("mission-brief-turn");
+  bub.style.fontFamily="inherit";
+  bub.innerHTML=`${artHtml}<div style="font-size:11px;font-weight:950;color:#FF8568;letter-spacing:.04em;margin-bottom:7px">REAL MISSION</div>
+    <div style="font-size:17px;font-weight:950;color:var(--text);line-height:1.35;margin-bottom:9px">${escapeHtml(m.titleKo)}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${(m.success||[]).slice(0,3).map(x=>`<div style="font-size:12.5px;color:var(--muted);line-height:1.45">✓ ${escapeHtml(x)}</div>`).join("")}
+    </div>
+    <div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:#B0958A;line-height:1.45">힌트 문장 없음. 상황을 보고 필요한 블록을 골라서 말하면 돼요.</div>`;
+  scrollDown();
+}
+function convoClampScore(x, fallback){
+  x=Number(x);
+  if(!isFinite(x)) x=fallback==null?0:fallback;
+  return Math.max(0,Math.min(100,Math.round(x)));
+}
+function convoCleanList(v){
+  if(!Array.isArray(v)) v=(v==null?[]:[v]);
+  return v.map(x=>String(x||"").trim()).filter(Boolean).slice(0,8);
+}
+function convoNormalizeEval(ev, fallback){
+  ev=ev&&typeof ev==="object"?ev:{};
+  fallback=fallback||{};
+  const reasons=convoCleanList(ev.errorReasons||fallback.errorReasons).filter(x=>CONVO_ERROR_LABELS[x]||x);
+  return {
+    communication:convoClampScore(ev.communication, fallback.communication||45),
+    task:convoClampScore(ev.task, fallback.task||40),
+    completeness:convoClampScore(ev.completeness, fallback.completeness||35),
+    fluency:convoClampScore(ev.fluency, fallback.fluency||45),
+    blockChoice:convoClampScore(ev.blockChoice, fallback.blockChoice||45),
+    recovery:convoClampScore(ev.recovery, fallback.recovery||45),
+    missing:convoCleanList(ev.missing||fallback.missing),
+    errorReasons:reasons,
+    targetBlocks:convoCleanList(ev.targetBlocks||fallback.targetBlocks),
+    missionProgress:convoClampScore(ev.missionProgress, fallback.missionProgress||0),
+    solved:!!ev.solved,
+    nextTraining:String(ev.nextTraining||fallback.nextTraining||"none"),
+    suggestedEnglish:String(ev.suggestedEnglish||fallback.suggestedEnglish||"").trim(),
+    noteKo:String(ev.noteKo||fallback.noteKo||"").trim()
+  };
+}
+function convoFallbackEval(userText, usedIds){
+  const words=String(userText||"").trim().split(/\s+/).filter(Boolean).length;
+  const reasons=[];
+  const hasBlockTargets=!!(((state.convoMetrics&&state.convoMetrics.targetBlocks)||[]).length || convoLearnedBlockList().length);
+  if(words<=1) reasons.push("too_short");
+  if(hasBlockTargets && (!usedIds || !usedIds.length)) reasons.push("block_avoid");
+  if(state.lastViaMic && state.lastMicLatencyMs>5000) reasons.push("slow_start");
+  return {communication:words<=1?30:55, task:45, completeness:words<=1?25:45, fluency:state.lastViaMic&&state.lastMicLatencyMs>5000?35:55, blockChoice:usedIds&&usedIds.length?65:35, recovery:45, errorReasons:reasons, nextTraining:reasons.indexOf("block_avoid")>=0?"block":"same_mission_retry"};
+}
+function convoRecordTurnEval(ev, meta){
+  if(state.engine!=="survival") return null;
+  if(!state.convoMetrics) state.convoMetrics=convoStartMetrics();
+  meta=meta||{};
+  const usedIds=Array.isArray(meta.usedIds)?meta.usedIds:[];
+  const norm=convoNormalizeEval(ev, convoFallbackEval(meta.userText, usedIds));
+  if(state.lastViaMic && state.lastMicLatencyMs>5000 && norm.errorReasons.indexOf("slow_start")<0) norm.errorReasons.push("slow_start");
+  usedIds.forEach(id=>{ if(state.convoMetrics.usedBlocks.indexOf(id)<0) state.convoMetrics.usedBlocks.push(id); });
+  norm.targetBlocks.forEach(id=>{ if(id && state.convoMetrics.targetBlocks.indexOf(id)<0) state.convoMetrics.targetBlocks.push(id); });
+  norm.missing.forEach(x=>{ state.convoMetrics.missing[x]=(state.convoMetrics.missing[x]||0)+1; });
+  norm.errorReasons.forEach(x=>{ state.convoMetrics.errorReasons[x]=(state.convoMetrics.errorReasons[x]||0)+1; });
+  state.convoMetrics.progress=Math.max(state.convoMetrics.progress||0, norm.missionProgress||0);
+  state.convoMetrics.solved=!!(state.convoMetrics.solved||norm.solved);
+  const row={t:Date.now(), userText:String(meta.userText||"").slice(0,220), coachText:String(meta.coachText||"").slice(0,240), viaMic:!!state.lastViaMic, latencyMs:state.lastMicLatencyMs||null, usedIds:usedIds.slice(0,8), eval:norm};
+  state.convoMetrics.turns.push(row);
+  try{ ledgerRecordConversationTurn({scenarioId:state.convoMetrics.scenarioId, missionTitleKo:state.convoMetrics.missionTitleKo, turn:row}); }catch(e){}
+  try{ convoRecordWeakTargets(norm, usedIds, meta.userText); }catch(e){}
+  return norm;
+}
+function convoRecordWeakTargets(ev, usedIds, userText){
+  const targets=(ev.targetBlocks||[]).concat(state.convoMetrics?state.convoMetrics.targetBlocks:[]).filter(Boolean);
+  const used=new Set(usedIds||[]);
+  const weakReasons=(ev.errorReasons||[]).filter(x=>x!=="");
+  targets.forEach(raw=>{
+    if(used.has(raw)) return;
+    if(raw.indexOf("ble:")===0){
+      const id=raw.slice(4);
+      try{ ledgerRecordExpressionEvent({blockId:id, source:"conversation_eval", context:(state.scn&&state.scn.id)||"conversation", communicationSuccess:ev.communication>=60, targetBlockSuccess:false, fail:ev.communication<45, userAnswer:userText, weakReasons:weakReasons.length?weakReasons:["missed in conversation"]}); }catch(e){}
+    }else if(raw.indexOf("core:")===0){
+      const id=raw.slice(5), p=CORE_PHRASES.find(x=>x.id===id);
+      if(p){ try{ ledgerRecordExpressionEvent({label:p.phrase, source:"conversation_eval", context:(state.scn&&state.scn.id)||"conversation", communicationSuccess:ev.communication>=60, targetBlockSuccess:false, fail:ev.communication<45, userAnswer:userText, weakReasons:weakReasons.length?weakReasons:["missed in conversation"]}); }catch(e){} }
+    }
+  });
+}
 
 /* ============ conversation flow ============ */
 async function startSession(){
   if(state.scn) markPractice({mode:"talk", id:state.scn.id, emo:state.scn.emo||"🗣️", label:(state.scn.id==="custom"?"직접 입력 회화":(state.scn.t||"회화"))});
   setup.style.display="none"; stage.style.display="flex"; $("#ctxBar").style.display="flex";
+  clearSurvivalBackdrop();
   pushScreen("talk");
   $("#ctxScn").textContent = state.scn.id==="custom" ? "직접 입력" : state.scn.t;
   $("#ctxLvl").textContent = levelName();
   $("#evalBtn").style.display="";
   state.convo=[];
   threadInner.innerHTML="";
+  state.convoMetrics = state.engine==="survival" ? convoStartMetrics() : null;
+  if(state.engine==="survival") addMissionBrief();
   setBusy(true);
   showTyping();
   try{
     const kickoff = state.engine==="output"
       ? "Start now. Give me the first situation in Korean (one line). Do not show any English."
       : state.engine==="survival"
-      ? "Start the situation now. Say your first line to me in English, in character."
+      ? "Start the mission now. Say your first line to me in English, in character. Do not output hidden evaluation tags until after the learner answers."
       : (state.scn && state.scn.id==="freetalk")
       ? "Start now. Greet me warmly in one short line and ask me your first easy question."
       : "Begin the role-play now. Say your first line to me.";
     const data = await callClaude(rolePrompt(), [{role:"user", content:kickoff}]);
-    const txt = extractText(data);
+    const parsed = stripUsedMarker(extractText(data));
+    const txt = parsed.clean;
     hideTyping();
     state.convo.push({role:"assistant", text:txt});
     addCoachTurn(txt);
@@ -2762,7 +3001,17 @@ async function sendMessage(){
   state.lastMicLatencyMs = msg.dataset.micLatencyMs ? parseInt(msg.dataset.micLatencyMs,10) : null;
   msg.dataset.viaMic=""; msg.dataset.micLatencyMs="";
   msg.value=""; autoSize();
-  if(hasHangul(text)){ addMeTurn(text); return koreanFallback(text); }
+  if(hasHangul(text)){
+    addMeTurn(text);
+    if(state.engine==="survival"){
+      convoRecordTurnEval({
+        communication:20, task:15, completeness:10, fluency:20, blockChoice:10, recovery:20,
+        errorReasons:["korean_escape"], missing:["english_response"], missionProgress:(state.convoMetrics&&state.convoMetrics.progress)||0,
+        nextTraining:"same_mission_retry", noteKo:"한국어로 막힌 지점"
+      }, {userText:text, coachText:"", usedIds:[]});
+    }
+    return koreanFallback(text);
+  }
   addMeTurn(text);
   state.convo.push({role:"user", text});
   questBump("talk");
@@ -2772,7 +3021,7 @@ async function sendMessage(){
     const msgs = state.convo.map(t=>({role:t.role, content:t.text}));
     const data = await callClaude(rolePrompt(), msgs);
     const raw = extractText(data);
-    const { clean, ids } = stripUsedMarker(raw);
+    const { clean, ids, turnEval } = stripUsedMarker(raw);
     const txt = clean;
     hideTyping();
     state.convo.push({role:"assistant", text:txt});
@@ -2783,6 +3032,7 @@ async function sendMessage(){
         if(ids!==null){ convoRecordUsedBlocks(ids, text); }
         else { convoTrackBlocks(text); }
       }catch(e){ try{ convoTrackBlocks(text); }catch(e2){} }
+      convoRecordTurnEval(turnEval, {userText:text, coachText:txt, usedIds:ids||[]});
     }
   }catch(e){
     hideTyping(); addCoachTurn("(연결 오류 — 다시 시도해 주세요.)");
@@ -3918,6 +4168,7 @@ function pushScreen(which){
 function enterStage(which){
   setup.style.display = which==="setup"?"block":"none";
   stage.style.display = which==="talk"?"flex":"none";
+  if(which!=="talk") clearSurvivalBackdrop();
   $("#listen").style.display = which==="listen"?"flex":"none";
   $("#review").style.display = which==="review"?"flex":"none";
   $("#block").style.display = which==="block"?"flex":"none";
@@ -6297,10 +6548,11 @@ function pronKoAutoStyle(){
     .pron-label{display:block;font-size:11px;color:#C08763;font-weight:900;margin-bottom:4px}
     .pron-stress-row{display:flex;gap:7px;align-items:flex-start;margin-top:3px;line-height:1.35}
     .pron-stress-row>b{flex:0 0 auto;font-size:10.5px;color:#B98572;background:rgba(255,133,104,.12);border-radius:999px;padding:2px 6px}
-    .pron-en-line{font-family:var(--serif);font-size:13px;color:#3A2D27}
+    .pron-en-line{font-family:var(--sans);font-size:13px;color:#3A2D27;font-weight:850}
     .pron-ko-line{font-family:var(--sans);font-size:14px;color:#3A2D27;font-weight:900}
     .pron-stress-hit{color:#E2674A;font-weight:1000;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
-    .pron-toggle{display:inline-block;margin-top:5px;padding:3px 10px;border:1px solid rgba(255,133,104,.32);background:rgba(255,133,104,.08);color:#C0653A;font-family:var(--sans);font-size:11px;font-weight:900;border-radius:999px;cursor:pointer;line-height:1.3}
+    .pron-toggle{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;border:1px solid rgba(255,133,104,.32);background:rgba(255,133,104,.08);color:#C0653A;font-family:var(--sans);font-size:11px;font-weight:950;border-radius:999px;cursor:pointer;line-height:1.3;user-select:none}
+    .pron-toggle:focus{outline:2px solid rgba(255,133,104,.35);outline-offset:2px}
     .pron-ko-auto .pron-body{display:none}
     .pron-ko-auto.pron-open .pron-body{display:block;margin-top:5px}
   `;
@@ -6331,7 +6583,12 @@ function pronKoAutoMount(el){
   node.className="pron-ko-auto pron-collapsed";
   // 기본은 접힘: [발음·강세 보기] 버튼만 노출 → 누르면 영어/한글 강세 펼침 (집중 방해 방지)
   const inner=pronStudyInnerHtml(txt,"");
-  node.innerHTML=`<button type="button" class="pron-toggle" onclick="(function(b){var w=b.parentNode;var open=w.classList.toggle('pron-open');b.textContent=open?'발음·강세 닫기':'🔉 발음·강세 보기';event.stopPropagation();})(this)">🔉 발음·강세 보기</button><span class="pron-body">${inner}</span>`;
+  node.innerHTML=`<span class="pron-toggle" role="button" tabindex="0">🔉 발음·강세 보기</span><span class="pron-body">${inner}</span>`;
+  const toggle=node.querySelector(".pron-toggle");
+  if(toggle){
+    toggle.onclick=(event)=>{ event.stopPropagation(); const open=node.classList.toggle("pron-open"); toggle.textContent=open?"발음·강세 닫기":"🔉 발음·강세 보기"; };
+    toggle.onkeydown=(event)=>{ if(event.key==="Enter"||event.key===" "){ event.preventDefault(); toggle.click(); } };
+  }
   el.appendChild(node);
 }
 function pronKoAutoScan(root){
@@ -10232,13 +10489,13 @@ function hSet(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} 
    ============================================================ */
 const LEDGER_KEY="speakingroom:learningLedger:v1";
 function ledgerBlank(){
-  return {version:1,updatedAt:null,words:{},expressions:{},listening:{},daily:{date:null,practicedWords:[],practicedExpressions:[],completedRoutineSteps:[],summary:{}}};
+  return {version:1,updatedAt:null,words:{},expressions:{},listening:{},conversations:{},daily:{date:null,practicedWords:[],practicedExpressions:[],completedRoutineSteps:[],summary:{}}};
 }
 function ledgerToday(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function ledgerGet(){
   let l=hGet(LEDGER_KEY,null);
   if(!l||l.version!==1||typeof l!=="object") l=ledgerBlank();
-  l.words=l.words||{}; l.expressions=l.expressions||{}; l.listening=l.listening||{};
+  l.words=l.words||{}; l.expressions=l.expressions||{}; l.listening=l.listening||{}; l.conversations=l.conversations||{};
   l.daily=l.daily||{}; if(l.daily.date!==ledgerToday()) l.daily={date:ledgerToday(),practicedWords:[],practicedExpressions:[],completedRoutineSteps:[],summary:{}};
   l.daily.practicedWords=l.daily.practicedWords||[]; l.daily.practicedExpressions=l.daily.practicedExpressions||[]; l.daily.completedRoutineSteps=l.daily.completedRoutineSteps||[]; l.daily.summary=l.daily.summary||{};
   return l;
@@ -10409,6 +10666,32 @@ function ledgerRecordExpressionEvent(ev){
     ledgerRefreshExpression(r);
     if(!passiveEvent) l.daily.practicedExpressions=ledgerPushUnique(l.daily.practicedExpressions, r.id, 200);
     ledgerSave(l); return r; });
+}
+function ledgerRecordConversationTurn(ev){
+  return ledgerSafe(()=>{ ev=ev||{}; const l=ledgerGet(); l.conversations=l.conversations||{}; const sid=ledgerCtxId(ev.scenarioId||"conversation"); const key="conv:"+sid; const now=Date.now();
+    const rec=l.conversations[key]||{id:key,scenarioId:sid,missionTitleKo:ev.missionTitleKo||"",startedAt:now,lastAt:now,turnCount:0,solvedCount:0,errorReasons:{},missing:{},turns:[]};
+    rec.missionTitleKo=ev.missionTitleKo||rec.missionTitleKo;
+    rec.lastAt=now; rec.turnCount=(rec.turnCount||0)+1;
+    const row=ev.turn||{};
+    const te=row.eval||{};
+    if(te.solved) rec.solvedCount=(rec.solvedCount||0)+1;
+    (te.errorReasons||[]).forEach(x=>{ if(x) rec.errorReasons[x]=(rec.errorReasons[x]||0)+1; });
+    (te.missing||[]).forEach(x=>{ if(x) rec.missing[x]=(rec.missing[x]||0)+1; });
+    rec.turns=(rec.turns||[]).concat([{
+      t:row.t||now,
+      viaMic:!!row.viaMic,
+      latencyMs:row.latencyMs||null,
+      userText:String(row.userText||"").slice(0,180),
+      communication:te.communication,
+      task:te.task,
+      completeness:te.completeness,
+      blockChoice:te.blockChoice,
+      missionProgress:te.missionProgress,
+      errorReasons:(te.errorReasons||[]).slice(0,6),
+      missing:(te.missing||[]).slice(0,6),
+      usedIds:(row.usedIds||[]).slice(0,6)
+    }]).slice(-80);
+    l.conversations[key]=rec; ledgerSave(l); return rec; });
 }
 function ledgerRecordListeningEvent(ev){
   return ledgerSafe(()=>{ ev=ev||{}; const l=ledgerGet(); const related=ev.relatedExpressionId || (ev.blockId?ledgerExprId((typeof BLE_BY_ID!=="undefined"&&BLE_BY_ID[ev.blockId])?BLE_BY_ID[ev.blockId].block:ev.text,ev.blockId):null); const r=ledgerEnsureListening(l,ev.text||ev.en,{context:ev.context,relatedExpressionId:related,relatedWords:ev.relatedWords}); if(!r) return null; const now=Date.now();
@@ -11194,6 +11477,19 @@ function autoDrillDone(){
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
 // 🌎 실전상황 Engine — 실전 상황 시뮬레이션
+const SURVIVAL_ART={
+  sv_ms:"assets/survival/sv_ms.png",
+  sv_clinic:"assets/survival/sv_clinic.png",
+  sv_school:"assets/survival/sv_school.png",
+  sv_bank:"assets/survival/sv_bank.png",
+  sv_phone:"assets/survival/sv_phone.png",
+  sv_hotel:"assets/survival/sv_hotel.png",
+  sv_parcel:"assets/survival/sv_parcel.png",
+  sv_pharm:"assets/survival/sv_pharm.png",
+  sv_immig:"assets/survival/sv_immig.png",
+  sv_net:"assets/survival/sv_net.png"
+};
+function survivalArt(id){ return SURVIVAL_ART[id]||""; }
 const SURVIVAL=[
  {id:"sv_ms",   emo:"💳", t:"카드 결제 문제", role:"a customer-service agent at a software company (like Microsoft)", ctx:"The learner called customer service because their card expired and a payment/subscription failed. They must explain the problem, verify the account, and get it fixed.", emotion:"polite but a bit impatient, follows a strict verification script", pressure:"a long support queue; the agent wants to move fast"},
  {id:"sv_clinic",emo:"🏥", t:"병원 예약·접수", role:"a hospital/clinic receptionist", ctx:"The learner needs to make an appointment or check in, describe a symptom, and answer questions about insurance and personal info.", emotion:"rushed and busy, many patients waiting", pressure:"the clinic closes soon; limited appointment slots"},
@@ -11211,15 +11507,18 @@ function openSurvival(){
   const LIST=SURVIVAL;
   const sc=document.createElement("div"); sc.id="svPick";
   sc.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:90;display:flex;align-items:flex-end;justify-content:center";
-  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 18px max(40px, calc(28px + env(safe-area-inset-bottom)));border-top:1px solid var(--line);max-height:80vh;overflow:auto">
+  sc.innerHTML=`<div style="width:100%;max-width:560px;background:var(--surface);border-radius:24px 24px 0 0;padding:18px 16px max(30px, calc(20px + env(safe-area-inset-bottom)));border-top:1px solid var(--line);max-height:92vh;overflow:auto">
     <div style="width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto 16px"></div>
     <div style="font-size:18px;font-weight:900;color:var(--text);margin-bottom:4px">🌎 모험 월드맵</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:16px">상대가 영어로 말 걸어와요. 버티면서 영어로 대응해보세요.</div>
     <div style="display:flex;flex-direction:column;gap:9px">
-      ${LIST.map(s=>`<button data-id="${s.id}" class="svItem" style="display:flex;align-items:center;gap:12px;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:15px;padding:14px;cursor:pointer">
-        <span style="font-size:24px">${s.emo}</span>
-        <span style="flex:1"><b style="display:block;font-size:15px;color:var(--text);font-weight:800">${s.t}</b><i style="font-size:11.5px;color:var(--muted);font-style:normal">${escapeHtml(s.role)}</i></span>
-        <span style="color:var(--muted);font-size:20px">›</span></button>`).join("")}
+      ${LIST.map(s=>{
+        const art=survivalArt(s.id);
+        return `<button data-id="${s.id}" class="svItem" style="display:flex;align-items:center;gap:12px;text-align:left;background:var(--card2);border:1.5px solid var(--line);border-radius:18px;padding:10px 12px;cursor:pointer;overflow:hidden">
+        ${art?`<span class="sv-thumb"><img src="${art}" alt=""></span>`:`<span class="sv-emoji">${s.emo}</span>`}
+        <span class="sv-card-text"><b style="display:block;font-size:15px;color:var(--text);font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.t)}</b><i style="font-size:11.5px;color:var(--muted);font-style:normal;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(s.role)}</i></span>
+        <span style="color:var(--muted);font-size:20px">›</span></button>`;
+      }).join("")}
     </div>
     <button id="svClose" style="width:100%;margin-top:14px;padding:13px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:14px">닫기</button>
   </div>`;
@@ -11231,7 +11530,7 @@ function openSurvival(){
 function startSurvival(s, opts){
   opts=opts||{};
   state.engine="survival"; state.mode="talk";
-  state.scn={ id:s.id, t:s.t, emo:s.emo, role:s.role, ctx:s.ctx, emotion:s.emotion, pressure:s.pressure };
+  state.scn={ id:s.id, t:s.t, emo:s.emo, role:s.role, ctx:s.ctx, emotion:s.emotion, pressure:s.pressure, art:survivalArt(s.id) };
   // 🎯 오늘 블록 써먹기 모드: NPC가 이 블록들을 자연스럽게 끌어내도록 유도
   state.targetBlocks = Array.isArray(opts.targetBlocks)&&opts.targetBlocks.length ? opts.targetBlocks.slice(0,4) : null;
   // 🗣️ non-cooperative partner: 세션당 한 번 확률 결정. 켜지면 NPC가 가끔 못 알아들은 척 되물어 repair 유도.
@@ -12150,6 +12449,111 @@ function resetLearningData(){
     }
   });
 }
+function convoMetricAverage(key){
+  const turns=(state.convoMetrics&&state.convoMetrics.turns)||[];
+  const vals=turns.map(t=>t&&t.eval?Number(t.eval[key]):NaN).filter(x=>isFinite(x));
+  return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+}
+function convoMetricOverall(){
+  const com=convoMetricAverage("communication"), task=convoMetricAverage("task"), comp=convoMetricAverage("completeness"), flu=convoMetricAverage("fluency"), block=convoMetricAverage("blockChoice"), rec=convoMetricAverage("recovery");
+  if(com==null) return null;
+  return Math.round((com||0)*0.30+(task||0)*0.25+(comp||0)*0.15+(flu||0)*0.10+(block||0)*0.10+(rec||0)*0.10);
+}
+function convoTopCounts(obj, n){
+  return Object.entries(obj||{}).sort((a,b)=>b[1]-a[1]).slice(0,n||4).map(x=>x[0]);
+}
+function convoReasonKo(reason){
+  return CONVO_ERROR_LABELS[reason]||reason;
+}
+function convoWeakTargetId(){
+  const m=state.convoMetrics; if(!m) return null;
+  const used=new Set(m.usedBlocks||[]);
+  const targets=(m.targetBlocks||[]).filter(Boolean);
+  const miss=targets.find(id=>!used.has(id));
+  if(miss) return miss;
+  const last=[...(m.turns||[])].reverse().find(t=>t.eval&&t.eval.targetBlocks&&t.eval.targetBlocks.length);
+  return last ? last.eval.targetBlocks.find(Boolean) : null;
+}
+function convoTargetLabel(id){
+  if(!id) return "";
+  if(id.indexOf("ble:")===0){ const b=BLE_BY_ID&&BLE_BY_ID[id.slice(4)]; return b?b.block:id; }
+  if(id.indexOf("core:")===0){ const p=CORE_PHRASES.find(x=>x.id===id.slice(5)); return p?p.phrase:id; }
+  return id;
+}
+function convoRecommendNext(finalReport){
+  const m=state.convoMetrics; if(!m) return null;
+  const reasons=m.errorReasons||{};
+  const top=convoTopCounts(reasons,3);
+  const weak=convoWeakTargetId();
+  const requested=String((finalReport&&finalReport.nextTraining)||"").toLowerCase();
+  if((requested==="block" || reasons.block_avoid || reasons.weak_block || reasons.wrong_answer) && weak){
+    return {type:"block", targetId:weak, title:"블록 선택 훈련", reason:`${convoTargetLabel(weak)} 블록을 상황에서 바로 고르는 힘이 약했어요.`, cta:"약한 블록 바로 훈련"};
+  }
+  if(requested==="auto" || reasons.slow_start || (convoMetricAverage("fluency")!=null && convoMetricAverage("fluency")<50)){
+    return {type:"auto", title:"자동화 드릴", reason:"아는 표현도 입이 늦게 열렸어요. 3초 안에 꺼내는 훈련이 먼저예요.", cta:"자동화 드릴 시작"};
+  }
+  if(requested==="vocab" || reasons.vocab_gap){
+    return {type:"vocab", title:"단어 능동화", reason:"상황에 필요한 단어가 부족해서 말이 짧아졌어요.", cta:"단어 말하기 훈련"};
+  }
+  if(requested==="listening" || reasons.pronunciation){
+    return {type:"listening", title:"듣기/따라말하기", reason:"상대 말을 듣고 바로 반응하는 감각을 더 올리면 좋아요.", cta:"리스닝 부스터"};
+  }
+  if(requested==="same_mission_retry" || reasons.missing_detail || reasons.no_meaning || reasons.korean_escape || (finalReport&&!finalReport.solved)){
+    return {type:"same_mission_retry", scenario:Object.assign({},state.scn||{}), targetBlocks:(state.targetBlocks||[]).slice(0,4), title:"같은 미션 재도전", reason:"미션 해결에 필요한 정보가 빠졌어요. 같은 상황을 다시 하면 효과가 큽니다.", cta:"같은 미션 다시"};
+  }
+  if(top.length){
+    return {type:"auto", title:"짧은 자동화", reason:"약점: "+top.map(convoReasonKo).join(", "), cta:"짧게 자동화"};
+  }
+  return null;
+}
+function convoRunNextTraining(rec){
+  if(!rec) return;
+  if(rec.type==="block" && rec.targetId){
+    if(rec.targetId.indexOf("core:")===0) return startChunkTraining(rec.targetId.slice(5));
+    if(rec.targetId.indexOf("ble:")===0) return bleStart(rec.targetId.slice(4));
+  }
+  if(rec.type==="auto") return startAutoDrill();
+  if(rec.type==="vocab") return startVocabCoach();
+  if(rec.type==="listening") return startBooster();
+  if(rec.type==="same_mission_retry" && rec.scenario && rec.scenario.id) return startSurvival(rec.scenario, {targetBlocks:rec.targetBlocks||state.targetBlocks||null});
+  return goToSetup();
+}
+function convoFinalizeMetrics(finalReport){
+  if(!state.convoMetrics) return;
+  state.convoMetrics.final=finalReport||{};
+  state.convoMetrics.solved=!!(state.convoMetrics.solved || (finalReport&&finalReport.solved));
+  try{
+    const l=ledgerGet();
+    const sid=ledgerCtxId(state.convoMetrics.scenarioId||"conversation");
+    const key="conv:"+sid;
+    const rec=l.conversations&&l.conversations[key];
+    if(rec){
+      rec.final=Object.assign({}, finalReport||{}, {metricOverall:convoMetricOverall(), progress:state.convoMetrics.progress});
+      rec.lastAt=Date.now();
+      ledgerSave(l);
+    }
+  }catch(e){}
+}
+function convoReportExtraHtml(rec){
+  const m=state.convoMetrics;
+  if(!m) return "";
+  const topReasons=convoTopCounts(m.errorReasons,4);
+  const miss=convoTopCounts(m.missing,3);
+  const met=m.success||[];
+  const reasonsHtml=topReasons.length?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px"><b style="color:var(--text)">오답 원인</b><br>${topReasons.map(x=>"• "+convoReasonKo(x)).join("<br>")}</div>`:"";
+  const missHtml=miss.length?`<div style="font-size:12.5px;color:var(--muted);margin-top:8px"><b style="color:var(--text)">빠진 정보</b><br>${miss.map(x=>"• "+escapeHtml(x)).join("<br>")}</div>`:"";
+  const missionHtml=`<div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin-top:11px;text-align:left">
+    <div style="font-size:12px;font-weight:950;color:#FF8568;margin-bottom:5px">미션 기준</div>
+    <div style="font-size:13px;font-weight:900;color:var(--text);margin-bottom:5px">${escapeHtml(m.missionTitleKo||"실전 미션")}</div>
+    ${met.slice(0,3).map(x=>`<div style="font-size:12.2px;color:var(--muted);line-height:1.45">✓ ${escapeHtml(x)}</div>`).join("")}
+  </div>`;
+  const recHtml=rec?`<div style="background:#FFF2EA;border:1px solid #FBD6C4;border-radius:13px;padding:11px 13px;margin-top:11px;text-align:left">
+    <div style="font-size:12px;font-weight:950;color:#F0664A;margin-bottom:4px">다음 훈련 추천</div>
+    <div style="font-size:14px;font-weight:950;color:#3A2D27">${escapeHtml(rec.title)}</div>
+    <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:3px">${escapeHtml(rec.reason)}</div>
+  </div>`:"";
+  return missionHtml+reasonsHtml+missHtml+recHtml;
+}
 async function endAndEvaluate(){
   const userTurns=(state.convo||[]).filter(m=>m.role==="user").length;
   if(userTurns<1){ goToSetup(); return; }
@@ -12162,23 +12566,42 @@ async function endAndEvaluate(){
     openModal({title:"상황 종료", msg:"이 상황을 마치고 실전 리포트를 받을까요?", input:false, okText:"리포트 받기", onOk:async()=>{
       xpToast(0); const t=$("#xpToast"); if(t){ t.innerHTML="실전 리포트 작성 중…"; t.classList.add("show"); }
       const transcript=state.convo.map(m=>(m.role==="user"?"Learner: ":"Other: ")+m.text).join("\n");
+      const mission=convoMission();
+      const metricSummary=state.convoMetrics?{
+        mission:state.convoMetrics.missionTitleKo,
+        required:state.convoMetrics.required,
+        turnCount:state.convoMetrics.turns.length,
+        progress:state.convoMetrics.progress,
+        topErrorReasons:convoTopCounts(state.convoMetrics.errorReasons,5),
+        missing:convoTopCounts(state.convoMetrics.missing,5),
+        usedBlocks:state.convoMetrics.usedBlocks,
+        targetBlocks:state.convoMetrics.targetBlocks,
+        metricOverall:convoMetricOverall()
+      }:null;
       const sys=[
 "You are evaluating a Korean learner's performance in a SURVIVAL simulation: "+scnDesc(),
+"Mission goal: "+mission.titleKo,
+"Success conditions: "+(mission.success||[]).join(" / "),
+"App-collected hidden turn metrics: "+JSON.stringify(metricSummary||{}),
 "SUCCESS = did they SOLVE the real problem? Grammar is secondary. Be warm in tone, but score HONESTLY — if they barely communicated or didn't solve it, the scores must reflect that. Do not inflate scores for effort alone; truthful scores help them improve.",
 "Give a SURVIVAL REPORT with four 0-100 sub-scores:",
 "- communication: did their meaning get across",
 "- problem_solving: did they actually move toward solving the problem / get their need met",
 "- confidence: did they keep going under pressure instead of freezing",
 "- recovery: when there was confusion/misunderstanding/noise, how well did they recover and clarify",
-"Also: solved = true/false (did they ultimately solve it). Pick the 3 most useful survival expressions from THIS situation with short Korean meanings.",
-'Return ONLY JSON: {"communication":<0-100>,"problem_solving":<0-100>,"confidence":<0-100>,"recovery":<0-100>,"solved":true or false,"ko":"한 줄 한국어 총평","phrases":[{"en":"","ko":""},{"en":"","ko":""},{"en":"","ko":""}]}'
+"Also: solved = true/false (did they ultimately satisfy the mission success conditions). Pick the 3 most useful survival expressions from THIS situation with short Korean meanings. Choose nextTraining from: block, auto, vocab, same_mission_retry, listening, none.",
+'Return ONLY JSON: {"communication":<0-100>,"problem_solving":<0-100>,"confidence":<0-100>,"recovery":<0-100>,"solved":true or false,"ko":"한 줄 한국어 총평","weakReasons":[""],"nextTraining":"block|auto|vocab|same_mission_retry|listening|none","phrases":[{"en":"","ko":""},{"en":"","ko":""},{"en":"","ko":""}]}'
       ].join("\n");
-      let r={communication:55,problem_solving:55,confidence:60,recovery:55,solved:false,ko:"",phrases:[]};
+      let r={communication:55,problem_solving:55,confidence:60,recovery:55,solved:false,ko:"",weakReasons:[],nextTraining:"none",phrases:[]};
       try{ const d=await callClaude(sys,[{role:"user",content:transcript}]); const o=parseJSON(extractText(d)); r=Object.assign(r,o); }catch(e){}
       if(t) t.classList.remove("show");
       const clamp=x=>Math.max(0,Math.min(100,Math.round(x||0)));
       const com=clamp(r.communication), ps=clamp(r.problem_solving), conf=clamp(r.confidence), rec=clamp(r.recovery);
-      const overall=Math.round(com*0.4+ps*0.3+conf*0.2+rec*0.1);
+      const aiOverall=Math.round(com*0.4+ps*0.3+conf*0.2+rec*0.1);
+      const metricOverall=convoMetricOverall();
+      const overall=metricOverall==null ? aiOverall : Math.round(aiOverall*0.65+metricOverall*0.35);
+      convoFinalizeMetrics(Object.assign({},r,{overall,aiOverall,metricOverall}));
+      const nextRec=convoRecommendNext(Object.assign({},r,{overall}));
       // 실전 성공률 추적
       try{ const h=hGet("speakingroom:survival",{done:0,solved:0}); h.done=(h.done||0)+1; if(r.solved) h.solved=(h.solved||0)+1; hSet("speakingroom:survival",h); }catch(e){}
       let saved=0, active=0;
@@ -12200,9 +12623,10 @@ async function endAndEvaluate(){
       const html=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${r.solved?"🟢 문제 해결 성공":"🔴 아직 미해결 — 다시 도전!"}</div><div style="font-size:40px;font-weight:900;color:${overall>=70?'#FF8568':overall>=45?'#e6ad4a':'#e0533f'}">${overall}</div><div style="font-size:11px;color:var(--muted)">실전 종합 점수</div></div>
       ${bar("소통",com)}${bar("문제해결",ps)}${bar("자신감",conf)}${bar("회복력",rec)}
       ${r.ko?`<div style="font-size:13px;color:var(--text);margin-top:10px;line-height:1.6">${escapeHtml(r.ko)}</div>`:""}
+      ${convoReportExtraHtml(nextRec)}
       ${plist?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px;white-space:pre-line">💾 저장된 핵심표현\n${escapeHtml(plist)}</div>`:""}
       ${active?`<div style="font-size:12.5px;color:#f59e0b;font-weight:800;margin-top:8px">💎 능동 어휘 +${active}</div>`:""}`;
-      setTimeout(()=>openModal({title:"🌎 실전 리포트", html:html, input:false, okText:"좋아요"}), 380);
+      setTimeout(()=>openModal({title:"🌎 실전 리포트", html:html, input:false, okText:nextRec?nextRec.cta:"좋아요", cancelText:nextRec?"홈으로":"취소", onOk:()=>{ if(nextRec) convoRunNextTraining(nextRec); }}), 380);
     }});
     return;
   }
@@ -12436,6 +12860,7 @@ function devSkipStep(){
 function goToSetup(fromPop){
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
   const _ss=$("#sprintScroll"); if(_ss){ _ss.style.background=""; _ss.classList.remove("fillv"); }
+  clearSurvivalBackdrop();
   if(TTS) TTS.cancel();
   if(sdActive){ sdActive=false; clearTimeout(sdTimer); }
   rvActive=false;
