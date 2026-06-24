@@ -2709,6 +2709,8 @@ async function startSession(){
 function convoRecordUsedBlocks(ids, userText){
   if(!Array.isArray(ids) || !ids.length) return;
   const ctxId="real:"+((state.scn&&state.scn.id)||"conversation");
+  const viaMic = (state.lastViaMic===true);                 // 🎤 이번 발화가 마이크였나 (타이핑이면 false)
+  const latMs = (typeof state.lastMicLatencyMs==="number") ? state.lastMicLatencyMs : null;  // 말 시작까지 latency
   let bleUsed=[], coreUsed=[];
   // BLE 블록
   try{
@@ -2718,17 +2720,24 @@ function convoRecordUsedBlocks(ids, userText){
       const id=raw.slice(4);
       const st=s[id]; if(!st || !st.introducedAt) return;          // 소개 안 된 블록은 무시
       if(bleUsed.indexOf(id)>=0) return;
-      st.realConversationSuccessCount=(st.realConversationSuccessCount||0)+1;
       st.lastSeenAt=bleNow();
       st.contextsUsed=st.contextsUsed||[];
       if(st.contextsUsed.indexOf(ctxId)<0) st.contextsUsed.push(ctxId);
       st.consecFails=0;
-      // 🔓 해금 게이트: 실전회화에서 힌트 없이 실제로 써먹음 → "쓸 줄 안다" 확정 → unlocked
-      if(!st.unlocked){ st.unlocked=true; st.unlockedAt=Date.now(); st.unlockedVia="real_conversation"; }
+      // 🎤 말하기 실력 카운터·해금은 '마이크로 말한 것'만 인정. 타이핑은 의미 연습이지 말하기 숙련이 아님.
+      if(viaMic){
+        st.realConversationSuccessCount=(st.realConversationSuccessCount||0)+1;
+        // 실전 latency 기록 (상대 말 듣고 몇 초 안에 입 떼었나) — 자동화 avgMs와 동일 단위
+        if(latMs!=null){ st.realLatencyMs=latMs; st.realLatencySamples=(st.realLatencySamples||0)+1; st.realLatencyAvg = st.realLatencyAvg!=null ? Math.round(st.realLatencyAvg*0.6+latMs*0.4) : latMs; }
+        // 🔓 해금: 마이크로, 힌트 없이 실전에서 써먹음 → "쓸 줄 안다" 확정
+        if(!st.unlocked){ st.unlocked=true; st.unlockedAt=Date.now(); st.unlockedVia="real_conversation"; }
+      } else {
+        st.typedUseCount=(st.typedUseCount||0)+1;   // 타이핑 사용은 별도 카운터(약한 신호)로만
+      }
       st.stage=bleComputeStage(st);
       s[id]=st; bleUsed.push(id);
-      // ledger에도 실전 사용 이벤트 (source=conversation → usedInConversationCount 증가)
-      try{ ledgerRecordExpressionEvent({blockId:id, source:"conversation", context:(state.scn&&state.scn.id)||"conversation", communicationSuccess:true, targetBlockSuccess:true}); }catch(e){}
+      // ledger 이벤트: 마이크 발화만 spoken 성공으로, latency 포함
+      try{ ledgerRecordExpressionEvent({blockId:id, source:"conversation", context:(state.scn&&state.scn.id)||"conversation", communicationSuccess:true, targetBlockSuccess:viaMic, spoken:viaMic, startDelayMs:(viaMic?latMs:null)}); }catch(e){}
     });
     if(bleUsed.length) bleSaveState(s);
   }catch(e){}
@@ -2793,6 +2802,10 @@ function convoTrackBlocks(userText){
 async function sendMessage(){
   const text=msg.value.trim();
   if(!text || state.busy) return;
+  // 🎤 이번 발화가 마이크였는지 + 말 시작까지 latency 캡처 (실력 카운터/실전 latency용)
+  state.lastViaMic = (msg.dataset.viaMic==="1");
+  state.lastMicLatencyMs = msg.dataset.micLatencyMs ? parseInt(msg.dataset.micLatencyMs,10) : null;
+  msg.dataset.viaMic=""; msg.dataset.micLatencyMs="";
   msg.value=""; autoSize();
   if(hasHangul(text)){ addMeTurn(text); return koreanFallback(text); }
   addMeTurn(text);
@@ -5899,6 +5912,7 @@ async function micFill(inp, btn, restoreLabel){
   const lbl = restoreLabel || btn.dataset.lbl || "🎤";
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   try{
+    const _meta={ promptAt:Date.now(), speechStartAt:null };
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     qzChunks=[]; const mime=getBestMime();
     qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
@@ -5911,18 +5925,31 @@ async function micFill(inp, btn, restoreLabel){
       try{
         const res=await sttRecognize(raw, am);
         const data=await res.json();
-        if(data.DisplayText){ const t=data.DisplayText.replace(/[.?!]$/,""); inp.value=t; inp.dispatchEvent(new Event("input")); }
+        if(data.DisplayText){
+          const t=data.DisplayText.replace(/[.?!]$/,"");
+          // 🎤 마이크로 채운 입력임을 표시 + 말 시작까지 걸린 latency 기록
+          inp.dataset.viaMic="1";
+          if(_meta.speechStartAt){ inp.dataset.micLatencyMs=String(Math.max(0,_meta.speechStartAt-_meta.promptAt)); }
+          else { inp.dataset.micLatencyMs=""; }
+          inp._viaMicSet=true;
+          inp.value=t; inp.dispatchEvent(new Event("input"));
+        }
       }catch(e){}
       btn.textContent=lbl;
     };
     micBeep(); qzMR.start(250); qzRecording=true; btn.textContent="⏹";
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, VAD_OPTS);
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ _meta.speechStartAt=t; }});
   }catch(e){}
 }
 function quizRecord(inp, btn){ return micFill(inp, btn, "🎤 말하기"); }
 // 입력칸 옆에 작은 🎤 버튼을 붙임 (중복 방지)
 function attachMic(inp){
   if(!inp || inp._micAttached) return; inp._micAttached=true;
+  // 사용자가 키보드로 직접 타이핑하면 '마이크 입력' 표시 해제 (마이크가 막 채운 input 이벤트는 1회 무시)
+  inp.addEventListener("input", ()=>{
+    if(inp._viaMicSet){ inp._viaMicSet=false; return; }   // micFill이 채운 input — 유지
+    inp.dataset.viaMic=""; inp.dataset.micLatencyMs="";    // 사람이 타이핑 — 해제
+  });
   const b=document.createElement("button");
   b.type="button"; b.textContent="🎤"; b.dataset.lbl="🎤"; b.title="말하기";
   b.style.cssText="flex:none;width:76px;height:64px;border-radius:15px;background:var(--mist);border:1.5px solid var(--line);font-size:34px;line-height:1";
