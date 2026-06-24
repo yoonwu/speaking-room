@@ -1936,7 +1936,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.79.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.80.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3810,7 +3810,7 @@ let shIdx=0;
 function startShadow(){ shIdx=0; renderShadow(); }
 function renderShadow(){
   const lines=(curPassage&&curPassage.lines)||[];
-  if(shIdx>=lines.length){ awardXP("listen",6,"섀도잉 완료","ls:shadow"); renderPassage(curPassage); return; }
+  if(shIdx>=lines.length){ awardXP("listen",6,"섀도잉 완료","ls:shadow"); renderListenPlay(); return; }
   const ln=lines[shIdx], sp=curPassage.speakers||{A:"A",B:"B"};
   const name=(ln.speaker==="B"?sp.B:sp.A)||ln.speaker;
   $("#lnext").style.display="none";
@@ -3834,7 +3834,7 @@ function renderShadow(){
   $("#shSlow").onclick=()=>speakOne(ln,true);
   $("#shDrill").onclick=()=>openDrill(ln.en||"", ln.ko||"");
   $("#shNext").onclick=()=>{ shIdx++; renderShadow(); };
-  $("#shExit").onclick=()=>{ TTS&&TTS.cancel(); renderPassage(curPassage); };
+  $("#shExit").onclick=()=>{ TTS&&TTS.cancel(); renderListenPlay(); };
 }
 
 /* ---- 되말하기: B 역할을 직접 영어로 ---- */
@@ -3842,7 +3842,7 @@ let rtIdx=0;
 function startRetell(){ rtIdx=0; renderRetell(); }
 function renderRetell(){
   const lines=(curPassage&&curPassage.lines)||[];
-  if(rtIdx>=lines.length){ awardXP("listen",6,"되말하기 완료","ls:retell"); renderPassage(curPassage); return; }
+  if(rtIdx>=lines.length){ awardXP("listen",6,"되말하기 완료","ls:retell"); renderListenPlay(); return; }
   const ln=lines[rtIdx], sp=curPassage.speakers||{A:"A",B:"B"};
   const name=(ln.speaker==="B"?sp.B:sp.A)||ln.speaker;
   $("#lnext").style.display="none";
@@ -3860,7 +3860,7 @@ function renderRetell(){
     $("#listenScroll").scrollTop=0;
     setTimeout(()=>speakOne(ln,false),320);
     $("#rtNext").onclick=()=>{ rtIdx++; renderRetell(); };
-    $("#rtExit").onclick=()=>{ TTS&&TTS.cancel(); renderPassage(curPassage); };
+    $("#rtExit").onclick=()=>{ TTS&&TTS.cancel(); renderListenPlay(); };
   }else{
     $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
       <div class="lmeta">🔁 되말하기 · ${rtIdx+1} / ${lines.length}</div>
@@ -3882,7 +3882,7 @@ function renderRetell(){
       $("#rtReplay").onclick=()=>speakOne(ln,false);
     };
     $("#rtNext").onclick=()=>{ rtIdx++; renderRetell(); };
-    $("#rtExit").onclick=()=>{ TTS&&TTS.cancel(); renderPassage(curPassage); };
+    $("#rtExit").onclick=()=>{ TTS&&TTS.cancel(); renderListenPlay(); };
   }
 }
 
