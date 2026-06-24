@@ -190,6 +190,8 @@
 .dict-src{font-size:11px;color:var(--muted);text-align:right;margin-top:14px}
 .dict-more{display:block;width:100%;margin-top:14px;padding:12px;border-radius:12px;background:var(--mist);border:1px solid var(--line);color:var(--jade);font-size:14px;font-weight:700;cursor:pointer}
 .dict-ask{display:block;width:100%;margin-top:10px;padding:13px;border-radius:12px;background:linear-gradient(135deg,#FF8568,#F0664A);border:none;color:#ffffff;font-size:14.5px;font-weight:800;cursor:pointer}
+.dict-mine{display:block;width:100%;margin-top:10px;padding:13px;border-radius:12px;background:#FFF1E9;border:1.5px solid #FBD2BF;color:#D9573A;font-size:14px;font-weight:800;cursor:pointer}
+.dict-mine.on{background:#E9F8EF;border-color:#BFE6CE;color:#2E9A5E}
 .dict-ask:active{transform:scale(.99)}
 .ask-u{align-self:flex-end;max-width:82%;background:var(--jade);color:#ffffff;padding:10px 14px;border-radius:15px 15px 4px 15px;font-size:14.5px;line-height:1.45}
 .ask-a{align-self:flex-start;max-width:88%;background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 14px;border-radius:15px 15px 15px 4px;font-size:14.5px;line-height:1.55;white-space:pre-wrap}
@@ -1934,7 +1936,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.78.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.79.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5102,15 +5104,25 @@ async function generateVocab(){
   $("#vbBarFill").style.width="0%"; $("#vbProgTxt").textContent="";
   // 1) 프리페치된 세트 있으면 즉시 사용
   let set=takeFromBankFresh(theme.id);
-  if(set && set.length){ vocabWords=fillVocabSet(set); vbIdx=0; markVocabSeen(vocabWords); showVocabCard(); }
+  if(set && set.length){ vocabWords=prependMyWords(fillVocabSet(set)); vbIdx=0; markVocabSeen(vocabWords); myWordsMarkStudied(vocabWords); showVocabCard(); }
   else {
     // 2) 캐시 없음 → 기다리지 말고 레벨맞춤 스타터를 0초에 띄움 (앱 끄지 않게)
-    vocabWords=starterSet(); vbIdx=0; markVocabSeen(vocabWords); showVocabCard();
+    vocabWords=prependMyWords(starterSet()); vbIdx=0; markVocabSeen(vocabWords); myWordsMarkStudied(vocabWords); showVocabCard();
   }
   // 3) 백그라운드로 다음 세트들 미리 생성 (다음 진입은 즉시 AI 단어)
   prefetchVocab(theme);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
+}
+// 내 단어장 단어를 세트 맨 앞에 끼움 (중복 제거, 세트당 최대 3개 — 테마 학습도 유지)
+function prependMyWords(set){
+  set=set||[];
+  const mine=myWordsForStudy(3);
+  if(!mine.length) return set;
+  const haveK=new Set(set.map(w=>dictKey(w&&w.word)));
+  const add=mine.filter(w=>!haveK.has(dictKey(w.word)));
+  if(!add.length) return set;
+  return add.concat(set);
 }
 // 최근 본 단어 추적 (반복 방지) — localStorage 영속화로 앱 재시작에도 유지
 let vocabSeenRecent=(function(){ try{ return hGet("speakingroom:vseen",[])||[]; }catch(e){ return []; } })();
@@ -8795,6 +8807,41 @@ function dictKey(s){ return String(s||"").toLowerCase().replace(/[^a-z' ]/g,"").
 // 영구 캐시 (AI 결과 저장 → 다음엔 로컬 속도)
 function dictCacheGet(k){ try{ return (hGet("speakingroom:dictcache",{})||{})[k]||null; }catch(e){ return null; } }
 function dictCacheSet(k,v){ try{ const c=hGet("speakingroom:dictcache",{})||{}; c[k]=v; const keys=Object.keys(c); if(keys.length>800){ delete c[keys[0]]; } hSet("speakingroom:dictcache",c); }catch(e){} }
+
+/* ===== 📒 내 단어장 — 사용자가 모르는 단어를 직접 추가, 단어 공부에서 우선 등장 ===== */
+const MYWORDS_KEY="speakingroom:mywords";
+function myWordsAll(){ try{ return hGet(MYWORDS_KEY,[])||[]; }catch(e){ return []; } }
+function myWordsHas(term){ const k=dictKey(term); return myWordsAll().some(w=>dictKey(w.word)===k); }
+function myWordsAdd(term, ko, ex){
+  const k=dictKey(term); if(!k) return false;
+  let list=myWordsAll();
+  if(list.some(w=>dictKey(w.word)===k)) return false;   // 중복 방지
+  list.push({ word:term.trim(), ko:(ko||"").trim(), ex:(ex&&ex.length?ex.slice(0,3):[]), ts:Date.now(), studied:0 });
+  if(list.length>500) list=list.slice(-500);
+  hSet(MYWORDS_KEY, list);
+  return true;
+}
+function myWordsRemove(term){
+  const k=dictKey(term);
+  hSet(MYWORDS_KEY, myWordsAll().filter(w=>dictKey(w.word)!==k));
+}
+// 학습용: 아직 충분히 안 본 내 단어를 우선순위로 (오래된 것 먼저, 적게 본 것 먼저)
+function myWordsForStudy(limit){
+  const list=myWordsAll().slice();
+  list.sort((a,b)=>(a.studied||0)-(b.studied||0) || (a.ts||0)-(b.ts||0));
+  return list.slice(0, limit||6).map(w=>({
+    word:w.word, ko:w.ko||"", diff:2, _mine:true,
+    examples:(w.ex||[]).map(e=>typeof e==="string"?{en:e,ko:""}:e)
+  }));
+}
+function myWordsMarkStudied(words){
+  try{
+    const studied=new Set((words||[]).filter(w=>w&&w._mine).map(w=>dictKey(w.word)));
+    if(!studied.size) return;
+    const list=myWordsAll().map(w=>{ if(studied.has(dictKey(w.word))) w.studied=(w.studied||0)+1; return w; });
+    hSet(MYWORDS_KEY, list);
+  }catch(e){}
+}
 // 청크 DB에서 찾기 (CORE_PHRASES 재활용)
 function lookupChunk(text){
   const t=dictKey(text);
@@ -8906,6 +8953,7 @@ function dictRenderPopup(d){
       ${(d.ex&&d.ex.length)?`<div class="dict-sec">예문</div>${d.ex.slice(0,3).map(e=>`<button class="dict-ex" data-say="${escapeAttr(e)}">${escapeHtml(e)} 🔊</button>`).join("")}`:""}
       ${(d.rel&&d.rel.length)?`<div class="dict-sec">관련 표현</div><div class="dict-rel">${d.rel.map(r=>`<span class="dict-relchip" data-rel="${escapeAttr(r)}">${escapeHtml(r)}</span>`).join("")}</div>`:""}
       ${(d.src==="local"&&(!d.ex||!d.ex.length)&&d.ko!=="…")?`<button class="dict-more" data-more="${escapeAttr(d.term)}">＋ 예문·설명 더 보기 (AI)</button>`:""}
+      ${(d.src!=="loading"&&d.ko&&d.ko!=="…")?`<button class="dict-mine" data-mine="${escapeAttr(d.term)}">${myWordsHas(d.term)?"✓ 내 단어장에 있음":"📒 내 단어장에 추가"}</button>`:""}
       <button class="dict-ask" data-ask="${escapeAttr(d.term)}">💬 AI에게 질문하기</button>
       <div class="dict-src">${d.src==="local"?"📖 사전":d.src==="cache"?"📖 저장됨":d.src==="loading"?"⏳ 찾는 중…":"✨ AI"}</div>
     </div>`;
@@ -8915,6 +8963,11 @@ function dictRenderPopup(d){
   pop.querySelectorAll(".dict-relchip").forEach(b=>{ b.onclick=()=>dictShow(null,b.dataset.rel); });
   const more=pop.querySelector(".dict-more"); if(more) more.onclick=()=>{ more.textContent="찾는 중…"; more.disabled=true; dictAILookup(more.dataset.more); };
   const ask=pop.querySelector(".dict-ask"); if(ask) ask.onclick=()=>{ openAskAI(ask.dataset.ask, (d.ex&&d.ex[0])||""); };
+  const mine=pop.querySelector(".dict-mine"); if(mine) mine.onclick=()=>{
+    const term=mine.dataset.mine;
+    if(myWordsHas(term)){ myWordsRemove(term); mine.textContent="📒 내 단어장에 추가"; mine.classList.remove("on"); cheatToast("내 단어장에서 뺐어요"); }
+    else { const exs=(d.ex||[]).map(e=>typeof e==="string"?e:(e&&e.en)||"").filter(Boolean); myWordsAdd(term, d.ko||"", exs); mine.textContent="✓ 내 단어장에 있음"; mine.classList.add("on"); cheatToast("내 단어장에 담았어요 · 단어 공부에서 나와요"); }
+  };
   if(d.src!=="loading"){ try{ speakEn(d.term); }catch(e){} }
 }
 // 출제 선택기: 연령/레벨/주제로 3~N개만 — 미능동 우선, 셔플
