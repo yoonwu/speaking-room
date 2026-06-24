@@ -3657,8 +3657,9 @@ levelCap(),
   }
   fb._active=becameActive;
   if(loRound===1){
-    if(!answer){ awardXP("output",3,"도전!","oe:"+loRound); }
-    else { awardXP("output", fb.communicated?10:5, fb.communicated?"의사소통 성공":"시도", "oe:a"); if(fb.communicated && elapsed<5) awardXP("output",5,"빠른 인출 ⚡"); }
+    if(!answer){ awardXP("output",2,"참여","oe:"+loRound); }   // 말 안 함 = 참여만(작게)
+    else if(fb.communicated){ awardXP("output", 10, "✅ 의사소통 성공", "oe:a"); if(elapsed<3) awardXP("output",6,"⚡ 3초 인출!"); else if(elapsed<5) awardXP("output",3,"빠른 인출"); }
+    else { awardXP("output", 3, "시도 (다시 도전)", "oe:a"); }   // 시도했지만 안 통함 = 작게
     bumpCount&&bumpCount("talk"); questBump&&questBump("talk");
   } else if(answer && fb.communicated){ awardXP("output",10,"다른 상황 재사용 ✅","oe:b"); }
   if(fb._active) awardXP("output",25,"💎 능동 어휘!");
@@ -11117,7 +11118,7 @@ function autoDrillDone(){
   const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
   const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
   const autoNow=autoChunkCount();
-  try{ awardXP("output", Math.max(8, perfect*8+ok*3), "자동화 드릴", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
+  try{ const earned=perfect*8+ok*3; awardXP("output", earned>0?earned:3, earned>0?"자동화 드릴 ✅":"자동화 참여", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
   $("#sprintScroll").style.background="";
   $("#sprintScroll").innerHTML=`<div class="auto-done">
     <div class="em">⚡</div>
@@ -12105,7 +12106,7 @@ async function endAndEvaluate(){
       const transcript=state.convo.map(m=>(m.role==="user"?"Learner: ":"Other: ")+m.text).join("\n");
       const sys=[
 "You are evaluating a Korean learner's performance in a SURVIVAL simulation: "+scnDesc(),
-"SUCCESS = did they SOLVE the real problem? Grammar is secondary. Be encouraging but honest.",
+"SUCCESS = did they SOLVE the real problem? Grammar is secondary. Be warm in tone, but score HONESTLY — if they barely communicated or didn't solve it, the scores must reflect that. Do not inflate scores for effort alone; truthful scores help them improve.",
 "Give a SURVIVAL REPORT with four 0-100 sub-scores:",
 "- communication: did their meaning get across",
 "- problem_solving: did they actually move toward solving the problem / get their need met",
@@ -12114,7 +12115,7 @@ async function endAndEvaluate(){
 "Also: solved = true/false (did they ultimately solve it). Pick the 3 most useful survival expressions from THIS situation with short Korean meanings.",
 'Return ONLY JSON: {"communication":<0-100>,"problem_solving":<0-100>,"confidence":<0-100>,"recovery":<0-100>,"solved":true or false,"ko":"한 줄 한국어 총평","phrases":[{"en":"","ko":""},{"en":"","ko":""},{"en":"","ko":""}]}'
       ].join("\n");
-      let r={communication:70,problem_solving:70,confidence:70,recovery:70,solved:true,ko:"",phrases:[]};
+      let r={communication:55,problem_solving:55,confidence:60,recovery:55,solved:false,ko:"",phrases:[]};
       try{ const d=await callClaude(sys,[{role:"user",content:transcript}]); const o=parseJSON(extractText(d)); r=Object.assign(r,o); }catch(e){}
       if(t) t.classList.remove("show");
       const clamp=x=>Math.max(0,Math.min(100,Math.round(x||0)));
@@ -12127,10 +12128,13 @@ async function endAndEvaluate(){
       if(overall>=60){ const dx=dailyExpr(); if(avRetrieve(dx.en, dx.ko, "sv:"+state.scn.id)) active++; }
       if(saved){ renderNotes&&renderNotes(); saveNotes&&saveNotes(); refreshRvBanner&&refreshRvBanner(); }
       bumpCount("talk");
-      awardXP("survival",15,"실전 완료","sv:done:"+state.scn.id);
-      const tier = overall>=90?40: overall>=80?25: overall>=70?15: overall>=60?10:5;
-      awardXP("survival",tier,"생존 점수 "+overall);
-      if(rec>=70) awardXP("survival",15,"혼란 회복 성공 🔄");
+      // 보상 정직화: '참여'와 '성취'를 분리. 통하지 않았으면 큰 보상 없음.
+      awardXP("survival",4,"실전 도전 (참여)","sv:done:"+state.scn.id);  // 참여 보상(작게, 명확히)
+      // 성취 보상: 실제로 통한 만큼만. 60 미만이면 0.
+      const tier = overall>=90?40: overall>=80?25: overall>=70?15: overall>=60?8:0;
+      if(tier>0) awardXP("survival",tier,"✅ 실전 통함 "+overall);
+      if(r.solved) awardXP("survival",12,"🟢 문제 해결!");          // 진짜 해결했을 때만
+      if(rec>=70 && overall>=60) awardXP("survival",10,"혼란 회복 🔄"); // 회복도 통했을 때만
       questBump("survival");
       goToSetup();
       const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#FF8568':v>=45?'#e6ad4a':'#e0533f'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
@@ -12148,7 +12152,7 @@ async function endAndEvaluate(){
     xpToast(0); const t=$("#xpToast"); if(t){ t.innerHTML="AI가 채점 중…"; t.classList.add("show"); }
     const transcript=state.convo.map(m=>(m.role==="user"?"Learner: ":"Coach: ")+m.text).join("\n");
     const sys=[
-"You are a kind English tutor. Score the LEARNER's spoken English in this role-play from 1 to 20, considering their level ("+state.level+"): effort, range of expressions, accuracy, and natural flow. Be encouraging — a learner who genuinely tried gets a fair score, never harsh.",
+"You are an honest but warm English tutor. Score the LEARNER's spoken English in this role-play from 1 to 20, considering their level ("+state.level+"): did their meaning actually get across, range of expressions, accuracy, natural flow. Be HONEST — score what actually happened, not effort alone. A learner who barely communicated should get a low score so they know what to work on; a learner who truly got their meaning across gets a high score. Honesty helps them improve. Keep the tone kind in the comment, but the number must be truthful.",
 'Return ONLY JSON: {"score": <1-20 integer>, "ko": "한 줄 칭찬과 개선 팁 (한국어)"}'
     ].join("\n");
     let score=10, ko="";
