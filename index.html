@@ -9525,17 +9525,22 @@ function blDone(){
 }
 // 🎯 완료 후 '오늘 블록 실전에서 써먹기' — 오늘 블록 + 기본 블록을 타겟으로 짧은 실전대화
 function startRealUseForChunk(pid){
-  // 타겟 블록 = 방금 배운 블록(pid) + 기본 3개(can_i_get/do_you_have/where_is) 중 소개된 것
-  const targets=[];
-  try{
-    const p=CORE_PHRASES.find(x=>x.id===pid);
-    if(p) targets.push({id:"core:"+p.id, pattern:p.phrase});
-  }catch(e){}
+  // 타겟 = 오늘 블록 + (잊을 때쯤 된 due/약한 블록 우선) + 기본 블록 보충
+  // → 실전 대화가 자동으로 옛날 블록을 다시 꺼내게 함 (사용자에겐 '복습'이 아니라 그냥 실전)
+  const targets=[]; const seen={};
+  const add=(id,pattern)=>{ const k=id; if(!k||seen[k]) return; if(targets.length>=4) return; seen[k]=1; targets.push({id, pattern}); };
+  // 1) 오늘 배운 블록
+  try{ const p=CORE_PHRASES.find(x=>x.id===pid); if(p) add("core:"+p.id, p.phrase); }catch(e){}
   try{
     const s=bleGetState();
-    ["can_i_get","do_you_have","where_is"].forEach(id=>{
-      if(s[id]&&s[id].introducedAt && BLE_BY_ID[id]) targets.push({id:"ble:"+id, pattern:BLE_BY_ID[id].block});
-    });
+    // 2) due 블록 (복습 시점 지남) — 잊을 때쯤 된 것 우선
+    try{ getDueReviewBlocks().forEach(b=>{ if(BLE_BY_ID[b.id]) add("ble:"+b.id, BLE_BY_ID[b.id].block); }); }catch(e){}
+    // 3) 약한 블록 (연속 실패 / quick check 실패)
+    BLE_BLOCKS.forEach(b=>{ const st=s[b.id]; if(st&&st.introducedAt && ((st.consecFails||0)>0 || st.quickCheckFailed) && BLE_BY_ID[b.id]) add("ble:"+b.id, BLE_BY_ID[b.id].block); });
+    // 4) 기본 블록 보충 (아직 4개 안 차면)
+    ["can_i_get","do_you_have","where_is"].forEach(id=>{ if(s[id]&&s[id].introducedAt && BLE_BY_ID[id]) add("ble:"+id, BLE_BY_ID[id].block); });
+    // 5) 그래도 부족하면 소개된 아무 블록
+    if(targets.length<3){ BLE_BLOCKS.forEach(b=>{ if(s[b.id]&&s[b.id].introducedAt && BLE_BY_ID[b.id]) add("ble:"+b.id, BLE_BY_ID[b.id].block); }); }
   }catch(e){}
   // 상황: 블록 태그에 맞는 SURVIVAL 하나 고르기 (없으면 무난한 카페/호텔류)
   let scn=null;
