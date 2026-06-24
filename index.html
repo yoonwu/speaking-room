@@ -1879,7 +1879,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.55.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.56.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7753,7 +7753,7 @@ function bleSummary(){
       </div>
       <div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:14px;padding:13px 16px;margin-bottom:12px;text-align:left">
         <div style="font-size:14px;font-weight:900;color:#4A372F">🔁 본격적으로 학습하기</div>
-        <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:3px">5개 블록을 섞어서 상황에 맞게 꺼내는 훈련입니다. 틀린 블록은 다시 나오고, 느린 블록은 더 빠르게 연습해요.</div>
+        <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:3px">${blocks.length}개 블록을 섞어서 상황에 맞게 꺼내는 훈련입니다. 틀린 블록은 다시 나오고, 막혔던 블록은 더 집중해서 연습해요.</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
         <button class="sh-next" id="bleToDeep" style="margin:0">🔁 본격적으로 학습하기 →</button>
@@ -8310,7 +8310,7 @@ function bleOpenHub(){
      <div class="hub-grab"></div>
      <div style="display:flex;align-items:flex-end;gap:9px;margin-bottom:3px">
        <div style="width:42px;height:42px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:22px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)">🦊</div>
-       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:10px 14px;font-size:13.5px;color:#5A463C;font-weight:600;line-height:1.45">${introDone?"5개 블록을 섞어서 상황에 맞게 꺼내볼까요?":"먼저 5개 블록을 짧게 익혀요. 그다음 섞어서 연습!"}</div>
+       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:10px 14px;font-size:13.5px;color:#5A463C;font-weight:600;line-height:1.45">${introDone?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`먼저 ${setBlocks.length}개 블록을 짧게 익혀요. 그다음 섞어서 연습!`}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:14px 0 16px">
        <div class="bl-sumcell"><b style="color:#F0664A">${introN}/${setBlocks.length}</b><i style="color:#8A6F62">소개됨</i></div>
@@ -8328,8 +8328,8 @@ function bleOpenHub(){
          </div>
          <div style="font-size:26px;color:#fff">${introDone?"✓":"🧱"}</div>
        </div>
-       <div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:11px">${introDone?"5개 블록 소개 완료 — 다시 보기":"5개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요"}</div>
-       <div style="display:block;width:100%;text-align:center;margin-top:14px;background:rgba(255,255,255,.95);color:#F0664A;font-size:16px;font-weight:900;border-radius:14px;padding:14px">${introDone?"다시 익히기 →":"5개 블록 빠르게 배우기 →"}</div>
+       <div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:11px">${introDone?`${setBlocks.length}개 블록 소개 완료 — 다시 보기`:`${setBlocks.length}개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요`}</div>
+       <div style="display:block;width:100%;text-align:center;margin-top:14px;background:rgba(255,255,255,.95);color:#F0664A;font-size:16px;font-weight:900;border-radius:14px;padding:14px">${introDone?"다시 익히기 →":`${setBlocks.length}개 블록 빠르게 배우기 →`}</div>
      </button>
 
      <!-- 영역 2: 본격 학습 (메인) -->
@@ -8338,7 +8338,7 @@ function bleOpenHub(){
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
            <div style="font-size:19px;font-weight:900;color:#4A372F">🔁 상황 → 블록 선택 → 말하기</div>
-           <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:4px;max-width:235px">${canDeep?"5개 블록을 섞어서 상황에 맞게 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 빠르게.":"먼저 5개 블록 세트를 소개받으세요."}</div>
+           <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:4px;max-width:235px">${canDeep?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 집중.`:"먼저 블록 세트를 소개받으세요."}</div>
          </div>
          <div style="font-size:30px">${canDeep?"💪":"🔒"}</div>
        </div>
