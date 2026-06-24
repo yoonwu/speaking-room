@@ -5848,6 +5848,18 @@ function micBeep(){
     if(navigator.vibrate) navigator.vibrate(30);
   }catch(e){}
 }
+// 마이크 종료음: 시작음(상승)과 반대로 하강 톤 → 녹음 끝났음을 청각적으로 구분
+function micBeepEnd(){
+  try{
+    _ac = _ac || new (window.AudioContext||window.webkitAudioContext)();
+    if(_ac.state==="suspended") _ac.resume();
+    const o=_ac.createOscillator(), g=_ac.createGain(), t=_ac.currentTime;
+    o.type="sine"; o.frequency.setValueAtTime(1320,t); o.frequency.setValueAtTime(660,t+0.09);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.30);
+    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.32);
+    if(navigator.vibrate) navigator.vibrate([20,40,20]);
+  }catch(e){}
+}
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
 const VAD_OPTS={maxMs:12000, silenceMs:300, minSpeechMs:280, thresh:0.02};
 function attachVAD(stream, onStop, opts){
@@ -5892,6 +5904,7 @@ async function micFillCb(cb){
     const am=qzMR.mimeType||mime;
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
+      micBeepEnd();
       meta.stopAt=Date.now();
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb("", meta); return; }
@@ -5919,6 +5932,7 @@ async function micFill(inp, btn, restoreLabel){
     const am=qzMR.mimeType||mime;
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
+      micBeepEnd();
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false; btn.textContent=lbl;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
       btn.textContent="🔄";
@@ -6408,6 +6422,7 @@ async function toggleDrillMic(){
     const actualMime=drillMR.mimeType||mimeType;
     drillMR.ondataavailable=e=>{ if(e.data.size>0) drillChunks.push(e.data); };
     drillMR.onstop=async()=>{
+      micBeepEnd();
       stream.getTracks().forEach(t=>t.stop());
       drillRecording=false;
       const btn=$("#drillSpeak"); if(btn){ btn.textContent="🔄 채점 중…"; btn.disabled=true; }
@@ -6589,6 +6604,7 @@ function phMic(ref, btn, cb){
     const am=phMR.mimeType||mime; phRec=true; if(btn) btn.classList.add("rec");
     phMR.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
     phMR.onstop=async()=>{
+      micBeepEnd();
       stream.getTracks().forEach(t=>t.stop()); phRec=false; if(btn) btn.classList.remove("rec");
       const raw=new Blob(chunks,{type:am}); if(raw.size<1000){ cb(null); return; }
       try{ const wav=await recordedToWav(raw);
