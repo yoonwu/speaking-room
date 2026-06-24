@@ -1872,7 +1872,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.52.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.53.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10004,18 +10004,18 @@ const FIRSTRUN_BLOCKS=[
       {situation:"카페에서 커피 있냐고 물어보세요.", target:"커피 있어요?", answer:"Do you have coffee?", key:"coffee"},
       {situation:"식당에서 우유 있냐고 물어보세요.", target:"우유 있어요?", answer:"Do you have milk?", key:"milk"},
     ]},
-  { id:"i_think", block:"I think so", ko:"그런 것 같아요",
+  { id:"where_is", block:"Where is...", ko:"~ 어디예요?",
     items:[
-      {situation:"상대 말에 동의하며 \"그런 것 같아요\"라고 해보세요.", target:"그런 것 같아요.", answer:"I think so.", key:"so"},
-      {situation:"이번엔 \"아닌 것 같아요\"라고 해보세요.", target:"아닌 것 같아요.", answer:"I don't think so.", key:"think"},
-      {situation:"\"저도 그런 것 같아요\"라고 해보세요.", target:"저도 그런 것 같아요.", answer:"I think so too.", key:"too"},
+      {situation:"화장실이 어디냐고 물어보세요.", target:"화장실 어디예요?", answer:"Where is the bathroom?", key:"bathroom"},
+      {situation:"역이 어디냐고 물어보세요.", target:"역 어디예요?", answer:"Where is the station?", key:"station"},
+      {situation:"출구가 어디냐고 물어보세요.", target:"출구 어디예요?", answer:"Where is the exit?", key:"exit"},
     ]},
 ];
 // 랜덤 믹스 3개 — 3블록 중 골라 꺼내기 (can i get / do you have / i think)
 const FIRSTRUN_MIX=[
   {situation:"카페에서 물 좀 달라고 해보세요.", target:"물 좀 주시겠어요?", answer:"Can I get some water?", key:"water", block:"Can I get..."},
   {situation:"커피 있냐고 물어보세요.", target:"커피 있어요?", answer:"Do you have coffee?", key:"coffee", block:"Do you have..."},
-  {situation:"상대 말에 동의하며 \"그런 것 같아요\"라고 해보세요.", target:"그런 것 같아요.", answer:"I think so.", key:"so", block:"I think..."},
+  {situation:"화장실이 어디냐고 물어보세요.", target:"화장실 어디예요?", answer:"Where is the bathroom?", key:"bathroom", block:"Where is..."},
 ];
 
 
