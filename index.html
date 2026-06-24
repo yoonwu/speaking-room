@@ -1872,7 +1872,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.48.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.49.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3023,7 +3023,7 @@ function renderListenPlay(){
     <button class="ls-skip lp2-skip" id="lsSkip">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
-  setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
+  setTimeout(()=>lsSpeak(false),300);   // 워밍업 여유 (앞소리 잘림 방지) — 테스트: 300ms
   $("#lsPlay").onclick=()=>lsSpeak(false);
   $("#lsSlow").onclick=()=>lsSpeak(true);
   $("#lsToDict").onclick=renderListenDictation;
