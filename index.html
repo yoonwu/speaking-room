@@ -1195,14 +1195,35 @@ body{background:var(--paper)!important;color:var(--text)}
 .eng-tx i{color:#B0958A!important}
 .eng-ar{background:#FFE0D2!important;color:#F0664A!important;box-shadow:none!important}
 #engIn .eng-emo,#vocabCard .eng-emo{background:#FFE0D2!important}
-#engOut .eng-emo{background:#FFD2C0!important}
+#engOut .eng-emo{background:#D4F1E5!important}
 #engReal .eng-emo,#boosterCard .eng-emo{background:#DCF1E8!important}
 #engSprint .eng-emo{background:#FFEBC9!important}
-#chunkCard .eng-emo{background:#EAE2FB!important}
+#chunkCard .eng-emo{background:#E6DCFB!important}
 #ageToggle{display:none!important}
 .worldlabel,.seclabel{color:#8A6F62!important;opacity:1!important}
 .kidworld .eng-tx i,.kidworld #kidCard .kt i{color:#B0958A!important}
 .kidworld .worldlabel{color:#C77F26!important}
+
+/* ===== 🎚️ 홈 카드 위계: 핵심(블록영어·스피킹) vs 보조(단어·듣기) ===== */
+.enghero{grid-template-columns:1fr;gap:9px;margin-bottom:9px}   /* 핵심 = 풀폭 한 줄씩 */
+.engsub{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px} /* 보조 = 반반 */
+/* 핵심 카드: 가로형으로 펴서 존재감 ↑ */
+.enghero .eng{flex-direction:row;align-items:center;gap:13px;min-height:0;padding:15px 16px}
+.enghero .eng-emo{width:50px;height:50px;font-size:27px}
+.enghero .eng-tx b{font-size:17px}
+.enghero .eng-tx i{font-size:11px;margin-top:2px}
+.enghero .eng-ar{display:flex!important}
+/* 핵심 컬러: 은은하게 차등 (너무 진하지 않게) */
+.eng-core-chunk{background:linear-gradient(135deg,#F3EEFF,#FBF7F2)!important;border:1.5px solid #DAD0F2!important;box-shadow:0 10px 22px -12px rgba(120,95,200,.32)!important}
+.eng-core-chunk .eng-emo{background:#E6DCFB!important}
+.eng-core-speak{background:linear-gradient(135deg,#E9FBF3,#FBF8F2)!important;border:1.5px solid #C4E9D8!important;box-shadow:0 10px 22px -12px rgba(40,175,130,.30)!important}
+.eng-core-speak .eng-emo{background:#D4F1E5!important}
+/* 보조 카드: 기존 크림 톤다운 + 살짝 작게 (부가 느낌) */
+.engsub .eng-side{background:#FBF6F1!important;border:1px solid #EEE2D8!important;box-shadow:0 6px 14px -12px rgba(150,120,95,.25)!important}
+.engsub .eng-side .eng-tx b{font-size:15px;color:#5C4D44!important}
+.engsub .eng-side .eng-tx i{font-size:10px}
+.engsub .eng-side .eng-emo{width:42px;height:42px;font-size:23px;background:#F1E7DE!important}
+
 
 /* — kidCard (사운드 아카데미) — */
 #kidCard{background:#FFF7F0!important;border:1px solid #F6D8C8!important;box-shadow:0 8px 18px -12px rgba(214,120,70,.30)!important}
@@ -1662,28 +1683,30 @@ body{background:var(--paper)!important;color:var(--text)}
         </div>
         <!-- 🗺️ 모험 지도 -->
         <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
-        <div class="engrid">
-        <button class="eng" id="chunkCard">
+        <div class="engrid enghero">
+        <button class="eng eng-core eng-core-chunk" id="chunkCard">
           <span class="eng-emo">🧱</span>
           <span class="eng-tx"><b>블록영어</b><i>자주 쓰는 말 덩어리를 배워요</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <button class="eng eng-out" id="engOut">
+        <button class="eng eng-out eng-core eng-core-speak" id="engOut">
           <span class="help-q" data-tut="output">?</span>
           <span class="eng-emo">⚔️</span>
           <span class="eng-tx"><b>스피킹 훈련장</b><i>영어로 꺼내기 · 스피드런 · 실전회화</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <button class="eng" id="vocabCard">
+        </div>
+        <div class="engrid engsub">
+        <button class="eng eng-side" id="vocabCard">
           <span class="help-q" data-tut="vocab">?</span>
           <span class="eng-emo">💬</span>
-          <span class="eng-tx"><b>단어</b><i>말하기에 필요한 재료를 익혀요</i></span>
+          <span class="eng-tx"><b>단어</b><i>말하기 재료 익히기</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <button class="eng eng-in" id="engListen">
+        <button class="eng eng-in eng-side" id="engListen">
           <span class="help-q" data-tut="listen">?</span>
           <span class="eng-emo">👂</span>
-          <span class="eng-tx"><b>듣기 훈련장</b><i>상황 듣기 · 연음 부스터</i></span>
+          <span class="eng-tx"><b>듣기 훈련장</b><i>상황 듣기 · 연음</i></span>
           <span class="eng-ar">›</span>
         </button>
         </div>
