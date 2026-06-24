@@ -1207,19 +1207,20 @@ body{background:var(--paper)!important;color:var(--text)}
 /* ===== 🎚️ 홈 카드 위계: 핵심(블록영어·스피킹) vs 보조(단어·듣기) ===== */
 .enghero{grid-template-columns:1fr;gap:9px;margin-bottom:9px}   /* 핵심 = 풀폭 한 줄씩 */
 .engsub{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px} /* 보조 = 반반 */
+.enghero .eng .help-q{display:none!important}   /* 핵심 카드엔 도움말 물음표 숨김 */
 /* 핵심 카드: 가로형으로 펴서 존재감 ↑ */
 .enghero .eng{flex-direction:row;align-items:center;gap:13px;min-height:0;padding:15px 16px}
 .enghero .eng-emo{width:50px;height:50px;font-size:27px}
 .enghero .eng-tx b{font-size:17px}
 .enghero .eng-tx i{font-size:11px;margin-top:2px}
 .enghero .eng-ar{display:flex!important}
-/* 핵심 컬러: 은은하게 차등 (너무 진하지 않게) */
-.eng-core-chunk{background:linear-gradient(135deg,#F3EEFF,#FBF7F2)!important;border:1.5px solid #DAD0F2!important;box-shadow:0 10px 22px -12px rgba(120,95,200,.32)!important}
-.eng-core-chunk .eng-emo{background:#E6DCFB!important}
-.eng-core-speak{background:linear-gradient(135deg,#E9FBF3,#FBF8F2)!important;border:1.5px solid #C4E9D8!important;box-shadow:0 10px 22px -12px rgba(40,175,130,.30)!important}
-.eng-core-speak .eng-emo{background:#D4F1E5!important}
+/* 핵심 컬러: 은은하게 차등 (특이도 높여 기본 크림색 덮음) */
+.engrid.enghero .eng.eng-core-chunk{background:linear-gradient(135deg,#EDE4FF,#F6EEFF)!important;border:1.5px solid #CFC0EE!important;box-shadow:0 10px 22px -12px rgba(120,95,200,.34)!important}
+.engrid.enghero .eng-core-chunk .eng-emo{background:#E2D5FA!important}
+.engrid.enghero .eng.eng-core-speak{background:linear-gradient(135deg,#DEF8EE,#EEFBF5)!important;border:1.5px solid #B5E4D2!important;box-shadow:0 10px 22px -12px rgba(40,175,130,.32)!important}
+.engrid.enghero .eng-core-speak .eng-emo{background:#CCEEDF!important}
 /* 보조 카드: 기존 크림 톤다운 + 살짝 작게 (부가 느낌) */
-.engsub .eng-side{background:#FBF6F1!important;border:1px solid #EEE2D8!important;box-shadow:0 6px 14px -12px rgba(150,120,95,.25)!important}
+.engrid.engsub .eng.eng-side{background:#FBF6F1!important;border:1px solid #EEE2D8!important;box-shadow:0 6px 14px -12px rgba(150,120,95,.25)!important}
 .engsub .eng-side .eng-tx b{font-size:15px;color:#5C4D44!important}
 .engsub .eng-side .eng-tx i{font-size:10px}
 .engsub .eng-side .eng-emo{width:42px;height:42px;font-size:23px;background:#F1E7DE!important}
