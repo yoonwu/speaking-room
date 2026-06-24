@@ -2506,7 +2506,7 @@ function buildSetup(){
 
   // 난이도 슬라이더 D1~D60
   const lr=$("#lvlRange");
-  if(lr){ lr.max=60; lr.value=diffLevel(); const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); };
+  if(lr){ lr.max=60; lr.value=diffLevel(); const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
     lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -11422,15 +11422,28 @@ const DAILY_EXPRESSIONS=[
  "pay_by_card_023","how_long_031","what_should_i_044","refund_035",
  "can_i_change_028","how_do_i_015"
 ];
+function dailyAllowedLevel(){
+  // 난이도 슬라이더(diffMacro 1~10) → 허용 블록 레벨(CORE_PHRASES level 1·2·3)
+  const m=diffMacro();
+  if(m<=2) return 1;        // 입문·기초 → level 1 블록만
+  if(m<=5) return 2;        // 초급~중급 → level ≤2
+  return 3;                 // 그 이상 → 전체
+}
 function dailyExpr(){
   const today=DAYN(); let d=hGet("speakingroom:daily",null);
+  const maxLv=dailyAllowedLevel();
   // 저장된 게 옛 형식(pid 없음)이거나 튜토 5블록이면 폐기하고 새로 뽑기
   const TUTOR=["can_i_get_002","do_you_have_005","i_need_004","could_you_003","i_think_022"];
   if(d && (!d.pid || TUTOR.indexOf(d.pid)>=0)) d=null;
+  // 저장된 오늘치가 현재 난이도 허용 레벨을 넘으면 폐기하고 다시 뽑기
+  if(d && d.pid){ const cp=CORE_PHRASES.find(x=>x.id===d.pid); if(cp && (cp.level||1)>maxLv) d=null; }
   if(!d || d.date!==today){
-    const pid=DAILY_EXPRESSIONS[today%DAILY_EXPRESSIONS.length];
+    // 난이도에 맞는 풀로 거른 뒤, 날짜 기반으로 하루 고정 선택
+    let pool=DAILY_EXPRESSIONS.filter(pid=>{ const cp=CORE_PHRASES.find(x=>x.id===pid); return cp ? (cp.level||1)<=maxLv : false; });
+    if(!pool.length) pool=DAILY_EXPRESSIONS.slice();   // 안전망: 비면 전체
+    const pid=pool[today%pool.length];
     const p=CORE_PHRASES.find(x=>x.id===pid) || CORE_PHRASES[0];
-    d={date:today, pid:p.id, en:p.phrase, ko:p.ko};
+    d={date:today, pid:p.id, en:p.phrase, ko:p.ko, lv:maxLv};
     hSet("speakingroom:daily",d); avSeen(p.phrase, p.ko);
   }
   try{ if(d&&d.en) reuseAdd(d.en, d.ko||"", "daily", "daily:"+today); }catch(e){}
