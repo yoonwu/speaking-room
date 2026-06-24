@@ -1872,7 +1872,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.49.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.50.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3023,7 +3023,7 @@ function renderListenPlay(){
     <button class="ls-skip lp2-skip" id="lsSkip">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
-  setTimeout(()=>lsSpeak(false),300);   // 워밍업 여유 (앞소리 잘림 방지) — 테스트: 300ms
+  setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
   $("#lsPlay").onclick=()=>lsSpeak(false);
   $("#lsSlow").onclick=()=>lsSpeak(true);
   $("#lsToDict").onclick=renderListenDictation;
@@ -5652,7 +5652,7 @@ function micBeep(){
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
-const VAD_OPTS={maxMs:12000, silenceMs:600, minSpeechMs:280, thresh:0.02};
+const VAD_OPTS={maxMs:12000, silenceMs:300, minSpeechMs:280, thresh:0.02};
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
@@ -5981,7 +5981,7 @@ async function toggleMic(){
     listening=true; micBtn.classList.add("live");
     micBeep();
     hint.textContent="🎤 듣는 중… 다 말하면 자동으로 끝나요";
-    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:600, minSpeechMs:280, thresh:0.02});
+    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:300, minSpeechMs:280, thresh:0.02});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
