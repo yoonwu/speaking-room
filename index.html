@@ -1872,7 +1872,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.47.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.48.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3844,14 +3844,19 @@ function speakEn(text){
   if(!TTS||!SSU) return;
   if(/[\uac00-\ud7a3]/.test(text)){ speakSmart(text); return; } // 한글 포함이면 한·영 자동 분리
   TTS.cancel();
-  const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
-  TTS.speak(u);
+  // Chrome/안드로이드 버그: cancel 직후 speak하면 첫 음절이 짤림 → 지연 후 재생
+  setTimeout(()=>{
+    const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
+    TTS.speak(u);
+  }, 130);
 }
 function speakKo(text){
   if(!TTS||!SSU) return;
   TTS.cancel();
-  const u=new SSU(text); if(koVoice) u.voice=koVoice; u.lang="ko-KR"; u.rate=0.98;
-  TTS.speak(u);
+  setTimeout(()=>{
+    const u=new SSU(text); if(koVoice) u.voice=koVoice; u.lang="ko-KR"; u.rate=0.98;
+    TTS.speak(u);
+  }, 130);
 }
 
 /* ---- speed drill ---- */
@@ -5860,7 +5865,8 @@ function speakSmart(text){
     if(ko){ if(koVoice) u.voice=koVoice; u.lang="ko-KR"; u.rate=0.98; }
     else { if(enVoice) u.voice=enVoice; u.lang="en-US"; u.rate=(typeof levelRate==="function")?levelRate(false):0.97; }
     u.onend=()=>setTimeout(go,70);
-    TTS.speak(u);
+    // 첫 세그먼트만 cancel 여파로 짤릴 수 있어 지연, 이후는 onend 체인이라 안전
+    if(i===1) setTimeout(()=>TTS.speak(u), 130); else TTS.speak(u);
   })();
 }
 function speak(text){ speakSmart(text); }
@@ -7302,10 +7308,12 @@ function bleSpeakAt(text, rate){
   if(!TTS||!SSU){ try{speakEn(text);}catch(e){} return; }
   if(/[\uac00-\ud7a3]/.test(text) && typeof speakSmart==="function"){ speakSmart(text); return; }
   TTS.cancel();
-  const u=new SSU(text);
-  if(typeof voiceA!=="undefined" && voiceA) u.voice=voiceA;
-  u.lang="en-US"; u.rate=rate||0.95;
-  TTS.speak(u);
+  setTimeout(()=>{
+    const u=new SSU(text);
+    if(typeof voiceA!=="undefined" && voiceA) u.voice=voiceA;
+    u.lang="en-US"; u.rate=rate||0.95;
+    TTS.speak(u);
+  }, 130);
 }
 function blePracticeWords(it){
   const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
@@ -9996,18 +10004,6 @@ const FIRSTRUN_BLOCKS=[
       {situation:"카페에서 커피 있냐고 물어보세요.", answer:"Do you have coffee?", key:"coffee"},
       {situation:"식당에서 우유 있냐고 물어보세요.", answer:"Do you have milk?", key:"milk"},
     ]},
-  { id:"i_need", block:"I need...", ko:"~이 필요해요",
-    items:[
-      {situation:"도움이 필요하다고 말해보세요.", answer:"I need help.", key:"help"},
-      {situation:"물이 필요하다고 말해보세요.", answer:"I need water.", key:"water"},
-      {situation:"시간이 좀 필요하다고 말해보세요.", answer:"I need time.", key:"time"},
-    ]},
-  { id:"could_you", block:"Could you...", ko:"~해 주시겠어요?",
-    items:[
-      {situation:"도와달라고 정중히 부탁해보세요.", answer:"Could you help me?", key:"help"},
-      {situation:"천천히 말해달라고 부탁해보세요.", answer:"Could you speak slowly?", key:"slowly"},
-      {situation:"기다려달라고 부탁해보세요.", answer:"Could you wait?", key:"wait"},
-    ]},
   { id:"i_think", block:"I think...", ko:"제 생각엔 ~",
     items:[
       {situation:"\"이거 좋은 것 같아요\"라고 말해보세요.", answer:"I think this is good.", key:"good"},
@@ -10015,11 +10011,11 @@ const FIRSTRUN_BLOCKS=[
       {situation:"\"맞는 것 같아요\"라고 말해보세요.", answer:"I think so.", key:"think"},
     ]},
 ];
-// 랜덤 믹스 3개 — 5블록 중 골라 꺼내기 (쉬운 난이도 + 관사 패턴 통일)
+// 랜덤 믹스 3개 — 3블록 중 골라 꺼내기 (can i get / do you have / i think)
 const FIRSTRUN_MIX=[
   {situation:"카페에서 물 좀 달라고 해보세요.", answer:"Can I get some water?", key:"water", block:"Can I get..."},
-  {situation:"도움이 필요하다고 말해보세요.", answer:"I need help.", key:"help", block:"I need..."},
   {situation:"커피 있냐고 물어보세요.", answer:"Do you have coffee?", key:"coffee", block:"Do you have..."},
+  {situation:"\"이거 좋은 것 같아요\"라고 말해보세요.", answer:"I think this is good.", key:"good", block:"I think..."},
 ];
 
 
@@ -10073,7 +10069,7 @@ function firstRunRender(){
     scroll.innerHTML=`<div class="auto-card" style="text-align:center">
       <div style="font-size:46px;margin-bottom:8px">🎲</div>
       <div style="font-size:21px;font-weight:950;color:#3A2D27;margin-bottom:8px">이번엔 섞어볼게요</div>
-      <div style="font-size:14px;color:#8A6F62;line-height:1.6;margin-bottom:18px">방금 배운 5개 중에서<br><b>골라서</b> 꺼내보세요. 이게 진짜 실전이에요.</div>
+      <div style="font-size:14px;color:#8A6F62;line-height:1.6;margin-bottom:18px">방금 배운 3개 중에서<br><b>골라서</b> 꺼내보세요. 이게 진짜 실전이에요.</div>
       <div class="auto-actions"><button class="auto-mic" id="frNext">해볼게요 →</button></div>
     </div>`;
     $("#frNext").onclick=()=>{ firstRun.idx++; firstRunRender(); };
@@ -10099,7 +10095,37 @@ function firstRunRender(){
     <div id="frTypeWrap"></div>
   </div>`;
   if(!it.hideAnswer){ try{ speakEn(it.answer); }catch(e){} }
-  let hintTimer=setTimeout(()=>{ try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){} }, 7000);
+  // 7초 후: 답을 바로 띄우지 않고 [💡 힌트] 버튼만 등장 (초보자가 스스로 떠올릴 시간 보장)
+  let frHintN=0;
+  function frHintStep(){
+    const ans=String(it.answer||"");
+    const words=ans.replace(/[?.!]/g,"").split(/\s+/).filter(Boolean);
+    frHintN++;
+    const stat=$("#frStat"); if(!stat) return;
+    if(frHintN===1){
+      // 1단계: 첫 단어만
+      stat.innerHTML=`💡 <b style="color:#F0664A">${escapeHtml(words[0]||"")}</b> … <span style="color:#B0958A">이렇게 시작해요</span>`;
+    }else if(frHintN===2 && words.length>2){
+      // 2단계: 앞 절반
+      const half=words.slice(0, Math.ceil(words.length/2)).join(" ");
+      stat.innerHTML=`💡 <b style="color:#F0664A">${escapeHtml(half)}</b> …`;
+    }else{
+      // 마지막: 전체 답 공개 + 읽어주기
+      stat.innerHTML=`💡 <b style="color:#F0664A">${escapeHtml(ans)}</b>`;
+      try{ speakEn(ans); }catch(e){}
+      const hb=$("#frHintBtn"); if(hb) hb.style.display="none";
+    }
+  }
+  let hintTimer=setTimeout(()=>{
+    const acts=document.querySelector("#sprintScroll .auto-actions");
+    if(acts && !document.getElementById("frHintBtn")){
+      const hb=document.createElement("button");
+      hb.id="frHintBtn"; hb.textContent="💡 힌트";
+      hb.style.cssText="margin-top:9px;width:100%;padding:11px;border-radius:13px;background:#FFF0E8;border:1px solid #FBD6C4;color:#C0653A;font-size:13.5px;font-weight:900;cursor:pointer";
+      hb.onclick=frHintStep;
+      acts.appendChild(hb);
+    }
+  }, 7000);
   const mic=$("#frMic");
   mic.onclick=()=>{
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
