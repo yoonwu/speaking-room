@@ -12178,9 +12178,14 @@ function resetLearningData(){
     danger:true,
     onOk:()=>{
       try{
-        // speakingroom:* 로 시작하는 모든 저장 키 삭제
+        // speakingroom:* + 온보딩/진행 플래그(prefix 없는 키)까지 전부 삭제
         const kill=[];
-        for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.indexOf("speakingroom:")===0) kill.push(k); }
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(!k) continue;
+          if(k.indexOf("speakingroom:")===0 || k.indexOf("dailyroom:")===0
+             || k==="firstrun_done" || k==="onboarding_v1_completed"){ kill.push(k); }
+        }
         kill.forEach(k=>localStorage.removeItem(k));
       }catch(e){}
       // 새로고침 → 온보딩부터 다시
