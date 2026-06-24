@@ -9506,6 +9506,65 @@ function ctScore(it, heard){
   setTimeout(()=>speakEn(it.en),120);
   setTimeout(()=>{ ctIdx++; ctNext(); }, 1100);
 }
+// ===== 🧱 블록 컬렉션 허브 — 완료 화면에서 자산감 + 다음 훈련 유도 =====
+function blockCollectionData(){
+  let learned=[], unlocked=[];
+  try{ learned=getLearnedBlocks()||[]; }catch(e){}
+  try{ unlocked=bleUnlockedBlocks()||[]; }catch(e){}
+  // 쌓은 블록 = 소개된(introducedAt) 블록
+  const s=(function(){ try{ return bleGetState(); }catch(e){ return {}; } })();
+  const introduced=BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].introducedAt);
+  // 자동화된 블록 = fast 이상 단계 (fastCount>=3 또는 stage fast/strong/ready)
+  const auto=introduced.filter(b=>{ const st=s[b.id]||{}; const stg=st.stage||""; return (st.fastCount||0)>=3 || stg==="fast"||stg==="strong"||stg==="ready_for_real"; });
+  // 복습 풀 = due + weak + 학습한 블록(중복 제거 느낌) — 섞어 말할 수 있는 양
+  let due=0; try{ due=(srsStats()||{}).due||0; }catch(e){}
+  const reviewPool=introduced.length; // 섞기 인출에 들어가는 블록 수 = 소개된 블록
+  // 상황 조합 = 블록 수 × 평균 상황(대략) — "여러 상황 섞기" 체감용
+  const ctxSum=introduced.reduce((a,b)=>a+((s[b.id]&&s[b.id].contextsUsed||[]).length),0);
+  const combos=Math.max(reviewPool, ctxSum);
+  return { introduced, auto, reviewPool, due, combos, count:introduced.length, autoCount:auto.length };
+}
+function blockCollectionHtml(){
+  const d=blockCollectionData();
+  if(d.count<=0) return "";
+  // 칩: 최근/대표 블록 4개 + 상태
+  const chips=d.introduced.slice(-4).reverse().map(b=>{
+    const st=(function(){ try{ return bleGetState()[b.id]||{}; }catch(e){ return {}; } })();
+    const stage=st.stage||"learning";
+    const label=BLE_STAGE_KO[stage]||"배우는 중";
+    const hot = (stage==="fast"||stage==="strong"||stage==="ready_for_real");
+    const col = hot?"#19a06b":((stage==="active")?"#C0653A":"#B98572");
+    const bg = hot?"rgba(25,160,107,.10)":"rgba(255,133,104,.10)";
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:${bg};border:1px solid ${hot?'rgba(25,160,107,.22)':'rgba(255,133,104,.2)'};border-radius:12px">
+      <span style="font-family:var(--serif);font-size:14.5px;color:#3A2D27;font-weight:700">${escapeHtml(b.block)}</span>
+      <span style="font-size:11px;font-weight:900;color:${col};white-space:nowrap">${label}</span>
+    </div>`;
+  }).join("");
+  const moreMsg = d.count<5
+    ? `하나 더 쌓으면 복습이 더 넓어져요.`
+    : `블록을 쌓을수록, 복습이 더 다양하고 실전처럼 변해요.`;
+  return `<div style="margin:18px 0 6px;text-align:left;background:rgba(255,255,255,.5);border:1px solid rgba(255,133,104,.18);border-radius:18px;padding:16px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:13px;font-weight:950;color:#3A2D27">🧱 내 블록 컬렉션</span>
+      <span style="font-size:11px;color:#B98572;font-weight:700">${escapeHtml(moreMsg)}</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="flex:1;text-align:center;background:rgba(255,133,104,.08);border-radius:12px;padding:10px 4px">
+        <div style="font-size:22px;font-weight:950;color:#F0664A;font-family:var(--serif)">${d.count}</div>
+        <div style="font-size:10.5px;color:#B98572;font-weight:800;margin-top:2px">쌓은 블록</div>
+      </div>
+      <div style="flex:1;text-align:center;background:rgba(25,160,107,.08);border-radius:12px;padding:10px 4px">
+        <div style="font-size:22px;font-weight:950;color:#19a06b;font-family:var(--serif)">${d.autoCount}</div>
+        <div style="font-size:10.5px;color:#7BA890;font-weight:800;margin-top:2px">입에 붙음</div>
+      </div>
+      <div style="flex:1;text-align:center;background:rgba(255,133,104,.08);border-radius:12px;padding:10px 4px">
+        <div style="font-size:22px;font-weight:950;color:#C0653A;font-family:var(--serif)">${d.reviewPool}</div>
+        <div style="font-size:10.5px;color:#B98572;font-weight:800;margin-top:2px">섞어 말하기</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px">${chips}</div>
+  </div>`;
+}
 function ctDone(){
   TTS&&TTS.cancel();
   const mastered = ctPass>=7;
@@ -9513,19 +9572,28 @@ function ctDone(){
   else { const w=weakGet(); if(w[ctPid]){ w[ctPid].miss=Math.max(1, 10-ctPass); weakSet(w); } }
   const xp = mastered? awardXP("output",60,"⭐ 블록 마스터!","chunkmaster") : awardXP("output",ctPass*5,"블록 훈련","chunk");
   const pct=Math.round(ctPass/ctItems.length*100);
+  const collHtml = mastered ? blockCollectionHtml() : "";
+  const canMix = (function(){ try{ return (bleUnlockedBlocks()||[]).length>0 || blockCollectionData().count>0; }catch(e){ return false; } })();
   $("#sprintScroll").innerHTML=`
    <div class="rv-done" style="max-width:440px"><div class="em">${mastered?"⭐":"💪"}</div>
-   <h2>${mastered?"블록 마스터!":"조금만 더!"}</h2>
+   <h2>${mastered?"오늘의 말문 열림!":"조금만 더!"}</h2>
    <p style="font-family:var(--serif);font-size:20px;color:var(--jade);margin:2px 0 4px">${escapeHtml(ctChunk)}</p>
    <p>${ctPass}/${ctItems.length} 통과 (${pct}%)${mastered?" · +60 XP ⭐":` · 7개 필요했어요`}</p>
-   ${mastered?`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">Seen → Recognized → Retrieved → <b style="color:var(--jade)">Mastered</b> ✓</div>`
-            :`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
-   <div class="blk-actions" style="max-width:340px">
-     <button class="blk-save" id="ctHome">홈으로</button>
-     <button class="blk-next" id="ctAgain">${mastered?"다른 청크":"다시 도전"}</button>
+   ${mastered?"":`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
+   ${collHtml}
+   <div class="blk-actions" style="max-width:340px;margin-top:16px">
+     ${mastered&&canMix?`<button class="blk-next" id="ctMix" style="font-size:16px;padding:16px">🔀 쌓은 블록 섞어서 말하기 →</button>`:""}
+     ${mastered?`<button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-next" id="ctAgain">다시 도전</button>`}
+     <button id="ctHome" style="width:100%;margin-top:6px;padding:11px;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px">나중에 · 홈으로</button>
    </div></div>`;
   $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
-  $("#ctAgain").onclick=()=>{ if(mastered){ goToSetup(); try{ renderWeakHome(); }catch(e){} } else startChunkTraining(ctPid); };
+  const mixBtn=$("#ctMix"); if(mixBtn) mixBtn.onclick=()=>{ try{ bleDeepStart(); }catch(e){ goToSetup(); } };
+  const newBtn=$("#ctNew"); if(newBtn) newBtn.onclick=()=>{
+    // 다음 배울 세트 소개로 (아직 인트로 안 끝난 세트 자동 선택)
+    try{ bleStartSetIntro(); return; }catch(e){}
+    goToSetup(); try{ renderWeakHome(); }catch(e){}
+  };
+  const againBtn=$("#ctAgain"); if(againBtn) againBtn.onclick=()=>startChunkTraining(ctPid);
 }
 // 🔥 홈 약점 청크 위젯 — 탭하면 즉시 재훈련
 function renderWeakHome(){
