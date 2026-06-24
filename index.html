@@ -1502,6 +1502,37 @@ body{background:var(--paper)!important;color:var(--text)}
 .learn-stat{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:#A38C81;font-weight:800;white-space:nowrap}
 .learn-stat b{font-size:15px;color:#2F241F;font-weight:900}
 .learn-stat+.learn-stat{border-left:1px solid #F0CDBE}
+/* 🏠 홈 헤더(통합 레벨/진척) — 중복 제거 */
+.home-head{background:rgba(255,255,255,.82);border:1px solid #F4D4C4;border-radius:18px;padding:15px 16px;box-shadow:0 10px 22px -16px rgba(214,120,70,.4);cursor:pointer}
+.hh-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.hh-lv{display:flex;align-items:baseline;gap:8px}
+.hh-lv-num{font-size:23px;font-weight:950;color:#2F241F;letter-spacing:-.01em}
+.hh-lv-band{font-size:12px;font-weight:800;color:#A38C81}
+.hh-chips{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.hh-chip{font-size:11.5px;font-weight:800;color:#8A6F62;background:#FFF0E8;border:1px solid #F8D8C8;border-radius:99px;padding:5px 10px;white-space:nowrap}
+.hh-chip b{color:#F0664A;font-weight:950}
+.hh-bar{height:9px;border-radius:99px;background:rgba(240,102,74,.15);overflow:hidden}
+.hh-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A);transition:width .5s ease}
+.hh-xp{display:flex;justify-content:space-between;margin-top:7px;font-size:12px;font-weight:800;color:#A38C81}
+.hh-xp span:first-child{color:#6E5A4F}
+/* 스킬 레벨 카드 */
+.skillcard{background:#FFF7F0;border:1px solid #F6D8C8;border-radius:16px;padding:12px 14px}
+.skillcard-h{font-size:11.5px;font-weight:900;color:#C08763;letter-spacing:.3px;margin-bottom:9px}
+.skillcard-h b{font-weight:950}
+.skillcard-row{display:flex;gap:8px}
+.skilltile{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff;border:1px solid #F2D9CB;border-radius:12px;padding:11px 6px}
+.skilltile .st-ic{font-size:17px}
+.skilltile b{font-size:14px;font-weight:900;color:#2F241F}
+.skilltile .st-l{font-size:11px;color:#A38C81;font-weight:700}
+/* 탭 가능 카드 trailing chevron */
+.sq-go{flex:0 0 auto;width:28px;height:28px;border-radius:99px;background:#FFF0E8;border:1px solid #F8D8C8;color:#F0664A;font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;line-height:1}
+/* 코랄 카드 상황 진행 점 */
+.bh-prog{display:inline-flex;align-items:center}
+.bh-dots{display:inline-flex;gap:4px;margin-left:6px}
+.bh-dots i{width:8px;height:8px;border-radius:99px;background:rgba(255,255,255,.34)}
+.bh-dots i.on{background:#fff}
+.block-hero.learn-block .bh-flow{color:rgba(255,255,255,.92)!important;font-weight:800}
+.block-hero.learn-block .bh-stats{color:#fff!important}
 .learn-diff{background:rgba(255,255,255,.62);border:1px solid #F2D4C5;border-radius:16px;padding:13px 14px;box-shadow:0 10px 22px -18px rgba(214,120,70,.35)}
 .learn-diff .ld-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .learn-diff .ld-title{font-size:14px;color:#2F241F;font-weight:900}
@@ -1879,7 +1910,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.56.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.57.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-23";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9427,7 +9458,7 @@ function renderWeakHome(){
   if(st.due>0){
     html+=`<button id="dueToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(255,133,104,.35);margin-bottom:9px;width:100%">
       <span><span style="font-size:15.5px;font-weight:900;color:var(--text)">🔥 오늘 복습할 표현</span><br><span style="font-size:12.5px;color:var(--jade);font-weight:700">${st.due}개 · 잊기 전에 다시 꺼내보기</span></span>
-      <span style="font-size:20px">📚</span></button>`;
+      <span class="sq-go">›</span></button>`;
   }
   if(weak.length){
     html+=`<div class="seclabel" style="margin-bottom:7px">🔥 약한 청크 — 탭하면 바로 훈련</div>
@@ -9441,7 +9472,7 @@ function renderWeakHome(){
   if(reuse.length){
     html+=`<button id="reuseToday" class="sidequest" style="display:flex;align-items:center;justify-content:space-between;text-align:left;padding:14px 16px;cursor:pointer;border:1.5px solid rgba(25,160,107,.28);margin-top:9px;width:100%">
       <span><span style="font-size:15.5px;font-weight:900;color:var(--text)">같은 표현, 다른 상황</span><br><span style="font-size:12.5px;color:#19a06b;font-weight:700">${reuse.length}개 표현 · 실전회화에서 다시 꺼내기</span></span>
-      <span style="font-size:20px">↻</span></button>`;
+      <span class="sq-go">›</span></button>`;
   }
   if(!html){ box.style.display="none"; box.innerHTML=""; return; }
   box.style.display="block"; box.innerHTML=html;
@@ -10755,7 +10786,7 @@ function renderDailyCard(){
     <div class="bh-ko">${escapeHtml(d.ko)}</div>
     <div class="bh-flow">배우고 → 꺼내고 → 빠르게 → 실전에서 써먹기</div>
     <div class="bh-stats">
-      <span>상황 연습 <b>${ctxDone}/5</b></span>
+      <span class="bh-prog">상황 연습 <span class="bh-dots">${Array.from({length:5},(_,i)=>`<i class="${i<ctxDone?'on':''}"></i>`).join("")}</span></span>
       <span class="bh-dot">·</span>
       <span>실전 준비까지 <b>${toReady}번</b></span>
     </div>
@@ -10782,14 +10813,15 @@ function renderAcqStats(){
   const ready=getReadyForRealBlocks().length;
   const skill=profSkillStats();
   const tiles=[
-    {ic:"📚", v:"Lv."+skill.wordLevel, l:"단어 "+skill.wordKnown+"개"},
-    {ic:"🎧", v:"Lv."+skill.listenLevel, l:"듣기 "+skill.listenPerfect+"개"},
-    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기 "+skill.speakPerfect+"개"},
-    {ic:"🧱", v:ready, l:"실전 준비"},
-    {ic:"🔥", v:streak+"일", l:"연속"}
+    {ic:"📚", v:"Lv."+skill.wordLevel, l:"단어", n:skill.wordKnown},
+    {ic:"🎧", v:"Lv."+skill.listenLevel, l:"듣기", n:skill.listenPerfect},
+    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기", n:skill.speakPerfect}
   ];
-  box.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-around;gap:6px;flex-wrap:wrap;background:#FFF7F0;border:1px solid #F6D8C8;border-radius:14px;padding:10px 12px;box-shadow:0 8px 18px -12px rgba(214,120,70,.25)">
-    ${tiles.map(t=>`<div style="display:flex;align-items:center;gap:6px;min-width:88px;justify-content:center"><span style="font-size:15px">${t.ic}</span><b style="font-size:14px;font-weight:800;color:var(--text)">${t.v}</b><span style="font-size:11px;color:var(--muted)">${t.l}</span></div>`).join("")}
+  box.innerHTML=`<div class="skillcard">
+    <div class="skillcard-h">스킬 레벨${ready>0?` · 실전 준비 <b style="color:#19a06b">${ready}개</b>`:""}</div>
+    <div class="skillcard-row">
+      ${tiles.map(t=>`<div class="skilltile"><span class="st-ic">${t.ic}</span><b>${t.v}</b><span class="st-l">${t.l}${t.n>0?` · ${t.n}`:""}</span></div>`).join("")}
+    </div>
   </div>`;
 }
 function applyAgeUI(){
@@ -10876,19 +10908,17 @@ function renderHero(){
   const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
   const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
   const done=routineDoneCount(), auto=autoChunkCount();
-  hz.innerHTML=`<div class="learn-statbar" title="내 학습 상태">
-    <div class="learn-stat"><span>🧱</span><b>Lv.${li.level}</b><span>내 레벨</span></div>
-    <div class="learn-stat"><span>⚡</span><b>${li.inLevel}/${li.need}</b><span>XP</span></div>
-    <div class="learn-stat"><span>🔁</span><b>${done}/4</b><span>오늘 전적</span></div>
-    <div class="learn-stat"><span>⚙️</span><b>${auto}</b><span>자동화</span></div>
-    <div class="learn-stat"><span>🔥</span><b>${streak}일</b><span>연속</span></div>
-  </div>
-  <div class="home-xp-mini" style="margin:10px 0 0;padding:10px 12px;border-radius:14px;background:rgba(255,133,104,.10);border:1px solid rgba(255,133,104,.22)">
-    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;font-weight:900;color:var(--text)">
-      <span>프로필 Lv.${li.level}</span>
-      <span style="color:var(--muted)">${li.inLevel} / ${li.need} XP · 총 ${p.xp||0} XP</span>
+  hz.innerHTML=`<div class="home-head">
+    <div class="hh-top">
+      <div class="hh-lv"><span class="hh-lv-num">Lv.${li.level}</span><span class="hh-lv-band">내 레벨</span></div>
+      <div class="hh-chips">
+        <span class="hh-chip"><b>🔥 ${streak}</b> 일 연속</span>
+        <span class="hh-chip"><b>${done}/4</b> 오늘</span>
+        ${auto>0?`<span class="hh-chip"><b>⚙️ ${auto}</b> 자동화</span>`:""}
+      </div>
     </div>
-    <div style="height:7px;border-radius:99px;background:rgba(255,255,255,.55);overflow:hidden;margin-top:7px"><i style="display:block;height:100%;width:${Math.round(pct*100)}%;border-radius:99px;background:linear-gradient(90deg,#FF8568,#F0664A)"></i></div>
+    <div class="hh-bar"><i style="width:${Math.round(pct*100)}%"></i></div>
+    <div class="hh-xp"><span>경험치 ${li.inLevel} / ${li.need}</span><span>총 ${p.xp||0} XP</span></div>
   </div>`;
 }
 // 🎉 레벨업 풀스크린 축포
