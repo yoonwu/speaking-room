@@ -2279,6 +2279,16 @@ function levelCap(){
   return "";
 }
 // 🧱 실전회화에서 '학습한 블록을 의미상 실제로 썼는지' AI가 판정하게 하는 지시 + 파싱
+function targetBlocksDirective(){
+  const tb=(typeof state!=="undefined" && state.targetBlocks)||null;
+  if(!tb || !tb.length) return "";
+  // tb: [{id, pattern}] — NPC가 학습자에게서 이 블록들을 자연스럽게 끌어내도록
+  const pats=tb.map(x=>`"${x.pattern}"`).join(", ");
+  return [
+"COACHING GOAL (hidden): Naturally steer the conversation so the learner has good opportunities to USE these specific blocks: "+pats+".",
+"Create situations or ask things where one of these is the natural thing for them to say (e.g. if a block is \"Can I get...?\", set up a moment where they'd request something). Do NOT tell them which blocks to use, do NOT show the patterns, and never make it feel like a drill — keep it a real, flowing conversation. Just tilt the scene toward these functions."
+  ].join("\n");
+}
 function convoLearnedBlockList(){
   // 실전회화 사용 판정 대상: 소개된(introduced) BLE 블록 + 학습한 CORE_PHRASES
   const out=[];
@@ -2433,6 +2443,7 @@ levelCap(),
 "- "+levelLine(),
 "- Usually end with a natural follow-up question so they have something to respond to.",
 "- Never correct their grammar and never switch to Korean. Just talk like a real person would.",
+targetBlocksDirective(),
 usedBlocksDirective()
   ].join("\n");
 }
@@ -2704,6 +2715,8 @@ function convoRecordUsedBlocks(ids, userText){
       st.contextsUsed=st.contextsUsed||[];
       if(st.contextsUsed.indexOf(ctxId)<0) st.contextsUsed.push(ctxId);
       st.consecFails=0;
+      // 🔓 해금 게이트: 실전회화에서 힌트 없이 실제로 써먹음 → "쓸 줄 안다" 확정 → unlocked
+      if(!st.unlocked){ st.unlocked=true; st.unlockedAt=Date.now(); st.unlockedVia="real_conversation"; }
       st.stage=bleComputeStage(st);
       s[id]=st; bleUsed.push(id);
       // ledger에도 실전 사용 이벤트 (source=conversation → usedInConversationCount 증가)
@@ -9510,6 +9523,57 @@ function blDone(){
   $("#blAgain").onclick=()=>blockLessonStart();
   $("#blHome").onclick=()=>{ goToSetup(); };
 }
+// 🎯 완료 후 '오늘 블록 실전에서 써먹기' — 오늘 블록 + 기본 블록을 타겟으로 짧은 실전대화
+function startRealUseForChunk(pid){
+  // 타겟 블록 = 방금 배운 블록(pid) + 기본 3개(can_i_get/do_you_have/where_is) 중 소개된 것
+  const targets=[];
+  try{
+    const p=CORE_PHRASES.find(x=>x.id===pid);
+    if(p) targets.push({id:"core:"+p.id, pattern:p.phrase});
+  }catch(e){}
+  try{
+    const s=bleGetState();
+    ["can_i_get","do_you_have","where_is"].forEach(id=>{
+      if(s[id]&&s[id].introducedAt && BLE_BY_ID[id]) targets.push({id:"ble:"+id, pattern:BLE_BY_ID[id].block});
+    });
+  }catch(e){}
+  // 상황: 블록 태그에 맞는 SURVIVAL 하나 고르기 (없으면 무난한 카페/호텔류)
+  let scn=null;
+  try{
+    const p=CORE_PHRASES.find(x=>x.id===pid);
+    const tag=(p&&p.tags&&p.tags[0])||"";
+    const map={restaurant:"sv_hotel",hotel:"sv_hotel",shopping:"sv_phone",hospital:"sv_clinic",support:"sv_net",banking:"sv_bank",travel:"sv_immig",transportation:"sv_parcel"};
+    const sid=map[tag];
+    scn=SURVIVAL.find(x=>x.id===sid) || SURVIVAL.find(x=>x.id==="sv_hotel") || SURVIVAL[0];
+  }catch(e){ scn=SURVIVAL[0]; }
+  if(!scn){ goToSetup(); return; }
+  startSurvival(scn, { targetBlocks: targets });
+}
+// 🔓 새 블록 공급 게이트: "기존 블록을 실전에서 써먹어야 새 블록이 열린다"
+// 규칙(쉽게): 소개된 블록 수보다 unlocked(실전 사용) 블록이 부족하면, 다음 1개는 이미 열려있게.
+// 단, '직전에 새로 소개한 블록'을 아직 실전에서 한 번도 안 썼으면 새 블록 잠금.
+function newBlockGate(){
+  let introduced=[], unlocked=[];
+  try{
+    const s=bleGetState();
+    introduced=BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].introducedAt);
+    unlocked=introduced.filter(b=>s[b.id].unlocked);
+  }catch(e){}
+  const introN=introduced.length, unlockedN=unlocked.length;
+  // 잠긴(소개됐지만 실전 미사용) 블록
+  const lockedBlocks=introduced.filter(b=>{ try{ return !bleGetState()[b.id].unlocked; }catch(e){ return false; } });
+  // 게이트: 잠긴 블록이 2개 이상이면 새 블록 잠금 (먼저 실전에서 써먹어라)
+  const open = lockedBlocks.length < 2;
+  const needUse = Math.max(0, 2 - 0) ; // 표시용
+  return {
+    open,
+    introN, unlockedN,
+    lockedCount: lockedBlocks.length,
+    lockedBlocks,
+    // 새 블록 열리려면 실전에서 더 써먹어야 하는 블록 수
+    needMoreReal: open ? 0 : (lockedBlocks.length - 1)
+  };
+}
 function startChunkTraining(pid){
   const p=CORE_PHRASES.find(x=>x.id===pid);
   if(!p){ goToSetup(); return; }
@@ -9633,6 +9697,17 @@ function blockCollectionHtml(){
   const moreMsg = d.count<5
     ? `하나 더 쌓으면 복습이 더 넓어져요.`
     : `블록을 쌓을수록, 복습이 더 다양하고 실전처럼 변해요.`;
+  // 새 블록 해금 진행 — 실전에서 써먹어야 열린다는 걸 보여줌
+  let gateLine="";
+  try{
+    const g=newBlockGate();
+    if(g.open){
+      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.2);border-radius:11px;font-size:12px;color:#19a06b;font-weight:800;text-align:center">🔓 새 블록 열려 있어요 — 하나 더 쌓을 수 있어요</div>`;
+    } else {
+      const n=Math.max(1, g.lockedCount-1);
+      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(255,133,104,.08);border:1px solid rgba(255,133,104,.2);border-radius:11px;font-size:12px;color:#C0653A;font-weight:800;text-align:center">🔒 새 블록 해금까지 — 배운 블록을 실전에서 <b>${n}번</b> 더 써먹기</div>`;
+    }
+  }catch(e){}
   return `<div style="margin:18px 0 6px;text-align:left;background:rgba(255,255,255,.5);border:1px solid rgba(255,133,104,.18);border-radius:18px;padding:16px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
       <span style="font-size:13px;font-weight:950;color:#3A2D27">🧱 내 블록 컬렉션</span>
@@ -9653,6 +9728,7 @@ function blockCollectionHtml(){
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:7px">${chips}</div>
+    ${gateLine}
   </div>`;
 }
 function ctDone(){
@@ -9672,16 +9748,26 @@ function ctDone(){
    ${mastered?"":`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
    ${collHtml}
    <div class="blk-actions" style="max-width:340px;margin-top:16px">
-     ${mastered&&canMix?`<button class="blk-next" id="ctMix" style="font-size:16px;padding:16px">🔀 쌓은 블록 섞어서 말하기 →</button>`:""}
+     ${mastered?`<button class="blk-next" id="ctReal" style="font-size:16px;padding:16px">🎯 실전에서 써먹기 →</button>`:""}
+     ${mastered&&canMix?`<button class="blk-save" id="ctMix">🔀 쌓은 블록 섞어서 말하기</button>`:""}
      ${mastered?`<button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-next" id="ctAgain">다시 도전</button>`}
      <button id="ctHome" style="width:100%;margin-top:6px;padding:11px;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px">나중에 · 홈으로</button>
    </div></div>`;
   $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
+  const realBtn=$("#ctReal"); if(realBtn) realBtn.onclick=()=>{ try{ startRealUseForChunk(ctPid); }catch(e){ goToSetup(); } };
   const mixBtn=$("#ctMix"); if(mixBtn) mixBtn.onclick=()=>{ try{ bleDeepStart(); }catch(e){ goToSetup(); } };
   const newBtn=$("#ctNew"); if(newBtn) newBtn.onclick=()=>{
-    // 다음 배울 세트 소개로 (아직 인트로 안 끝난 세트 자동 선택)
-    try{ bleStartSetIntro(); return; }catch(e){}
-    goToSetup(); try{ renderWeakHome(); }catch(e){}
+    let gate={open:true};
+    try{ gate=newBlockGate(); }catch(e){}
+    if(gate.open){
+      try{ bleStartSetIntro(); return; }catch(e){}
+      goToSetup(); try{ renderWeakHome(); }catch(e){}
+    } else {
+      // 막힘: "조금만 하면 열림" — 잠긴 블록을 실전에서 써먹게 유도
+      try{
+        openModal({title:"새 블록 준비 중", msg:`이미 배운 블록을 실전에서 ${gate.lockedCount-1}번만 더 써보면 새 표현이 열려요. 지금 실전에서 써볼까요?`, okText:"실전에서 써먹기 →", cancelText:"나중에", onOk:()=>{ try{ startRealUseForChunk(ctPid); }catch(e){ goToSetup(); } }});
+      }catch(e){ try{ startRealUseForChunk(ctPid); }catch(e2){ goToSetup(); } }
+    }
   };
   const againBtn=$("#ctAgain"); if(againBtn) againBtn.onclick=()=>startChunkTraining(ctPid);
 }
@@ -11081,9 +11167,12 @@ function openSurvival(){
   $("#svClose").onclick=()=>sc.remove();
   sc.onclick=(e)=>{ if(e.target===sc) sc.remove(); };
 }
-function startSurvival(s){
+function startSurvival(s, opts){
+  opts=opts||{};
   state.engine="survival"; state.mode="talk";
   state.scn={ id:s.id, t:s.t, emo:s.emo, role:s.role, ctx:s.ctx, emotion:s.emotion, pressure:s.pressure };
+  // 🎯 오늘 블록 써먹기 모드: NPC가 이 블록들을 자연스럽게 끌어내도록 유도
+  state.targetBlocks = Array.isArray(opts.targetBlocks)&&opts.targetBlocks.length ? opts.targetBlocks.slice(0,4) : null;
   startSession();
 }
 function startVocabCoach(){
