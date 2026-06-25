@@ -1949,7 +1949,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.92.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.93.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4538,8 +4538,8 @@ function pushToBank(themeId,set){
   const key=bankKey(themeId);
   const b=vbankGet(); const arr=b[key]||[]; arr.push(set); while(arr.length>6) arr.shift(); b[key]=arr; vbankSave(b);
 }
-function vocabWordLevelRule(){
-  const v=diffMacro(), micro=diffLevel();
+function vocabWordLevelRule(bandOverride){
+  const v=bandOverride||diffMacro(), micro=diffLevel();
   const map={
 1:"WORD DIFFICULTY: absolute beginner. Pick the ~300 most basic English words only (cat, dog, run, eat, big, happy, water). Single common words. NO phrasal verbs, NO idioms, NO abstract nouns.",
 2:"WORD DIFFICULTY: beginner (1st grade). Very common concrete everyday words (kitchen, friend, hungry, jump, clean). Simple and frequent only.",
@@ -4552,7 +4552,8 @@ function vocabWordLevelRule(){
 9:"WORD DIFFICULTY: very advanced (CEFR C1). Nuanced, lower-frequency words, natural idioms and slang, fine shades of meaning (subtle, tedious, knack, hassle).",
 10:"WORD DIFFICULTY: native adult. Use genuinely advanced, idiomatic, lower-frequency vocabulary a native uses (meticulous, ambivalent, off the cuff). NO simplification."
   };
-  return (map[v]||map[1])+" MICRO WORD DIFFICULTY: selected problem difficulty is D"+micro+"/60. Within this macro band, choose slightly easier words near the lower end and less obvious/lower-frequency words near the upper end.";
+  const microLine = bandOverride ? "" : (" MICRO WORD DIFFICULTY: selected problem difficulty is D"+micro+"/60. Within this macro band, choose slightly easier words near the lower end and less obvious/lower-frequency words near the upper end.");
+  return (map[v]||map[1])+microLine;
 }
 function vocabPrompt(theme){
   const seed=Math.floor(Math.random()*100000);
@@ -7268,7 +7269,15 @@ function getLimitedContextBlocks(){ const s=bleGetState(); return BLE_BLOCKS.fil
 // ===== P5: Context Variation 생성기 (같은 문장 반복 방지) =====
 const BLE_PLACES=["카페","식당","호텔","병원","학교","쇼핑","고객센터","공항","택시","사무실","약국","은행","편의점","미용실"];
 let BLE_CTX_CACHE={};   // {blockId: [{situation,ko,en,object},...]} AI로 생성한 새 상황 누적
-function bleCtxCacheLoad(){ try{ BLE_CTX_CACHE=hGet("speakingroom:ble_ctx",{})||{}; }catch(e){ BLE_CTX_CACHE={}; } }
+const BLE_CTX_CACHE_VER=2;   // 상황 난이도 룰 변경 시 올림 → 옛 어려운 캐시 폐기
+function bleCtxCacheLoad(){
+  try{
+    if(hGet("speakingroom:ble_ctx_ver",0)!==BLE_CTX_CACHE_VER){
+      BLE_CTX_CACHE={}; hSet("speakingroom:ble_ctx",{}); hSet("speakingroom:ble_ctx_ver",BLE_CTX_CACHE_VER); return;
+    }
+    BLE_CTX_CACHE=hGet("speakingroom:ble_ctx",{})||{};
+  }catch(e){ BLE_CTX_CACHE={}; }
+}
 function bleCtxCacheSave(){ try{ hSet("speakingroom:ble_ctx", BLE_CTX_CACHE); }catch(e){} }
 const BLE_RECENT_CTX_KEY="speakingroom:ble_recent_ctx_v2";
 const BLE_RECENT_BLOCK_KEY="speakingroom:ble_recent_blocks_v2";
@@ -7298,7 +7307,7 @@ const BLE_LOCAL_CONTEXTS={
   ],
   do_you_have:[
     {situation:"쇼핑", ko:"이거 검은색 있어요?", en:"Do you have this in black?", object:"this in black"},
-    {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size", hard:true},
+    {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size"},
     {situation:"카페", ko:"디카페인 있어요?", en:"Do you have decaf?", object:"decaf"},
     {situation:"식당", ko:"채식 메뉴 있어요?", en:"Do you have vegetarian options?", object:"vegetarian options"},
     {situation:"식당", ko:"영어 메뉴 있어요?", en:"Do you have an English menu?", object:"an English menu"},
@@ -7337,7 +7346,7 @@ const BLE_LOCAL_CONTEXTS={
   could_you:[
     {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the check?", object:"bring the check"},
     {situation:"식당", ko:"양파 빼주시겠어요?", en:"Could you leave out the onions?", object:"leave out the onions"},
-    {situation:"카페", ko:"덜 달게 해주시겠어요?", en:"Could you make it less sweet?", object:"make it less sweet", hard:true},
+    {situation:"카페", ko:"덜 달게 해주시겠어요?", en:"Could you make it less sweet?", object:"make it less sweet"},
     {situation:"호텔", ko:"택시 불러주시겠어요?", en:"Could you call a taxi?", object:"call a taxi"},
     {situation:"호텔", ko:"짐 좀 맡아주시겠어요?", en:"Could you hold my luggage?", object:"hold my luggage"},
     {situation:"병원", ko:"이거 설명해주시겠어요?", en:"Could you explain this?", object:"explain this"},
@@ -7346,16 +7355,16 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"공항", ko:"게이트 확인해주시겠어요?", en:"Could you check the gate?", object:"check the gate"},
     {situation:"택시", ko:"여기서 세워주시겠어요?", en:"Could you stop here?", object:"stop here"},
     {situation:"고객센터", ko:"다시 말씀해주시겠어요?", en:"Could you say that again?", object:"say that again"},
-    {situation:"고객센터", ko:"천천히 말씀해주시겠어요?", en:"Could you speak more slowly?", object:"speak more slowly", hard:true},
+    {situation:"고객센터", ko:"천천히 말씀해주시겠어요?", en:"Could you speak more slowly?", object:"speak more slowly"},
     {situation:"학교", ko:"과제 마감일을 알려주시겠어요?", en:"Could you tell me the deadline?", object:"tell me the deadline"},
     {situation:"은행", ko:"계좌를 확인해주시겠어요?", en:"Could you check my account?", object:"check my account"},
     {situation:"사무실", ko:"파일 보내주시겠어요?", en:"Could you send me the file?", object:"send me the file"},
-    {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter", hard:true}
+    {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter"}
   ],
   i_think:[
     {situation:"쇼핑", ko:"이건 너무 비싼 것 같아요.", en:"I think it's too expensive.", object:"it's too expensive"},
     {situation:"쇼핑", ko:"이 색이 더 나은 것 같아요.", en:"I think this color is better.", object:"this color is better"},
-    {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty", hard:true},
+    {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty"},
     {situation:"카페", ko:"여기가 너무 시끄러운 것 같아요.", en:"I think it's too noisy here.", object:"it's too noisy here"},
     {situation:"호텔", ko:"방이 너무 추운 것 같아요.", en:"I think the room is too cold.", object:"the room is too cold"},
     {situation:"병원", ko:"이제 좀 나아진 것 같아요.", en:"I think I feel better now.", object:"I feel better now"},
@@ -7393,15 +7402,11 @@ function bleShuffle(arr){
   return arr;
 }
 // 블록의 전체 예문 풀 (로컬 실전 상황 + 원본 + 생성캐시)
-function bleAllEx(b, safeOnly){
+function bleAllEx(b){
   const out=[], seen=new Set();
-  const sources = safeOnly
-    ? [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[]]
-    : [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[], (BLE_CTX_CACHE[b.id])||[]];
-  sources.forEach(list=>{
+  [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[], (BLE_CTX_CACHE[b.id])||[]].forEach(list=>{
     list.forEach(e=>{
       if(!e||!e.ko||!e.en) return;
-      if(safeOnly && e.hard) return;   // 입에 붙이기 등 쉬운 모드에서는 어려운(비교급·정도부사 등) 슬롯 제외
       const clean={situation:String(e.situation||"상황"), ko:String(e.ko), en:String(e.en), object:String(e.object||""), emoji:e.emoji};
       const key=bleExKey(clean); if(!key||seen.has(key)) return;
       seen.add(key); out.push(clean);
@@ -7418,7 +7423,7 @@ function bleSampleExamples(b,n){
 function bleFreshContextEx2(b, opts){
   opts=opts||{};
   const st=bleGetState()[b.id]; const used=(st&&st.contextsUsed)||[];
-  const all=bleAllEx(b, opts.safeOnly);
+  const all=bleAllEx(b);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
   const fresh=all.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
@@ -7439,6 +7444,20 @@ function bleSituationHint(b){
   };
   return map[b.func]||"상황의 목적을 먼저 고르고 영어로 말해보세요.";
 }
+// 🔤 단어 보기 — 정답의 핵심 단어 + 뜻 공개 (뱉기 막힘 방지)
+function bleWordHintHtml(it){
+  const ex=(it&&it.ex)||{};
+  let words=bleContentWords(ex.en||"");
+  if(!words.length) words=bleWords(ex.en||"");
+  const seen=new Set(), rows=[];
+  words.forEach(w=>{
+    if(seen.has(w)||w.length<2) return; seen.add(w);
+    const ko=(typeof FREQ_DICT!=="undefined" && FREQ_DICT[w]) ? FREQ_DICT[w] : "";
+    rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):""));
+  });
+  if(!rows.length) return "🔤 단어 정보 없음";
+  return "🔤 "+rows.join(" · ");
+}
 // 힌트를 카드 위에 토스트로 띄움 (레이아웃 출렁임 방지). html 허용.
 let _bleHintTimer=null;
 function bleShowHintToast(html){
@@ -7456,20 +7475,27 @@ async function bleGenContexts(b, n){
   try{
     const have=bleAllEx(b).map(e=>e.situation+":"+e.en).join(" / ");
     const places=BLE_PLACES.slice().sort(()=>Math.random()-0.5).slice(0,6).join(", ");
+    // 내부 단어레벨(1~60) → 1~10 밴드 → 한 단계 낮게 (뱉기 연습이라 일부러 쉽게)
+    const _wl=(typeof profSkillStats==="function")?(profSkillStats().wordLevel||1):6;
+    const _band=Math.max(1, Math.ceil(_wl/6)-1);
+    const wordRule=(typeof vocabWordLevelRule==="function")?vocabWordLevelRule(_band):"";
     const sys=`You generate fresh real-life situations for practicing ONE English speaking block.
 BLOCK: "${b.block}" (${b.meaningKo}) — function: ${b.func}
 The block must be naturally usable in each situation.
-Vary: place (${places}), the object/need, the relationship, and urgency.
-Avoid repeating these existing ones: ${have}
+
+${wordRule}
+
+SIMPLICITY (CRITICAL — this is OUTPUT-FLUENCY practice; the learner must blurt the English out instantly):
+- Each situation is ONE single, simple intent. Both ko and en must be plain and direct.
+- The English answer = the block + ONE easy object/word. Nothing more.
+- FORBIDDEN: comparatives or degree nuance (조금 더 ~, ~보다 더, a little more/shorter/bigger), conditions, multi-step requests, extra adjectives/adverbs, or any word harder than the WORD DIFFICULTY above.
+- Good: "머리 잘라 주세요" → "Could you cut my hair?"   Bad: "조금 더 짧게 잘라 주실 수 있나요?" (too nuanced, rejected).
+- If an object word is harder than the allowed level, swap it for an easier everyday one.
+
+Vary the place (${places}) and the simple object/need. Avoid repeating these existing ones: ${have}
 Return ONLY a JSON array of ${n} items, no markdown:
-[{"situation":"카페","ko":"한국어 상황 한 문장","en":"natural English using the block","object":"the object/need part"}]
-CRITICAL DIFFICULTY RULES — the learner is a TRUE BEGINNER. The whole point is to make the BLOCK come out of their mouth easily, so the slot/object must NOT add difficulty:
-- The object/slot must be a SINGLE concrete everyday noun a beginner already knows: water, a fork, a towel, the bill, a taxi, the restroom, a menu, a receipt, the key, a doctor, coffee, help.
-- NO modifiers, NO comparatives, NO adverbs of degree (NEVER "a little shorter", "more slowly", "a bit bigger"). NO multi-step requests.
-- Each "en" must be 3-6 words total and use only the most common 500 English words besides the block itself.
-- If a request would need an advanced or abstract object, pick a simpler everyday one instead.
-- ko must be the simple natural Korean for that same easy request (e.g. "물 좀 주시겠어요?", "포크 하나 주세요", "화장실 어디예요?"). Never produce hard Korean like "조금 더 짧게 잘라 주시겠어요?".
-Keep en short, real, and EASY. situation is a short Korean place label.`;
+[{"situation":"카페","ko":"한국어 상황 한 문장(아주 쉬운 한 가지 의도)","en":"natural English using the block","object":"the object/need part"}]
+Rules: ko is a natural Korean request/statement a beginner would actually want to say. en MUST naturally use "${b.block}". Keep en as short as possible. situation is a short Korean place label.`;
     const d=await callClaude(sys, [{role:"user", content:"Generate now."}], FAST_MODEL);
     const arr=parseJSON(extractText(d));
     if(Array.isArray(arr) && arr.length){
@@ -8093,6 +8119,7 @@ function bleViewRetrieve(it){
       <div class="blpz-stat" id="bleStat"></div>
       <div class="blpz-foot">
         <button id="bleHint">💡 힌트</button>
+        <button id="bleWord">🔤 단어 보기</button>
         <button id="bleType">⌨️ 글로 쓰기</button>
       </div>
     </div>
@@ -8114,6 +8141,7 @@ function bleWireRetrieve(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
   $("#bleHint").onclick=()=>{ bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); };
+  { const _bw=$("#bleWord"); if(_bw) _bw.onclick=()=>{ bleShowHintToast(bleWordHintHtml(it)); }; }
   bleWireFocusTools(it);
 }
 async function bleFinishRetrieve(it, heard){
@@ -10982,14 +11010,14 @@ function autoDrillBuildItems(blocks){
   const focus=blocks.slice(0, Math.min(3, blocks.length));
   focus.forEach((b,bi)=>{
     for(let r=0;r<(diffLevel()<=12?4:3);r++){
-      const ex=bleFreshContextEx2(b, {forceFresh:true, safeOnly:true});
+      const ex=bleFreshContextEx2(b, {forceFresh:true});
       items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
     }
   });
   let guard=0;
   while(items.length<8 && blocks.length && guard++<30){
     const b=blocks[items.length%blocks.length];
-    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true, safeOnly:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
+    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
   }
   return items.slice(0, diffLevel()<=12?8:10);
 }
@@ -12763,6 +12791,8 @@ function openCheatPanel(){
       +'<button class="ch-b" data-act="firstrun">\u25B6 \uCCAB \uC138\uC158(firstRun) \uBC14\uB85C \uC2E4\uD589</button>'
       +'<button class="ch-b" data-act="dailyroom">\u25B6 \uC624\uB298\uC758 \uBC29 \uBC14\uB85C \uC2E4\uD589</button>'
       +'<div style="height:1px;background:#ffffff22;margin:12px 0"></div>'
+      +'<button class="ch-b" data-act="deploy" style="background:#1f6f43;color:#dfffe9">\uD83D\uDE80 GitHub \uBC30\uD3EC (index.html \uCEE4\uBC0B)</button>'
+      +'<div style="height:1px;background:#ffffff22;margin:12px 0"></div>'
       +'<button class="ch-b" data-act="reset-fr">\u267B firstRun \uC644\uB8CC \uB9AC\uC14B</button>'
       +'<button class="ch-b" data-act="reset-dr">\u267B \uC624\uB298\uC758 \uBC29 \uC644\uB8CC \uB9AC\uC14B(\uC624\uB298)</button>'
       +'<button class="ch-b" data-act="reset-onb">\u267B \uC628\uBCF4\uB529 \uB2E4\uC2DC \uBCF4\uC774\uAC8C</button>'
@@ -12791,6 +12821,7 @@ function cheatAct(act,p){
     if(act==="close"){ close(); return; }
     if(act==="firstrun"){ close(); startFirstRun(); return; }
     if(act==="dailyroom"){ close(); startDailyRoom(); return; }
+    if(act==="deploy"){ close(); openDeployPanel(); return; }
     if(act==="reset-fr"){ try{ localStorage.removeItem("firstrun_done"); }catch(e){} cheatToast("firstRun \uC644\uB8CC \uB9AC\uC14B\uB428"); }
     else if(act==="reset-dr"){ try{ localStorage.removeItem("dailyroom:done:"+DAYN()); }catch(e){} cheatToast("\uC624\uB298\uC758 \uBC29 \uB9AC\uC14B\uB428"); }
     else if(act==="reset-onb"){ try{ localStorage.removeItem("onboarding_v1_completed"); }catch(e){} cheatToast("\uC628\uBCF4\uB529 \uB2E4\uC2DC \uBCF4\uC784"); }
@@ -12799,6 +12830,74 @@ function cheatAct(act,p){
     close();
     try{ if(typeof goToSetup==="function") goToSetup(); }catch(e){}   // 홈 새로고침해서 카드/상태 반영
   }catch(e){ alert("\uCE58\uD2B8 \uC624\uB958: "+(e&&e.message)); }
+}
+
+// 🚀 GitHub 셀프 배포 — 새 index.html 골라서 레포에 커밋. PAT은 이 기기 localStorage에만 저장(외부/서버 전송 없음, GitHub로만 PUT).
+function ghCfg(){
+  const g=(k,d)=>{ try{ return localStorage.getItem(k)||d; }catch(e){ return d; } };
+  return { owner:g("sr_gh_owner","yoonwu"), repo:g("sr_gh_repo","speaking-room"),
+    branch:g("sr_gh_branch","main"), path:g("sr_gh_path","index.html"), pat:g("sr_gh_pat","") };
+}
+function openDeployPanel(){
+  const old=$("#deployPanel"); if(old) old.remove();
+  const c=ghCfg();
+  const p=document.createElement("div"); p.id="deployPanel";
+  p.style.cssText="position:fixed;inset:0;z-index:100001;background:rgba(20,12,8,.6);display:flex;align-items:center;justify-content:center;padding:18px";
+  const fld=(label,id,val,type)=>'<label style="display:block;font-size:11px;opacity:.7;margin:8px 0 3px">'+label+'</label><input id="'+id+'" type="'+(type||"text")+'" value="'+escapeAttr(val)+'" style="width:100%;box-sizing:border-box;background:#0f0a07;border:1px solid #ffffff22;color:#ffeede;border-radius:9px;padding:9px 11px;font-size:13px">';
+  p.innerHTML='<div style="background:#1c1410;color:#ffeede;max-width:380px;width:100%;border-radius:18px;padding:20px 18px;box-shadow:0 24px 60px -20px #000;max-height:90vh;overflow:auto">'
+    +'<div style="font-weight:900;font-size:15px;margin-bottom:2px">\uD83D\uDE80 GitHub \uBC30\uD3EC</div>'
+    +'<div style="font-size:11px;opacity:.55;margin-bottom:8px">\uC0C8 index.html \uACE8\uB77C\uC11C \uCEE4\uBC0B \xB7 \uD1A0\uD070\uC740 \uC774 \uAE30\uAE30\uC5D0\uB9CC \uC800\uC7A5</div>'
+    +fld("owner","dpOwner",c.owner)
+    +fld("repo","dpRepo",c.repo)
+    +fld("branch","dpBranch",c.branch)
+    +fld("path (\uB808\uD3EC \uB0B4 \uD30C\uC77C)","dpPath",c.path)
+    +fld("GitHub PAT","dpPat",c.pat,"password")
+    +'<label style="display:block;font-size:11px;opacity:.7;margin:8px 0 3px">\uC62C\uB9B4 index.html \uD30C\uC77C</label>'
+    +'<input id="dpFile" type="file" accept=".html,text/html" style="width:100%;font-size:12px;color:#ffeede">'
+    +'<div id="dpStat" style="font-size:12px;margin-top:10px;min-height:16px;line-height:1.5"></div>'
+    +'<button id="dpGo" style="width:100%;margin-top:8px;background:#1f6f43;color:#dfffe9;border:none;border-radius:11px;padding:13px;font-weight:900;font-size:14px;cursor:pointer">\uCEE4\uBC0B\uD558\uAE30</button>'
+    +'<button id="dpClose" style="width:100%;margin-top:8px;background:#ffffff14;color:#ffeede;border:none;border-radius:11px;padding:11px;font-weight:700;font-size:13px;cursor:pointer">\uB2EB\uAE30</button>'
+    +'</div>';
+  document.body.appendChild(p);
+  p.addEventListener("click",e=>{ if(e.target===p) p.remove(); });
+  $("#dpClose").onclick=()=>p.remove();
+  $("#dpGo").onclick=()=>deployToGithub(p);
+}
+function dpSetStat(html,color){ const s=$("#dpStat"); if(s){ s.innerHTML=html; s.style.color=color||"#ffeede"; } }
+async function deployToGithub(p){
+  const owner=$("#dpOwner").value.trim(), repo=$("#dpRepo").value.trim(),
+    branch=$("#dpBranch").value.trim()||"main", path=$("#dpPath").value.trim()||"index.html",
+    pat=$("#dpPat").value.trim(), file=$("#dpFile").files[0];
+  if(!owner||!repo||!pat){ dpSetStat("owner\xB7repo\xB7PAT \uB2E4 \uCC44\uC6CC\uC918","#ff8a7a"); return; }
+  if(!file){ dpSetStat("\uC62C\uB9B4 index.html \uD30C\uC77C\uC744 \uACE8\uB77C\uC918","#ff8a7a"); return; }
+  try{ localStorage.setItem("sr_gh_owner",owner); localStorage.setItem("sr_gh_repo",repo);
+    localStorage.setItem("sr_gh_branch",branch); localStorage.setItem("sr_gh_path",path);
+    localStorage.setItem("sr_gh_pat",pat); }catch(e){}
+  dpSetStat("\uD30C\uC77C \uC77D\uB294 \uC911\u2026");
+  let text=""; try{ text=await file.text(); }catch(e){ dpSetStat("\uD30C\uC77C \uC77D\uAE30 \uC2E4\uD328","#ff8a7a"); return; }
+  const verM=text.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+  const msg=(verM?verM[1]:"deploy")+" \xB7 3\uCD08\uC601\uC5B4 \uBC30\uD3EC";
+  let b64=""; try{ const bytes=new TextEncoder().encode(text); let bin=""; bytes.forEach(x=>bin+=String.fromCharCode(x)); b64=btoa(bin); }
+  catch(e){ dpSetStat("\uC778\uCF54\uB529 \uC2E4\uD328","#ff8a7a"); return; }
+  const api="https://api.github.com/repos/"+owner+"/"+repo+"/contents/"+path.split("/").map(encodeURIComponent).join("/");
+  const hdr={ "Authorization":"Bearer "+pat, "Accept":"application/vnd.github+json" };
+  dpSetStat("\uAE30\uC874 \uD30C\uC77C \uD655\uC778 \uC911\u2026");
+  let sha=null;
+  try{
+    const g=await fetch(api+"?ref="+encodeURIComponent(branch),{headers:hdr,cache:"no-store"});
+    if(g.status===200){ sha=(await g.json()).sha||null; }
+    else if(g.status===401){ dpSetStat("PAT \uC778\uC99D \uC2E4\uD328 (\uD1A0\uD070 \uD655\uC778)","#ff8a7a"); return; }
+    else if(g.status!==404){ let em=""; try{ em=(await g.json()).message||""; }catch(e){} dpSetStat("\uD655\uC778 \uC2E4\uD328 "+g.status+" "+escapeHtml(em),"#ff8a7a"); return; }
+  }catch(e){ dpSetStat("\uB124\uD2B8\uC6CC\uD06C \uC624\uB958","#ff8a7a"); return; }
+  dpSetStat("\uCEE4\uBC0B \uC911\u2026");
+  const body={ message:msg, content:b64, branch:branch }; if(sha) body.sha=sha;
+  try{
+    const r=await fetch(api,{ method:"PUT", headers:Object.assign({"Content-Type":"application/json"},hdr), body:JSON.stringify(body) });
+    if(r.status===200||r.status===201){
+      const rj=await r.json(); const link=(rj.commit&&rj.commit.html_url)||"";
+      dpSetStat("\u2705 \uCEE4\uBC0B \uC644\uB8CC ("+(verM?verM[1]:"")+")"+(link?'<br><a href="'+link+'" target="_blank" style="color:#9fe">\uCEE4\uBC0B \uBCF4\uAE30</a>':""),"#9be8b0");
+    } else { let em=""; try{ em=(await r.json()).message||""; }catch(e){} dpSetStat("\u274C \uC2E4\uD328 "+r.status+" "+escapeHtml(em),"#ff8a7a"); }
+  }catch(e){ dpSetStat("\u274C PUT \uC624\uB958: "+escapeHtml((e&&e.message)||""),"#ff8a7a"); }
 }
 
 async function forceUpdate(){
