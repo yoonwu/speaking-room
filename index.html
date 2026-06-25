@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.8";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.9";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7664,12 +7664,17 @@ function bleApplySlotGuard(j, ex, heard){
 }
 // 🔤 단어 보기 — 슬롯 핵심 단어+뜻 공개 + 모르는 단어로 SRS 등록 (모든 블록 드릴 공용)
 function bleRevealWord(it){
-  const ex=(it&&it.ex)||{};
-  const slot=String(ex.object||"").trim()||String(ex.en||"").trim();
+  const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  // 핵심어만: 슬롯(object) 우선. 없으면 정답에서 '블록 단어'를 제외한 내용어 → 블록은 절대 안 보여줌
+  let words=bleContentWords(String(ex.object||""));
+  if(!words.length){
+    const blockCore=new Set(bleCoreWords(b));
+    words=bleContentWords(String(ex.en||"")).filter(w=>!blockCore.has(w));
+  }
   const seen=new Set(), rows=[], reg=[];
-  bleContentWords(slot).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const ko=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):"")); reg.push({en:w, ko:ko||ex.ko||""}); });
+  words.forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const ko=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):"")); reg.push({en:w, ko:ko||ex.ko||""}); });
   if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
-  bleShowHintToast(rows.length?("🔤 "+rows.join(" · ")):"🔤 단어 정보 없음");
+  bleShowHintToast(rows.length?("🔤 핵심 단어: "+rows.join(" · ")):"🔤 단어 정보 없음");
 }
 async function bleJudge(targetBlock, ex, heard){
   const local=bleGradeLocal(targetBlock, ex.en, heard);   // 즉시 폴백값
@@ -10293,7 +10298,10 @@ function ctNext(){
 }
 // 🔤 정답의 핵심 단어 + 뜻 공개 → 본 단어는 '모르는 단어'로 SRS 등록 (뱉기 막힘 방지 + 단어 학습 연결)
 function ctShowWords(it){
-  const words=bleContentWords(it.en||"");
+  // 핵심어만: 정답에서 블록(chunk) 단어 제외 → 블록은 안 보여줌
+  const chunkW=new Set(bleContentWords(String(it.chunk||"").replace(/\.\.\.|\?/g,"")));
+  let words=bleContentWords(it.en||"").filter(w=>!chunkW.has(w));
+  if(!words.length) words=bleContentWords(it.en||"");   // 전부 블록어면 그냥 표시
   const seen=new Set(), rows=[], reg=[];
   words.forEach(w=>{
     if(seen.has(w)||w.length<2) return; seen.add(w);
@@ -10302,7 +10310,7 @@ function ctShowWords(it){
     reg.push({en:w, ko:ko||it.ko||""});
   });
   if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
-  bleShowHintToast(rows.length?("🔤 "+rows.join(" · ")):"🔤 단어 정보 없음");
+  bleShowHintToast(rows.length?("🔤 핵심 단어: "+rows.join(" · ")):"🔤 단어 정보 없음");
 }
 // 정답을 단어별로 색칠: 사용자가 말한 것과 비교해 맞은 단어=초록, 틀린/빠진 단어=빨강
 function ctNorm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9']/g," ").split(/\s+/).filter(Boolean); }
@@ -11596,7 +11604,10 @@ function dailyRoomRender(){
     <div class="fr-bot">
       <div id="drStat" style="text-align:center;font-size:14px;color:#8A6F62;min-height:22px;font-weight:700;margin-bottom:12px"></div>
       <div class="auto-actions"><button class="auto-mic" id="drMic">🎤 터치해서 말하기</button></div>
-      <button id="drType" style="width:100%;margin-top:10px;padding:13px;border-radius:14px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer">⌨️ 글로 쓰기</button>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="drType" style="flex:1;padding:13px;border-radius:14px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer">⌨️ 글로 쓰기</button>
+        <button id="drWord" style="flex:1;padding:13px;border-radius:14px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:14px;font-weight:700;cursor:pointer">🔤 단어 보기</button>
+      </div>
       <div id="drTypeWrap"></div>
     </div>
   </div>`;
@@ -11617,6 +11628,18 @@ function dailyRoomRender(){
     const inp=document.getElementById("drTypeIn"); inp.focus();
     const submit=()=>{ const t=inp.value.trim(); if(!t) return; inp.disabled=true; clearHints(); dailyRoomJudge(it, t); };
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
+  };
+  // 🔤 단어 보기 — 핵심 단어(it.key)만. 블록은 안 보여줌(블록 공부 중 단어 막힘 방지)
+  const wordBtn=$("#drWord");
+  if(wordBtn) wordBtn.onclick=()=>{
+    let key=String(it.key||"").trim();
+    if(!key){ const bw=bleContentWords(String(it.answer||"")); key=bw[bw.length-1]||""; }
+    if(!key){ bleShowHintToast("🔤 단어 정보 없음"); return; }
+    const kk=key.toLowerCase();
+    const ko=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[kk])?FREQ_DICT[kk]:"";
+    try{ bleRegisterUnknownWords([{en:key, ko:ko}]); }catch(e){}
+    bleShowHintToast("🔤 핵심 단어: <b>"+escapeHtml(key)+"</b>"+(ko?" "+escapeHtml(ko):""));
+    try{ speakEn(key); }catch(e){}
   };
 }
 function dailyRoomJudge(it, heard){
