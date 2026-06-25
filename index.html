@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.9";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.10";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6103,10 +6103,11 @@ function micBeepEnd(){
     _ac = _ac || new (window.AudioContext||window.webkitAudioContext)();
     if(_ac.state==="suspended") _ac.resume();
     const o=_ac.createOscillator(), g=_ac.createGain(), t=_ac.currentTime;
-    o.type="sine"; o.frequency.setValueAtTime(1320,t); o.frequency.setValueAtTime(660,t+0.09);
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.30);
-    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.32);
-    if(navigator.vibrate) navigator.vibrate([20,40,20]);
+    // 낮고 부드러운 2음(G4→B4) 부드럽게 글라이드 — 기분좋은 완료음(소름 X)
+    o.type="sine"; o.frequency.setValueAtTime(392,t); o.frequency.exponentialRampToValueAtTime(494,t+0.13);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.13,t+0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+0.38);
+    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.4);
+    if(navigator.vibrate) navigator.vibrate(16);
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
@@ -10436,9 +10437,8 @@ function ctDone(){
    ${mastered?"":`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
    ${collHtml}
    <div class="blk-actions" style="max-width:340px;margin-top:16px">
-     ${mastered?`<button class="blk-next" id="ctReal" style="font-size:16px;padding:16px">🎯 실전에서 써먹기 →</button>`:""}
-     ${mastered&&canMix?`<button class="blk-save" id="ctMix">🔀 쌓은 블록 섞어서 말하기</button>`:""}
-     ${mastered?`<button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-next" id="ctAuto" style="font-size:16px;padding:16px">🔥 배운 표현 입에 붙이기 →</button><button class="blk-save" id="ctAgain">다시 도전</button>`}
+     <button class="blk-next" id="ctAuto" style="font-size:16px;padding:16px">🔥 배운 표현 입에 붙이기 →</button>
+     ${mastered?`<button class="blk-save" id="ctReal">🎯 실전에서 써먹기</button><button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-save" id="ctAgain">다시 도전</button>`}
      <button id="ctHome" style="width:100%;margin-top:6px;padding:11px;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px">나중에 · 홈으로</button>
    </div></div>`;
   $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
@@ -11618,7 +11618,7 @@ function dailyRoomRender(){
   const mic=$("#drMic");
   mic.onclick=()=>{
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
-    micFillCb((heard)=>{ mic.classList.remove("live"); clearHints(); dailyRoomJudge(it, heard||""); });
+    micFillCb((heard,meta)=>{ mic.classList.remove("live"); clearHints(); dailyRoomJudge(it, heard||"", meta); }, it.answer);
   };
   const typeBtn=$("#drType");
   if(typeBtn) typeBtn.onclick=()=>{
@@ -11642,7 +11642,7 @@ function dailyRoomRender(){
     try{ speakEn(key); }catch(e){}
   };
 }
-function dailyRoomJudge(it, heard){
+function dailyRoomJudge(it, heard, meta){
   dailyRoom.tries++;
   const h=adNorm(heard);
   const key=adNorm(it.key||"");
@@ -11651,22 +11651,24 @@ function dailyRoomJudge(it, heard){
   // 극관대 — 첫날은 좌절 0 (문법 지적 금지, "통했는지"만)
   const pass = keyHit || blockHit || dailyRoom.tries>=2 || h.length>=3;
   const stat=$("#drStat"); const mic=$("#drMic"); const staff=$("#drStaff");
+  const pron=meta&&meta.pron;
+  const pronLine = pron ? `<br><span style="font-size:12px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점</span>${heard?` <span style="color:#8A6F62;font-size:11.5px">· 내 발음: "${escapeHtml(heard)}"</span>`:""}` : "";
+  // 발음 다시 하기 — 점수만 갱신, 진행은 그대로
+  const reSay=()=>{ if(mic){ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; } micFillCb((hd,m)=>{ if(mic) mic.classList.remove("live"); dailyRoom.tries--; dailyRoomJudge(it, hd||"", m); }, it.answer); };
   if(pass){
     dailyRoom.said++;
     try{ speakEn(it.answer); }catch(e){}
-    if(stat) stat.innerHTML='<b style="color:#19a06b">✅ 통했어요!</b>';
+    if(stat) stat.innerHTML='<b style="color:#19a06b">✅ 통했어요!</b>'+pronLine;
     if(staff) staff.innerHTML=`<div style="text-align:left;background:#EAF6F0;border:1px solid #BFE6D4;border-radius:14px;padding:11px 14px;margin:10px 0 6px">
       <div style="font-size:11px;color:#3A8A66;font-weight:900;margin-bottom:3px">🛎️ 직원</div>
       <div style="font-size:15px;color:#2F5C49;font-family:var(--serif)">${escapeHtml(it.staff)}</div></div>`;
     const last=(dailyRoom.idx>=dailyRoom.items.length-1);
-    if(mic){ mic.textContent=last?"상황 처리 완료 →":"다음 →"; mic.classList.remove("live");
-      mic.onclick=()=>{ dailyRoom.idx++; dailyRoomRender(); }; }
+    if(mic){ mic.textContent="🎤 발음 다시 해보기"; mic.classList.remove("live"); mic.onclick=reSay; }
+    const wrap=$("#drTypeWrap"); if(wrap){ wrap.innerHTML=`<button id="drNext" style="width:100%;margin-top:10px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);border:none;color:#fff;font-size:16px;font-weight:900;cursor:pointer">${last?"상황 처리 완료 →":"다음 →"}</button>`; const nb=$("#drNext"); if(nb) nb.onclick=()=>{ dailyRoom.idx++; dailyRoomRender(); }; }
   }else{
-    if(stat) stat.innerHTML='<span style="color:#E0A300">거의 다 됐어요! 한 번만 더요.</span>';
+    if(stat) stat.innerHTML='<span style="color:#E0A300">거의 다 됐어요! 한 번만 더요.</span>'+pronLine;
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
-    if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
-      mic.onclick=()=>{ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
-        micFillCb((hd)=>{ mic.classList.remove("live"); dailyRoomJudge(it, hd||""); }); }; }
+    if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live"); mic.onclick=reSay; }
   }
 }
 function dailyRoomDone(){
