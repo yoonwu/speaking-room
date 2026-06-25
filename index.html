@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.83.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.84.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4159,11 +4159,13 @@ function scheduleItem(n, ok){
   n.due = Date.now() + INTERVALS[n.box]*DAY;
 }
 let curScreen="setup";
+let micEpoch=0;   // 화면/모드 전환마다 +1. 진행 중인 마이크 콜백이 옛 화면에 결과를 쓰는 것을 막는 토큰.
 function pushScreen(which){
   if(which!=="setup"){
     try{ if(curScreen==="setup") history.pushState({s:which},""); else history.replaceState({s:which},""); }catch(e){}
   }
   curScreen=which;
+  micEpoch++;
 }
 function enterStage(which){
   setup.style.display = which==="setup"?"block":"none";
@@ -6110,8 +6112,11 @@ function attachVAD(stream, onStop, opts){
     return ()=>clearTimeout(id);
   }
 }
-async function micFillCb(cb){
+async function micFillCb(rawCb){
   if(qzRecording){ return; }
+  const startEpoch=micEpoch;
+  // 화면/모드가 바뀐 뒤 도착한 콜백은 옛 화면 상태를 오염시키므로 폐기.
+  const cb=(t,meta)=>{ if(micEpoch!==startEpoch){ return; } rawCb(t,meta); };
   try{
     const meta={startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null};
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
@@ -12860,6 +12865,7 @@ function devSkipStep(){
 }
 
 function goToSetup(fromPop){
+  micEpoch++;
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
   const _ss=$("#sprintScroll"); if(_ss){ _ss.style.background=""; _ss.classList.remove("fillv"); }
   clearSurvivalBackdrop();
