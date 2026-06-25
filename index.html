@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.6";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.7";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6110,7 +6110,7 @@ function micBeepEnd(){
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
-const VAD_OPTS={maxMs:12000, silenceMs:300, minSpeechMs:280, thresh:0.02};
+const VAD_OPTS={maxMs:12000, silenceMs:600, minSpeechMs:280, thresh:0.02};
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
@@ -7622,6 +7622,7 @@ Rules: ko is a natural Korean request/statement a beginner would actually want t
 // 캐시가 부족하면 백그라운드로 채워둠
 function bleEnsureContexts(b){
   if(b&&b.func==="phrase") return;   // 오늘의 블록(완성 문장)은 큐레이션 예문만 사용
+  if(typeof userWordLevel==="function" && userWordLevel()<=2) return;   // 초보: AI 컨텍스트 생성 끔 — 큐레이션만(번역불가 시나리오 방지)
   const cache=(BLE_CTX_CACHE[b.id])||[];
   if(cache.length<3){ bleGenContexts(b, 5); }   // 비동기, 기다리지 않음
 }
@@ -10176,18 +10177,14 @@ function startChunkTraining(pid){
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
-  // 베이스: DB 예문. 유저 단어레벨에 맞는 것만 — 낮은 레벨(L1-2)은 모르는 단어 0개로 엄격
+  // ⚠️ AI 생성 제거 — AI가 '우산 빌려준 친구 가격 묻기' 같은 번역 불가 시나리오를 만들어
+  // 항상 검증된 큐레이션 예문(사람이 쓴 ko→en)만 사용. 단어레벨에 맞는 것 우선, 부족하면 전체.
   const baseAll=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
   const lowLvl=userWordLevel()<=2;
   const filtered=baseAll.filter(e=>sentenceAllowedForUser(e.en, lowLvl?0:1));
-  // 낮은 레벨 + 레벨적합 예문 충분(>=5) → AI 없이 반복(어렵거나 엉뚱한 문장 0 보장)
-  if(lowLvl && filtered.length>=5){
-    ctItems=[]; let i=0; while(ctItems.length<10){ ctItems.push(filtered[i%filtered.length]); i++; }
-    ctNext(); return;
-  }
-  // 그 외(레벨적합 예문 부족 등) → AI로 레벨 맞는 쉬운 예문 생성·보충
-  $("#sprintScroll").innerHTML=`<div class="lloading">"${escapeHtml(p.phrase)}" 집중 훈련 준비 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
-  ctGenerate(p);
+  const pool=filtered.length?filtered:baseAll;   // 레벨 적합 없으면 큐레이션 전체(여전히 사람이 쓴 문장)
+  ctItems=[]; let i=0; while(ctItems.length<10 && pool.length){ ctItems.push(pool[i%pool.length]); i++; }
+  ctNext();
 }
 async function ctGenerate(p){
   const contexts="restaurant, hospital, school, hotel, customer support, daily life, travel, shopping, parent conversation, friend conversation";
