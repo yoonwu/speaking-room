@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.88.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.89.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9604,6 +9604,11 @@ function openSpeakHub(){
      <div class="hub-grab"></div>
      <div class="hub-title">⚔️ 스피킹 훈련장</div>
      <div class="hub-sub">배운 블록을 말로 써봐요</div>
+     <button class="hub-opt" data-go="auto">
+       <span class="hub-emo">🔥</span>
+       <span class="hub-tx"><b>입에 붙이기</b><i>배운 표현을 빠르게 반복해 자동으로 나오게</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="out">
        <span class="hub-emo">⚔️</span>
        <span class="hub-tx"><b>영어로 꺼내기</b><i>상황을 보고 배운 블록으로 말해요</i></span>
@@ -9623,7 +9628,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="out") startOutputEngine(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
