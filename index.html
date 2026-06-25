@@ -1645,6 +1645,14 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-wordhint .wh-lbl{font-size:10.5px;color:#C08763;font-weight:900;letter-spacing:.03em}
 .auto-wordhint .wh-en{font-size:18px;color:#E0664A;font-weight:900;margin-top:3px}
 .auto-input{width:100%;margin-top:10px;border:1.5px solid #F2D4C5;border-radius:14px;padding:13px 14px;font-size:16px;background:#fff;color:#2F241F;display:none}
+.study-panel{margin-top:12px;text-align:left}
+.study-words{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:9px}
+.study-word{background:#fff;border:1px solid #E9D7CB;color:#5A463D;border-radius:10px;padding:6px 11px;font-size:14px;font-weight:800;cursor:pointer}
+.study-word.added{background:rgba(25,160,107,.12);border-color:rgba(25,160,107,.4);color:#19a06b}
+.study-wordinfo{background:#FFF8F3;border:1px solid #F1DDD0;border-radius:11px;padding:9px 12px;font-size:13.5px;color:#5A463D;line-height:1.5;margin-bottom:9px}
+.study-acts{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
+.study-act{background:#fff;border:1px solid #E9D7CB;color:#8A6F62;border-radius:11px;padding:9px 12px;font-size:12.5px;font-weight:900;cursor:pointer}
+.study-extra{margin-top:9px}
 .auto-done{max-width:460px;margin:0 auto;text-align:center;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:24px;padding:24px 18px;box-shadow:0 18px 34px -24px rgba(214,120,70,.5)}
 .auto-done .em{font-size:42px;margin-bottom:8px}
 
@@ -1955,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.1";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10221,7 +10229,8 @@ function ctScore(it, heard){
   // 자동 넘김 제거 — 사용자가 정답을 다 보고 직접 넘김
   const wrap=$("#ctTypeWrap");
   if(wrap){
-    wrap.innerHTML=`<button id="ctNextBtn" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px;margin-top:4px">${ctIdx+1>=ctItems.length?"결과 보기 →":"다음 →"}</button>`;
+    wrap.innerHTML=`${studyPanelHtml(it.en, it.ko, "ct")}<button id="ctNextBtn" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px;margin-top:10px">${ctIdx+1>=ctItems.length?"결과 보기 →":"다음 →"}</button>`;
+    bindStudyPanel(wrap.querySelector(".study-panel"));
     $("#ctNextBtn").onclick=()=>{ ctIdx++; ctNext(); };
   }
 }
@@ -11171,7 +11180,8 @@ function autoDrillBlocks(){
 }
 function autoDrillBuildItems(blocks){
   const limits=adLimits(), items=[];
-  const focus=blocks.slice(0, Math.min(3, blocks.length));
+  // 배운 블록 중 랜덤으로 골라 섞어 출제 (배운 순서대로 X)
+  const focus=bleShuffle(blocks).slice(0, Math.min(3, blocks.length));
   focus.forEach((b,bi)=>{
     for(let r=0;r<(diffLevel()<=12?4:3);r++){
       const ex=bleFreshContextEx2(b, {forceFresh:true});
@@ -11180,10 +11190,11 @@ function autoDrillBuildItems(blocks){
   });
   let guard=0;
   while(items.length<8 && blocks.length && guard++<30){
-    const b=blocks[items.length%blocks.length];
+    const b=focus[items.length%focus.length]||blocks[0];
     items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
   }
-  return items.slice(0, diffLevel()<=12?8:10);
+  // 블록이 뭉치지 않게 최종 순서를 섞음 → 배운 블록 안에서 랜덤
+  return bleShuffle(items).slice(0, diffLevel()<=12?8:10);
 }
 // ===== 🚀 첫 5분 세션 (firstRunFlow) — 무조건 성공 경험 설계 =====
 // 슬롯은 극도로 쉬운 단어만 (water, coffee, this, help...) — 단어 때문에 막히면 안 됨
@@ -11613,6 +11624,67 @@ function startAutoDrill(){
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   autoDrillRender();
 }
+// ===== 📚 답 화면 공용 학습 패널 — 단어 클릭(뜻+단어장) · 강세·발음 · AI 질문 =====
+function studyPanelHtml(en, ko, id){
+  id=id||"sp";
+  const seen=new Set(), chips=[];
+  bleContentWords(en).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); chips.push(`<button class="study-word" data-w="${escapeAttr(w)}">${escapeHtml(w)}</button>`); });
+  return `<div class="study-panel" data-en="${escapeAttr(en)}" data-ko="${escapeAttr(ko||"")}">
+    <div class="study-words">${chips.join("")}</div>
+    <div class="study-wordinfo" style="display:none"></div>
+    <div class="study-acts">
+      <button class="study-act" data-act="pron">🔊 강세·발음</button>
+      <button class="study-act" data-act="ai">🤖 AI에게 질문</button>
+      <button class="study-act" data-act="vocab">📒 단어장 보내기</button>
+    </div>
+    <div class="study-extra"></div>
+  </div>`;
+}
+function bindStudyPanel(panel){
+  if(!panel) return;
+  const en=panel.getAttribute("data-en")||"", ko=panel.getAttribute("data-ko")||"";
+  const info=panel.querySelector(".study-wordinfo"), extra=panel.querySelector(".study-extra");
+  panel.querySelectorAll(".study-word").forEach(b=>{ b.onclick=()=>{
+    const w=b.getAttribute("data-w"); const koW=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:"";
+    try{ bleRegisterUnknownWords([{en:w, ko:koW||ko}]); }catch(e){}
+    b.classList.add("added");
+    if(info){ info.style.display="block"; info.innerHTML=`<b>${escapeHtml(w)}</b>${koW?" — "+escapeHtml(koW):" — 뜻 불러오는 중…"} <span style="color:#19a06b;font-weight:900">· 단어장 ✓</span>`; }
+    try{ speakEn(w); }catch(e){}
+    if(!koW) studyWordExplain(w, info);
+  }; });
+  panel.querySelectorAll(".study-act").forEach(b=>{ b.onclick=()=>{
+    const act=b.getAttribute("data-act");
+    if(act==="pron"){ if(extra) extra.innerHTML=extra.innerHTML?"":pronStudyCardHtml(en,"강세·발음"); }
+    else if(act==="ai"){ studyAskAI(en, ko); }
+    else if(act==="vocab"){ studySendToVocab(en, ko); }
+  }; });
+}
+async function studyWordExplain(w, info){
+  try{
+    const sys="You explain ONE English word for a Korean beginner. Return ONLY JSON: {\"ko\":\"아주 짧은 한국어 뜻\",\"ex\":\"a very short example\"}";
+    const d=await callClaude(sys,[{role:"user",content:"word: "+w}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(info&&o&&o.ko) info.innerHTML=`<b>${escapeHtml(w)}</b> — ${escapeHtml(o.ko)}${o.ex?`<br><span style="color:#8A6F62;font-size:12px">${escapeHtml(o.ex)}</span>`:""} <span style="color:#19a06b;font-weight:900">· 단어장 ✓</span>`;
+  }catch(e){}
+}
+function studyAskAI(en, ko){
+  openModal({title:"🤖 AI에게 질문", msg:`"${en}"\n무엇이 궁금한가요? (한국어로)`, input:true, placeholder:"예: the는 왜 들어가요? / 다른 표현은?", okText:"질문하기", onOk:(q)=>{ if(q) studyDoAsk(en, ko, q); }});
+}
+async function studyDoAsk(en, ko, q){
+  openModal({title:"🤖 생각 중…", html:`<div style="text-align:center;padding:18px;color:var(--muted)">답변 불러오는 중…</div>`, okText:"닫기"});
+  try{
+    const sys=["You are a friendly English tutor for a Korean learner.","The sentence: \""+en+"\" (Korean: "+(ko||"")+").","Answer the learner's question briefly IN KOREAN, simple and practical. 2-4 sentences max."].join("\n");
+    const d=await callClaude(sys,[{role:"user",content:q}]);
+    const ans=extractText(d)||"답변을 가져오지 못했어요.";
+    openModal({title:"🤖 답변", html:`<div style="text-align:left;line-height:1.7;font-size:14.5px;color:var(--text)"><div style="color:var(--muted);font-size:12px;margin-bottom:8px">"${escapeHtml(en)}" — ${escapeHtml(q)}</div>${escapeHtml(ans).replace(/\n/g,"<br>")}</div>`, okText:"닫기"});
+  }catch(e){ openModal({title:"오류", msg:"답변을 불러오지 못했어요. 다시 시도해주세요.", okText:"닫기"}); }
+}
+function studySendToVocab(en, ko){
+  const seen=new Set(), reg=[];
+  bleContentWords(en).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const koW=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; reg.push({en:w, ko:koW||ko}); });
+  if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
+  openModal({title:"📒 단어장에 추가됨", msg:`${reg.length}개 단어를 단어장에 넣었어요. 단어 공부에서 만날 수 있어요.`, okText:"단어 공부 하러 가기", cancelText:"계속 드릴", onOk:()=>{ try{ if(typeof startVocab==="function") startVocab(); }catch(e){} }});
+}
 function autoDrillRender(recallMode){
   if(!autoDrill) return goToSetup();
   if(autoDrill.idx>=autoDrill.items.length) return autoDrillDone();
@@ -11662,7 +11734,7 @@ function autoDrillRender(recallMode){
   const inp=$("#autoInput");
   inp.addEventListener("input",()=>{ if(!autoDrill.typedAt) autoDrill.typedAt=Date.now(); });
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
-  $("#autoShow").onclick=()=>autoDrillRevealAndRecall("정답을 봤어요. 1.5초 뒤 가리고 다시 말합니다.");
+  $("#autoShow").onclick=()=>{ if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; } const cur=autoDrill.items[autoDrill.idx]; if(cur) autoDrillShowResult(cur, true); };
   $("#autoWord").onclick=()=>autoDrillShowWord();
   // 힌트(단어/정답 보기)는 7초 뒤에만 등장 — 끝까지 스스로 풀 기회 보장
   autoDrill.hintTimer=setTimeout(()=>{ const r=document.getElementById("autoHintRow"); if(r) r.style.display="flex"; }, 7000);
@@ -11706,15 +11778,36 @@ function autoDrillFinish(heard, meta){
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
   if(perfect){
     if(stat) stat.innerHTML=`<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
-    try{ speakEn(it.ex.en); profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
-    autoDrillNextButton("다음 →");
+    try{ profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
+    autoDrillShowResult(it, false);
   }else if(g.ok){
-    if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. 이번엔 ${it.limit}초 안에 시작해봐요.`;
-    autoDrillRevealAndRecall("정답을 잠깐 보고, 가린 뒤 더 빨리 다시 꺼냅니다.");
+    if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. ${it.limit}초 안에 시작해봐요.`;
+    autoDrillShowResult(it, true);
   }else{
     const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
-    if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}<br>정답을 1.5초만 보고 가린 뒤 다시 말해요.`;
-    autoDrillRevealAndRecall("정답을 잠깐 보고, 가린 뒤 다시 꺼냅니다.");
+    if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}`;
+    autoDrillShowResult(it, true);
+  }
+}
+// 답 화면 — 정답 + 학습 패널(단어/강세/AI) 표시. 자동 넘김 없음: 사용자가 직접 넘김
+function autoDrillShowResult(it, canRetry){
+  const card=document.querySelector(".auto-card"); if(!card) return;
+  const old=card.querySelector("#autoAnswer"); if(old) old.remove();
+  const ans=document.createElement("div"); ans.className="auto-answer"; ans.id="autoAnswer";
+  ans.innerHTML=`<div style="font-size:11px;color:#B0958A;font-weight:900;margin-bottom:5px">정답</div><b>${escapeHtml(it.ex.en)}</b>${studyPanelHtml(it.ex.en, it.ex.ko, "auto")}`;
+  const stat=$("#autoStat"); card.insertBefore(ans, stat);
+  try{ speakEn(it.ex.en); }catch(e){}
+  bindStudyPanel(ans.querySelector(".study-panel"));
+  const actions=card.querySelector(".auto-actions");
+  if(actions){
+    const last=autoDrill.idx+1>=autoDrill.items.length;
+    actions.innerHTML = canRetry
+      ? `<button class="auto-mic" id="autoRetry">🔄 가리고 다시 말하기</button><button class="auto-sub" id="autoSkip" style="margin-top:8px;width:100%">${last?"결과 보기 →":"다음 →"}</button>`
+      : `<button class="auto-mic" id="autoNext">${last?"결과 보기 →":"다음 →"}</button>`;
+    const r=$("#autoRetry"); if(r) r.onclick=()=>autoDrillRender(true);
+    const go=()=>{ autoDrill.idx++; autoDrillRender(false); };
+    const sk=$("#autoSkip"); if(sk) sk.onclick=go;
+    const nx=$("#autoNext"); if(nx) nx.onclick=go;
   }
 }
 function autoDrillRevealAndRecall(msg){
