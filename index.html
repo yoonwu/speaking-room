@@ -1518,13 +1518,14 @@ body{background:var(--paper)!important;color:var(--text)}
 .hub-tx i{font-size:12.5px;color:var(--muted);font-style:normal;font-weight:600;margin-top:3px;display:block}
 .hub-ar{font-size:20px;color:#E2674A;font-weight:900}
 .hub-sheet-tall .chk-list{max-height:52vh;overflow-y:auto;margin:0 -2px;padding:0 2px 2px}
-.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:13px;padding:9px 13px;margin-bottom:6px;cursor:pointer;transition:transform .1s}
+.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:13px;padding:10px 14px;margin-bottom:6px;cursor:pointer;transition:transform .1s}
 .chk-row:active{transform:scale(.98);background:var(--mist)}
 .chk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .chk-en{font-family:var(--serif);font-size:15px;font-weight:700;color:#E2674A}
 .chk-ko{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chk-stars{font-size:11px;color:#F0A05A;letter-spacing:1px;margin-top:0}
-.chk-stars i{font-size:10px;color:var(--muted);font-style:normal;margin-left:5px;letter-spacing:0}
+.chk-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.chk-stars{font-size:11px;color:#F0A05A;letter-spacing:1px}
+.chk-side i{font-size:10px;color:var(--muted);font-style:normal}
 .chk-ar{font-size:18px;color:var(--muted);font-weight:900;flex:none}
 .bl-summary{display:flex;gap:8px;margin:4px 0 14px}
 .bl-sumcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:9px 6px;text-align:center}
@@ -1948,7 +1949,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.90.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.91.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8771,13 +8772,15 @@ function bleOpenHub(){
     return {t:"소개 완료", c:"#C08763"};
   };
   const rows=setBlocks.map(b=>{ const st=statusOf(b);
-    return `<button class="chk-row" data-id="${b.id}">
+    return `<button class="chk-row" data-id="${b.id}" data-no-pronko>
       <span class="chk-main">
-        <span class="chk-en">${escapeHtml(b.block)}</span>
+        <span class="chk-en" data-no-pronko>${escapeHtml(b.block)}</span>
         <span class="chk-ko">${escapeHtml(b.meaningKo)}</span>
-        <span class="chk-stars">${bleStars(b.id)} <i style="color:${st.c}">${st.t}</i></span>
       </span>
-      <span class="chk-ar" style="color:${st.c}">${st.t==="실전 준비"?'🏆':st.t==="소개 전"?'·':'›'}</span>
+      <span class="chk-side">
+        <span class="chk-stars">${bleStars(b.id)}</span>
+        <i style="color:${st.c}">${st.t}</i>
+      </span>
     </button>`; }).join("");
   const introN=setBlocks.filter(b=>bleBlockIntroduced(b.id)).length;
   const introDone=setSt.introCompleted;
