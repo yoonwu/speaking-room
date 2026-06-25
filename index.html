@@ -1653,6 +1653,13 @@ body{background:var(--paper)!important;color:var(--text)}
 .study-acts{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
 .study-act{background:#fff;border:1px solid #E9D7CB;color:#8A6F62;border-radius:11px;padding:9px 12px;font-size:12.5px;font-weight:900;cursor:pointer}
 .study-extra{margin-top:9px}
+.wp-more{margin-top:10px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.wp-more>summary{list-style:none;cursor:pointer;padding:13px 16px;font-size:13.5px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between}
+.wp-more>summary::-webkit-details-marker{display:none}
+.wp-more>summary::after{content:"펼치기 ▾";color:var(--muted);font-size:12px;font-weight:700}
+.wp-more[open]>summary::after{content:"접기 ▴"}
+.wp-more>summary:active{background:var(--mist)}
+.wp-more .wp-more-inner{padding:0 12px 12px}
 .auto-done{max-width:460px;margin:0 auto;text-align:center;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:24px;padding:24px 18px;box-shadow:0 18px 34px -24px rgba(214,120,70,.5)}
 .auto-done .em{font-size:42px;margin-bottom:8px}
 
@@ -1963,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.5";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.6";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5738,39 +5745,39 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
   const card=document.createElement("div");
   card.innerHTML=`
     <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
-    <div class="mbcard" style="padding:28px 22px;text-align:center">
-      ${(answer&&correct)?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
-      <div style="font-size:14px;color:var(--jade);font-weight:700;margin-bottom:6px">정답</div>
-      <div style="font-family:var(--serif);font-size:38px;color:var(--jade);font-weight:700;line-height:1.2">${escapeHtml(a)}</div>
-      <div style="font-family:var(--serif);font-size:26px;color:var(--text);margin-top:18px;line-height:1.45">${tappableEn(full)}</div>
-      <div style="font-size:16px;color:var(--muted);margin-top:10px">${escapeHtml(q.blank.ko)}</div>
-      <button class="ans-replay" id="wpSay" style="margin-top:14px;color:var(--jade);font-size:15px;font-weight:700">🔊 듣기</button>
-      ${(!correct)?`<div style="font-size:13px;color:var(--muted);margin-top:12px;border-top:1px solid var(--line);padding-top:10px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
-    </div>
-    <!-- 🎧 발음 3속도 -->
-    <div class="mbcard" style="padding:14px 18px;margin-top:10px">
-      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🎧 발음 듣기</div>
-      <div style="display:flex;gap:8px">
-        <button class="wp-spd" data-r="0.6">🐢 느리게</button>
-        <button class="wp-spd" data-r="1.0">🚶 보통</button>
-        <button class="wp-spd" data-r="1.3">🏃 빠르게</button>
+    <div class="mbcard" style="padding:18px 18px;text-align:center">
+      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
+      <div style="font-size:13px;color:var(--jade);font-weight:700;margin-bottom:4px">정답</div>
+      <div style="font-family:var(--serif);font-size:30px;color:var(--jade);font-weight:700;line-height:1.15">${escapeHtml(a)}</div>
+      <div style="font-family:var(--serif);font-size:21px;color:var(--text);margin-top:11px;line-height:1.4">${tappableEn(full)}</div>
+      <div style="font-size:14.5px;color:var(--muted);margin-top:7px">${escapeHtml(q.blank.ko)}</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:13px">
+        <button class="wp-spd" id="wpSay" style="flex:1">🔊 듣기</button>
+        <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
       </div>
+      <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
+      ${(!correct)?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
-    <!-- 🎤 발음 연습 (녹음 → 채점) -->
-    <div class="mbcard" style="padding:14px 18px;margin-top:10px">
-      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🎤 발음 연습 — 따라 말하고 점수 받기</div>
-      <button class="wp-spd" id="wpPron" style="width:100%">🎤 녹음해서 채점</button>
-      <div id="wpPronResult" style="margin-top:9px;text-align:center;min-height:18px"></div>
-    </div>
-    ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
-      return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
-        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted)">${SRS_STAGES.map((s,i)=>`<span style="color:${i<=idx?'var(--jade)':'var(--muted)'};font-weight:${i===idx?'900':'400'}">${srsStageLabel(s)}</span>`).join("")}</div>
-      </div>`; })()}
-    <div id="wpLearnCard"></div>
-    <button class="dict-ask" id="wpAsk" style="margin-top:10px">💬 이 표현에 대해 AI에게 질문하기</button>
-    <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>`;
+    <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>
+    <details class="wp-more">
+      <summary>📚 더 알아보기 — 발음 속도 · 예문 · 비슷한 표현 · AI 질문</summary>
+      <div class="wp-more-inner">
+        <div style="margin-bottom:9px"><div style="font-size:12.5px;font-weight:800;color:var(--text);margin-bottom:7px">🎧 발음 듣기</div>
+          <div style="display:flex;gap:8px">
+            <button class="wp-spd" data-r="0.6">🐢 느리게</button>
+            <button class="wp-spd" data-r="1.0">🚶 보통</button>
+            <button class="wp-spd" data-r="1.3">🏃 빠르게</button>
+          </div>
+        </div>
+        ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
+          return `<div style="margin-bottom:9px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:11px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
+            <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+          </div>`; })()}
+        <div id="wpLearnCard"></div>
+        <button class="dict-ask" id="wpAsk" style="margin-top:6px;width:100%">💬 이 표현에 대해 AI에게 질문하기</button>
+      </div>
+    </details>`;
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(full),260);
   $("#wpSay").onclick=()=>speakEn(full);
