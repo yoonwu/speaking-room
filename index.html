@@ -1955,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.96.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.97.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7521,6 +7521,7 @@ Rules: ko is a natural Korean request/statement a beginner would actually want t
 }
 // 캐시가 부족하면 백그라운드로 채워둠
 function bleEnsureContexts(b){
+  if(b&&b.func==="phrase") return;   // 오늘의 블록(완성 문장)은 큐레이션 예문만 사용
   const cache=(BLE_CTX_CACHE[b.id])||[];
   if(cache.length<3){ bleGenContexts(b, 5); }   // 비동기, 기다리지 않음
 }
@@ -9017,6 +9018,46 @@ const CORE_PHRASES=[
 
 ];
 
+// ===== 🔗 오늘의 블록(CORE_PHRASE) ↔ 배운 블록(BLE) 통합 =====
+// 오늘의 블록을 마스터하면 BLE 학습 시스템에 등록 → 입에붙이기·섞어말하기·실전·컬렉션에 자동 포함
+const CP_BY_ID=Object.fromEntries(CORE_PHRASES.map(p=>[p.id,p]));
+const CP_LEARNED_KEY="speakingroom:ct_learned";
+const CP_TAG_SIT={restaurant:"식당",cafe:"카페",shopping:"쇼핑",hotel:"호텔",hospital:"병원",school:"학교",support:"고객센터",banking:"은행",travel:"여행",airport:"공항",government:"관공서",daily:"일상"};
+function cpSituation(tags){ const t=(tags&&tags[0])||""; return CP_TAG_SIT[t]||"상황"; }
+// CORE_PHRASE → BLE 블록 형태로 변환 (id는 cp_ 네임스페이스로 BLE와 충돌 방지)
+function cpToBleBlock(p){
+  return {
+    id:"cp_"+p.id, block:p.phrase, meaningKo:p.ko, func:"phrase", contrast:[], fromCorePhrase:p.id,
+    examples:(p.examples||[]).map(e=>({situation:cpSituation(p.tags), ko:e.ko, en:e.en, object:""}))
+  };
+}
+// BLE_BLOCKS/BLE_BY_ID에 등록 (없을 때만). 반환=블록 id
+function cpEnsureBlock(p){
+  const id="cp_"+p.id;
+  if(!BLE_BY_ID[id]){ const b=cpToBleBlock(p); BLE_BLOCKS.push(b); BLE_BY_ID[id]=b; }
+  return id;
+}
+// 오늘의 블록 마스터 시 호출 → 영구 등록 + 학습 상태 부여
+function cpRegisterLearned(p){
+  if(!p||!p.id) return;
+  const id=cpEnsureBlock(p);
+  // 영구 목록에 pid 저장 (리로드 후 재구성용)
+  try{ const list=hGet(CP_LEARNED_KEY,[])||[]; if(list.indexOf(p.id)<0){ list.push(p.id); hSet(CP_LEARNED_KEY,list); } }catch(e){}
+  // BLE 학습 상태 부여 (소개됨 + 해금 + 성공 기록)
+  try{
+    const s=bleGetState(); const st=s[id]||{};
+    if(!st.introducedAt) st.introducedAt=Date.now();
+    st.unlocked=true; st.lastSeenAt=Date.now();
+    st.successCount=Math.max(st.successCount||0, 3);
+    st.communicationSuccessCount=Math.max(st.communicationSuccessCount||0, 3);
+    s[id]=st; bleSaveState(s);
+  }catch(e){}
+}
+// 리로드 시 BLE_BLOCKS 재구성 (블록 정의는 메모리뿐이라 매번 다시 추가) — 멱등
+function cpHydrate(){
+  try{ (hGet(CP_LEARNED_KEY,[])||[]).forEach(pid=>{ const p=CP_BY_ID[pid]; if(p) cpEnsureBlock(p); }); }catch(e){}
+}
+
 /* ===================== 📖 로컬 사전/블록 조회 시스템 =====================
    탭하면 100ms 내 로컬 표시. 없으면 AI 백그라운드 + 영구 캐시.
    절대 전체 DB를 AI에 보내지 않음. */
@@ -9676,7 +9717,7 @@ function spDone(){
   $$(".weakItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
 // ===== CHUNK MASTERY TRAINING — 약점 블록 집중(10문제, 7/10 → 마스터) =====
-let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0;
+let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0, ctPhrase=null;
 function openSpeakHub(){
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="speakHub";
   ov.innerHTML=`<div class="hub-bg"></div>
@@ -9995,7 +10036,7 @@ function newBlockGate(){
 function startChunkTraining(pid){
   const p=CORE_PHRASES.find(x=>x.id===pid);
   if(!p){ goToSetup(); return; }
-  ctPid=pid; ctChunk=p.phrase; ctIdx=0; ctPass=0;
+  ctPid=pid; ctChunk=p.phrase; ctPhrase=p; ctIdx=0; ctPass=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
@@ -10200,7 +10241,7 @@ function blockCollectionHtml(){
 function ctDone(){
   TTS&&TTS.cancel();
   const mastered = ctPass>=7;
-  if(mastered){ weakClear(ctPid); }
+  if(mastered){ weakClear(ctPid); try{ cpRegisterLearned(ctPhrase); }catch(e){} }   // 🔗 오늘의 블록 → 배운 블록 등록
   else { const w=weakGet(); if(w[ctPid]){ w[ctPid].miss=Math.max(1, 10-ctPass); weakSet(w); } }
   const xp = mastered? awardXP("output",60,"⭐ 블록 마스터!","chunkmaster") : awardXP("output",ctPass*5,"블록 훈련","chunk");
   const pct=Math.round(ctPass/ctItems.length*100);
@@ -12083,6 +12124,7 @@ function renderHome(){
   if(!$("#homeCard")) return;
   state.age="adult";
   applyAgeUI();
+  try{ cpHydrate(); }catch(e){}   // 오늘의 블록→배운 블록 재구성 (리로드 대비)
   const home=$("#homeCard"), qbox=$("#questBox"), daily=$("#dailyCard");
   if(home){ home.classList.add("learning-home"); }
   if(home&&qbox&&daily){ home.insertBefore(qbox, daily); }
