@@ -1955,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.97.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.98.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2227,7 +2227,8 @@ const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1"
 function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
 // 모든 진행 화면 상단에 현재 난이도 작게 표시
 function updateLevelBadges(){
-  const txt="D"+diffLevel();
+  let txt="D"+diffLevel();
+  try{ txt+=" · 단어Lv."+userWordLevel(); }catch(e){}
   ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
 }
 function levelRate(slow){ const v=diffLevel(); const base=0.70 + (v-1)*(0.34/59); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
@@ -7619,20 +7620,46 @@ const BLE_STOPWORDS=new Set("i you he she we they it a an the some any to for of
 function bleWords(t){ return bleNorm(t).split(" ").filter(Boolean); }
 function bleContentWords(t){ return bleWords(t).filter(w=>!BLE_STOPWORDS.has(w)); }
 // 슬롯(object) 난이도: 내용어가 모두 COMMON_FREQ_WORDS 안에 있으면 easy
+// ===== 📊 단어 레벨 시스템 — 유저가 아는 단어에 맞춰 콘텐츠 어휘를 조절 =====
 const _FREQ_SET=new Set(COMMON_FREQ_WORDS);
-function bleSlotIsHard(object){
-  if(!object) return false;
-  const words=bleContentWords(String(object));
-  if(!words.length) return false;
-  return words.some(w=>!_FREQ_SET.has(w));
+const _FREQ_INDEX=(function(){ const m={}; COMMON_FREQ_WORDS.forEach((w,i)=>{ if(m[w]==null) m[w]=i; }); return m; })();
+// 레벨1 생존 핵심 단어 — 빈도리스트엔 약하지만 당장 살아남는 데 필요한 기초 30개
+const SURVIVAL_L1=new Set("water coffee tea this that here please thank help bathroom toilet menu check bill bag receipt ticket room key taxi size more one two yes no card cash open close".split(" "));
+// 단어 난이도 레벨 (1=가장 기초 … 6=희귀어)
+function wordLevelOf(w){
+  w=String(w||"").toLowerCase();
+  if(SURVIVAL_L1.has(w)) return 1;
+  const i=_FREQ_INDEX[w];
+  if(i==null) return 6;
+  if(i<150) return 1; if(i<300) return 2; if(i<500) return 3; if(i<800) return 4; if(i<1200) return 5; return 6;
 }
-// 현재 D레벨 기준: D1-20(macro1-3)=easy만, D21-40(macro4-6)=medium까지, D41+=전체
-function bleSlotAllowed(object){
-  const v=typeof diffLevel==="function"?diffLevel():60;
-  if(v<=20) return !bleSlotIsHard(object);   // D1-20: 쉬운 슬롯만
-  if(v<=40) return true;                      // D21+: 전부 허용 (추후 medium 구분 가능)
-  return true;
+// 유저 단어레벨 — SRS에서 충분히 아는(review 이상) 단어 수로 산정. 콜드스타트=1
+function userWordLevel(){
+  let known=0;
+  try{ const s=srsAll(); for(const k in s){ const st=s[k]&&s[k].stage; if(st==="review"||st==="strong"||st==="mastered") known++; } }catch(e){}
+  if(known>=220) return 6; if(known>=140) return 5; if(known>=80) return 4;
+  if(known>=40) return 3; if(known>=15) return 2; return 1;
 }
+// 이 단어를 현재 유저가 써도 되나 — 기능어/레벨 이내 OR 이미 아는 SRS 단어
+function wordAllowedForUser(w, uwl){
+  w=String(w||"").toLowerCase();
+  if(!w) return true;
+  if(BLE_STOPWORDS.has(w)) return true;
+  if(_FREQ_INDEX[w]!=null && _FREQ_INDEX[w]<60) return true;   // 초고빈도 기능어
+  if(wordLevelOf(w)<=uwl) return true;
+  try{ const it=srsGet(w); if(it&&(it.stage==="review"||it.stage==="strong"||it.stage==="mastered")) return true; }catch(e){}
+  return false;
+}
+// 문장이 유저 레벨에 맞나 — 모르는 단어 slack개까지 허용(점진 도입)
+function sentenceAllowedForUser(en, slack){
+  const uwl=userWordLevel();
+  const words=bleContentWords(String(en||""));
+  if(!words.length) return true;
+  let over=0; words.forEach(w=>{ if(!wordAllowedForUser(w,uwl)) over++; });
+  return over<=(slack==null?1:slack);
+}
+// 슬롯(object) 허용 — 입에붙이기/인출은 새 단어 0개(다 알아야 자동화 가능)
+function bleSlotAllowed(object){ return sentenceAllowedForUser(object, 0); }
 function bleCoreWords(targetBlock){
   return bleWords(String(targetBlock.block||"").replace(/\.\.\.|\?/g,"")).filter(w=>!BLE_STOPWORDS.has(w));
 }
@@ -10041,11 +10068,13 @@ function startChunkTraining(pid){
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   // 베이스: DB 예문 전부 + 중복 제거. 10개 채울 때까지 AI로 다양한 상황 보충.
-  const base=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+  const baseAll=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+  // 유저 단어레벨에 맞는 예문 우선 (모르는 단어 1개까지 허용). 다 걸리면 원본 폴백
+  const base=(function(){ const f=baseAll.filter(e=>sentenceAllowedForUser(e.en,1)); return f.length?f:baseAll; })();
   ctItems=base.slice(0,10);
   if(ctItems.length>=10){ ctNext(); return; }
-  // 낮은 레벨(D1-20): AI 생성 대신 검증된 예문만 반복 — 어렵거나 엉뚱한 문장 차단
-  if(typeof diffLevel==="function" && diffLevel()<=20 && base.length){
+  // 낮은 유저 레벨(L1-2): AI 생성 대신 레벨에 맞는 예문만 반복 — 어렵거나 엉뚱한 문장 차단
+  if(userWordLevel()<=2 && base.length){
     ctItems=[]; let i=0; while(ctItems.length<10){ ctItems.push(base[i%base.length]); i++; }
     ctNext(); return;
   }
@@ -10061,7 +10090,8 @@ grammarRule(),
 "The chunk: \""+p.phrase+"\" (Korean meaning: "+p.ko+").",
 "Generate "+Math.max(need,6)+" NEW everyday situations. For EACH: a short KOREAN prompt + the natural English answer that MUST use the chunk \""+p.phrase+"\".",
 "CRITICAL: the Korean prompt MUST describe a situation that naturally REQUIRES this exact chunk. Never write a prompt whose natural answer would NOT use the chunk (e.g. for 'How much is it?' do NOT write '아메리카노를 주문했어요').",
-"DIFFICULTY (beginner): English answer max "+((typeof diffLevel==="function"&&diffLevel()<=30)?6:9)+" words. Use ONLY very common everyday words. No rare/long vocabulary. The Korean prompt should be one short, simple line.",
+"VOCABULARY LIMIT: the learner is at word level "+userWordLevel()+"/6. Use ONLY the ~"+(userWordLevel()*150)+" most common English words plus very basic survival nouns (water, coffee, bag, room, ticket...). Absolutely no rare or advanced vocabulary.",
+"DIFFICULTY: English answer max "+(userWordLevel()<=2?6:9)+" words. The Korean prompt should be one short, simple line.",
 "Vary the contexts widely: "+contexts+". Keep it natural.",
 "Do NOT repeat these existing ones: "+p.examples.map(e=>e.en).join(" / ")+".",
 'Return ONLY JSON: {"items":[{"ko":"한국어 상황","en":"English using the chunk"}]}.'
@@ -10069,7 +10099,7 @@ grammarRule(),
   try{
     const d=await callClaude(sys,[{role:"user",content:"Generate now."}], FAST_MODEL);
     const o=parseJSON(extractText(d));
-    const gen=(o.items||[]).filter(x=>x&&x.ko&&x.en).map(x=>({ko:x.ko,en:x.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
+    const gen=(o.items||[]).filter(x=>x&&x.ko&&x.en&&sentenceAllowedForUser(x.en,1)).map(x=>({ko:x.ko,en:x.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
     ctItems=p.examples.map(e=>({ko:e.ko,en:e.en,pid:ctPid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")})).concat(gen).slice(0,10);
     if(ctItems.length<5) throw new Error("short");
     ctNext();
