@@ -1949,7 +1949,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.91.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.92.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7298,7 +7298,7 @@ const BLE_LOCAL_CONTEXTS={
   ],
   do_you_have:[
     {situation:"쇼핑", ko:"이거 검은색 있어요?", en:"Do you have this in black?", object:"this in black"},
-    {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size"},
+    {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size", hard:true},
     {situation:"카페", ko:"디카페인 있어요?", en:"Do you have decaf?", object:"decaf"},
     {situation:"식당", ko:"채식 메뉴 있어요?", en:"Do you have vegetarian options?", object:"vegetarian options"},
     {situation:"식당", ko:"영어 메뉴 있어요?", en:"Do you have an English menu?", object:"an English menu"},
@@ -7337,7 +7337,7 @@ const BLE_LOCAL_CONTEXTS={
   could_you:[
     {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the check?", object:"bring the check"},
     {situation:"식당", ko:"양파 빼주시겠어요?", en:"Could you leave out the onions?", object:"leave out the onions"},
-    {situation:"카페", ko:"덜 달게 해주시겠어요?", en:"Could you make it less sweet?", object:"make it less sweet"},
+    {situation:"카페", ko:"덜 달게 해주시겠어요?", en:"Could you make it less sweet?", object:"make it less sweet", hard:true},
     {situation:"호텔", ko:"택시 불러주시겠어요?", en:"Could you call a taxi?", object:"call a taxi"},
     {situation:"호텔", ko:"짐 좀 맡아주시겠어요?", en:"Could you hold my luggage?", object:"hold my luggage"},
     {situation:"병원", ko:"이거 설명해주시겠어요?", en:"Could you explain this?", object:"explain this"},
@@ -7346,16 +7346,16 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"공항", ko:"게이트 확인해주시겠어요?", en:"Could you check the gate?", object:"check the gate"},
     {situation:"택시", ko:"여기서 세워주시겠어요?", en:"Could you stop here?", object:"stop here"},
     {situation:"고객센터", ko:"다시 말씀해주시겠어요?", en:"Could you say that again?", object:"say that again"},
-    {situation:"고객센터", ko:"천천히 말씀해주시겠어요?", en:"Could you speak more slowly?", object:"speak more slowly"},
+    {situation:"고객센터", ko:"천천히 말씀해주시겠어요?", en:"Could you speak more slowly?", object:"speak more slowly", hard:true},
     {situation:"학교", ko:"과제 마감일을 알려주시겠어요?", en:"Could you tell me the deadline?", object:"tell me the deadline"},
     {situation:"은행", ko:"계좌를 확인해주시겠어요?", en:"Could you check my account?", object:"check my account"},
     {situation:"사무실", ko:"파일 보내주시겠어요?", en:"Could you send me the file?", object:"send me the file"},
-    {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter"}
+    {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter", hard:true}
   ],
   i_think:[
     {situation:"쇼핑", ko:"이건 너무 비싼 것 같아요.", en:"I think it's too expensive.", object:"it's too expensive"},
     {situation:"쇼핑", ko:"이 색이 더 나은 것 같아요.", en:"I think this color is better.", object:"this color is better"},
-    {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty"},
+    {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty", hard:true},
     {situation:"카페", ko:"여기가 너무 시끄러운 것 같아요.", en:"I think it's too noisy here.", object:"it's too noisy here"},
     {situation:"호텔", ko:"방이 너무 추운 것 같아요.", en:"I think the room is too cold.", object:"the room is too cold"},
     {situation:"병원", ko:"이제 좀 나아진 것 같아요.", en:"I think I feel better now.", object:"I feel better now"},
@@ -7393,11 +7393,15 @@ function bleShuffle(arr){
   return arr;
 }
 // 블록의 전체 예문 풀 (로컬 실전 상황 + 원본 + 생성캐시)
-function bleAllEx(b){
+function bleAllEx(b, safeOnly){
   const out=[], seen=new Set();
-  [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[], (BLE_CTX_CACHE[b.id])||[]].forEach(list=>{
+  const sources = safeOnly
+    ? [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[]]
+    : [BLE_LOCAL_CONTEXTS[b.id]||[], b.examples||[], (BLE_CTX_CACHE[b.id])||[]];
+  sources.forEach(list=>{
     list.forEach(e=>{
       if(!e||!e.ko||!e.en) return;
+      if(safeOnly && e.hard) return;   // 입에 붙이기 등 쉬운 모드에서는 어려운(비교급·정도부사 등) 슬롯 제외
       const clean={situation:String(e.situation||"상황"), ko:String(e.ko), en:String(e.en), object:String(e.object||""), emoji:e.emoji};
       const key=bleExKey(clean); if(!key||seen.has(key)) return;
       seen.add(key); out.push(clean);
@@ -7414,7 +7418,7 @@ function bleSampleExamples(b,n){
 function bleFreshContextEx2(b, opts){
   opts=opts||{};
   const st=bleGetState()[b.id]; const used=(st&&st.contextsUsed)||[];
-  const all=bleAllEx(b);
+  const all=bleAllEx(b, opts.safeOnly);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
   const fresh=all.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
@@ -7459,7 +7463,13 @@ Vary: place (${places}), the object/need, the relationship, and urgency.
 Avoid repeating these existing ones: ${have}
 Return ONLY a JSON array of ${n} items, no markdown:
 [{"situation":"카페","ko":"한국어 상황 한 문장","en":"natural English using the block","object":"the object/need part"}]
-Rules: ko is a natural Korean request/statement a learner would want to say. en MUST naturally use "${b.block}". Keep en short and real. situation is a short Korean place label.`;
+CRITICAL DIFFICULTY RULES — the learner is a TRUE BEGINNER. The whole point is to make the BLOCK come out of their mouth easily, so the slot/object must NOT add difficulty:
+- The object/slot must be a SINGLE concrete everyday noun a beginner already knows: water, a fork, a towel, the bill, a taxi, the restroom, a menu, a receipt, the key, a doctor, coffee, help.
+- NO modifiers, NO comparatives, NO adverbs of degree (NEVER "a little shorter", "more slowly", "a bit bigger"). NO multi-step requests.
+- Each "en" must be 3-6 words total and use only the most common 500 English words besides the block itself.
+- If a request would need an advanced or abstract object, pick a simpler everyday one instead.
+- ko must be the simple natural Korean for that same easy request (e.g. "물 좀 주시겠어요?", "포크 하나 주세요", "화장실 어디예요?"). Never produce hard Korean like "조금 더 짧게 잘라 주시겠어요?".
+Keep en short, real, and EASY. situation is a short Korean place label.`;
     const d=await callClaude(sys, [{role:"user", content:"Generate now."}], FAST_MODEL);
     const arr=parseJSON(extractText(d));
     if(Array.isArray(arr) && arr.length){
@@ -10972,14 +10982,14 @@ function autoDrillBuildItems(blocks){
   const focus=blocks.slice(0, Math.min(3, blocks.length));
   focus.forEach((b,bi)=>{
     for(let r=0;r<(diffLevel()<=12?4:3);r++){
-      const ex=bleFreshContextEx2(b, {forceFresh:true});
+      const ex=bleFreshContextEx2(b, {forceFresh:true, safeOnly:true});
       items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
     }
   });
   let guard=0;
   while(items.length<8 && blocks.length && guard++<30){
     const b=blocks[items.length%blocks.length];
-    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
+    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true, safeOnly:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
   }
   return items.slice(0, diffLevel()<=12?8:10);
 }
