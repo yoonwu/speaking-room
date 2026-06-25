@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.7";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.8";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7646,6 +7646,31 @@ function bleRegisterUnknownWords(list){
   });
 }
 // 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded, unknownWords}
+// 슬롯(핵심 단어) 커버리지 — 'I think'만 하고 'flight/delayed' 빠지면 통과 막기
+function bleSlotCoverage(ex, heard){
+  const slot=String((ex&&ex.object)||"").trim();
+  const words=bleContentWords(slot).filter(w=>w.length>1);
+  if(!words.length) return 1;
+  const h=" "+adNorm(heard||"")+" ";
+  const hit=words.filter(w=>h.includes(" "+w.toLowerCase()+" ")).length;
+  return hit/words.length;
+}
+function bleApplySlotGuard(j, ex, heard){
+  if(j && (j.result==="PERFECT"||j.result==="HIT") && bleSlotCoverage(ex,heard)<0.5){
+    j.result="WEAK_HIT"; j.targetBlockSuccess=false;
+    if(!j.shortFeedbackKo) j.shortFeedbackKo="핵심 단어가 빠졌어요 — 끝까지 말해보세요.";
+  }
+  return j;
+}
+// 🔤 단어 보기 — 슬롯 핵심 단어+뜻 공개 + 모르는 단어로 SRS 등록 (모든 블록 드릴 공용)
+function bleRevealWord(it){
+  const ex=(it&&it.ex)||{};
+  const slot=String(ex.object||"").trim()||String(ex.en||"").trim();
+  const seen=new Set(), rows=[], reg=[];
+  bleContentWords(slot).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const ko=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):"")); reg.push({en:w, ko:ko||ex.ko||""}); });
+  if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
+  bleShowHintToast(rows.length?("🔤 "+rows.join(" · ")):"🔤 단어 정보 없음");
+}
 async function bleJudge(targetBlock, ex, heard){
   const local=bleGradeLocal(targetBlock, ex.en, heard);   // 즉시 폴백값
   if(!heard || !heard.trim()) return local;
@@ -7681,7 +7706,7 @@ Return ONLY JSON, no markdown:
         result=communicationSuccess ? "HIT" : "WEAK_HIT";
       }
       if(result==="HIT" && targetBlockSuccess && !communicationSuccess) result="WEAK_HIT";
-      return {
+      return bleApplySlotGuard({
         result,
         communicationSuccess,
         targetBlockSuccess,
@@ -7691,10 +7716,10 @@ Return ONLY JSON, no markdown:
         shortFeedbackKo:o.shortFeedbackKo||"",
         repairNeeded:!!o.repairNeeded,
         unknownWords: Array.isArray(o.unknownWords)? o.unknownWords.filter(w=>w&&w.en&&w.ko).slice(0,5) : []
-      };
+      }, ex, heard);
     }
   }catch(e){}
-  return local;
+  return bleApplySlotGuard(local, ex, heard);
 }
 // 로컬 폴백 채점 (AI 실패 시) — 결과타입으로 변환
 function bleGradeLocal(targetBlock, expectedEn, heard){
@@ -8283,7 +8308,6 @@ function bleViewRetrieve(it){
         <button id="bleType">⌨️ 글로 쓰기</button>
       </div>
     </div>
-    ${bleFocusPanel(it)}
   </div>`;
 }
 function bleWireRetrieve(it){
@@ -8301,7 +8325,7 @@ function bleWireRetrieve(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
   $("#bleHint").onclick=()=>{ bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); };
-  { const _bw=$("#bleWord"); if(_bw) _bw.onclick=()=>{ bleShowHintToast(bleWordHintHtml(it)); }; }
+  { const _bw=$("#bleWord"); if(_bw) _bw.onclick=()=>bleRevealWord(it); }
   bleWireFocusTools(it);
 }
 async function bleFinishRetrieve(it, heard){
@@ -8731,6 +8755,7 @@ function bleWireRetrieveDeep(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer){clearInterval(timer);timer=null;} bleFinishRetrieveDeep(it, v); } });
   };
   $("#bleHint").onclick=()=>{ if(it.type==="repair_fill"){ bleShowHintToast('💡 <b>'+escapeHtml(ex.en)+'</b>'); speakEn(ex.en); } else { bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); } };
+  { const wb=$("#bleWord"); if(wb) wb.onclick=()=>bleRevealWord(it); }
   bleWireFocusTools(it);
 }
 // Deep 블록구별 (P6 대조 피드백)
