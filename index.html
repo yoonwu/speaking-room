@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.82.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.83.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10997,6 +10997,7 @@ function frProg(){
 }
 function firstRunRender(){
   if(!firstRun) return goToSetup();
+  if(firstRun.hintTimer){ clearTimeout(firstRun.hintTimer); firstRun.hintTimer=null; }
   const it=firstRun.queue[firstRun.idx];
   if(!it) return goToSetup();
   const scroll=$("#sprintScroll"); scroll.style.background="";
@@ -11086,6 +11087,7 @@ function firstRunRender(){
       acts.appendChild(hb);
     }
   }, 7000);
+  firstRun.hintTimer=hintTimer;
   const mic=$("#frMic");
   mic.onclick=()=>{
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
@@ -11120,7 +11122,7 @@ function firstRunJudge(it, heard){
     if(stat) stat.innerHTML='<b style="color:#19a06b">✅ 통했어요!</b> 방금 영어로 말했어요.';
     try{ speakEn(it.answer); }catch(e){}
     if(mic){ mic.textContent="좋아요 →"; mic.classList.remove("live");
-      mic.onclick=()=>{ firstRun.idx++; firstRunRender(); }; }
+      mic.onclick=()=>{ if(firstRun&&firstRun.hintTimer){ clearTimeout(firstRun.hintTimer); firstRun.hintTimer=null; } firstRun.idx++; firstRunRender(); }; }
   }else{
     if(stat) stat.innerHTML='<span style="color:#E0A300">거의 다 됐어요! 한 번만 더요.</span>';
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
