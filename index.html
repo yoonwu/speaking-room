@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.12";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.13";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10126,7 +10126,12 @@ function blScore(it, heard){
   if(ok){ try{ avSeen(it.en,it.ko); avRetrieve(it.en,it.ko,'chunk'); }catch(e){} }
   bumpCount&&bumpCount("talk"); questBump&&questBump("chunk");
   setTimeout(()=>speakEn(it.en),120);
-  setTimeout(()=>{ blIdx++; blRender(); }, 1150);
+  // 자동 넘김 제거 — 정답 확인 후 직접 넘김
+  const ctrl=document.querySelector(".ar2-ctrl");
+  if(ctrl){
+    ctrl.innerHTML=`<button id="blNext" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px">${blIdx+1>=blItems.length?"완료 →":"다음 →"}</button>`;
+    $("#blNext").onclick=()=>{ blIdx++; blRender(); };
+  } else { setTimeout(()=>{ blIdx++; blRender(); }, 1150); }
 }
 function blDone(){
   TTS&&TTS.cancel();
