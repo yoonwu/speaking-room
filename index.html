@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.4";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.5";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5756,6 +5756,12 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
         <button class="wp-spd" data-r="1.3">🏃 빠르게</button>
       </div>
     </div>
+    <!-- 🎤 발음 연습 (녹음 → 채점) -->
+    <div class="mbcard" style="padding:14px 18px;margin-top:10px">
+      <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:9px">🎤 발음 연습 — 따라 말하고 점수 받기</div>
+      <button class="wp-spd" id="wpPron" style="width:100%">🎤 녹음해서 채점</button>
+      <div id="wpPronResult" style="margin-top:9px;text-align:center;min-height:18px"></div>
+    </div>
     ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
       return `<div class="mbcard" style="padding:14px 18px;margin-top:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:12px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
@@ -5769,7 +5775,8 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
   setTimeout(()=>speakEn(full),260);
   $("#wpSay").onclick=()=>speakEn(full);
   const askB=$("#wpAsk"); if(askB) askB.onclick=()=>openAskAI(q.word.word, full);
-  card.querySelectorAll(".wp-spd").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
+  card.querySelectorAll(".wp-spd[data-r]").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
+  { const pb=$("#wpPron"); if(pb) pb.onclick=function(){ startPronPractice(full, pb, $("#wpPronResult")); }; }
   $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
   if(correct) wpLoadLearnCard(q.word.word, q.word.ko, q.word);
 }
@@ -6146,20 +6153,19 @@ async function micFillCb(rawCb, refText){
       meta.stopAt=Date.now();
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb("", meta); return; }
-      let wav=null; try{ wav=await recordedToWav(raw); }catch(_){}
-      // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수)
-      if(refText && wav){
-        try{ const data=await pronounceRecognize(wav, refText); meta.sttDoneAt=Date.now(); const ex=pronExtract(data); meta.pron=ex.pron; if(ex.heard){ cb(ex.heard, meta); return; } }catch(e){}
+      // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수). WAV 실패시 원본 폴백 내장
+      if(refText){
+        try{ const r=await pronouncePractice(refText, raw, am); meta.sttDoneAt=Date.now(); if(r.score!=null) meta.pron={score:r.score, acc:r.acc}; if(r.heard){ cb(r.heard, meta); return; } }catch(e){}
       }
       // 2) 기존 /stt
       try{ const res=await sttRecognize(raw, am); const data=await res.json(); meta.sttDoneAt=Date.now(); const t=data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):""; if(t){ cb(t, meta); return; } }catch(e){}
-      // 3) /stt 실패 → /pronounce 더미 참조로 텍스트라도 복구
-      if(wav){ try{ const data=await pronounceRecognize(wav, refText||"hello world"); meta.sttDoneAt=Date.now(); const ex=pronExtract(data); if(!meta.pron) meta.pron=ex.pron; cb(ex.heard, meta); return; }catch(e){} }
+      // 3) /stt 실패 → /pronounce 더미 참조로 텍스트라도 복구 (디코드 실패 기기도 원본 폴백)
+      try{ const r=await pronouncePractice(refText||"hello world", raw, am); meta.sttDoneAt=Date.now(); if(r.score!=null&&!meta.pron) meta.pron={score:r.score, acc:r.acc}; cb(r.heard||"", meta); return; }catch(e){}
       cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
     attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
-  }catch(e){ cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
+  }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
 // /pronounce로 음성 인식 (DisplayText) + 발음 점수 추출 — /stt 대체·폴백용
 async function pronounceRecognize(wav, refText){
@@ -6173,6 +6179,55 @@ function pronExtract(data){
   const pa=n&&(n.PronunciationAssessment||(n.AccuracyScore!=null?n:null));
   const pron=pa?{acc:Math.round(pa.AccuracyScore||0), flu:Math.round(pa.FluencyScore||0), score:Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0))}:null;
   return {heard, pron};
+}
+// 마이크 실패 원인을 사람이 알아볼 메시지로 (기기별 진단)
+function micErrMsg(err){
+  const n=(err&&err.name)||"";
+  if(n==="NotAllowedError"||n==="SecurityError") return "마이크 권한이 거부됐어요 — 주소창 자물쇠/휴대폰 설정에서 마이크를 허용해 주세요";
+  if(n==="NotFoundError"||n==="OverconstrainedError") return "마이크를 찾을 수 없어요";
+  if(n==="NotReadableError"||n==="AbortError") return "마이크를 다른 앱이 쓰고 있어요 — 통화/녹음 앱을 끄고 다시";
+  return "마이크를 열 수 없어요 — 카톡/인스타 등 인앱 브라우저면 Chrome·Safari로 열어주세요";
+}
+function notifyMicError(err){ try{ bleShowHintToast("🎤 "+micErrMsg(err)); }catch(e){} }
+// 발음 채점용 — WAV 우선, 디코드 실패 기기는 원본 컨테이너로 폴백(호환성↑)
+async function pronouncePractice(ref, blob, am){
+  let body, ctype;
+  try{ body=await recordedToWav(blob); ctype="audio/wav"; }
+  catch(_){ body=blob; ctype=/webm/.test(am)?"audio/webm; codecs=opus":/ogg/.test(am)?"audio/ogg; codecs=opus":/mp4|aac/.test(am)?"audio/mp4":(am||"audio/webm; codecs=opus"); }
+  const b64=btoa(unescape(encodeURIComponent(ref||"hello world")));
+  const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":ctype,"X-Pronunciation-Text-B64":b64},body});
+  const txt=await res.text(); if(!res.ok) throw new Error("서버 "+res.status);
+  let d=null; try{ d=JSON.parse(txt); }catch(e){}
+  const ex=pronExtract(d||{}); return {heard:ex.heard, score:ex.pron?ex.pron.score:null, acc:ex.pron?ex.pron.acc:null};
+}
+// 단어/문장 발음 연습 녹음 — 결과를 box에 표시(점수·인식·에러). 어디서든 재사용
+let wpPronMR=null, wpPronRec=false;
+function startPronPractice(ref, btn, box){
+  if(wpPronRec){ if(wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); return; }
+  if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">마이크 준비 중…</div>`;
+  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+    let chunks=[]; const mime=getBestMime();
+    try{ wpPronMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); }
+    catch(err){ stream.getTracks().forEach(t=>t.stop()); if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">이 브라우저는 녹음을 지원하지 않아요. Chrome·Safari 최신 버전으로 열어보세요.</div>`; return; }
+    const am=wpPronMR.mimeType||mime; wpPronRec=true; if(btn) btn.textContent="⏹ 멈추기 (말하는 중…)";
+    wpPronMR.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
+    wpPronMR.onstop=async()=>{
+      try{ micBeepEnd&&micBeepEnd(); }catch(e){}
+      stream.getTracks().forEach(t=>t.stop()); wpPronRec=false; if(btn) btn.textContent="🎤 다시 발음 채점";
+      const raw=new Blob(chunks,{type:am});
+      if(raw.size<1000){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">🔇 소리가 안 잡혔어요. 마이크에 가까이서 또렷하게.</div>`; return; }
+      if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">채점 중…</div>`;
+      try{
+        const r=await pronouncePractice(ref, raw, am);
+        if(!box) return;
+        if(r.score==null){ box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">인식이 안 됐어요${r.heard?` — 들린 말: "${escapeHtml(r.heard)}"`:""}. 다시 또렷하게.</div>`; return; }
+        const col=r.score>=80?'#19a06b':r.score>=60?'#E0A300':'#e0533f';
+        box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${r.heard?`<div style="font-size:12px;color:var(--muted);margin-top:3px">내가 말한 발음: "${escapeHtml(r.heard)}"</div>`:""}`;
+      }catch(e){ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
+    };
+    try{ micBeep&&micBeep(); }catch(e){} wpPronMR.start(250);
+    try{ attachVAD&&attachVAD(stream, ()=>{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }, VAD_OPTS); }catch(e){}
+  }).catch(err=>{ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px;line-height:1.5">${micErrMsg(err)}</div>`; });
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
@@ -6880,7 +6935,7 @@ function phMic(ref, btn, cb){
     };
     micBeep(); phMR.start(250);
     attachVAD(stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, VAD_OPTS);
-  }).catch(e=>cb(null));
+  }).catch(e=>{ notifyMicError(e); cb(null); });
 }
 
 /* ===================== ⚡ OUTPUT SPRINT — 발화량·인출속도 스피킹 짐 =====================
