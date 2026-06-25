@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.84.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.85.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9451,6 +9451,8 @@ function spNext(){
     </div>
     <div class="ar2-ctrl">
      <button id="spMicBtn" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 공격!</button>
+     <button id="spType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+     <div id="spTypeWrap"></div>
      <button id="spPass" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">모르겠어요 — 넘기기 (MISS)</button>
     </div>
     <div class="ar2-foot">
@@ -9467,6 +9469,14 @@ function spNext(){
     b.classList.add("live"); $("#spStat").textContent="시전 중…";
     micFillCb((t)=>{ b.classList.remove("live"); spPassItem(it, t); }); };
   $("#spPass").onclick=()=>{ if(!spSpoke) spSpoke=Date.now(); spPassItem(it, ""); };
+  $("#spType").onclick=()=>{
+    const wrap=$("#spTypeWrap"); if(!wrap) return;
+    if(document.getElementById("spTypeIn")){ document.getElementById("spTypeIn").focus(); return; }
+    wrap.innerHTML=`<input id="spTypeIn" style="width:100%;margin-top:8px;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off" autocapitalize="off">`;
+    const inp=document.getElementById("spTypeIn"); inp.focus();
+    if(!spSpoke) spSpoke=Date.now();
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const t=inp.value.trim(); if(!t) return; inp.disabled=true; spPassItem(it, t); } });
+  };
 }
 function spPassItem(it, heard){
   const startT=spSpoke||Date.now();
@@ -9959,12 +9969,22 @@ function ctNext(){
     </div>
     <div id="ctStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px"></div>
     <button id="ctMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
+    <button id="ctType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+    <div id="ctTypeWrap"></div>
    </div>`;
   ctT0=Date.now(); ctSpoke=0;
   $("#ctExit").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
   $("#ctMic").onclick=function(){ const b=this; if(qzRecording) return; if(!ctSpoke) ctSpoke=Date.now();
     b.classList.add("live"); $("#ctStat").textContent="시전 중…";
     micFillCb((t)=>{ b.classList.remove("live"); ctScore(it, t); }); };
+  $("#ctType").onclick=()=>{
+    const wrap=$("#ctTypeWrap"); if(!wrap) return;
+    if(document.getElementById("ctTypeIn")){ document.getElementById("ctTypeIn").focus(); return; }
+    wrap.innerHTML=`<input id="ctTypeIn" style="width:100%;margin-top:9px;padding:13px;border:1.5px solid var(--jade);border-radius:13px;background:var(--surface);color:var(--text);font-size:16px" placeholder="영어로 입력 후 Enter" autocomplete="off" autocapitalize="off">`;
+    const inp=document.getElementById("ctTypeIn"); inp.focus();
+    if(!ctSpoke) ctSpoke=Date.now();
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const t=inp.value.trim(); if(!t) return; inp.disabled=true; ctScore(it, t); } });
+  };
 }
 function ctScore(it, heard){
   const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
