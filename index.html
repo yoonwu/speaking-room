@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.3";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.4";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6129,13 +6129,13 @@ function attachVAD(stream, onStop, opts){
     return ()=>clearTimeout(id);
   }
 }
-async function micFillCb(rawCb){
+async function micFillCb(rawCb, refText){
   if(qzRecording){ return; }
   const startEpoch=micEpoch;
   // 화면/모드가 바뀐 뒤 도착한 콜백은 옛 화면 상태를 오염시키므로 폐기.
   const cb=(t,meta)=>{ if(micEpoch!==startEpoch){ return; } rawCb(t,meta); };
   try{
-    const meta={startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null};
+    const meta={startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null};
     const stream=await navigator.mediaDevices.getUserMedia({audio:true});
     qzChunks=[]; const mime=getBestMime();
     qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
@@ -6146,16 +6146,33 @@ async function micFillCb(rawCb){
       meta.stopAt=Date.now();
       stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb("", meta); return; }
-      try{
-        const res=await sttRecognize(raw, am);
-        const data=await res.json();
-        meta.sttDoneAt=Date.now();
-        cb(data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):"", meta);
-      }catch(e){ cb("", meta); }
+      let wav=null; try{ wav=await recordedToWav(raw); }catch(_){}
+      // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수)
+      if(refText && wav){
+        try{ const data=await pronounceRecognize(wav, refText); meta.sttDoneAt=Date.now(); const ex=pronExtract(data); meta.pron=ex.pron; if(ex.heard){ cb(ex.heard, meta); return; } }catch(e){}
+      }
+      // 2) 기존 /stt
+      try{ const res=await sttRecognize(raw, am); const data=await res.json(); meta.sttDoneAt=Date.now(); const t=data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):""; if(t){ cb(t, meta); return; } }catch(e){}
+      // 3) /stt 실패 → /pronounce 더미 참조로 텍스트라도 복구
+      if(wav){ try{ const data=await pronounceRecognize(wav, refText||"hello world"); meta.sttDoneAt=Date.now(); const ex=pronExtract(data); if(!meta.pron) meta.pron=ex.pron; cb(ex.heard, meta); return; }catch(e){} }
+      cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
     attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
-  }catch(e){ cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null}); }
+  }catch(e){ cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
+}
+// /pronounce로 음성 인식 (DisplayText) + 발음 점수 추출 — /stt 대체·폴백용
+async function pronounceRecognize(wav, refText){
+  const b64=btoa(unescape(encodeURIComponent(refText||"hello world")));
+  const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64},body:wav});
+  return res.json();
+}
+function pronExtract(data){
+  const n=data&&data.NBest&&data.NBest[0];
+  const heard=((data&&data.DisplayText)||(n&&(n.Display||n.Lexical))||"").replace(/[.?!]+$/,"");
+  const pa=n&&(n.PronunciationAssessment||(n.AccuracyScore!=null?n:null));
+  const pron=pa?{acc:Math.round(pa.AccuracyScore||0), flu:Math.round(pa.FluencyScore||0), score:Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0))}:null;
+  return {heard, pron};
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
@@ -8211,7 +8228,7 @@ function bleWireRetrieve(it){
   let timer=null;
   // 학습 단계에선 시간압박 제거 — 끝까지 생각해서 스스로 맞춰보는 게 더 중요 (speed라도 타이머 안 돌림)
   // (게이트 충족용으로 type은 유지하되, 카운트다운/자동종료는 하지 않음)
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieve(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieve(it, t); }, (it&&it.ex&&it.ex.en)||(it&&it.en)||""); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
@@ -8641,7 +8658,7 @@ function bleWireRetrieveDeep(it){
   const ex=it.ex, b=it.block;
   let timer=null;
   // 학습 단계 시간압박 제거 — 끝까지 생각해서 스스로 맞춰보게 (speed라도 카운트다운 없음)
-  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieveDeep(it, t); }); };
+  $("#bleMic").onclick=function(){ if(qzRecording) return; if(!bleSpoke) bleSpoke=Date.now(); this.classList.add("live"); $("#bleMicLbl").textContent="듣는 중…"; micFillCb((t)=>{ this.classList.remove("live"); if(timer){ clearInterval(timer); timer=null; } bleFinishRetrieveDeep(it, t); }, (it&&it.ex&&it.ex.en)||(it&&it.en)||""); };
   $("#bleType").onclick=()=>{
     const wrap=document.querySelector(".blpz"); if(document.getElementById("bleTypeIn")){ document.getElementById("bleTypeIn").focus(); return; }
     if(!bleSpoke) bleSpoke=Date.now();
@@ -9645,7 +9662,7 @@ function spNext(){
   $("#spExit").onclick=spDone;
   $("#spMicBtn").onclick=function(){ const b=this; if(qzRecording) return; if(!spSpoke) spSpoke=Date.now();
     b.classList.add("live"); $("#spStat").textContent="시전 중…";
-    micFillCb((t)=>{ b.classList.remove("live"); spPassItem(it, t); }); };
+    micFillCb((t)=>{ b.classList.remove("live"); spPassItem(it, t); }, (it&&it.en)||""); };
   $("#spPass").onclick=()=>{ if(!spSpoke) spSpoke=Date.now(); spPassItem(it, ""); };
   $("#spType").onclick=()=>{
     const wrap=$("#spTypeWrap"); if(!wrap) return;
@@ -9985,7 +10002,7 @@ function blRender(){
    </div>`;
   blT0=Date.now(); blSpoke=0;
   $("#blExit").onclick=()=>{ goToSetup(); };
-  $("#blMic").onclick=function(){ const b=this; if(qzRecording) return; if(!blSpoke) blSpoke=Date.now(); b.classList.add("live"); $("#blStat").textContent="시전 중…"; micFillCb((t)=>{ b.classList.remove("live"); blScore(it,t); }); };
+  $("#blMic").onclick=function(){ const b=this; if(qzRecording) return; if(!blSpoke) blSpoke=Date.now(); b.classList.add("live"); $("#blStat").textContent="시전 중…"; micFillCb((t)=>{ b.classList.remove("live"); blScore(it,t); }, (it&&it.en)||""); };
   const hb=$("#blHint"); if(hb) hb.onclick=()=>{ const s=$("#blStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(it.chunk)+'</b> 로 시작해요'; };
   // 문제 단계에서는 정답을 읽어주지 않음 (스스로 떠올려야 함). 정답 음성은 답한 뒤에만.
   $("#blType").onclick=()=>blTypeAnswer(it);
@@ -10179,7 +10196,7 @@ function ctNext(){
   $("#ctExit").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
   $("#ctMic").onclick=function(){ const b=this; if(qzRecording) return; if(!ctSpoke) ctSpoke=Date.now();
     b.classList.add("live"); $("#ctStat").textContent="시전 중…";
-    micFillCb((t)=>{ b.classList.remove("live"); ctScore(it, t); }); };
+    micFillCb((t,meta)=>{ b.classList.remove("live"); ctScore(it, t, meta); }, it.en); };
   $("#ctType").onclick=()=>{
     const wrap=$("#ctTypeWrap"); if(!wrap) return;
     if(document.getElementById("ctTypeIn")){ document.getElementById("ctTypeIn").focus(); return; }
@@ -10212,7 +10229,7 @@ function ctColorAnswer(correct, heard){
     : `<span style="color:#f04438;font-weight:900;text-decoration:underline;text-underline-offset:2px">${escapeHtml(w)}</span>`
   ).join(" ");
 }
-function ctScore(it, heard){
+function ctScore(it, heard, meta){
   if(ctHintTimer){ clearTimeout(ctHintTimer); ctHintTimer=null; }
   const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
   const grade=spGrade(heard, it, elapsed);
@@ -10223,7 +10240,9 @@ function ctScore(it, heard){
     const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
              : grade==="hit"?`<span style="color:#FF8568;font-weight:900">⚔️ 통과</span>`
              : `<span style="color:#f87171;font-weight:900">💥 다시</span>`;
-    stat.innerHTML=`${lbl} <span style="font-family:var(--serif);font-size:17px">${ctColorAnswer(it.en, heard)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`들림 "${escapeHtml(heard)}"`:"안 들렸어요"}</span>`;
+    const pron=meta&&meta.pron;
+    const pronLine = pron ? `<br><span style="font-size:11.5px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점 (정확도 ${pron.acc})</span>` : "";
+    stat.innerHTML=`${lbl} <span style="font-family:var(--serif);font-size:17px">${ctColorAnswer(it.en, heard)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`🎙️ 내가 말한 발음: "${escapeHtml(heard)}"`:"안 들렸어요"}</span>${pronLine}`;
   }
   const mic=$("#ctMic"); if(mic){ mic.disabled=true; mic.style.display="none"; }
   const tb=$("#ctType"), wb=$("#ctWord"); if(tb) tb.style.display="none"; if(wb) wb.style.display="none";
@@ -11731,7 +11750,7 @@ function autoDrillRender(recallMode){
   $("#autoMic").onclick=function(){
     if(qzRecording) return;
     this.classList.add("live"); $("#autoStat").textContent="듣고 있어요…";
-    micFillCb((t,meta)=>{ this.classList.remove("live"); autoDrillFinish(t, meta||{}); });
+    micFillCb((t,meta)=>{ this.classList.remove("live"); autoDrillFinish(t, meta||{}); }, (it.ex&&it.ex.en)||"");
   };
   $("#autoType").onclick=()=>{ const inp=$("#autoInput"); inp.style.display="block"; inp.focus(); };
   const inp=$("#autoInput");
@@ -11790,6 +11809,12 @@ function autoDrillFinish(heard, meta){
     const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
     if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}`;
     autoDrillShowResult(it, true);
+  }
+  // 내가 말한 발음(인식 결과) + 발음 점수 표시
+  const st2=$("#autoStat"); if(st2){
+    const pron=meta&&meta.pron;
+    const pl=pron?` · <span style="color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점</span>`:"";
+    st2.innerHTML+=`<br><span style="font-size:11.5px;color:#8A6F62">${heard?`🎙️ 내가 말한 발음: "${escapeHtml(heard)}"`:"안 들렸어요"}${pl}</span>`;
   }
 }
 // 답 화면 — 정답 + 학습 패널(단어/강세/AI) 표시. 자동 넘김 없음: 사용자가 직접 넘김
