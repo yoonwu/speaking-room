@@ -1955,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.95.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.96.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10003,6 +10003,11 @@ function startChunkTraining(pid){
   const base=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
   ctItems=base.slice(0,10);
   if(ctItems.length>=10){ ctNext(); return; }
+  // 낮은 레벨(D1-20): AI 생성 대신 검증된 예문만 반복 — 어렵거나 엉뚱한 문장 차단
+  if(typeof diffLevel==="function" && diffLevel()<=20 && base.length){
+    ctItems=[]; let i=0; while(ctItems.length<10){ ctItems.push(base[i%base.length]); i++; }
+    ctNext(); return;
+  }
   $("#sprintScroll").innerHTML=`<div class="lloading">"${escapeHtml(p.phrase)}" 집중 훈련 준비 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   ctGenerate(p);
 }
@@ -10014,7 +10019,9 @@ async function ctGenerate(p){
 grammarRule(),
 "The chunk: \""+p.phrase+"\" (Korean meaning: "+p.ko+").",
 "Generate "+Math.max(need,6)+" NEW everyday situations. For EACH: a short KOREAN prompt + the natural English answer that MUST use the chunk \""+p.phrase+"\".",
-"Vary the contexts widely: "+contexts+". Keep English short (max 9 words) and natural.",
+"CRITICAL: the Korean prompt MUST describe a situation that naturally REQUIRES this exact chunk. Never write a prompt whose natural answer would NOT use the chunk (e.g. for 'How much is it?' do NOT write '아메리카노를 주문했어요').",
+"DIFFICULTY (beginner): English answer max "+((typeof diffLevel==="function"&&diffLevel()<=30)?6:9)+" words. Use ONLY very common everyday words. No rare/long vocabulary. The Korean prompt should be one short, simple line.",
+"Vary the contexts widely: "+contexts+". Keep it natural.",
 "Do NOT repeat these existing ones: "+p.examples.map(e=>e.en).join(" / ")+".",
 'Return ONLY JSON: {"items":[{"ko":"한국어 상황","en":"English using the chunk"}]}.'
   ].join("\n");
@@ -10045,7 +10052,6 @@ function ctNext(){
     </div>
     <div style="text-align:center;margin:8px 0 16px">
       <div style="font-size:12px;color:var(--muted);font-weight:700">🎯 이 블록으로만 답하기</div>
-      <div style="font-family:var(--serif);font-size:26px;font-weight:700;color:var(--jade);margin-top:3px">${escapeHtml(ctChunk)}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">7/10 맞히면 마스터 ⭐</div>
     </div>
     <div class="spell-card">
@@ -10054,7 +10060,10 @@ function ctNext(){
     </div>
     <div id="ctStat" style="text-align:center;font-size:14px;color:var(--muted);font-weight:700;min-height:22px;margin-bottom:12px"></div>
     <button id="ctMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
-    <button id="ctType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="ctType" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+      <button id="ctWord" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">🔤 단어 보기</button>
+    </div>
     <div id="ctTypeWrap"></div>
    </div>`;
   ctT0=Date.now(); ctSpoke=0;
@@ -10070,6 +10079,29 @@ function ctNext(){
     if(!ctSpoke) ctSpoke=Date.now();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const t=inp.value.trim(); if(!t) return; inp.disabled=true; ctScore(it, t); } });
   };
+  $("#ctWord").onclick=()=>ctShowWords(it);
+}
+// 🔤 정답의 핵심 단어 + 뜻 공개 → 본 단어는 '모르는 단어'로 SRS 등록 (뱉기 막힘 방지 + 단어 학습 연결)
+function ctShowWords(it){
+  const words=bleContentWords(it.en||"");
+  const seen=new Set(), rows=[], reg=[];
+  words.forEach(w=>{
+    if(seen.has(w)||w.length<2) return; seen.add(w);
+    const ko=(typeof FREQ_DICT!=="undefined" && FREQ_DICT[w]) ? FREQ_DICT[w] : "";
+    rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):""));
+    reg.push({en:w, ko:ko||it.ko||""});
+  });
+  if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
+  bleShowHintToast(rows.length?("🔤 "+rows.join(" · ")):"🔤 단어 정보 없음");
+}
+// 정답을 단어별로 색칠: 사용자가 말한 것과 비교해 맞은 단어=초록, 틀린/빠진 단어=빨강
+function ctNorm(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9']/g," ").split(/\s+/).filter(Boolean); }
+function ctColorAnswer(correct, heard){
+  const hSet=new Set(ctNorm(heard));
+  return ctNorm(correct).map(w=> hSet.has(w)
+    ? `<span style="color:#19a06b">${escapeHtml(w)}</span>`
+    : `<span style="color:#f04438;font-weight:900;text-decoration:underline;text-underline-offset:2px">${escapeHtml(w)}</span>`
+  ).join(" ");
 }
 function ctScore(it, heard){
   const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
@@ -10081,12 +10113,18 @@ function ctScore(it, heard){
     const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
              : grade==="hit"?`<span style="color:#FF8568;font-weight:900">⚔️ 통과</span>`
              : `<span style="color:#f87171;font-weight:900">💥 다시</span>`;
-    stat.innerHTML=`${lbl} <span style="font-family:var(--serif);color:var(--text);font-size:17px">${escapeHtml(it.en)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`들림 "${escapeHtml(heard)}"`:"안 들렸어요"}</span>`;
+    stat.innerHTML=`${lbl} <span style="font-family:var(--serif);font-size:17px">${ctColorAnswer(it.en, heard)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`들림 "${escapeHtml(heard)}"`:"안 들렸어요"}</span>`;
   }
-  const mic=$("#ctMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
+  const mic=$("#ctMic"); if(mic){ mic.disabled=true; mic.style.display="none"; }
+  const tb=$("#ctType"), wb=$("#ctWord"); if(tb) tb.style.display="none"; if(wb) wb.style.display="none";
   if(ok){ try{ avSeen(it.en,it.ko); avRetrieve(it.en,it.ko,it.tag||"chunk"); }catch(e){} }
   setTimeout(()=>speakEn(it.en),120);
-  setTimeout(()=>{ ctIdx++; ctNext(); }, 1100);
+  // 자동 넘김 제거 — 사용자가 정답을 다 보고 직접 넘김
+  const wrap=$("#ctTypeWrap");
+  if(wrap){
+    wrap.innerHTML=`<button id="ctNextBtn" class="bigplay" style="width:100%;justify-content:center;padding:16px;font-size:17px;margin-top:4px">${ctIdx+1>=ctItems.length?"결과 보기 →":"다음 →"}</button>`;
+    $("#ctNextBtn").onclick=()=>{ ctIdx++; ctNext(); };
+  }
 }
 // ===== 🧱 블록 컬렉션 허브 — 완료 화면에서 자산감 + 다음 훈련 유도 =====
 function blockCollectionData(){
