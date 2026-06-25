@@ -1638,6 +1638,12 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-mic{background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;min-width:180px}
 .auto-mic.live{animation:pulse 1s infinite}
 .auto-sub{background:#fff;color:#8A6F62;border:1px solid #F2D4C5!important}
+.auto-row{display:flex;gap:9px;justify-content:center;flex:1 1 100%}
+.auto-row button{flex:1}
+.auto-row .auto-mic{min-width:0}
+.auto-wordhint{background:#FFF4EC;border:1px dashed #F0A782;border-radius:13px;padding:11px 14px;margin:10px 0 0;text-align:center}
+.auto-wordhint .wh-lbl{font-size:10.5px;color:#C08763;font-weight:900;letter-spacing:.03em}
+.auto-wordhint .wh-en{font-size:18px;color:#E0664A;font-weight:900;margin-top:3px}
 .auto-input{width:100%;margin-top:10px;border:1.5px solid #F2D4C5;border-radius:14px;padding:13px 14px;font-size:16px;background:#fff;color:#2F241F;display:none}
 .auto-done{max-width:460px;margin:0 auto;text-align:center;background:#FFF8F3;border:1px solid #F3D2C3;border-radius:24px;padding:24px 18px;box-shadow:0 18px 34px -24px rgba(214,120,70,.5)}
 .auto-done .em{font-size:42px;margin-bottom:8px}
@@ -1949,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.93.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.94.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11474,9 +11480,14 @@ function autoDrillRender(recallMode){
     ${answerHtml}
     <div class="auto-stat" id="autoStat">상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.</div>
     <div class="auto-actions">
-      <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
-      <button class="auto-sub" id="autoType">⌨️ 입력</button>
-      <button class="auto-sub" id="autoShow">정답 보기</button>
+      <div class="auto-row">
+        <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
+        <button class="auto-sub" id="autoType">⌨️ 입력</button>
+      </div>
+      <div class="auto-row">
+        <button class="auto-sub" id="autoWord">🔤 단어만 보기</button>
+        <button class="auto-sub" id="autoShow">정답 보기</button>
+      </div>
     </div>
     <input id="autoInput" class="auto-input" autocomplete="off" placeholder="영어로 입력 후 Enter">
   </div>`;
@@ -11493,6 +11504,27 @@ function autoDrillRender(recallMode){
   inp.addEventListener("input",()=>{ if(!autoDrill.typedAt) autoDrill.typedAt=Date.now(); });
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
   $("#autoShow").onclick=()=>autoDrillRevealAndRecall("정답을 봤어요. 1.5초 뒤 가리고 다시 말합니다.");
+  $("#autoWord").onclick=()=>autoDrillShowWord();
+}
+// 🔤 슬롯(빈칸) 단어만 살짝 보여주기 — 턴은 안 끝냄. 본 단어 = 모르는 단어 → 내부 등록
+function autoDrillShowWord(){
+  const it=autoDrill&&autoDrill.items[autoDrill.idx]; if(!it) return;
+  const slot=String((it.ex&&it.ex.object)||"").trim();
+  const showEn=slot||String((it.ex&&it.ex.en)||"").trim();
+  if(!showEn) return;
+  // 처음 누를 때만 "모르는 단어"로 SRS 등록(중복 방지)
+  if(!it._wordShown){
+    it._wordShown=true;
+    try{ bleRegisterUnknownWords([{en:showEn, ko:(it.ex&&it.ex.ko)||it.block.meaningKo||""}]); }catch(e){}
+  }
+  const card=document.querySelector(".auto-card"); if(!card) return;
+  let hint=card.querySelector("#autoWordHint");
+  if(!hint){
+    hint=document.createElement("div"); hint.className="auto-wordhint"; hint.id="autoWordHint";
+    const stat=$("#autoStat"); card.insertBefore(hint, stat);
+  }
+  hint.innerHTML=`<div class="wh-lbl">🔤 이 단어를 넣어 말해보세요</div><div class="wh-en">${escapeHtml(showEn)}</div>`;
+  try{ speakEn(showEn); }catch(e){}
 }
 function autoDrillInitMs(meta){
   const t=(meta&&meta.speechStartAt) || autoDrill.speechStartAt || autoDrill.typedAt || Date.now();
