@@ -1518,17 +1518,17 @@ body{background:var(--paper)!important;color:var(--text)}
 .hub-tx i{font-size:12.5px;color:var(--muted);font-style:normal;font-weight:600;margin-top:3px;display:block}
 .hub-ar{font-size:20px;color:#E2674A;font-weight:900}
 .hub-sheet-tall .chk-list{max-height:52vh;overflow-y:auto;margin:0 -2px;padding:0 2px 2px}
-.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:transform .1s}
+.chk-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:#FFF7F0;border:1px solid var(--line);border-radius:13px;padding:9px 13px;margin-bottom:6px;cursor:pointer;transition:transform .1s}
 .chk-row:active{transform:scale(.98);background:var(--mist)}
-.chk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.chk-en{font-family:var(--serif);font-size:16px;font-weight:700;color:#E2674A}
-.chk-ko{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chk-stars{font-size:12px;color:#F0A05A;letter-spacing:1px;margin-top:1px}
-.chk-stars i{font-size:10.5px;color:var(--muted);font-style:normal;margin-left:5px;letter-spacing:0}
+.chk-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.chk-en{font-family:var(--serif);font-size:15px;font-weight:700;color:#E2674A}
+.chk-ko{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chk-stars{font-size:11px;color:#F0A05A;letter-spacing:1px;margin-top:0}
+.chk-stars i{font-size:10px;color:var(--muted);font-style:normal;margin-left:5px;letter-spacing:0}
 .chk-ar{font-size:18px;color:var(--muted);font-weight:900;flex:none}
 .bl-summary{display:flex;gap:8px;margin:4px 0 14px}
-.bl-sumcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center}
-.bl-sumcell b{display:block;font-size:21px;font-weight:900;color:var(--jade)}
+.bl-sumcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:9px 6px;text-align:center}
+.bl-sumcell b{display:block;font-size:19px;font-weight:900;color:var(--jade)}
 .bl-sumcell i{font-size:10.5px;color:var(--muted);font-style:normal}
 
 /* ================= learning-first home v3.23 ================= */
@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.89.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.90.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8789,41 +8789,52 @@ function bleOpenHub(){
    <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
      <div class="hub-grab"></div>
      <div style="display:flex;align-items:flex-end;gap:9px;margin-bottom:3px">
-       <div style="width:42px;height:42px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:22px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)">🦊</div>
-       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:10px 14px;font-size:13.5px;color:#5A463C;font-weight:600;line-height:1.45">${introDone?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`먼저 ${setBlocks.length}개 블록을 짧게 익혀요. 그다음 섞어서 연습!`}</div>
+       <div style="width:36px;height:36px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:19px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)">🦊</div>
+       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`먼저 ${setBlocks.length}개 블록을 짧게 익혀요. 그다음 섞어서 연습!`}</div>
      </div>
-     <div class="bl-summary" style="background:transparent;margin:14px 0 16px">
+     <div class="bl-summary" style="background:transparent;margin:11px 0 13px">
        <div class="bl-sumcell"><b style="color:#F0664A">${introN}/${setBlocks.length}</b><i style="color:#8A6F62">소개됨</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${introDone?"열림":"잠김"}</b><i style="color:#8A6F62">본격 학습</i></div>
      </div>
 
      <!-- 영역 1: 세트 인트로 -->
-     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">Set 1 · ${escapeHtml(set.title)}</div>
-     <button id="bleStartNext" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:22px;padding:18px 20px;margin-bottom:18px;box-shadow:0 14px 26px -12px rgba(240,102,74,.6),inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 0 rgba(176,60,35,.4)">
+     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 7px">Set 1 · ${escapeHtml(set.title)}</div>
+     <button id="bleStartNext" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:20px;padding:15px 18px;margin-bottom:14px;box-shadow:0 14px 26px -12px rgba(240,102,74,.6),inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 0 rgba(176,60,35,.4)">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
            <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.04em">${introDone?"세트 다시 훑어보기":"필수 기본 블록 "+setBlocks.length+"개"}</div>
-           <div style="font-family:var(--serif);font-size:19px;font-weight:600;color:#fff;line-height:1.25;margin-top:4px">${escapeHtml(blockNames)}</div>
+           <div style="font-family:var(--serif);font-size:17px;font-weight:600;color:#fff;line-height:1.25;margin-top:3px">${escapeHtml(blockNames)}</div>
          </div>
-         <div style="font-size:26px;color:#fff">${introDone?"✓":"🧱"}</div>
+         <div style="font-size:24px;color:#fff">${introDone?"✓":"🧱"}</div>
        </div>
-       <div style="font-size:11.5px;color:rgba(255,255,255,.9);margin-top:11px">${introDone?`${setBlocks.length}개 블록 소개 완료 — 다시 보기`:`${setBlocks.length}개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요`}</div>
-       <div style="display:block;width:100%;text-align:center;margin-top:14px;background:rgba(255,255,255,.95);color:#F0664A;font-size:16px;font-weight:900;border-radius:14px;padding:14px">${introDone?"다시 익히기 →":`${setBlocks.length}개 블록 빠르게 배우기 →`}</div>
+       <div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:8px">${introDone?`${setBlocks.length}개 블록 소개 완료 — 다시 보기`:`${setBlocks.length}개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요`}</div>
+       <div style="display:block;width:100%;text-align:center;margin-top:11px;background:rgba(255,255,255,.95);color:#F0664A;font-size:15px;font-weight:900;border-radius:13px;padding:12px">${introDone?"다시 익히기 →":`${setBlocks.length}개 블록 빠르게 배우기 →`}</div>
      </button>
 
      <!-- 영역 2: 본격 학습 (메인) -->
-     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 9px">본격적으로 학습하기 <span style="color:#19a06b">★ 메인</span></div>
-     <button id="bleDeepHubBtn" ${canDeep?"":"disabled"} style="display:block;width:100%;text-align:left;border:2px solid ${canDeep?'#FF8568':'#E8D5C8'};cursor:${canDeep?'pointer':'default'};background:${canDeep?'linear-gradient(180deg,#FFF2EA,#FFE5D8)':'#F1E8E0'};border-radius:22px;padding:18px 20px;margin-bottom:20px;opacity:${canDeep?1:.6};box-shadow:${canDeep?'0 16px 30px -14px rgba(214,120,70,.5)':'none'}">
+     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 7px">본격적으로 학습하기 <span style="color:#19a06b">★ 메인</span></div>
+     <button id="bleDeepHubBtn" ${canDeep?"":"disabled"} style="display:block;width:100%;text-align:left;border:2px solid ${canDeep?'#FF8568':'#E8D5C8'};cursor:${canDeep?'pointer':'default'};background:${canDeep?'linear-gradient(180deg,#FFF2EA,#FFE5D8)':'#F1E8E0'};border-radius:20px;padding:14px 18px;margin-bottom:10px;opacity:${canDeep?1:.6};box-shadow:${canDeep?'0 16px 30px -14px rgba(214,120,70,.5)':'none'}">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
-           <div style="font-size:19px;font-weight:900;color:#4A372F">🔁 상황 → 블록 선택 → 말하기</div>
-           <div style="font-size:12.5px;color:#8A6F62;line-height:1.5;margin-top:4px;max-width:235px">${canDeep?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 집중.`:"먼저 블록 세트를 소개받으세요."}</div>
+           <div style="font-size:17px;font-weight:900;color:#4A372F">🔁 상황 → 블록 선택 → 말하기</div>
+           <div style="font-size:12px;color:#8A6F62;line-height:1.45;margin-top:3px;max-width:235px">${canDeep?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내는 훈련. 틀린 블록은 다시, 느린 블록은 더 집중.`:"먼저 블록 세트를 소개받으세요."}</div>
          </div>
-         <div style="font-size:30px">${canDeep?"💪":"🔒"}</div>
+         <div style="font-size:27px">${canDeep?"💪":"🔒"}</div>
        </div>
-       ${canDeep?`<div style="display:block;width:100%;text-align:center;margin-top:14px;background:#F0664A;color:#fff;font-size:16px;font-weight:900;border-radius:14px;padding:15px">지금 시작 →</div>`:""}
+       ${canDeep?`<div style="display:block;width:100%;text-align:center;margin-top:11px;background:#F0664A;color:#fff;font-size:15px;font-weight:900;border-radius:13px;padding:13px">지금 시작 →</div>`:""}
      </button>
+
+     ${introN>0?`<button id="bleAutoBtn" style="display:block;width:100%;text-align:left;border:1.5px solid #FBD6C4;cursor:pointer;background:#FFF7F0;border-radius:20px;padding:13px 18px;margin-bottom:18px">
+       <div style="display:flex;align-items:center;gap:12px">
+         <div style="font-size:24px">🔥</div>
+         <div style="flex:1;min-width:0">
+           <div style="font-size:15px;font-weight:900;color:#4A372F">입에 붙이기</div>
+           <div style="font-size:11.5px;color:#8A6F62;line-height:1.4;margin-top:2px">배운 표현을 빠르게 반복해 자동으로 나오게</div>
+         </div>
+         <div style="font-size:18px;color:#C08763;font-weight:900">›</div>
+       </div>
+     </button>`:`<div style="margin-bottom:18px"></div>`}
 
      <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${setBlocks.length}개 · 상태</div>
      <div class="chk-list">${rows}</div>
@@ -8832,6 +8843,7 @@ function bleOpenHub(){
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
   $("#bleStartNext").onclick=()=>{ close(); bleStartSetIntro(set.id); };
+  { const ab=$("#bleAutoBtn"); if(ab) ab.onclick=()=>{ close(); startAutoDrill(); }; }
   if(canDeep) $("#bleDeepHubBtn").onclick=()=>{ close(); bleDeepStart(); };
   ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); bleStartSetIntro(set.id); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
