@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.87.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.88.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11406,7 +11406,7 @@ function autoDrillRender(recallMode){
       <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
     </div>
     <div class="auto-kicker">${it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"}</div>
-    <div class="auto-block">${escapeHtml(it.block.block)}</div>
+    <div class="auto-block">${it.recall?"❓ 어떤 표현이었죠?":escapeHtml(it.block.block)}</div>
     <div class="auto-meta">
       <span class="auto-chip">시작 지연 ${it.limit}초 안</span>
       <span class="auto-chip">말 길이 제외</span>
