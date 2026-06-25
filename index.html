@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.2";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.3";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9455,18 +9455,21 @@ function spGrade(heard, it, elapsed){
   const h=spNorm(heard), target=spNorm(it.en);
   if(!h) return "miss";   // STT 아무것도 못 잡음 = 시도 실패(말 안 함/딴소리)
   const hw=h.split(" ").filter(Boolean), tw=target.split(" ").filter(Boolean);
-  const tset=new Set(tw);
-  const overlap=hw.filter(w=>tset.has(w)).length;
-  const coverage = tw.length? overlap/tw.length : 0;   // 정답 단어 중 얼마나 말했나
-  // 블록 키워드(맨 앞 1~2단어, 예: "could you", "i'm looking for")가 들어갔나
+  const hset=new Set(hw);
+  // 블록 키워드(맨 앞 1~3단어, 예: "could you", "how much is")가 들어갔나
   const chunkKey=spNorm(it.chunk||"").replace(/\.\.\.|\?/g,"").trim();
   const chunkWords=chunkKey.split(" ").filter(Boolean).slice(0,3);
   const chunkHit = chunkWords.length? chunkWords.every(w=>h.includes(w)) : false;
+  // 슬롯(정답에서 블록·기능어 뺀 핵심어)을 실제로 말했나 — 블록만 맞고 슬롯 틀리면 통과 금지
+  const slotWords = tw.filter(w=>chunkWords.indexOf(w)<0 && !BLE_STOPWORDS.has(w) && w.length>1);
+  const slotCov = slotWords.length? slotWords.filter(w=>hset.has(w)||h.includes(w)).length/slotWords.length : 1;
   const exact = (h===target);
-  if(coverage<0.34 && !chunkHit) return "miss";       // 의미 실패 / 딴소리
-  if(exact || (coverage>=0.7 && chunkHit && elapsed<=4)) return "perfect";
-  if(coverage>=0.5 || chunkHit) return "hit";
-  return "miss";
+  if(!exact){
+    if(!chunkHit) return "miss";        // 블록 자체를 안 씀
+    if(slotCov<0.5) return "miss";       // 정답 핵심어가 빠짐 = 틀림 (블록만 맞은 경우)
+  }
+  if(exact || (slotCov>=0.9 && chunkHit && elapsed<=4)) return "perfect";
+  return "hit";
 }
 // 약점 블록 저장소 (pid 기준 누적 miss 카운트)
 function weakGet(){ try{ return hGet("speakingroom:weak",{}); }catch(e){ return {}; } }
