@@ -1955,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.94.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.95.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7422,7 +7422,10 @@ function bleAllEx(b){
 }
 function bleSampleExamples(b,n){
   const out=[], seen=new Set();
-  bleShuffle(bleAllEx(b)).forEach(e=>{ const k=bleExKey(e); if(!seen.has(k)&&out.length<(n||3)){ seen.add(k); out.push(e); } });
+  const all=bleAllEx(b);
+  const allowed=all.filter(e=>bleSlotAllowed(e.object));
+  const pool=allowed.length>=(n||3)?allowed:all;   // 부족하면 전체 폴백
+  bleShuffle(pool).forEach(e=>{ const k=bleExKey(e); if(!seen.has(k)&&out.length<(n||3)){ seen.add(k); out.push(e); } });
   return out;
 }
 // 최근 문장과 이미 성공한 맥락을 피해서 하나 고른다.
@@ -7432,9 +7435,12 @@ function bleFreshContextEx2(b, opts){
   const all=bleAllEx(b);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
-  const fresh=all.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
-  const notRecent=all.filter(e=>recent.indexOf(bleExKey(e))<0);
-  const pool=fresh.length?fresh:(notRecent.length?notRecent:all);
+  // 난이도 필터: 낮은 D레벨에선 쉬운 슬롯만 허용
+  const allowed=all.filter(e=>bleSlotAllowed(e.object));
+  const base=allowed.length>=2?allowed:all;   // 쉬운 게 부족하면 전체로 폴백
+  const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
+  const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
+  const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
   const pick=pool[(Math.random()*pool.length)|0];
   if(opts.remember!==false) bleRememberContext(b.id,pick);
   return pick;
@@ -7611,6 +7617,21 @@ function bleNorm(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9' ]/g,"
 const BLE_STOPWORDS=new Set("i you he she we they it a an the some any to for of in on at with my your me us this that is are am be do does did can could would should may might get got have has had please just now".split(" "));
 function bleWords(t){ return bleNorm(t).split(" ").filter(Boolean); }
 function bleContentWords(t){ return bleWords(t).filter(w=>!BLE_STOPWORDS.has(w)); }
+// 슬롯(object) 난이도: 내용어가 모두 COMMON_FREQ_WORDS 안에 있으면 easy
+const _FREQ_SET=new Set(COMMON_FREQ_WORDS);
+function bleSlotIsHard(object){
+  if(!object) return false;
+  const words=bleContentWords(String(object));
+  if(!words.length) return false;
+  return words.some(w=>!_FREQ_SET.has(w));
+}
+// 현재 D레벨 기준: D1-20(macro1-3)=easy만, D21-40(macro4-6)=medium까지, D41+=전체
+function bleSlotAllowed(object){
+  const v=typeof diffLevel==="function"?diffLevel():60;
+  if(v<=20) return !bleSlotIsHard(object);   // D1-20: 쉬운 슬롯만
+  if(v<=40) return true;                      // D21+: 전부 허용 (추후 medium 구분 가능)
+  return true;
+}
 function bleCoreWords(targetBlock){
   return bleWords(String(targetBlock.block||"").replace(/\.\.\.|\?/g,"")).filter(w=>!BLE_STOPWORDS.has(w));
 }
