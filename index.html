@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.11";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.12";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10079,7 +10079,10 @@ function blRender(){
     </div>
     <div class="ar2-ctrl">
      <button id="blMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
-     <button id="blType" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기</button>
+     <div style="display:flex;gap:8px;margin-top:8px">
+       <button id="blType" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">⌨️ 글로 쓰기</button>
+       <button id="blWord" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">🔤 단어 보기</button>
+     </div>
      ${teach?'':'<button id="blHint" style="width:100%;margin-top:8px;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px">💡 힌트 보기</button>'}
     </div>
    </div>`;
@@ -10089,6 +10092,15 @@ function blRender(){
   const hb=$("#blHint"); if(hb) hb.onclick=()=>{ const s=$("#blStat"); if(s) s.innerHTML='💡 <b style="color:var(--jade)">'+escapeHtml(it.chunk)+'</b> 로 시작해요'; };
   // 문제 단계에서는 정답을 읽어주지 않음 (스스로 떠올려야 함). 정답 음성은 답한 뒤에만.
   $("#blType").onclick=()=>blTypeAnswer(it);
+  { const bw=$("#blWord"); if(bw) bw.onclick=()=>{
+    const chunkW=new Set(bleContentWords(String(it.chunk||"").replace(/\.\.\.|\?/g,"")));
+    let words=bleContentWords(it.en||"").filter(w=>!chunkW.has(w));
+    if(!words.length) words=bleContentWords(it.en||"");
+    const seen=new Set(), rows=[], reg=[];
+    words.forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const ko=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; rows.push("<b>"+escapeHtml(w)+"</b>"+(ko?" "+escapeHtml(ko):"")); reg.push({en:w, ko:ko||it.ko||""}); });
+    if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
+    bleShowHintToast(rows.length?("🔤 핵심 단어: "+rows.join(" · ")):"🔤 단어 정보 없음");
+  }; }
 }
 // ⌨️ 글로 쓰기 — 마이크 대신 타이핑으로 답 (공공장소용)
 function blTypeAnswer(it){
@@ -11756,6 +11768,7 @@ function studyPanelHtml(en, ko, id){
     <div class="study-words">${chips.join("")}</div>
     <div class="study-wordinfo" style="display:none"></div>
     <div class="study-acts">
+      <button class="study-act" data-act="rec">🎤 발음 채점</button>
       <button class="study-act" data-act="pron">🔊 강세·발음</button>
       <button class="study-act" data-act="ai">🤖 AI에게 질문</button>
       <button class="study-act" data-act="vocab">📒 단어장 보내기</button>
@@ -11777,7 +11790,8 @@ function bindStudyPanel(panel){
   }; });
   panel.querySelectorAll(".study-act").forEach(b=>{ b.onclick=()=>{
     const act=b.getAttribute("data-act");
-    if(act==="pron"){ if(extra) extra.innerHTML=extra.innerHTML?"":pronStudyCardHtml(en,"강세·발음"); }
+    if(act==="rec"){ if(extra) startPronPractice(en, b, extra); }
+    else if(act==="pron"){ if(extra) extra.innerHTML=extra.innerHTML?"":pronStudyCardHtml(en,"강세·발음"); }
     else if(act==="ai"){ studyAskAI(en, ko); }
     else if(act==="vocab"){ studySendToVocab(en, ko); }
   }; });
