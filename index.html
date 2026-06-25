@@ -1955,7 +1955,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.98.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7291,6 +7291,9 @@ const BLE_RECENT_BLOCK_KEY="speakingroom:ble_recent_blocks_v2";
 const BLE_BLOCK_GAP=3;
 const BLE_LOCAL_CONTEXTS={
   can_i_get:[
+    {situation:"카페", ko:"물 좀 주세요.", en:"Can I get some water?", object:"some water"},
+    {situation:"식당", ko:"메뉴 좀 주세요.", en:"Can I get a menu?", object:"a menu"},
+    {situation:"쇼핑", ko:"봉투 하나 주세요.", en:"Can I get a bag?", object:"a bag"},
     {situation:"카페", ko:"아이스 아메리카노 한 잔 받을 수 있을까요?", en:"Can I get an iced Americano?", object:"an iced Americano"},
     {situation:"카페", ko:"빨대 하나 받을 수 있을까요?", en:"Can I get a straw?", object:"a straw"},
     {situation:"식당", ko:"계산서 받을 수 있을까요?", en:"Can I get the check?", object:"the check"},
@@ -7313,6 +7316,10 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"미용실", ko:"오늘 예약 받을 수 있을까요?", en:"Can I get an appointment today?", object:"an appointment today"}
   ],
   do_you_have:[
+    {situation:"식당", ko:"물 있어요?", en:"Do you have water?", object:"water"},
+    {situation:"식당", ko:"메뉴 있어요?", en:"Do you have a menu?", object:"a menu"},
+    {situation:"호텔", ko:"방 있어요?", en:"Do you have a room?", object:"a room"},
+    {situation:"쇼핑", ko:"봉투 있어요?", en:"Do you have a bag?", object:"a bag"},
     {situation:"쇼핑", ko:"이거 검은색 있어요?", en:"Do you have this in black?", object:"this in black"},
     {situation:"쇼핑", ko:"더 작은 사이즈 있어요?", en:"Do you have a smaller size?", object:"a smaller size"},
     {situation:"카페", ko:"디카페인 있어요?", en:"Do you have decaf?", object:"decaf"},
@@ -7333,6 +7340,9 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"미용실", ko:"오늘 가능한 시간 있어요?", en:"Do you have any openings today?", object:"any openings today"}
   ],
   i_need:[
+    {situation:"식당", ko:"물이 필요해요.", en:"I need water.", object:"water"},
+    {situation:"호텔", ko:"방 키가 필요해요.", en:"I need a key.", object:"a key"},
+    {situation:"공항", ko:"택시가 필요해요.", en:"I need a taxi.", object:"a taxi"},
     {situation:"식당", ko:"알레르기 없는 메뉴가 필요해요.", en:"I need an allergy-free option.", object:"an allergy-free option"},
     {situation:"카페", ko:"조용한 자리가 필요해요.", en:"I need a quiet seat.", object:"a quiet seat"},
     {situation:"호텔", ko:"방 키가 필요해요.", en:"I need a room key.", object:"a room key"},
@@ -7436,9 +7446,11 @@ function bleFreshContextEx2(b, opts){
   const all=bleAllEx(b);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
-  // 난이도 필터: 낮은 D레벨에선 쉬운 슬롯만 허용
+  // 난이도 필터: 유저 단어레벨 내 슬롯만. 없으면 '가장 덜 어려운' 것만(무작위 어려운 것 방지)
   const allowed=all.filter(e=>bleSlotAllowed(e.object));
-  const base=allowed.length>=2?allowed:all;   // 쉬운 게 부족하면 전체로 폴백
+  let base;
+  if(allowed.length){ base=allowed; }
+  else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
   const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
@@ -7660,6 +7672,11 @@ function sentenceAllowedForUser(en, slack){
 }
 // 슬롯(object) 허용 — 입에붙이기/인출은 새 단어 0개(다 알아야 자동화 가능)
 function bleSlotAllowed(object){ return sentenceAllowedForUser(object, 0); }
+// 슬롯 난이도 = 유저가 모르는 내용어 수 (낮을수록 쉬움)
+function bleSlotHardness(object){
+  const uwl=userWordLevel();
+  return bleContentWords(String(object||"")).filter(w=>!wordAllowedForUser(w,uwl)).length;
+}
 function bleCoreWords(targetBlock){
   return bleWords(String(targetBlock.block||"").replace(/\.\.\.|\?/g,"")).filter(w=>!BLE_STOPWORDS.has(w));
 }
@@ -8876,6 +8893,8 @@ function bleOpenHub(){
       </span>
     </button>`; }).join("");
   const introN=setBlocks.filter(b=>bleBlockIntroduced(b.id)).length;
+  // 입에붙이기 노출 = 이 세트뿐 아니라 (온보딩 포함) 전체 배운 블록이 하나라도 있으면
+  const hasAnyLearned=(function(){ try{ return getLearnedBlocks().length>0; }catch(e){ return introN>0; } })();
   const introDone=setSt.introCompleted;
   const dueN=getDueReviewBlocks().length;
   const canDeep = bleDeepGateReady(set);
@@ -8921,7 +8940,7 @@ function bleOpenHub(){
        ${canDeep?`<div style="display:block;width:100%;text-align:center;margin-top:11px;background:#F0664A;color:#fff;font-size:15px;font-weight:900;border-radius:13px;padding:13px">지금 시작 →</div>`:""}
      </button>
 
-     ${introN>0?`<button id="bleAutoBtn" style="display:block;width:100%;text-align:left;border:1.5px solid #FBD6C4;cursor:pointer;background:#FFF7F0;border-radius:20px;padding:13px 18px;margin-bottom:18px">
+     ${hasAnyLearned?`<button id="bleAutoBtn" style="display:block;width:100%;text-align:left;border:1.5px solid #FBD6C4;cursor:pointer;background:#FFF7F0;border-radius:20px;padding:13px 18px;margin-bottom:18px">
        <div style="display:flex;align-items:center;gap:12px">
          <div style="font-size:24px">🔥</div>
          <div style="flex:1;min-width:0">
@@ -9744,7 +9763,7 @@ function spDone(){
   $$(".weakItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
 // ===== CHUNK MASTERY TRAINING — 약점 블록 집중(10문제, 7/10 → 마스터) =====
-let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0, ctPhrase=null;
+let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0, ctPhrase=null, ctHintTimer=null;
 function openSpeakHub(){
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="speakHub";
   ov.innerHTML=`<div class="hub-bg"></div>
@@ -10133,11 +10152,14 @@ function ctNext(){
     <button id="ctMic" class="bigplay" style="width:100%;justify-content:center;padding:18px;font-size:18px">🎤 말하기</button>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button id="ctType" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
-      <button id="ctWord" style="flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">🔤 단어 보기</button>
+      <button id="ctWord" style="display:none;flex:1;padding:11px;border-radius:14px;background:transparent;color:var(--muted);border:1px solid var(--line);font-size:13px;cursor:pointer">🔤 단어 보기</button>
     </div>
     <div id="ctTypeWrap"></div>
    </div>`;
   ctT0=Date.now(); ctSpoke=0;
+  if(ctHintTimer){ clearTimeout(ctHintTimer); ctHintTimer=null; }
+  // 단어 보기는 7초 뒤에만 등장 — 스스로 꺼낼 기회 먼저
+  ctHintTimer=setTimeout(()=>{ const w=document.getElementById("ctWord"); if(w) w.style.display="block"; }, 7000);
   $("#ctExit").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
   $("#ctMic").onclick=function(){ const b=this; if(qzRecording) return; if(!ctSpoke) ctSpoke=Date.now();
     b.classList.add("live"); $("#ctStat").textContent="시전 중…";
@@ -10175,6 +10197,7 @@ function ctColorAnswer(correct, heard){
   ).join(" ");
 }
 function ctScore(it, heard){
+  if(ctHintTimer){ clearTimeout(ctHintTimer); ctHintTimer=null; }
   const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
   const grade=spGrade(heard, it, elapsed);
   const ok=(grade!=="miss");
@@ -11589,6 +11612,7 @@ function autoDrillRender(recallMode){
   if(!autoDrill) return goToSetup();
   if(autoDrill.idx>=autoDrill.items.length) return autoDrillDone();
   const it=autoDrill.items[autoDrill.idx]; it.recall=!!recallMode;
+  if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; }
   const prog=Math.round(autoDrill.idx/autoDrill.items.length*100);
   const answerClass=it.recall?"auto-answer hide":"auto-answer";
   const answerHtml=it.recall?`<div class="${answerClass}" id="autoAnswer"><div style="font-size:11px;color:#B0958A;font-weight:900;margin-bottom:5px">방금 본 문장을 가렸어요. 기억에서 꺼내세요.</div><b>${escapeHtml(it.ex.en)}</b></div>`:"";
@@ -11600,7 +11624,7 @@ function autoDrillRender(recallMode){
       <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
     </div>
     <div class="auto-kicker">${it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"}</div>
-    <div class="auto-block">${it.recall?"❓ 어떤 표현이었죠?":escapeHtml(it.block.block)}</div>
+    <div class="auto-block">${it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?"}</div>
     <div class="auto-meta">
       <span class="auto-chip">시작 지연 ${it.limit}초 안</span>
       <span class="auto-chip">말 길이 제외</span>
@@ -11614,7 +11638,7 @@ function autoDrillRender(recallMode){
         <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
         <button class="auto-sub" id="autoType">⌨️ 입력</button>
       </div>
-      <div class="auto-row">
+      <div class="auto-row" id="autoHintRow" style="display:none">
         <button class="auto-sub" id="autoWord">🔤 단어만 보기</button>
         <button class="auto-sub" id="autoShow">정답 보기</button>
       </div>
@@ -11635,6 +11659,8 @@ function autoDrillRender(recallMode){
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
   $("#autoShow").onclick=()=>autoDrillRevealAndRecall("정답을 봤어요. 1.5초 뒤 가리고 다시 말합니다.");
   $("#autoWord").onclick=()=>autoDrillShowWord();
+  // 힌트(단어/정답 보기)는 7초 뒤에만 등장 — 끝까지 스스로 풀 기회 보장
+  autoDrill.hintTimer=setTimeout(()=>{ const r=document.getElementById("autoHintRow"); if(r) r.style.display="flex"; }, 7000);
 }
 // 🔤 슬롯(빈칸) 단어만 살짝 보여주기 — 턴은 안 끝냄. 본 단어 = 모르는 단어 → 내부 등록
 function autoDrillShowWord(){
@@ -11662,6 +11688,7 @@ function autoDrillInitMs(meta){
 }
 function autoDrillFinish(heard, meta){
   if(!autoDrill) return;
+  if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; }
   const it=autoDrill.items[autoDrill.idx], stat=$("#autoStat");
   const initMs=autoDrillInitMs(meta||{});
   const initSec=initMs/1000;
