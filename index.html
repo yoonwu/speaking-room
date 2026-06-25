@@ -1948,7 +1948,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.86.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.87.0";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10093,7 +10093,7 @@ function ctDone(){
    <div class="blk-actions" style="max-width:340px;margin-top:16px">
      ${mastered?`<button class="blk-next" id="ctReal" style="font-size:16px;padding:16px">🎯 실전에서 써먹기 →</button>`:""}
      ${mastered&&canMix?`<button class="blk-save" id="ctMix">🔀 쌓은 블록 섞어서 말하기</button>`:""}
-     ${mastered?`<button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-next" id="ctAgain">다시 도전</button>`}
+     ${mastered?`<button class="blk-save" id="ctNew">＋ 새 블록 하나 더 쌓기</button>`:`<button class="blk-next" id="ctAuto" style="font-size:16px;padding:16px">🔥 배운 표현 입에 붙이기 →</button><button class="blk-save" id="ctAgain">다시 도전</button>`}
      <button id="ctHome" style="width:100%;margin-top:6px;padding:11px;background:transparent;border:none;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px">나중에 · 홈으로</button>
    </div></div>`;
   $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
@@ -10112,6 +10112,7 @@ function ctDone(){
       }catch(e){ try{ startRealUseForChunk(ctPid); }catch(e2){ goToSetup(); } }
     }
   };
+  const autoBtn=$("#ctAuto"); if(autoBtn) autoBtn.onclick=()=>{ try{ startAutoDrill(); }catch(e){ goToSetup(); } };
   const againBtn=$("#ctAgain"); if(againBtn) againBtn.onclick=()=>startChunkTraining(ctPid);
 }
 // 🔥 홈 약점 블록 위젯 — 탭하면 즉시 재훈련
