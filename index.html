@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.29";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.30";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7001,14 +7001,16 @@ const BLE_BLOCKS=[
       {situation:"쇼핑", ko:"이거 도움이 필요해요.", en:"I need help with this.", object:"help with this"},
       {situation:"공항", ko:"택시가 필요해요.", en:"I need a taxi.", object:"a taxi"},
     ]},
-  { id:"could_you", block:"Could you...", meaningKo:"~해 주시겠어요? (정중한 부탁)", func:"polite-request",
+  { id:"could_you", block:"Could you...", meaningKo:"~해 주시겠어요? (정중한 부탁 — Could you + 동작)", func:"polite-request",
     contrast:["can_i_get","i_need","do_you_have"],
     examples:[
+      {situation:"호텔", ko:"문 좀 열어 주시겠어요?", en:"Could you open the door?", object:"open the door"},
+      {situation:"사무실", ko:"다시 보내 주시겠어요?", en:"Could you send it again?", object:"send it again"},
+      {situation:"식당", ko:"이거 확인해 주시겠어요?", en:"Could you check this?", object:"check this"},
       {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the bill?", object:"bring the bill"},
       {situation:"병원", ko:"이거 설명해 주시겠어요?", en:"Could you explain this?", object:"explain this"},
       {situation:"호텔", ko:"택시 좀 불러 주시겠어요?", en:"Could you call a taxi?", object:"call a taxi"},
       {situation:"학교", ko:"다시 말씀해 주시겠어요?", en:"Could you say that again?", object:"say that again"},
-      {situation:"은행", ko:"제 계정 확인해 주시겠어요?", en:"Could you check my account?", object:"check my account"},
     ]},
   { id:"i_think", block:"I think...", meaningKo:"제 생각엔 ~ (의견 말하기)", func:"opinion",
     contrast:["i_need","could_you","do_you_have"],
@@ -7025,7 +7027,7 @@ const BLE_EXTRA_ROWS=[
 ["im_looking_for","I'm looking for...","~을 찾고 있어요","search",[["쇼핑","충전기를 찾고 있어요.","I'm looking for a charger.","a charger"],["공항","택시 타는 곳을 찾고 있어요.","I'm looking for the taxi stand.","the taxi stand"],["병원","접수처를 찾고 있어요.","I'm looking for reception.","reception"]]],
 ["where_is","Where is...","~이 어디예요?","location",[["공항","화장실이 어디예요?","Where is the restroom?","the restroom"],["호텔","엘리베이터가 어디예요?","Where is the elevator?","the elevator"],["쇼핑","계산대가 어디예요?","Where is the checkout?","the checkout"]]],
 ["how_do_i","How do I...","어떻게 ~하죠?","procedure",[["공항","와이파이에 어떻게 연결하죠?","How do I connect to the Wi-Fi?","connect to the Wi-Fi"],["호텔","체크아웃은 어떻게 하죠?","How do I check out?","check out"],["앱","비밀번호를 어떻게 바꾸죠?","How do I change my password?","change my password"]]],
-["can_you_help_me","Can you help me...","~하는 것 좀 도와주실래요?","help",[["쇼핑","이거 찾는 것 좀 도와주실래요?","Can you help me find this?","find this"],["공항","이 양식 쓰는 것 좀 도와주실래요?","Can you help me fill this out?","fill this out"],["호텔","문 여는 것 좀 도와주실래요?","Can you help me open the door?","open the door"]]],
+["can_you_help_me","Can you help me?","도와주세요 (도움 요청 · 비상 표현)","survival",[["길에서","길을 잃었어요.","Can you help me?",""],["공항","도움이 필요해요.","Can you help me?",""],["가게","저 좀 도와주실 수 있어요?","Can you help me?",""]]],
 ["could_i_have","Could I have...","~을 받을 수 있을까요?","polite-request",[["식당","계산서 받을 수 있을까요?","Could I have the check?","the check"],["카페","물 한 잔 받을 수 있을까요?","Could I have some water?","some water"],["호텔","새 수건 받을 수 있을까요?","Could I have a fresh towel?","a fresh towel"]]],
 ["is_there","Is there...","~이 있나요?","availability",[["호텔","근처에 약국이 있나요?","Is there a pharmacy nearby?","a pharmacy nearby"],["공항","셔틀이 있나요?","Is there a shuttle?","a shuttle"],["식당","채식 메뉴가 있나요?","Is there a vegetarian option?","a vegetarian option"]]],
 ["do_i_need_to","Do I need to...","~해야 하나요?","requirement",[["공항","여기서 기다려야 하나요?","Do I need to wait here?","wait here"],["병원","보험 카드를 보여줘야 하나요?","Do I need to show my insurance card?","show my insurance card"],["호텔","지금 결제해야 하나요?","Do I need to pay now?","pay now"]]],
@@ -7123,6 +7125,14 @@ BLE_EXTRA_ROWS.forEach(r=>{
   BLE_BLOCKS.push({id:r[0], block:r[1], meaningKo:r[2], func:r[3], contrast:[], examples:r[4].map(e=>({situation:e[0], ko:e[1], en:e[2], object:e[3]}))});
 });
 const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
+// ⚠️ 늬앙스가 너무 비슷해 '블록 구별' 문제로 같이 내면 안 되는 묶음(둘 다 정답이 될 수 있어 헷갈림).
+//    예) "Can you help me?"(비상 도움요청) vs "Could you...?"(공손한 부탁 틀) — 같은 보기로 섞지 않는다.
+const BLE_NOMIX_GROUPS=[
+  ["can_i_get","could_i_have","id_like"],   // 물건 요청 — 거의 동의어
+  ["could_you","can_you_help_me"],          // 부탁/도움 — 비상표현 vs 공손한 부탁
+  ["do_you_have","is_there"],               // 있는지 묻기 — 거의 동의어
+];
+function bleNoMix(id){ const out=new Set(); BLE_NOMIX_GROUPS.forEach(g=>{ if(g.indexOf(id)>=0) g.forEach(x=>{ if(x!==id) out.add(x); }); }); return out; }
 // ===== 세트 기반 학습 (5블록 1세트) =====
 const BLE_SETS=(()=>{
   const names=["필수 기본 블록","요청·위치 블록","문제해결 블록","시간·가격 블록","상태 말하기 블록","허락·선호 블록","정중한 부탁 블록","내 행동 말하기 블록","계획·시도 블록","상황 설명 블록","반응·조언 블록","선택·정보 블록"];
@@ -8301,8 +8311,9 @@ function bleViewDiscriminate(it){
   // 보기: 정답 + 누적 학습 블록 우선 + 필요한 경우 contrast 보강
   const baseIds=(!it.deep&&bleSession&&bleSession.startedIds&&bleSession.startedIds.length)?bleSession.startedIds:bleUnlockedBlocks().map(x=>x.id);
   const knownIds=baseIds.filter(id=>id!==b.id&&BLE_BY_ID[id]);
+  const noMix=bleNoMix(b.id);
   const distractors=[];
-  knownIds.concat(b.contrast||[]).forEach(id=>{ if(id!==b.id&&BLE_BY_ID[id]&&distractors.indexOf(id)<0) distractors.push(id); });
+  knownIds.concat(b.contrast||[]).forEach(id=>{ if(id!==b.id&&BLE_BY_ID[id]&&!noMix.has(id)&&distractors.indexOf(id)<0) distractors.push(id); });
   // 미니 혼합 테스트(allOptions): 세트 5개 전부 보기 / 일반: 정답+2
   const optCount = it.allOptions ? distractors.length : 2;
   const opts=[b.id, ...distractors.slice(0,optCount)];
@@ -12059,9 +12070,10 @@ function studySendToVocab(en, ko){
 function autoDrillDiscOptions(b){
   if(!b||!b.id) return null;
   const learned=(function(){ try{ return bleUnlockedBlocks().map(x=>x.id); }catch(e){ return []; } })();
-  // 선택지는 '배운 블록'으로 구성(정답 포함) — 배운 만큼, 최대 7개
+  // 선택지는 '배운 블록'으로 구성(정답 포함) — 배운 만큼, 최대 7개. 단, 늬앙스 너무 비슷한 블록은 제외
+  const noMix=bleNoMix(b.id);
   const pool=[];
-  (b.contrast||[]).concat(learned).forEach(id=>{ if(id!==b.id && BLE_BY_ID[id] && pool.indexOf(id)<0) pool.push(id); });
+  (b.contrast||[]).concat(learned).forEach(id=>{ if(id!==b.id && BLE_BY_ID[id] && !noMix.has(id) && pool.indexOf(id)<0) pool.push(id); });
   if(pool.length<1) return null;
   for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
   const opts=[b.id, ...pool.slice(0,6)];   // 정답 1 + 나머지 최대 6 = 최대 7
