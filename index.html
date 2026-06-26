@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.17";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.18";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2004,7 +2004,7 @@ let ttsUnlocked=false;
 function unlockTTS(){ if(ttsUnlocked||!TTS||!SSU) return; try{ const u=new SSU(" "); u.volume=0; TTS.speak(u); ttsUnlocked=true; }catch(e){} }
 
 /* custom modal (native prompt/confirm are blocked inside the app webview) */
-let _modalOnOk=null;
+let _modalOnOk=null, _modalOnCancel=null;
 function openModal(opts){
   const t=document.getElementById("modalTitle"), m=document.getElementById("modalMsg"), inp=document.getElementById("modalInput");
   t.textContent=opts.title||"";
@@ -2017,8 +2017,9 @@ function openModal(opts){
   document.getElementById("modalScrim").classList.add("show");
   if(opts.input) setTimeout(()=>inp.focus(),60);
   _modalOnOk=()=>{ const v=opts.input?inp.value.trim():true; closeModal(); if(opts.onOk) opts.onOk(v); };
+  _modalOnCancel=opts.onCancel?(()=>{ closeModal(); opts.onCancel(); }):null;
 }
-function closeModal(){ document.getElementById("modalScrim").classList.remove("show"); _modalOnOk=null; }
+function closeModal(){ document.getElementById("modalScrim").classList.remove("show"); _modalOnOk=null; _modalOnCancel=null; }
 
 /* ============ scenarios ============ */
 const SCENARIOS = [
@@ -2667,7 +2668,7 @@ function refreshBlockPanel(){
       <span class="tx"><span class="tt">익힌 블록 섞어 연습</span><span class="ds">${n<1?"먼저 블록을 하나 이상 익혀주세요":`지금까지 익힌 ${n}개를 여러 상황에 섞어서`}</span></span>
       <span class="arr">→</span>
     </button>`;
-  const sb=$("#blkStudyBtn"); if(sb && !allDone) sb.onclick=startStudy;
+  const sb=$("#blkStudyBtn"); if(sb && !allDone) sb.onclick=()=>gateNewBlock(startStudy);
   const rb=$("#blkRandomBtn"); if(rb && n>=1) rb.onclick=startRandomBlocks;
 }
 function pickTopic(id, btn){
@@ -10225,6 +10226,43 @@ function newBlockGate(){
     needMoreReal: open ? 0 : (lockedBlocks.length - 1)
   };
 }
+// ===== 새 블록 학습 게이트 — 하루 3개 상한 + 복습 우선 + 해금 잠금 =====
+// 철학: "블록을 많이 아는 것보다, 아는 블록을 많이 말하는 게 중요"
+const NEWBLOCK_DAILY_CAP=3;
+function newBlkKey(){ return "speakingroom:newblk:"+DAYN(); }
+function newBlocksToday(){ try{ return hGet(newBlkKey(),0)||0; }catch(e){ return 0; } }
+function bumpNewBlocksToday(){ try{ hSet(newBlkKey(), newBlocksToday()+1); }catch(e){} }
+function gateNewBlock(proceed){
+  const toAuto=()=>{ try{ startAutoDrill(); }catch(e){ goToSetup(); } };
+  const doLearn=()=>{ bumpNewBlocksToday(); try{ proceed(); }catch(e){ goToSetup(); } };
+  // 1) 하루 3개 상한
+  if(newBlocksToday()>=NEWBLOCK_DAILY_CAP){
+    openModal({title:"오늘 새 블록 3개 다 배웠어요 🎉",
+      html:`<div style="line-height:1.75;font-size:14.5px;color:var(--text)"><b style="color:#F0664A;font-size:15.5px">블록을 많이 아는 것보다,<br>아는 블록을 많이 <u>말하는</u> 게 훨씬 중요해요.</b><br><br>새 블록은 내일 또 열려요. 오늘은 배운 걸 입에 붙여볼까요?</div>`,
+      okText:"🔥 입에 붙이기 →", cancelText:"홈으로", onOk:toAuto });
+    return;
+  }
+  // 해금 잠금 검사 → 통과 시 학습
+  const checkLockThenLearn=()=>{
+    let gate={open:true}; try{ gate=newBlockGate(); }catch(e){}
+    if(!gate.open){
+      openModal({title:"새 블록은 조금 뒤에 🔒",
+        html:`<div style="line-height:1.72;font-size:14.5px">배운 블록 <b>${Math.max(1,(gate.lockedCount||1)-1)}개</b>를 입에붙이기/실전에서 더 써야 새 블록이 열려요.<br><b style="color:#F0664A">아는 걸 입에 붙이는 게 먼저!</b></div>`,
+        okText:"🔥 입에 붙이기 →", cancelText:"나중에", onOk:toAuto });
+      return;
+    }
+    doLearn();
+  };
+  // 2) 복습 우선 — due 있으면 권유(취소하면 새 블록 진행)
+  let due=[]; try{ due=getDueReviewBlocks()||[]; }catch(e){}
+  if(due.length){
+    openModal({title:"복습이 먼저예요",
+      html:`<div style="line-height:1.72;font-size:14.5px">잊을 때쯤 된 블록 <b>${due.length}개</b>가 있어요.<br><b style="color:#F0664A">아는 걸 까먹으면 새로 배운 것도 소용없어요.</b><br>복습부터 할까요?</div>`,
+      okText:"🔁 복습부터 (입에 붙이기)", cancelText:"그래도 새 블록", onOk:toAuto, onCancel:checkLockThenLearn });
+    return;
+  }
+  checkLockThenLearn();
+}
 function startChunkTraining(pid){
   const p=CORE_PHRASES.find(x=>x.id===pid);
   if(!p){ goToSetup(); return; }
@@ -10469,19 +10507,7 @@ function ctDone(){
   $("#ctHome").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
   const realBtn=$("#ctReal"); if(realBtn) realBtn.onclick=()=>{ try{ startRealUseForChunk(ctPid); }catch(e){ goToSetup(); } };
   const mixBtn=$("#ctMix"); if(mixBtn) mixBtn.onclick=()=>{ try{ bleDeepStart(); }catch(e){ goToSetup(); } };
-  const newBtn=$("#ctNew"); if(newBtn) newBtn.onclick=()=>{
-    let gate={open:true};
-    try{ gate=newBlockGate(); }catch(e){}
-    if(gate.open){
-      try{ bleStartSetIntro(); return; }catch(e){}
-      goToSetup(); try{ renderWeakHome(); }catch(e){}
-    } else {
-      // 막힘: "조금만 하면 열림" — 잠긴 블록을 실전에서 써먹게 유도
-      try{
-        openModal({title:"새 블록 준비 중", msg:`이미 배운 블록을 실전에서 ${gate.lockedCount-1}번만 더 써보면 새 표현이 열려요. 지금 실전에서 써볼까요?`, okText:"실전에서 써먹기 →", cancelText:"나중에", onOk:()=>{ try{ startRealUseForChunk(ctPid); }catch(e){ goToSetup(); } }});
-      }catch(e){ try{ startRealUseForChunk(ctPid); }catch(e2){ goToSetup(); } }
-    }
-  };
+  const newBtn=$("#ctNew"); if(newBtn) newBtn.onclick=()=>gateNewBlock(()=>{ try{ bleStartSetIntro(); }catch(e){ goToSetup(); try{ renderWeakHome(); }catch(e2){} } });
   const autoBtn=$("#ctAuto"); if(autoBtn) autoBtn.onclick=()=>{ try{ startAutoDrill(); }catch(e){ goToSetup(); } };
   const againBtn=$("#ctAgain"); if(againBtn) againBtn.onclick=()=>startChunkTraining(ctPid);
 }
@@ -13562,7 +13588,7 @@ $("#scrim").onclick=()=>{ $("#notes").classList.remove("open"); $("#scrim").clas
 
 // modal + TTS unlock (native dialogs blocked in webview; iOS needs gesture to start speech)
 document.getElementById("modalOk").onclick=()=>{ if(_modalOnOk) _modalOnOk(); };
-document.getElementById("modalCancel").onclick=closeModal;
+document.getElementById("modalCancel").onclick=()=>{ if(_modalOnCancel) _modalOnCancel(); else closeModal(); };
 document.getElementById("modalScrim").onclick=(e)=>{ if(e.target.id==="modalScrim") closeModal(); };
 document.addEventListener("pointerdown", unlockTTS, {once:true});
 document.addEventListener("touchstart", unlockTTS, {once:true});
