@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.28";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.29";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7311,6 +7311,8 @@ function bleStars(id){
 }
 // ===== 헬퍼 함수 (다른 모드용 데이터 훅) =====
 function getLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>({...b, state:s[b.id]})); }
+// 소개(introducedAt)된 블록 수 — 실전 진입 최소치(5개) 판정용
+function bleIntroducedCount(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>{ const st=s[b.id]; return st && st.introducedAt; }).length; }
 function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount).map(b=>({...b,state:s[b.id]})); }
 function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
 function getReadyForRealBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].stage==="ready_for_real").map(b=>({...b,state:s[b.id]})); }
@@ -8712,10 +8714,11 @@ function bleDeepNextItem(){
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
 const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepGateReady(set){
-  set=set||bleActiveSet();
+  // 실전(꺼내기) 진입 = 소개된 블록이 총 5개 이상. 온보딩 기본 3개 + 추가 2개면 첫날에도 가능.
   const s=bleGetState();
-  // 세트의 모든 블록이 소개됨 + 각 블록 퀵체크(또는 미니테스트) 최소 1회 시도
-  return set.blocks.every(id=>{ const st=s[id]; return st && st.introducedAt && (st.introAttemptCount||0)>=1; });
+  let n=0;
+  BLE_BLOCKS.forEach(b=>{ const st=s[b.id]; if(st && st.introducedAt && (st.introAttemptCount||0)>=1) n++; });
+  return n>=5;
 }
 function bleDeepStart(){
   try{ xpSessionStart(); }catch(e){}
@@ -9067,6 +9070,56 @@ function bleOutputSummary(res){
   $("#outReview").onclick=()=>{ if(typeof bleOpenHub==="function") bleOpenHub(); else goToSetup(); };
 }
 
+// 🧱 내가 아는 블록 + 숙련도 목록 (아는 블록 카드 클릭 시)
+function bleOpenProficiency(){
+  const learned=getLearnedBlocks().slice().sort((a,b)=>adProf(b)-adProf(a));
+  const stageOrder=["new","learning","retrieved","active","strong","fast","ready_for_real"];
+  const statusOf=(st)=>{
+    if(!st||!st.introducedAt) return {t:"소개 전", c:"#B0958A"};
+    if(st.stage==="ready_for_real") return {t:"실전 준비 완료", c:"#19a06b"};
+    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함 — 더 연습", c:"#e0533f"};
+    if((st.successCount||0)>0) return {t:"연습 중", c:"#F0664A"};
+    return {t:"소개 완료", c:"#C08763"};
+  };
+  const rows=learned.length?learned.map(b=>{
+    const st=b.state||{};
+    const succ=st.successCount||0, fast=st.fastCount||0, ctx=(st.contextsUsed||[]).length;
+    const stage=(function(){ try{ return bleComputeStage(st); }catch(e){ return st.stage||"learning"; } })();
+    const si=Math.max(0, stageOrder.indexOf(stage));
+    const pct=Math.round(si/(stageOrder.length-1)*100);
+    const lab=statusOf(st);
+    const stars=(function(){ try{ return bleStars(b.id); }catch(e){ return ""; } })();
+    return `<div style="background:#fff;border:1px solid #F2D4C5;border-radius:14px;padding:11px 13px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="min-width:0">
+          <div style="font-family:var(--serif);font-size:16px;color:#3A2D27" data-no-pronko>${escapeHtml(b.block)}</div>
+          <div style="font-size:11.5px;color:#A28A7F">${escapeHtml(b.meaningKo||"")}</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:12px">${stars}</div>
+          <i style="font-size:11px;font-weight:800;color:${lab.c}">${lab.t}</i>
+        </div>
+      </div>
+      <div style="height:7px;border-radius:99px;background:#F3E7DE;overflow:hidden;margin:8px 0 6px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+      <div style="font-size:11px;color:#8A6F62">${BLE_STAGE_KO[stage]||stage} · 자동화 ${fast}회 · 인출 ${succ}회 · 연습 상황 ${ctx}개</div>
+    </div>`;
+  }).join(""):`<div style="text-align:center;color:#A28A7F;font-size:14px;padding:30px 0">아직 배운 블록이 없어요.<br>블록을 하나 배워볼까요?</div>`;
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleProfOv";
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD;display:flex;flex-direction:column">
+     <div class="hub-grab"></div>
+     <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 2px 12px">
+       <div style="font-size:17px;font-weight:950;color:#3A2D27">내가 아는 블록 <span style="color:#F0664A">${learned.length}개</span> · 숙련도</div>
+       <button id="bleProfClose" style="background:#fff;border:1px solid #F2D4C5;border-radius:12px;padding:6px 12px;font-weight:900;color:#C08763;cursor:pointer">닫기</button>
+     </div>
+     <div style="overflow-y:auto;flex:1;min-height:0">${rows}</div>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  $("#bleProfClose").onclick=close;
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
 function bleOpenHub(){
   const s=bleGetState();
   const set=bleActiveSet();
@@ -9109,7 +9162,7 @@ function bleOpenHub(){
        <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`배운 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`한 번에 하나씩 차근차근 — 많이 아는 것보다 아는 걸 입에 붙이는 게 중요해요!`}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:11px 0 13px">
-       <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return getLearnedBlocks().length}catch(e){return introN}})()}</b><i style="color:#8A6F62">아는 블록</i></div>
+       <div class="bl-sumcell" id="bleKnownCell" style="cursor:pointer"><b style="color:#F0664A">${(function(){try{return getLearnedBlocks().length}catch(e){return introN}})()}</b><i style="color:#8A6F62">아는 블록 ›</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return NEWBLOCK_DAILY_CAP-newBlocksToday()}catch(e){return 3}})()}</b><i style="color:#8A6F62">오늘 더 배우기</i></div>
      </div>
@@ -9150,6 +9203,7 @@ function bleOpenHub(){
   // 새 블록 학습이면 하루 3개 상한/복습우선 게이트 경유. 이미 다 소개됐으면(복습) 바로.
   const goLearn=()=>{ close(); if(introDone){ bleStartSetIntro(set.id); } else { gateNewBlock(()=>bleStartSetIntro(set.id)); } };
   $("#bleStartNext").onclick=goLearn;
+  { const kc=$("#bleKnownCell"); if(kc) kc.onclick=()=>bleOpenProficiency(); }
   { const ab=$("#bleAutoBtn"); if(ab) ab.onclick=()=>{ close(); startAutoDrill(); }; }
   { const _dh=$("#bleDeepHubBtn"); if(_dh) _dh.onclick=()=>{ close(); bleDeepStart(); }; }
   ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=goLearn; });
@@ -10302,8 +10356,11 @@ function bumpNewBlocksToday(){ try{ hSet(newBlkKey(), newBlocksToday()+1); }catc
 function gateNewBlock(proceed){
   const toAuto=()=>{ try{ startAutoDrill(); }catch(e){ goToSetup(); } };
   const doLearn=()=>{ bumpNewBlocksToday(); try{ proceed(); }catch(e){ goToSetup(); } };
-  // 1) 하루 3개 상한
-  if(newBlocksToday()>=NEWBLOCK_DAILY_CAP){
+  // 실전(꺼내기) 최소치 5블록에 도달하기 전에는 하루 상한을 적용하지 않음
+  // → 온보딩 기본 블록이 상한을 잡아먹어 첫날 5개를 못 채우는 문제 방지
+  const introN=(function(){ try{ return bleIntroducedCount(); }catch(e){ return 99; } })();
+  // 1) 하루 3개 상한 (단, 아직 5블록 미만이면 면제)
+  if(introN>=5 && newBlocksToday()>=NEWBLOCK_DAILY_CAP){
     openModal({title:"오늘 새 블록 3개 다 배웠어요 🎉",
       html:`<div style="line-height:1.75;font-size:14.5px;color:var(--text)"><b style="color:#F0664A;font-size:15.5px">블록을 많이 아는 것보다,<br>아는 블록을 많이 <u>말하는</u> 게 훨씬 중요해요.</b><br><br>새 블록은 내일 또 열려요. 오늘은 배운 걸 입에 붙여볼까요?</div>`,
       okText:"🔥 입에 붙이기 →", cancelText:"홈으로", onOk:toAuto });
