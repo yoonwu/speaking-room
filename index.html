@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.24";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.25";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11405,6 +11405,7 @@ function adSpread(arr){
 }
 function autoDrillBuildItems(blocks){
   const limits=adLimits(), items=[];
+  const TARGET=12, MAXN=16;
   // 배운 블록 '전부' 출제 — 숙련도 낮은 블록은 2번씩(더 자주), 익숙한 블록은 1번
   blocks.forEach(b=>{
     const reps=adProf(b)<3?2:1;
@@ -11413,8 +11414,17 @@ function autoDrillBuildItems(blocks){
       items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
     }
   });
-  // 블록이 뭉치지 않게 섞고, 한 세션은 최소 8 ~ 최대 16문제로 제한
-  const sliced=bleShuffle(items).slice(0, Math.max(8, Math.min(16, items.length)));
+  // 12문제가 안 되면 블록을 더 돌려(저숙련 블록 우선) 채움
+  if(items.length<TARGET && blocks.length){
+    const order=blocks.slice().sort((a,b)=>adProf(a)-adProf(b));
+    let i=0, guard=0;
+    while(items.length<TARGET && guard++<80){
+      const b=order[i++%order.length];
+      items.push({block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), limit:limits[0], rep:1, recall:false});
+    }
+  }
+  // 블록이 뭉치지 않게 섞고, 한 세션은 12 ~ 16문제로 제한
+  const sliced=bleShuffle(items).slice(0, Math.max(TARGET, Math.min(MAXN, items.length)));
   // 반복은 텀을 줘서 같은 블록이 바로 이어 나오지 않게(남은 개수 많은 블록 우선·직전 블록 회피)
   const final=adSpread(sliced);
   // 3~4문제에 한 번 '블록 구별' 라운드 — 고를 블록(contrast/학습블록)이 있을 때만
@@ -12074,6 +12084,11 @@ function autoDrillFinish(heard, meta){
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
+  // 제대로 못 맞춘(자동화 미완성) 문항은 맨 뒤로 다시 보내 반복 — 같은 문항 최대 2회까지(총 문항 수가 늘어남: 0/12→0/13…)
+  if(!perfect && (it._requeues||0)<2){
+    const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _requeues:(it._requeues||0)+1, _requeued:true});
+    autoDrill.items.push(clone);
+  }
   if(perfect){
     if(stat) stat.innerHTML=`<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
     try{ profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
