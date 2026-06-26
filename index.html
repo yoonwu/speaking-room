@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.14";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.15";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10214,12 +10214,13 @@ function startChunkTraining(pid){
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
-  // ⚠️ AI 생성 제거 — AI가 '우산 빌려준 친구 가격 묻기' 같은 번역 불가 시나리오를 만들어
-  // 항상 검증된 큐레이션 예문(사람이 쓴 ko→en)만 사용. 단어레벨에 맞는 것 우선, 부족하면 전체.
+  // ⚠️ AI 생성 제거(번역불가 시나리오 방지) — 검증된 큐레이션 예문만 사용.
+  // 단, 변화(variety) 보장: 레벨 필터로 1개만 남기지 말고, 전체 예문을 '쉬운 순'으로 정렬해 다 돌림.
+  // (모르는 단어는 '단어 보기'로 확인 — 같은 문장만 반복되는 게 더 나쁨)
   const baseAll=p.examples.map(e=>({ko:e.ko,en:e.en,pid:pid,chunk:p.phrase,chunkKo:p.ko,tag:(p.tags[0]||"daily")}));
-  const lowLvl=userWordLevel()<=2;
-  const filtered=baseAll.filter(e=>sentenceAllowedForUser(e.en, lowLvl?0:1));
-  const pool=filtered.length?filtered:baseAll;   // 레벨 적합 없으면 큐레이션 전체(여전히 사람이 쓴 문장)
+  const uwl=userWordLevel();
+  const overCnt=e=>bleContentWords(e.en||"").filter(w=>!wordAllowedForUser(w,uwl)).length;
+  const pool=baseAll.slice().sort((a,b)=>overCnt(a)-overCnt(b));   // 쉬운(모르는단어 적은) 순 먼저
   ctItems=[]; let i=0; while(ctItems.length<10 && pool.length){ ctItems.push(pool[i%pool.length]); i++; }
   ctNext();
 }
@@ -11773,7 +11774,7 @@ function studyPanelHtml(en, ko, id){
     <div class="study-words">${chips.join("")}</div>
     <div class="study-wordinfo" style="display:none"></div>
     <div class="study-acts">
-      <button class="study-act" data-act="listen">🔊 성우 발음</button>
+      <button class="study-act" data-act="listen">🔊 다시 듣기</button>
       <button class="study-act" data-act="rec">🎤 발음 채점</button>
       <button class="study-act" data-act="pron">📊 강세 보기</button>
       <button class="study-act" data-act="ai">🤖 AI 질문</button>
