@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.25";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.26";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7556,11 +7556,18 @@ function bleFreshContextEx2(b, opts){
   const all=bleAllEx(b);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
-  // 난이도 필터: 유저 단어레벨 내 슬롯만. 없으면 '가장 덜 어려운' 것만(무작위 어려운 것 방지)
+  // 난이도 필터: 유저 단어레벨 내 슬롯만. 단, 다양성을 위해 풀을 최소 8개까지 '가장 쉬운 것들'로 넓힌다
+  // (허용 슬롯이 3~4개뿐이면 같은 단어만 무한 반복되던 문제 해결 — 다음으로 쉬운 슬롯을 더 채움)
   const allowed=all.filter(e=>bleSlotAllowed(e.object));
   let base;
-  if(allowed.length){ base=allowed; }
-  else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
+  if(allowed.length>=8){ base=allowed; }
+  else {
+    const scored=all.map(e=>({e,h:bleSlotHardness(e.object)})).sort((a,b)=>a.h-b.h);
+    const want=Math.min(all.length, Math.max(8, allowed.length));
+    const seen=new Set(allowed.map(e=>bleExKey(e)));
+    base=allowed.slice();
+    for(const s of scored){ if(base.length>=want) break; const k=bleExKey(s.e); if(!seen.has(k)){ base.push(s.e); seen.add(k); } }
+  }
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
   const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
@@ -11376,8 +11383,24 @@ function ledgerBlocksForAuto(limit){
   }catch(e){ return []; }
 }
 function adProf(b){ const st=(b&&b.state)||(function(){try{return bleGetState()[b.id]||{}}catch(e){return{}}})(); return (st.fastCount||0)*2+(st.successCount||0); }
-function autoDrillBlocks(){
+function autoDrillBlocks(focusIds){
   let learned=[]; try{ learned=getLearnedBlocks()||[]; }catch(e){}
+  // 방금 배운(오늘의 방 등) 블록 — 무조건 포함하고 맨 앞에 배치
+  let focus=[];
+  if(focusIds&&focusIds.length){
+    const st=(function(){try{return bleGetState()}catch(e){return{}}})();
+    focusIds.forEach(id=>{
+      let b=learned.find(x=>x.id===id);
+      if(!b && BLE_BY_ID[id]) b={...BLE_BY_ID[id], state:(st[id]||{})};
+      if(b && !focus.some(f=>f.id===b.id)) focus.push(b);
+    });
+  }
+  if(!learned.length && !focus.length){ try{ return bleUnlockedBlocks().slice(0,5); }catch(e){ return []; } }
+  if(focus.length){
+    // 포커스 블록 먼저, 나머지 배운 블록은 저숙련 순으로 채워 최대 10개
+    const rest=learned.filter(b=>!focus.some(f=>f.id===b.id)).sort((a,b)=>adProf(a)-adProf(b));
+    return focus.concat(rest).slice(0,10);
+  }
   if(!learned.length){ try{ return bleUnlockedBlocks().slice(0,5); }catch(e){ return []; } }
   // 10개 이하 → 배운 블록 전부 (저숙련 순)
   if(learned.length<=10) return learned.slice().sort((a,b)=>adProf(a)-adProf(b));
@@ -11796,6 +11819,16 @@ function dailyRoomJudge(it, heard, meta){
 function dailyRoomDone(){
   try{ awardXP("output", 40, "오늘의 방", "dailyroom:"+DAYN()); }catch(e){}
   try{ hSet("dailyroom:done:"+DAYN(), true); }catch(e){}
+  // 오늘의 방에서 쓴 블록을 '배운 블록'으로 등록 → 바로 이어지는 입에 붙이기에 그 블록이 등장
+  let drFocusIds=[];
+  try{
+    const labels=[...new Set(((dailyRoom&&dailyRoom.items)||[]).map(it=>it.block))];
+    drFocusIds=labels.map(lbl=>{ const m=BLE_BLOCKS.find(b=>b.block===lbl); return m&&m.id; }).filter(Boolean);
+    drFocusIds.forEach(id=>{ if(BLE_BY_ID[id]) bleBlockState(id); });
+    const s=bleGetState(); const now=Date.now();
+    drFocusIds.forEach(id=>{ if(s[id]){ if(!s[id].introducedAt){ s[id].introducedAt=now; s[id].introAttemptCount=(s[id].introAttemptCount||0)+1; } s[id].unlocked=true; } });
+    bleSaveState(s);
+  }catch(e){}
   const scroll=$("#sprintScroll");
   const _xpSum=(function(){try{return xpSummaryHtml()}catch(e){return""}})();
   scroll.innerHTML=`<div class="auto-done" style="max-width:480px;text-align:center">
@@ -11817,7 +11850,7 @@ function dailyRoomDone(){
       <button id="drToHome" style="margin:0;width:100%;padding:14px 20px;background:#fff;border:2px solid #F0C4AC;border-radius:18px;font-size:15px;font-weight:900;color:#C08763;cursor:pointer;letter-spacing:-.01em">홈으로 돌아가기</button>
     </div>
   </div>`;
-  $("#drToAuto").onclick=()=>{ dailyRoom=null; startAutoDrill(); };
+  $("#drToAuto").onclick=()=>{ dailyRoom=null; startAutoDrill(drFocusIds); };
   $("#drToHome").onclick=()=>{ dailyRoom=null; goToSetup(); };
 }
 
@@ -11859,9 +11892,9 @@ function renderDailyRoomCard(){
   }
 }
 
-function startAutoDrill(){
+function startAutoDrill(focusIds){
   bleCtxCacheLoad();
-  let blocks=autoDrillBlocks();
+  let blocks=autoDrillBlocks(focusIds);
   if(!blocks.length){
     openModal({
       title:"먼저 블록을 하나 배워요",
