@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.19";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.20";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9039,7 +9039,9 @@ function bleOpenHub(){
   const introDone=setSt.introCompleted;
   const dueN=getDueReviewBlocks().length;
   const canDeep = bleDeepGateReady(set);
-  const blockNames=set.blocks.map(id=>BLE_BY_ID[id].block.replace(/\.\.\.$/,"")).join(" · ");
+  // Set 개념 제거 — 다음 배울 1개 블록만 표시(오늘의 새 블록)
+  const _nextBlk=setBlocks.find(b=>!bleBlockIntroduced(b.id))||setBlocks[0];
+  const blockNames=_nextBlk?_nextBlk.block.replace(/\.\.\.$/,""):"";
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleHub";
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
@@ -9055,7 +9057,7 @@ function bleOpenHub(){
      </div>
 
      <!-- 영역 1: 세트 인트로 -->
-     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 7px">Set 1 · ${escapeHtml(set.title)}</div>
+     <div style="font-size:12px;font-weight:900;letter-spacing:.04em;color:#C08763;margin:2px 2px 7px">🧱 오늘의 새 블록</div>
      <button id="bleStartNext" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:20px;padding:15px 18px;margin-bottom:14px;box-shadow:0 14px 26px -12px rgba(240,102,74,.6),inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 0 rgba(176,60,35,.4)">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
@@ -10272,6 +10274,7 @@ function startChunkTraining(pid){
   const p=CORE_PHRASES.find(x=>x.id===pid);
   if(!p){ goToSetup(); return; }
   ctPid=pid; ctChunk=p.phrase; ctPhrase=p; ctIdx=0; ctPass=0;
+  try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
@@ -10396,6 +10399,8 @@ function ctScore(it, heard, meta){
   const grade=spGrade(heard, it, elapsed);
   const ok=(grade!=="miss");
   if(ok) ctPass++;
+  // 난이도 기반 XP — 정답일수록·어려울수록 더 (문항별)
+  try{ awardXP("output", xpForResult(it.en, grade), "오늘의 블록", "ct:"+String(it.en||"").toLowerCase().slice(0,28)); }catch(e){}
   const stat=$("#ctStat");
   if(stat){
     const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
@@ -10493,16 +10498,18 @@ function ctDone(){
   const mastered = ctPass>=7;
   if(mastered){ weakClear(ctPid); try{ cpRegisterLearned(ctPhrase); }catch(e){} }   // 🔗 오늘의 블록 → 배운 블록 등록
   else { const w=weakGet(); if(w[ctPid]){ w[ctPid].miss=Math.max(1, 10-ctPass); weakSet(w); } }
-  const xp = mastered? awardXP("output",60,"⭐ 블록 마스터!","chunkmaster") : awardXP("output",ctPass*5,"블록 훈련","chunk");
+  if(mastered){ try{ awardXP("output",20,"⭐ 블록 마스터 보너스","chunkmaster:"+ctPid+":"+DAYN()); }catch(e){} }   // 문항별 XP는 ctScore에서, 여기선 마스터 보너스만
   const pct=Math.round(ctPass/ctItems.length*100);
+  const xpSum=(function(){ try{ return xpSummaryHtml(); }catch(e){ return ""; } })();
   const collHtml = mastered ? blockCollectionHtml() : "";
   const canMix = (function(){ try{ return (bleUnlockedBlocks()||[]).length>0 || blockCollectionData().count>0; }catch(e){ return false; } })();
   $("#sprintScroll").innerHTML=`
    <div class="rv-done" style="max-width:440px"><div class="em">${mastered?"⭐":"💪"}</div>
    <h2>${mastered?"오늘의 말문 열림!":"조금만 더!"}</h2>
    <p style="font-family:var(--serif);font-size:20px;color:var(--jade);margin:2px 0 4px">${escapeHtml(ctChunk)}</p>
-   <p>${ctPass}/${ctItems.length} 통과 (${pct}%)${mastered?" · +60 XP ⭐":` · 7개 필요했어요`}</p>
-   ${mastered?"":`<div style="font-size:13px;color:var(--muted);margin:6px 0 16px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
+   <p>${ctPass}/${ctItems.length} 통과 (${pct}%)${mastered?"":` · 7개 필요했어요`}</p>
+   ${mastered?"":`<div style="font-size:13px;color:var(--muted);margin:6px 0 6px">아직 약점으로 남겨둘게요. 한 번 더 도전!</div>`}
+   ${xpSum}
    ${collHtml}
    <div class="blk-actions" style="max-width:340px;margin-top:16px">
      <button class="blk-next" id="ctAuto" style="font-size:16px;padding:16px">🔥 배운 표현 입에 붙이기 →</button>
@@ -11808,6 +11815,7 @@ function startAutoDrill(){
   }
   blocks.forEach(b=>bleEnsureContexts(b));
   autoDrill={items:autoDrillBuildItems(blocks), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
+  try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
   if($("#phonics")) $("#phonics").style.display="none";
@@ -12013,6 +12021,8 @@ function autoDrillFinish(heard, meta){
   const fast=initSec<=it.limit;
   const perfect=g.ok && fast;
   const result=g.ok ? "PERFECT" : "MISS";
+  // 난이도 기반 XP (문항별): 자동화 성공=perfect, 뜻만 맞음=hit, 실패=miss
+  try{ awardXP("output", xpForResult((it.ex&&it.ex.en)||"", perfect?"perfect":(g.ok?"hit":"miss")), "입에 붙이기", "auto:"+String((it.ex&&it.ex.en)||"").toLowerCase().slice(0,28)); }catch(e){}
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
@@ -12078,7 +12088,8 @@ function autoDrillDone(){
   const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
   const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
   const autoNow=autoChunkCount();
-  try{ const earned=perfect*8+ok*3; awardXP("output", earned>0?earned:3, earned>0?"입에 붙이기 ✅":"자동화 참여", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
+  try{ bumpCount("talk"); questBump("talk"); }catch(e){}   // XP는 문항별(autoDrillFinish)에서 적립
+  const xpSum=(function(){ try{ return xpSummaryHtml(); }catch(e){ return ""; } })();
   $("#sprintScroll").style.background="";
   $("#sprintScroll").innerHTML=`<div class="auto-done">
     <div class="em">⚡</div>
@@ -12089,7 +12100,8 @@ function autoDrillDone(){
       <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#F0664A">${avg.toFixed(1)}초</b><div style="font-size:11px;color:#A28A7F">평균 시작 지연</div></div>
       <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#3A2D27">${autoNow}</b><div style="font-size:11px;color:#A28A7F">자동화 블록</div></div>
     </div>
-    <div style="font-size:13px;color:#8A6F62;line-height:1.55;margin:8px 0 16px">통과 ${ok}/${total}. 실패한 문장은 정답을 보고 읽은 게 아니라, 가린 뒤 다시 꺼내게 처리했어요.</div>
+    <div style="font-size:13px;color:#8A6F62;line-height:1.55;margin:8px 0 8px">통과 ${ok}/${total}. 실패한 문장은 가린 뒤 다시 꺼내게 처리했어요.</div>
+    ${xpSum}
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="routine-main" id="autoAgain" style="margin:0">한 번 더 자동화 →</button>
       <button class="auto-sub" id="autoHome">홈으로</button>
@@ -12813,6 +12825,41 @@ function awardXP(cat, base, label, itemKey){
   return base;
 }
 function todayXP(){ try{ return xpDayGet().total||0; }catch(e){ return 0; } }
+// ===== 📈 레벨링 — 문장 난이도 기반 점수 + 단락 끝 XP/레벨 요약 =====
+// 난이도 1~5: 정답 내용어의 희귀도(단어레벨) + 문장 길이
+function answerDifficulty(en){
+  const words=(typeof bleContentWords==="function")?bleContentWords(String(en||"")):String(en||"").split(/\s+/);
+  if(!words.length) return 1;
+  let sum=0; words.forEach(w=>sum+=(typeof wordLevelOf==="function"?wordLevelOf(w):2));
+  const avg=sum/words.length;             // 1~6 (희귀도)
+  const lenF=Math.min(2, words.length/3); // 길이 가중
+  return Math.max(1, Math.min(5, Math.round(avg*0.7+lenF)));
+}
+// 결과별 XP: 난이도↑·정답↑ 일수록 많이. result: perfect|hit|weak|miss
+function xpForResult(en, result){
+  const d=answerDifficulty(en);           // 1~5
+  const base=4+d*3;                       // 7~19 (난이도)
+  const mult=result==="perfect"?1 : result==="hit"?0.6 : result==="weak"?0.3 : 0.12;
+  return Math.max(1, Math.round(base*mult));
+}
+let _xpSession=null;
+function xpSessionStart(){ try{ const p=getProf(); _xpSession={xp:p.xp||0, level:levelInfo(p.xp).level}; }catch(e){ _xpSession=null; } }
+function xpSummaryHtml(){
+  if(!_xpSession) return "";
+  let p, li; try{ p=getProf(); li=levelInfo(p.xp); }catch(e){ return ""; }
+  const gained=Math.max(0,(p.xp||0)-_xpSession.xp);
+  const leveled=li.level>_xpSession.level;
+  const pct=Math.max(0,Math.min(100,Math.round(li.inLevel/li.need*100)));
+  return `<div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:16px;padding:14px 16px;margin:12px 0;text-align:left">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+      <span style="font-size:13px;font-weight:900;color:#C0653A">✨ 이번 학습 결과</span>
+      <span style="font-size:19px;font-weight:950;color:#F0664A">+${gained} XP</span>
+    </div>
+    <div style="font-size:15px;font-weight:900;color:#3A2D27;margin-bottom:7px">${leveled?`Lv.${_xpSession.level} → <span style="color:#19a06b">Lv.${li.level} 레벨업! 🎉</span>`:`Lv.${li.level}`}</div>
+    <div style="height:10px;border-radius:99px;background:#fff;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+    <div style="font-size:11px;color:#A8897B;margin-top:5px;text-align:right">${li.inLevel} / ${li.need} XP · 다음 레벨까지 ${Math.max(0,li.need-li.inLevel)}</div>
+  </div>`;
+}
 // 오늘 최고 발음 점수
 function bestPronToday(score){ let d=hGet("speakingroom:bestpron",{date:0,score:0}); const today=DAYN(); if(d.date!==today) d={date:today,score:0}; if(score!=null && score>d.score){ d.score=score; hSet("speakingroom:bestpron",d); } return d.score; }
 function firstHighPronToday(){ let d=hGet("speakingroom:hipron",{date:0,done:false}); const today=DAYN(); if(d.date!==today) d={date:today,done:false}; if(!d.done){ d.done=true; hSet("speakingroom:hipron",d); return true; } return false; }
