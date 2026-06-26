@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.23";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.24";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11389,6 +11389,20 @@ function autoDrillBlocks(){
   try{ hSet("speakingroom:ad_recent", pick.map(b=>b.id).concat(recent).slice(0,20)); }catch(e){}
   return pick;
 }
+// 같은 블록 항목이 연속(또는 바로 근처)으로 나오지 않게 재배치 — 남은 개수 많은 블록 우선, 직전 블록은 회피
+function adSpread(arr){
+  const groups={}; arr.forEach(it=>{ const k=(it.block&&it.block.id)||"_"; (groups[k]=groups[k]||[]).push(it); });
+  const out=[]; let lastK=null, n=arr.length;
+  for(let i=0;i<n;i++){
+    const keys=Object.keys(groups).filter(k=>groups[k].length>0);
+    if(!keys.length) break;
+    // 직전과 다른 블록 중 남은 개수가 가장 많은 것 선택, 없으면 어쩔 수 없이 직전 블록
+    keys.sort((a,b)=>groups[b].length-groups[a].length);
+    let pickK=keys.find(k=>k!==lastK); if(!pickK) pickK=keys[0];
+    out.push(groups[pickK].shift()); lastK=pickK;
+  }
+  return out;
+}
 function autoDrillBuildItems(blocks){
   const limits=adLimits(), items=[];
   // 배운 블록 '전부' 출제 — 숙련도 낮은 블록은 2번씩(더 자주), 익숙한 블록은 1번
@@ -11400,7 +11414,9 @@ function autoDrillBuildItems(blocks){
     }
   });
   // 블록이 뭉치지 않게 섞고, 한 세션은 최소 8 ~ 최대 16문제로 제한
-  const final=bleShuffle(items).slice(0, Math.max(8, Math.min(16, items.length)));
+  const sliced=bleShuffle(items).slice(0, Math.max(8, Math.min(16, items.length)));
+  // 반복은 텀을 줘서 같은 블록이 바로 이어 나오지 않게(남은 개수 많은 블록 우선·직전 블록 회피)
+  const final=adSpread(sliced);
   // 3~4문제에 한 번 '블록 구별' 라운드 — 고를 블록(contrast/학습블록)이 있을 때만
   final.forEach((it,idx)=>{ if((idx+1)%4===0){ const opts=autoDrillDiscOptions(it.block); if(opts&&opts.length>=2){ it.discriminate=true; it._discOpts=opts; } } });
   return final;
