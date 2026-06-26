@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.26";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.27";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7419,7 +7419,15 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"학교", ko:"상담 시간 잡을 수 있을까요?", en:"Can I get a counseling appointment?", object:"a counseling appointment"},
     {situation:"은행", ko:"신청서 받을 수 있을까요?", en:"Can I get an application form?", object:"an application form"},
     {situation:"사무실", ko:"서명 받을 수 있을까요?", en:"Can I get your signature?", object:"your signature"},
-    {situation:"미용실", ko:"오늘 예약 받을 수 있을까요?", en:"Can I get an appointment today?", object:"an appointment today"}
+    {situation:"미용실", ko:"오늘 예약 받을 수 있을까요?", en:"Can I get an appointment today?", object:"an appointment today"},
+    {situation:"식당", ko:"포크 하나 주세요.", en:"Can I get a fork?", object:"a fork"},
+    {situation:"식당", ko:"숟가락 하나 주세요.", en:"Can I get a spoon?", object:"a spoon"},
+    {situation:"카페", ko:"컵 하나 주세요.", en:"Can I get a cup?", object:"a cup"},
+    {situation:"식당", ko:"냅킨 좀 주세요.", en:"Can I get a napkin?", object:"a napkin"},
+    {situation:"카페", ko:"얼음 좀 주세요.", en:"Can I get some ice?", object:"some ice"},
+    {situation:"호텔", ko:"수건 하나 주세요.", en:"Can I get a towel?", object:"a towel"},
+    {situation:"호텔", ko:"담요 하나 주세요.", en:"Can I get a blanket?", object:"a blanket"},
+    {situation:"호텔", ko:"베개 하나 주세요.", en:"Can I get a pillow?", object:"a pillow"}
   ],
   do_you_have:[
     {situation:"식당", ko:"물 있어요?", en:"Do you have water?", object:"water"},
@@ -7443,7 +7451,15 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"은행", ko:"수수료 없는 계좌 있어요?", en:"Do you have a no-fee account?", object:"a no-fee account"},
     {situation:"편의점", ko:"휴대폰 충전기 있어요?", en:"Do you have a phone charger?", object:"a phone charger"},
     {situation:"사무실", ko:"회의실 비어 있어요?", en:"Do you have a meeting room available?", object:"a meeting room available"},
-    {situation:"미용실", ko:"오늘 가능한 시간 있어요?", en:"Do you have any openings today?", object:"any openings today"}
+    {situation:"미용실", ko:"오늘 가능한 시간 있어요?", en:"Do you have any openings today?", object:"any openings today"},
+    {situation:"카페", ko:"커피 있어요?", en:"Do you have coffee?", object:"coffee"},
+    {situation:"카페", ko:"차 있어요?", en:"Do you have tea?", object:"tea"},
+    {situation:"식당", ko:"자리 있어요?", en:"Do you have a table?", object:"a table"},
+    {situation:"편의점", ko:"충전기 있어요?", en:"Do you have a charger?", object:"a charger"},
+    {situation:"호텔", ko:"우산 있어요?", en:"Do you have an umbrella?", object:"an umbrella"},
+    {situation:"카페", ko:"얼음 있어요?", en:"Do you have ice?", object:"ice"},
+    {situation:"식당", ko:"포크 있어요?", en:"Do you have a fork?", object:"a fork"},
+    {situation:"호텔", ko:"수건 있어요?", en:"Do you have a towel?", object:"a towel"}
   ],
   i_need:[
     {situation:"식당", ko:"물이 필요해요.", en:"I need water.", object:"water"},
@@ -7464,7 +7480,15 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"학교", ko:"수업 일정을 바꿔야 해요.", en:"I need to change my class schedule.", object:"to change my class schedule"},
     {situation:"은행", ko:"새 카드를 발급받아야 해요.", en:"I need a new card.", object:"a new card"},
     {situation:"사무실", ko:"오늘 안에 승인이 필요해요.", en:"I need approval by today.", object:"approval by today"},
-    {situation:"편의점", ko:"현금 인출기가 필요해요.", en:"I need an ATM.", object:"an ATM"}
+    {situation:"편의점", ko:"현금 인출기가 필요해요.", en:"I need an ATM.", object:"an ATM"},
+    {situation:"호텔", ko:"수건이 필요해요.", en:"I need a towel.", object:"a towel"},
+    {situation:"식당", ko:"냅킨이 필요해요.", en:"I need a napkin.", object:"a napkin"},
+    {situation:"카페", ko:"얼음이 필요해요.", en:"I need some ice.", object:"some ice"},
+    {situation:"호텔", ko:"담요가 필요해요.", en:"I need a blanket.", object:"a blanket"},
+    {situation:"호텔", ko:"베개가 필요해요.", en:"I need a pillow.", object:"a pillow"},
+    {situation:"식당", ko:"메뉴가 필요해요.", en:"I need a menu.", object:"a menu"},
+    {situation:"식당", ko:"포크가 필요해요.", en:"I need a fork.", object:"a fork"},
+    {situation:"카페", ko:"컵이 필요해요.", en:"I need a cup.", object:"a cup"}
   ],
   could_you:[
     {situation:"식당", ko:"계산서 가져다주시겠어요?", en:"Could you bring the check?", object:"bring the check"},
@@ -7556,18 +7580,12 @@ function bleFreshContextEx2(b, opts){
   const all=bleAllEx(b);
   if(!all.length) return {situation:"상황", ko:"이 상황을 영어로 말해보세요.", en:String(b.block||"").replace("...",""), object:""};
   const recent=bleRecentCtx()[b.id]||[];
-  // 난이도 필터: 유저 단어레벨 내 슬롯만. 단, 다양성을 위해 풀을 최소 8개까지 '가장 쉬운 것들'로 넓힌다
-  // (허용 슬롯이 3~4개뿐이면 같은 단어만 무한 반복되던 문제 해결 — 다음으로 쉬운 슬롯을 더 채움)
+  // 난이도 필터(절대 원칙): 유저 단어레벨에 맞는 슬롯만 사용. 어려운 슬롯은 변화를 위해서라도 절대 넣지 않는다.
+  // 변화(다양성)는 데이터에 쉬운 슬롯을 충분히 넣어 확보한다(어려운 슬롯 끌어오기 X).
   const allowed=all.filter(e=>bleSlotAllowed(e.object));
   let base;
-  if(allowed.length>=8){ base=allowed; }
-  else {
-    const scored=all.map(e=>({e,h:bleSlotHardness(e.object)})).sort((a,b)=>a.h-b.h);
-    const want=Math.min(all.length, Math.max(8, allowed.length));
-    const seen=new Set(allowed.map(e=>bleExKey(e)));
-    base=allowed.slice();
-    for(const s of scored){ if(base.length>=want) break; const k=bleExKey(s.e); if(!seen.has(k)){ base.push(s.e); seen.add(k); } }
-  }
+  if(allowed.length){ base=allowed; }
+  else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
   const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
@@ -7784,7 +7802,9 @@ function bleContentWords(t){ return bleWords(t).filter(w=>!BLE_STOPWORDS.has(w))
 const _FREQ_SET=new Set(COMMON_FREQ_WORDS);
 const _FREQ_INDEX=(function(){ const m={}; COMMON_FREQ_WORDS.forEach((w,i)=>{ if(m[w]==null) m[w]=i; }); return m; })();
 // 레벨1 생존 핵심 단어 — 빈도리스트엔 약하지만 당장 살아남는 데 필요한 기초 30개
-const SURVIVAL_L1=new Set("water coffee tea this that here please thank help bathroom toilet menu check bill bag receipt ticket room key taxi size more one two yes no card cash open close".split(" "));
+// 생존 영어 기본 명사 — 빈도가 낮아도(영화 코퍼스 기준) 손가락으로 가리킬 수 있는 가장 쉬운 단어들은 1레벨로 취급
+const SURVIVAL_L1=new Set(("water coffee tea this that here please thank help bathroom toilet menu check bill bag receipt ticket room key taxi size more one two yes no card cash open close "+
+"fork spoon knife cup plate napkin straw bottle glass milk sugar bread rice soup salad chicken ice towel blanket pillow soap chair table seat bed phone charger wifi password refund discount fee box umbrella").split(" "));
 // 단어 난이도 레벨 (1=가장 기초 … 6=희귀어)
 function wordLevelOf(w){
   w=String(w||"").toLowerCase();
