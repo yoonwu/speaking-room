@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.16";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.17";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7018,7 +7018,7 @@ const BLE_BLOCKS=[
     ]},
 ];
 const BLE_EXTRA_ROWS=[
-["id_like","I'd like...","~하고 싶어요 / ~주세요","request",[["카페","커피 한 잔 주세요.","I'd like a coffee.","a coffee"],["식당","창가 자리로 부탁해요.","I'd like a table by the window.","a table by the window"],["호텔","늦은 체크아웃을 하고 싶어요.","I'd like a late checkout.","a late checkout"]]],
+["id_like","I'd like...","~로 할게요 / ~ 주세요(주문)","request",[["카페","저는 커피로 할게요.","I'd like a coffee.","a coffee"],["식당","창가 자리로 부탁해요.","I'd like a table by the window.","a table by the window"],["호텔","늦은 체크아웃을 하고 싶어요.","I'd like a late checkout.","a late checkout"]]],
 ["im_looking_for","I'm looking for...","~을 찾고 있어요","search",[["쇼핑","충전기를 찾고 있어요.","I'm looking for a charger.","a charger"],["공항","택시 타는 곳을 찾고 있어요.","I'm looking for the taxi stand.","the taxi stand"],["병원","접수처를 찾고 있어요.","I'm looking for reception.","reception"]]],
 ["where_is","Where is...","~이 어디예요?","location",[["공항","화장실이 어디예요?","Where is the restroom?","the restroom"],["호텔","엘리베이터가 어디예요?","Where is the elevator?","the elevator"],["쇼핑","계산대가 어디예요?","Where is the checkout?","the checkout"]]],
 ["how_do_i","How do I...","어떻게 ~하죠?","procedure",[["공항","와이파이에 어떻게 연결하죠?","How do I connect to the Wi-Fi?","connect to the Wi-Fi"],["호텔","체크아웃은 어떻게 하죠?","How do I check out?","check out"],["앱","비밀번호를 어떻게 바꾸죠?","How do I change my password?","change my password"]]],
@@ -8091,7 +8091,7 @@ function bleAnswerTools(answer, ko){
     <button data-ble-say="${safe}" data-rate="0.62">느리게</button>
     <button data-ble-say="${safe}" data-rate="0.95">보통</button>
     <button data-ble-say="${safe}" data-rate="1.18">빠르게</button>
-    <button data-ble-drill="${safe}" data-ble-ko="${safeKo}">말해보기</button>
+    <button data-ble-drill="${safe}" data-ble-ko="${safeKo}">🎤 다시 말하기</button>
     <button data-ble-ai="1" data-ble-reveal="1">AI 질문</button>
   </div>`;
 }
@@ -8121,7 +8121,10 @@ function bleViewUnderstand(it){
   const places=bleAllEx(b).map(e=>e.situation).filter((v,i,a)=>a.indexOf(v)===i).slice(0,8);
   const exs=bleSampleExamples(b,2);
   const first=exs[0]||{ko:b.meaningKo,en:b.block};
-  return `${blePhaseTag("understand")}
+  return `<div style="text-align:center;margin-bottom:13px">
+     <div style="display:inline-block;font-size:14.5px;font-weight:900;color:#fff;background:linear-gradient(135deg,#FF8568,#F0664A);border-radius:99px;padding:8px 18px;box-shadow:0 8px 18px -8px rgba(240,102,74,.6)">📘 1단계 · 이해하기</div>
+     <div style="font-size:12.5px;color:#C0653A;font-weight:800;margin-top:7px">👀 듣고 눈으로 익히기만 — <u>말 안 해도 돼요</u>. 다 보면 '알겠어요'</div>
+   </div>
    <div class="ar2-scene">
     <div class="ble-learn-dense">
      <div class="ble-learn-main">
@@ -8368,10 +8371,10 @@ async function bleFinishRetrieve(it, heard){
       : (j.shortFeedbackKo||"한 번 더 연습해볼게요");
     // 내가 말한 내용(STT) 표시 — 발음 문제인지 단어 문제인지 확인용
     const heardBlock = heard && heard.trim()
-      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div>${pronKoHtml(heard, "내 발음 한글")}</div>`
-      : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
+      ? `<div style="font-size:12px;color:#8A6F62;margin-top:7px">🎤 내가 말한 것: "${escapeHtml(heard)}"</div>`
+      : `<div style="font-size:12px;color:#B0958A;margin-top:7px">🎤 잘 안 들렸어요 — 또박또박 다시</div>`;
     const ans=j.naturalAnswer||ex.en;
-    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${bleAnswerTools(ans, ex.ko)}${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:6px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${heardBlock}<div style="font-size:12px;color:#8A6F62;margin-top:5px">${sub}</div>${bleAnswerTools(ans, ex.ko)}`;
     bleWireFocusTools(it);
   }
   const mic=$("#bleMic"); if(mic){ mic.disabled=true; mic.style.opacity=".5"; }
@@ -8727,10 +8730,10 @@ async function bleFinishRetrieveDeep(it, heard){
       : isHit?`의미는 통했어요. 다음엔 <b style="color:#F0664A">${escapeHtml(b.block)}</b> 로!`
       : (j.shortFeedbackKo||"");
     const heardBlock = heard && heard.trim()
-      ? `<div style="background:#FFF1E6;border:1px solid #FBE0D2;border-radius:12px;padding:9px 13px;margin-top:10px;text-align:left"><div style="font-size:11px;color:#B0958A;font-weight:700">내가 말한 것</div><div style="font-size:15px;color:#5A463C;margin-top:2px">"${escapeHtml(heard)}"</div>${pronKoHtml(heard, "내 발음 한글")}</div>`
-      : `<div style="font-size:12px;color:#B0958A;margin-top:8px">🎤 잘 안 들렸어요 — 다시 또박또박 말해보세요</div>`;
+      ? `<div style="font-size:12px;color:#8A6F62;margin-top:7px">🎤 내가 말한 것: "${escapeHtml(heard)}"</div>`
+      : `<div style="font-size:12px;color:#B0958A;margin-top:7px">🎤 잘 안 들렸어요 — 또박또박 다시</div>`;
     const ans=j.naturalAnswer||ex.en;
-    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:8px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${bleAnswerTools(ans, ex.ko)}${heardBlock}<div style="font-size:12.5px;color:#8A6F62;margin-top:8px">${sub}</div>`;
+    stat.innerHTML=`${lbl}<div style="font-size:11px;color:#B0958A;font-weight:700;margin-top:6px">정답</div><div style="font-family:var(--serif);color:#3A2D27;font-size:18px">${escapeHtml(ans)}</div>${heardBlock}<div style="font-size:12px;color:#8A6F62;margin-top:5px">${sub}</div>${bleAnswerTools(ans, ex.ko)}`;
     bleWireFocusTools(it);
   }
   // 한글로 말한 단어(=모르는 단어) → 단어공부 DB로
