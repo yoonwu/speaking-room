@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.15";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.16";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6186,7 +6186,9 @@ function pronExtract(data){
   const heard=((data&&data.DisplayText)||(n&&(n.Display||n.Lexical))||"").replace(/[.?!]+$/,"");
   const pa=n&&(n.PronunciationAssessment||(n.AccuracyScore!=null?n:null));
   const pron=pa?{acc:Math.round(pa.AccuracyScore||0), flu:Math.round(pa.FluencyScore||0), score:Math.round(pa.PronScore!=null?pa.PronScore:(pa.AccuracyScore||0))}:null;
-  return {heard, pron};
+  // 단어별 발음 점수 (Azure Words) → 색칠용
+  const words=(n&&Array.isArray(n.Words))?n.Words.map(w=>{ const wpa=w.PronunciationAssessment||w; return {w:String(w.Word||""), acc:(wpa&&wpa.AccuracyScore!=null)?Math.round(wpa.AccuracyScore):null, err:(wpa&&wpa.ErrorType)||""}; }):[];
+  return {heard, pron, words};
 }
 // 마이크 실패 원인을 사람이 알아볼 메시지로 (기기별 진단)
 function micErrMsg(err){
@@ -6206,13 +6208,16 @@ async function pronouncePractice(ref, blob, am){
   const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":ctype,"X-Pronunciation-Text-B64":b64},body});
   const txt=await res.text(); if(!res.ok) throw new Error("서버 "+res.status);
   let d=null; try{ d=JSON.parse(txt); }catch(e){}
-  const ex=pronExtract(d||{}); return {heard:ex.heard, score:ex.pron?ex.pron.score:null, acc:ex.pron?ex.pron.acc:null};
+  const ex=pronExtract(d||{}); return {heard:ex.heard, score:ex.pron?ex.pron.score:null, acc:ex.pron?ex.pron.acc:null, words:ex.words};
 }
 // 단어/문장 발음 연습 녹음 — 결과를 box에 표시(점수·인식·에러). 어디서든 재사용
 let wpPronMR=null, wpPronRec=false;
 function startPronPractice(ref, btn, box){
   if(wpPronRec){ if(wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); return; }
   if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">마이크 준비 중…</div>`;
+  // 직전 녹음(질문 화면 마이크)이 기기를 잡고 있으면 윈도우에서 NotReadableError → 먼저 정리
+  try{ if(typeof qzMR!=="undefined" && qzMR && qzMR.state!=="inactive") qzMR.stop(); }catch(e){}
+  const _run=(retry)=>{
   navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
     let chunks=[]; const mime=getBestMime();
     try{ wpPronMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); }
@@ -6230,12 +6235,22 @@ function startPronPractice(ref, btn, box){
         if(!box) return;
         if(r.score==null){ box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">인식이 안 됐어요${r.heard?` — 들린 말: "${escapeHtml(r.heard)}"`:""}. 다시 또렷하게.</div>`; return; }
         const col=r.score>=80?'#19a06b':r.score>=60?'#E0A300':'#e0533f';
-        box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${r.heard?`<div style="font-size:12px;color:var(--muted);margin-top:3px">내가 말한 발음: "${escapeHtml(r.heard)}"</div>`:""}`;
+        // 단어별 색칠: 초록=좋음 / 노랑=보통 / 빨강=약함(or 빠뜨림)
+        const wHtml=(r.words&&r.words.length)
+          ? r.words.map(w=>{ const a=w.acc; const wc=(w.err&&w.err!=="None"&&w.err!=="")?'#e0533f':(a==null?'#e0533f':a>=80?'#19a06b':a>=60?'#E0A300':'#e0533f'); const ul=(a!=null&&a<60)||(w.err&&w.err!=="None"&&w.err!=="")?';text-decoration:underline;text-underline-offset:2px':''; return `<span style="color:${wc};font-weight:800${ul}">${escapeHtml(w.w)}</span>`; }).join(" ")
+          : (r.heard?`<span style="color:var(--muted)">${escapeHtml(r.heard)}</span>`:"");
+        box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${wHtml?`<div style="margin-top:5px;font-size:16px;line-height:1.5">${wHtml}</div><div style="font-size:10.5px;color:var(--muted);margin-top:3px">빨강=발음 약함 · 노랑=보통 · 초록=좋음</div>`:""}`;
       }catch(e){ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
     };
     try{ micBeep&&micBeep(); }catch(e){} wpPronMR.start(250);
     try{ attachVAD&&attachVAD(stream, ()=>{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }, VAD_OPTS); }catch(e){}
-  }).catch(err=>{ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px;line-height:1.5">${micErrMsg(err)}</div>`; });
+  }).catch(err=>{
+    // 기기 점유(NotReadableError)면 잠깐 뒤 1회 재시도 — 직전 마이크가 늦게 풀리는 윈도우 대응
+    if(err&&(err.name==="NotReadableError"||err.name==="AbortError")&&!retry){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">마이크 다시 잡는 중…</div>`; setTimeout(()=>_run(true), 600); return; }
+    if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px;line-height:1.5">${micErrMsg(err)}</div>`;
+  });
+  };
+  _run(false);
 }
 // 입력칸 음성 채우기 (한 번 녹음 → STT → 입력칸). 모든 텍스트 입력에 공용.
 let qzMR=null, qzRecording=false, qzChunks=[];
@@ -9086,7 +9101,7 @@ const CORE_PHRASES=[
  {id:"can_i_011",phrase:"Can I...?",ko:"~해도 돼요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"여기 앉아도 돼요?",en:"Can I sit here?"},{ko:"들어가도 돼요?",en:"Can I come in?"},{ko:"질문해도 돼요?",en:"Can I ask a question?"},{ko:"늦게 체크아웃해도 돼요?",en:"Can I check out late?"},{ko:"나중에 내도 돼요?",en:"Can I pay later?"}]},
  {id:"is_there_012",phrase:"Is there...?",ko:"~ 있나요?",level:2,tags:["restaurant","hospital","school","hotel","transportation","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"2인 자리 있나요?",en:"Is there a table for two?"},{ko:"진료 가능한 의사 있나요?",en:"Is there a doctor available?"},{ko:"버스 있나요?",en:"Is there a bus?"},{ko:"무료 와이파이 있나요?",en:"Is there free wifi?"},{ko:"다른 방법 있나요?",en:"Is there another option?"}]},
  {id:"looking_for_013",phrase:"I'm looking for...",ko:"~을 찾고 있어요",level:2,tags:["restaurant","hospital","school","hotel","shopping","government","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"채식 메뉴를 찾고 있어요.",en:"I'm looking for a vegetarian dish."},{ko:"응급실을 찾고 있어요.",en:"I'm looking for the ER."},{ko:"5번 방을 찾고 있어요.",en:"I'm looking for room 5."},{ko:"엘리베이터를 찾고 있어요.",en:"I'm looking for the elevator."},{ko:"제 영수증을 찾고 있어요.",en:"I'm looking for my receipt."}]},
- {id:"help_me_014",phrase:"Can you help me?",ko:"도와주실 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"주문 좀 도와주실 수 있어요?",en:"Can you help me order?"},{ko:"좀 도와주실 수 있어요?",en:"Can you help me, please?"},{ko:"이거 작성 좀 도와주실 수 있어요?",en:"Can you help me fill this out?"},{ko:"가방 좀 도와주실 수 있어요?",en:"Can you help me with my bags?"},{ko:"이거 고치는 거 도와주실 수 있어요?",en:"Can you help me fix this?"}]},
+ {id:"help_me_014",phrase:"Can you help me?",ko:"도와주실 수 있어요?",level:1,tags:["restaurant","hospital","school","hotel","support","government","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"주문 좀 도와주실 수 있어요?",en:"Can you help me order?"},{ko:"좀 도와주실 수 있어요?",en:"Can you help me, please?"},{ko:"이거 작성 좀 도와주실 수 있어요?",en:"Can you help me fill this out?"},{ko:"가방 드는 것 좀 도와주실 수 있어요?",en:"Can you help me with my bags?"},{ko:"이거 고치는 거 도와주실 수 있어요?",en:"Can you help me fix this?"}]},
  {id:"how_do_i_015",phrase:"How do I...?",ko:"어떻게 ~해요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"여기서 어떻게 주문해요?",en:"How do I order here?"},{ko:"예약 어떻게 해요?",en:"How do I make an appointment?"},{ko:"등록 어떻게 해요?",en:"How do I register?"},{ko:"역까지 어떻게 가요?",en:"How do I get to the station?"},{ko:"이거 어떻게 취소해요?",en:"How do I cancel?"}]},
  {id:"what_time_016",phrase:"What time...?",ko:"몇 시에 ~?",level:1,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"몇 시에 닫아요?",en:"What time do you close?"},{ko:"제 예약 몇 시예요?",en:"What time is my appointment?"},{ko:"몇 시에 시작해요?",en:"What time does it start?"},{ko:"체크아웃 몇 시예요?",en:"What time is checkout?"},{ko:"몇 시에 열어요?",en:"What time do you open?"}]},
  {id:"i_have_a_017",phrase:"I have a...",ko:"~이 있어요 / ~이 아파요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"예약했어요.",en:"I have a reservation."},{ko:"머리가 아파요.",en:"I have a headache."},{ko:"질문이 있어요.",en:"I have a question."},{ko:"예약이 있어요.",en:"I have a booking."},{ko:"문제가 있어요.",en:"I have a problem."}]},
@@ -10977,7 +10992,7 @@ function ledgerExpressionNext(r){
   if((r.usedInConversationCount||0)<1) return "실전회화";
   if((r.heardInListeningCount||0)<1) return "상황 듣기";
   if(r.status==="mastered") return "maintenance";
-  return "자동화 드릴";
+  return "입에 붙이기";
 }
 function ledgerRefreshExpression(r){
   r.mastery=ledgerExpressionMastery(r);
@@ -11751,7 +11766,7 @@ function startAutoDrill(){
   if(!blocks.length){
     openModal({
       title:"먼저 블록을 하나 배워요",
-      msg:"자동화 드릴은 배운 블록을 입에 붙이는 단계예요. 새 블록을 하나 배운 뒤 바로 이어서 할게요.",
+      msg:"입에 붙이기는 배운 블록을 자동으로 나오게 하는 단계예요. 새 블록을 하나 배운 뒤 바로 이어서 할게요.",
       okText:"새 블록 배우기",
       onOk:()=>bleOpenHub()
     });
@@ -11799,7 +11814,7 @@ function bindStudyPanel(panel){
     const act=b.getAttribute("data-act");
     if(act==="listen"){ try{ speakEn(en); }catch(e){} }
     else if(act==="rec"){ if(extra) startPronPractice(en, b, extra); }
-    else if(act==="pron"){ if(extra) extra.innerHTML=extra.innerHTML?"":pronStudyCardHtml(en,"강세·발음"); }
+    else if(act==="pron"){ if(extra){ const showing=extra.querySelector(".pron-study-card"); extra.innerHTML = showing ? "" : pronStudyCardHtml(en,"강세·발음"); } }
     else if(act==="ai"){ studyAskAI(en, ko); }
     else if(act==="vocab"){ studySendToVocab(en, ko); }
   }; });
@@ -11828,7 +11843,7 @@ function studySendToVocab(en, ko){
   const seen=new Set(), reg=[];
   bleContentWords(en).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); const koW=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[w])?FREQ_DICT[w]:""; reg.push({en:w, ko:koW||ko}); });
   if(reg.length){ try{ bleRegisterUnknownWords(reg); }catch(e){} }
-  openModal({title:"📒 단어장에 추가됨", msg:`${reg.length}개 단어를 단어장에 넣었어요. 단어 공부에서 만날 수 있어요.`, okText:"단어 공부 하러 가기", cancelText:"계속 드릴", onOk:()=>{ try{ if(typeof startVocab==="function") startVocab(); }catch(e){} }});
+  openModal({title:"📒 단어장에 추가됨", msg:`${reg.length}개 단어를 단어장에 넣었어요. 단어 공부에서 만날 수 있어요.`, okText:"단어 공부 하러 가기", cancelText:"계속 연습", onOk:()=>{ try{ if(typeof startVocab==="function") startVocab(); }catch(e){} }});
 }
 // 🤔 블록 구별 라운드 — 여러 블록 중 상황에 맞는 걸 먼저 고른 뒤 말하기 (3~4문제에 한 번)
 function autoDrillDiscOptions(b){
@@ -12029,11 +12044,11 @@ function autoDrillDone(){
   const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
   const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
   const autoNow=autoChunkCount();
-  try{ const earned=perfect*8+ok*3; awardXP("output", earned>0?earned:3, earned>0?"자동화 드릴 ✅":"자동화 참여", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
+  try{ const earned=perfect*8+ok*3; awardXP("output", earned>0?earned:3, earned>0?"입에 붙이기 ✅":"자동화 참여", "auto:"+DAYN()+":"+Date.now()); bumpCount("talk"); questBump("talk"); }catch(e){}
   $("#sprintScroll").style.background="";
   $("#sprintScroll").innerHTML=`<div class="auto-done">
     <div class="em">⚡</div>
-    <h2>자동화 드릴 완료</h2>
+    <h2>입에 붙이기 완료</h2>
     <p style="font-size:13px;color:#8A6F62;margin:4px 0 14px">정답률보다 중요한 건 <b>상황 보자마자 입이 열리는 속도</b>예요.</p>
     <div style="display:flex;gap:9px;margin:12px 0">
       <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#19a06b">${perfect}</b><div style="font-size:11px;color:#A28A7F">자동화 성공</div></div>
@@ -12562,7 +12577,7 @@ function todayRoutineSteps(){
   return [
     firstStep,
     {id:"routineBlock", emo:"🧱", t:"새 블록", d:contextNeed.length?`${(contextNeed[0].label||"배운 블록")} 다른 상황 1개 추가 · 약 4분`:"1개 배우기 · 약 4분", done:(c.chunk||0)>=1, run:()=>bleOpenHub()},
-    {id:"routineSpeak", emo:"⚡", t:"자동화 드릴", d:focusExpr?`${focusLabel} · ${slowNeed.length?"3초 안에":"다른 상황에서"} 꺼내기`:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
+    {id:"routineSpeak", emo:"⚡", t:"입에 붙이기", d:focusExpr?`${focusLabel} · ${slowNeed.length?"3초 안에":"다른 상황에서"} 꺼내기`:"블록을 3초 안에 꺼내기 · 약 3분", done:(c.talk||0)>=1 || (c.survival||0)>=1, run:()=>startAutoDrill()},
     {id:"routineListen", emo:"👂", t:"듣기 연습", d:unknownWords.length?`${unknownWords[0].text||"약한 단어"} 들어간 문장 듣기 · 약 2분`:"3문장 듣기 · 약 2분", done:(c.listen||0)>=1, run:()=>openListenHub()}
   ];
 }
@@ -13064,7 +13079,7 @@ function convoRecommendNext(finalReport){
     return {type:"block", targetId:weak, title:"블록 선택 훈련", reason:`${convoTargetLabel(weak)} 블록을 상황에서 바로 고르는 힘이 약했어요.`, cta:"약한 블록 바로 훈련"};
   }
   if(requested==="auto" || reasons.slow_start || (convoMetricAverage("fluency")!=null && convoMetricAverage("fluency")<50)){
-    return {type:"auto", title:"자동화 드릴", reason:"아는 표현도 입이 늦게 열렸어요. 3초 안에 꺼내는 훈련이 먼저예요.", cta:"자동화 드릴 시작"};
+    return {type:"auto", title:"입에 붙이기", reason:"아는 표현도 입이 늦게 열렸어요. 3초 안에 꺼내는 훈련이 먼저예요.", cta:"입에 붙이기 시작"};
   }
   if(requested==="vocab" || reasons.vocab_gap){
     return {type:"vocab", title:"단어 능동화", reason:"상황에 필요한 단어가 부족해서 말이 짧아졌어요.", cta:"단어 말하기 훈련"};
