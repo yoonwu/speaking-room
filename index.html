@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.18";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.19";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7962,19 +7962,22 @@ let bleT0=0, bleSpoke=0;
 function bleBuildSetIntro(set){
   const blocks=bleSetBlocks(set);
   const items=[];
-  // 아직 소개 안 된 블록만 (이어하기 시 이미 소개된 건 건너뜀)
+  // 한 번에 1개만 — 하루 3개 철학에 맞춰 젠틀하게 (한꺼번에 5개 X)
   const todo=blocks.filter(b=>!bleBlockIntroduced(b.id));
-  const introList = todo.length? todo : blocks;   // 다 소개됐으면 전체 복습
+  const introList = todo.length? [todo[0]] : [blocks[0]];   // 다음 1개만 (다 됐으면 첫 블록 복습)
   introList.forEach(b=>{
     items.push({type:"understand", block:b, setIntro:true});
     bleEnsureContexts(b);
     items.push({type:"situation", block:b, ex:bleFreshContextEx2(b), introHidden:true, quickCheck:true, setIntro:true});
   });
-  // 🎯 미니 혼합 테스트: 5개 블록을 섞어서 "상황만 보고 알맞은 블록 고르기" (블록명 숨김, 5지선다)
-  // 소개 직후 모든 블록을 한 번씩 + 약했던 블록은 한 번 더 (총 5~7문제)
-  const testBlocks=blocks.slice();
-  for(let i=testBlocks.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [testBlocks[i],testBlocks[j]]=[testBlocks[j],testBlocks[i]]; }
-  testBlocks.forEach(b=>{ bleEnsureContexts(b); items.push({type:"discriminate", block:b, ex:bleFreshContextEx2(b), setIntro:true, miniTest:true, allOptions:true}); });
+  // 미니 구별 테스트: 이미 아는 블록 + 이번 블록끼리만 (2개 이상일 때만 — 1개뿐이면 고를 게 없음)
+  const introIds=new Set(introList.map(b=>b.id));
+  const knownNow=blocks.filter(b=>bleBlockIntroduced(b.id) || introIds.has(b.id));
+  if(knownNow.length>=2){
+    const testBlocks=knownNow.slice();
+    for(let i=testBlocks.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [testBlocks[i],testBlocks[j]]=[testBlocks[j],testBlocks[i]]; }
+    testBlocks.forEach(b=>{ bleEnsureContexts(b); items.push({type:"discriminate", block:b, ex:bleFreshContextEx2(b), setIntro:true, miniTest:true, allOptions:true}); });
+  }
   bleSession={ items, idx:0, newBlock:null, results:[], startedIds:blocks.map(b=>b.id), setId:set.id, isSetIntro:true };
   return bleSession;
 }
@@ -9043,12 +9046,12 @@ function bleOpenHub(){
      <div class="hub-grab"></div>
      <div style="display:flex;align-items:flex-end;gap:9px;margin-bottom:3px">
        <div style="width:36px;height:36px;flex:none;border-radius:50%;background:linear-gradient(155deg,#FFD9A1,#FF9576);display:grid;place-items:center;font-size:19px;box-shadow:0 6px 14px -6px rgba(240,102,74,.5)">🦊</div>
-       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`${setBlocks.length}개 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`먼저 ${setBlocks.length}개 블록을 짧게 익혀요. 그다음 섞어서 연습!`}</div>
+       <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`배운 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`한 번에 하나씩 차근차근 — 많이 아는 것보다 아는 걸 입에 붙이는 게 중요해요!`}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:11px 0 13px">
-       <div class="bl-sumcell"><b style="color:#F0664A">${introN}/${setBlocks.length}</b><i style="color:#8A6F62">소개됨</i></div>
+       <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return getLearnedBlocks().length}catch(e){return introN}})()}</b><i style="color:#8A6F62">아는 블록</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
-       <div class="bl-sumcell"><b style="color:#F0664A">${introDone?"열림":"잠김"}</b><i style="color:#8A6F62">본격 학습</i></div>
+       <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return NEWBLOCK_DAILY_CAP-newBlocksToday()}catch(e){return 3}})()}</b><i style="color:#8A6F62">오늘 더 배우기</i></div>
      </div>
 
      <!-- 영역 1: 세트 인트로 -->
@@ -9056,13 +9059,13 @@ function bleOpenHub(){
      <button id="bleStartNext" style="display:block;width:100%;text-align:left;border:none;cursor:pointer;background:linear-gradient(160deg,#FF9576,#F0664A);border-radius:20px;padding:15px 18px;margin-bottom:14px;box-shadow:0 14px 26px -12px rgba(240,102,74,.6),inset 0 2px 0 rgba(255,255,255,.3),inset 0 -7px 0 rgba(176,60,35,.4)">
        <div style="display:flex;align-items:center;justify-content:space-between">
          <div>
-           <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.04em">${introDone?"세트 다시 훑어보기":"필수 기본 블록 "+setBlocks.length+"개"}</div>
+           <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.04em">${introDone?"세트 다시 훑어보기":"오늘의 새 블록"}</div>
            <div style="font-family:var(--serif);font-size:17px;font-weight:600;color:#fff;line-height:1.25;margin-top:3px">${escapeHtml(blockNames)}</div>
          </div>
          <div style="font-size:24px;color:#fff">${introDone?"✓":"🧱"}</div>
        </div>
-       <div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:8px">${introDone?`${setBlocks.length}개 블록 소개 완료 — 다시 보기`:`${setBlocks.length}개 블록을 짧게 익힌 뒤, 상황을 보고 알맞은 블록을 골라 말해요`}</div>
-       <div style="display:block;width:100%;text-align:center;margin-top:11px;background:rgba(255,255,255,.95);color:#F0664A;font-size:15px;font-weight:900;border-radius:13px;padding:12px">${introDone?"다시 익히기 →":`${setBlocks.length}개 블록 빠르게 배우기 →`}</div>
+       <div style="font-size:11px;color:rgba(255,255,255,.9);margin-top:8px">${introDone?`소개 완료 — 다시 보기`:`한 번에 1개씩 익혀요 (하루 최대 3개). 무리하지 않고 차근차근.`}</div>
+       <div style="display:block;width:100%;text-align:center;margin-top:11px;background:rgba(255,255,255,.95);color:#F0664A;font-size:15px;font-weight:900;border-radius:13px;padding:12px">${introDone?"다시 익히기 →":`다음 블록 1개 배우기 →`}</div>
      </button>
 
      <!-- 영역 2: 입에 붙이기 (메인) -->
@@ -9084,10 +9087,12 @@ function bleOpenHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  $("#bleStartNext").onclick=()=>{ close(); bleStartSetIntro(set.id); };
+  // 새 블록 학습이면 하루 3개 상한/복습우선 게이트 경유. 이미 다 소개됐으면(복습) 바로.
+  const goLearn=()=>{ close(); if(introDone){ bleStartSetIntro(set.id); } else { gateNewBlock(()=>bleStartSetIntro(set.id)); } };
+  $("#bleStartNext").onclick=goLearn;
   { const ab=$("#bleAutoBtn"); if(ab) ab.onclick=()=>{ close(); startAutoDrill(); }; }
   { const _dh=$("#bleDeepHubBtn"); if(_dh) _dh.onclick=()=>{ close(); bleDeepStart(); }; }
-  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); bleStartSetIntro(set.id); }; });
+  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=goLearn; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 
