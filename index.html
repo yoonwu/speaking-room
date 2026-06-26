@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.22";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.23";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7819,15 +7819,22 @@ function slotHasIntensifier(object){
   const comps=["better","worse","bigger","smaller","shorter","longer","cheaper","cleaner","quieter","warmer","colder","hotter","cooler","harder","softer","faster","slower","closer","larger","nicer","lighter","darker","easier"];
   return phrases.some(x=>s.includes(" "+x+" ")) || comps.some(c=>s.includes(" "+c+" "));
 }
+// 슬롯 단어 수 (긴 의견·절일수록 초보에겐 부담)
+function slotWordCount(object){ return String(object||"").trim().split(/\s+/).filter(Boolean).length; }
 function bleSlotAllowed(object){
-  if(userWordLevel()<=2 && slotHasIntensifier(object)) return false;   // 초보: 강조어/비교급 슬롯 제외
+  const uwl=userWordLevel();
+  if(uwl<=2){
+    if(slotHasIntensifier(object)) return false;        // 초보: 강조어/비교급 슬롯 제외
+    if(slotWordCount(object)>4) return false;            // 초보: 5단어↑ 긴 의견절 제외("this class is right for me")
+  }
   return sentenceAllowedForUser(object, 0);
 }
-// 슬롯 난이도 = 모르는 내용어 수 + 강조어 가중 (낮을수록 쉬움)
+// 슬롯 난이도 = 모르는 내용어 수 + 강조어 + 길이 가중 (낮을수록 쉬움)
 function bleSlotHardness(object){
   const uwl=userWordLevel();
   let h=bleContentWords(String(object||"")).filter(w=>!wordAllowedForUser(w,uwl)).length;
   if(slotHasIntensifier(object)) h+=2;
+  h+=Math.max(0, slotWordCount(object)-4);   // 4단어 초과분만큼 가중(짧고 구체적인 문장 우선)
   return h;
 }
 function bleCoreWords(targetBlock){
@@ -11368,36 +11375,32 @@ function ledgerBlocksForAuto(limit){
     return picked.slice(0,limit||5);
   }catch(e){ return []; }
 }
+function adProf(b){ const st=(b&&b.state)||(function(){try{return bleGetState()[b.id]||{}}catch(e){return{}}})(); return (st.fastCount||0)*2+(st.successCount||0); }
 function autoDrillBlocks(){
-  const lists=[
-    ledgerBlocksForAuto(5),
-    getDueReviewBlocks(),
-    getWeakBlocks(),
-    getSlowBlocks(),
-    getLimitedContextBlocks(),
-    getRecentlyLearnedBlocks(),
-    bleUnlockedBlocks()
-  ];
-  const out=bleUniqueBlocks(lists, 5);
-  return out.length?out:bleUnlockedBlocks().slice(0,5);
+  let learned=[]; try{ learned=getLearnedBlocks()||[]; }catch(e){}
+  if(!learned.length){ try{ return bleUnlockedBlocks().slice(0,5); }catch(e){ return []; } }
+  // 10개 이하 → 배운 블록 전부 (저숙련 순)
+  if(learned.length<=10) return learned.slice().sort((a,b)=>adProf(a)-adProf(b));
+  // 10개 초과 → 최근 안 나온 것 우선, 부족분은 저숙련(어려워하는) 것으로 채움(중복 허용)
+  const recent=hGet("speakingroom:ad_recent",[])||[];
+  const fresh=learned.filter(b=>recent.indexOf(b.id)<0).sort((a,b)=>adProf(a)-adProf(b));
+  let pick=fresh.slice(0,10);
+  if(pick.length<10){ const rest=learned.filter(b=>pick.indexOf(b)<0).sort((a,b)=>adProf(a)-adProf(b)); pick=pick.concat(rest.slice(0,10-pick.length)); }
+  try{ hSet("speakingroom:ad_recent", pick.map(b=>b.id).concat(recent).slice(0,20)); }catch(e){}
+  return pick;
 }
 function autoDrillBuildItems(blocks){
   const limits=adLimits(), items=[];
-  // 배운 블록 중 랜덤으로 골라 섞어 출제 (배운 순서대로 X)
-  const focus=bleShuffle(blocks).slice(0, Math.min(3, blocks.length));
-  focus.forEach((b,bi)=>{
-    for(let r=0;r<(diffLevel()<=12?4:3);r++){
+  // 배운 블록 '전부' 출제 — 숙련도 낮은 블록은 2번씩(더 자주), 익숙한 블록은 1번
+  blocks.forEach(b=>{
+    const reps=adProf(b)<3?2:1;
+    for(let r=0;r<reps;r++){
       const ex=bleFreshContextEx2(b, {forceFresh:true});
       items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
     }
   });
-  let guard=0;
-  while(items.length<8 && blocks.length && guard++<30){
-    const b=focus[items.length%focus.length]||blocks[0];
-    items.push({block:b, ex:bleFreshContextEx2(b, {forceFresh:true}), limit:limits[Math.min(items.length%limits.length,limits.length-1)], rep:1, recall:false});
-  }
-  // 블록이 뭉치지 않게 최종 순서를 섞음 → 배운 블록 안에서 랜덤
-  const final=bleShuffle(items).slice(0, diffLevel()<=12?8:10);
+  // 블록이 뭉치지 않게 섞고, 한 세션은 최소 8 ~ 최대 16문제로 제한
+  const final=bleShuffle(items).slice(0, Math.max(8, Math.min(16, items.length)));
   // 3~4문제에 한 번 '블록 구별' 라운드 — 고를 블록(contrast/학습블록)이 있을 때만
   final.forEach((it,idx)=>{ if((idx+1)%4===0){ const opts=autoDrillDiscOptions(it.block); if(opts&&opts.length>=2){ it.discriminate=true; it._discOpts=opts; } } });
   return final;
@@ -12872,12 +12875,28 @@ function xpForResult(en, result){
   return Math.max(1, Math.round(base*mult));
 }
 let _xpSession=null;
-function xpSessionStart(){ try{ const p=getProf(); _xpSession={xp:p.xp||0, level:levelInfo(p.xp).level}; }catch(e){ _xpSession=null; } }
+// 학습(드릴) 진행 중에는 레벨업 연출을 누르고, 세션이 끝난 뒤 한 번에 보여준다
+let _suppressLevelUp=false, _pendingLevelTo=0, _pendingLevelFrom=0;
+function doLevelUpFx(before,after){
+  try{ levelUpCelebrate(after); }catch(e){}
+  // 🎁 20레벨마다 보물상자
+  let chests=0; for(let L=before+1; L<=after; L++){ if(L%20===0) chests++; }
+  if(chests>0){ for(let i=0;i<chests;i++) grantChest(); setTimeout(()=>{ try{ openChestFlow(); }catch(e){} }, 2700); }
+}
+// 세션 종료 시 호출 — 눌러둔 레벨업 연출을 한 번에 발사
+function xpSessionFlush(){
+  _suppressLevelUp=false;
+  if(_pendingLevelTo>_pendingLevelFrom){ const f=_pendingLevelFrom, t=_pendingLevelTo; setTimeout(()=>{ try{ doLevelUpFx(f,t); }catch(e){} }, 600); }
+  _pendingLevelTo=0; _pendingLevelFrom=0;
+}
+function xpSessionStart(){ try{ const p=getProf(); _xpSession={xp:p.xp||0, level:levelInfo(p.xp).level}; }catch(e){ _xpSession=null; } _suppressLevelUp=true; _pendingLevelTo=0; _pendingLevelFrom=0; }
 function xpSummaryHtml(){
   if(!_xpSession) return "";
   let p, li; try{ p=getProf(); li=levelInfo(p.xp); }catch(e){ return ""; }
   const gained=Math.max(0,(p.xp||0)-_xpSession.xp);
   const leveled=li.level>_xpSession.level;
+  // 결과 화면이 뜨는 이 시점에 눌러둔 레벨업 연출을 한 번에 발사
+  try{ xpSessionFlush(); }catch(e){}
   const pct=Math.max(0,Math.min(100,Math.round(li.inLevel/li.need*100)));
   return `<div style="background:linear-gradient(135deg,#FFF2EA,#FFE5D8);border:1px solid #FBD6C4;border-radius:16px;padding:14px 16px;margin:12px 0;text-align:left">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
@@ -12898,12 +12917,11 @@ function addXP(amount,label){
   const p=getProf(); const before=levelInfo(p.xp).level;
   p.xp=(p.xp||0)+amount; hSet("speakingroom:prof",p);
   const after=levelInfo(p.xp).level;
-  xpToast(amount,label, after>before?after:0);
+  // 드릴 진행 중이면 레벨업 연출을 토스트에서도 빼고(조용히), 끝난 뒤 xpSessionFlush에서 한 번에
+  xpToast(amount,label, (after>before && !_suppressLevelUp)?after:0);
   if(after>before){
-    try{ levelUpCelebrate(after); }catch(e){}
-    // 🎁 20레벨마다 보물상자
-    let chests=0; for(let L=before+1; L<=after; L++){ if(L%20===0) chests++; }
-    if(chests>0){ for(let i=0;i<chests;i++) grantChest(); setTimeout(()=>{ try{ openChestFlow(); }catch(e){} }, 2700); }
+    if(_suppressLevelUp){ if(!_pendingLevelFrom) _pendingLevelFrom=before; _pendingLevelTo=after; }
+    else doLevelUpFx(before,after);
   }
   try{ checkBadges(); }catch(e){}
   renderHome();
