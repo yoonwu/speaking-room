@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.21";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.22";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7485,6 +7485,10 @@ const BLE_LOCAL_CONTEXTS={
     {situation:"미용실", ko:"조금만 더 짧게 잘라주시겠어요?", en:"Could you cut it a little shorter?", object:"cut it a little shorter"}
   ],
   i_think:[
+    {situation:"호텔", ko:"방이 추운 것 같아요.", en:"I think the room is cold.", object:"the room is cold"},
+    {situation:"쇼핑", ko:"이거 비싼 것 같아요.", en:"I think it's expensive.", object:"it's expensive"},
+    {situation:"식당", ko:"이거 짠 것 같아요.", en:"I think this is salty.", object:"this is salty"},
+    {situation:"카페", ko:"여기 시끄러운 것 같아요.", en:"I think it's noisy here.", object:"it's noisy here"},
     {situation:"쇼핑", ko:"이건 너무 비싼 것 같아요.", en:"I think it's too expensive.", object:"it's too expensive"},
     {situation:"쇼핑", ko:"이 색이 더 나은 것 같아요.", en:"I think this color is better.", object:"this color is better"},
     {situation:"식당", ko:"이 음식이 조금 짠 것 같아요.", en:"I think this is a little salty.", object:"this is a little salty"},
@@ -7808,11 +7812,23 @@ function sentenceAllowedForUser(en, slack){
   return over<=(slack==null?1:slack);
 }
 // 슬롯(object) 허용 — 입에붙이기/인출은 새 단어 0개(다 알아야 자동화 가능)
-function bleSlotAllowed(object){ return sentenceAllowedForUser(object, 0); }
-// 슬롯 난이도 = 유저가 모르는 내용어 수 (낮을수록 쉬움)
+// 강조어·정도부사·비교급 — 1~2레벨에선 부담(없는 단순 문장 우선)
+function slotHasIntensifier(object){
+  const s=" "+String(object||"").toLowerCase()+" ";
+  const phrases=["too","very","really","quite","so","a little","a bit","much more","kind of","sort of","pretty","more","less"];
+  const comps=["better","worse","bigger","smaller","shorter","longer","cheaper","cleaner","quieter","warmer","colder","hotter","cooler","harder","softer","faster","slower","closer","larger","nicer","lighter","darker","easier"];
+  return phrases.some(x=>s.includes(" "+x+" ")) || comps.some(c=>s.includes(" "+c+" "));
+}
+function bleSlotAllowed(object){
+  if(userWordLevel()<=2 && slotHasIntensifier(object)) return false;   // 초보: 강조어/비교급 슬롯 제외
+  return sentenceAllowedForUser(object, 0);
+}
+// 슬롯 난이도 = 모르는 내용어 수 + 강조어 가중 (낮을수록 쉬움)
 function bleSlotHardness(object){
   const uwl=userWordLevel();
-  return bleContentWords(String(object||"")).filter(w=>!wordAllowedForUser(w,uwl)).length;
+  let h=bleContentWords(String(object||"")).filter(w=>!wordAllowedForUser(w,uwl)).length;
+  if(slotHasIntensifier(object)) h+=2;
+  return h;
 }
 function bleCoreWords(targetBlock){
   return bleWords(String(targetBlock.block||"").replace(/\.\.\.|\?/g,"")).filter(w=>!BLE_STOPWORDS.has(w));
