@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.20";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.21";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5516,6 +5516,7 @@ function wpResume(){
   wpNext();
 }
 function wpStart(words){
+  try{ xpSessionStart(); }catch(e){}
   const ws=uniqueVocabWords(words||[]).filter(w=>w&&w.word).slice(0,VOCAB_SET_SIZE);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
   // 한 세트 안에서는 한 단어를 맞히면 다시 내지 않는다. 예문 확장은 결과 카드에서만 보여준다.
@@ -5818,6 +5819,7 @@ function wpDone(){
       <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:var(--text)">${wpStats.correct}/${wpStats.total}</div><div style="font-size:11px;color:var(--muted)">맞힌 횟수</div></div>
       <div style="flex:1;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px"><div style="font-size:22px;font-weight:900;color:#f59e0b">${st.due}</div><div style="font-size:11px;color:var(--muted)">복습 대기</div></div>
     </div>
+    ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
     <div class="blk-actions" style="max-width:340px">
       <button class="blk-save" id="wpHome">나가기</button>
       <button class="blk-next" id="wpAgain">계속 ↻</button>
@@ -7982,6 +7984,7 @@ function bleBuildSetIntro(set){
   return bleSession;
 }
 function bleStartSetIntro(setId){
+  try{ xpSessionStart(); }catch(e){}
   const set=setId?BLE_SETS.find(s=>s.id===setId):bleActiveSet();
   bleBuildSetIntro(set);
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -7991,6 +7994,7 @@ function bleStartSetIntro(setId){
   bleRender();
 }
 function bleStart(forcedNewId){
+  try{ xpSessionStart(); }catch(e){}
   bleBuildSession(forcedNewId);
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -8476,8 +8480,9 @@ function bleSummary(){
     const s=bleGetState();
     const weakBlocks=blocks.filter(b=>s[b.id]&&s[b.id].quickCheckFailed).map(b=>b.block);
     $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
-      <div class="em">🎉</div><h2>${escapeHtml(set.title)} 5개 소개 완료!</h2>
-      <p style="font-size:13px;color:var(--muted)">이제 섞어서 상황에 맞게 꺼내는 진짜 훈련이에요</p>
+      <div class="em">🎉</div><h2>오늘 새 블록 익혔어요!</h2>
+      <p style="font-size:13px;color:var(--muted)">이제 입에 붙이기로 자동으로 나오게 해봐요</p>
+      ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
       <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
         ${blocks.map(b=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span style="font-family:var(--serif);color:var(--text);font-size:15px">${escapeHtml(b.block)}</span><span style="font-size:12px;color:#8A6F62">${escapeHtml(b.meaningKo)}</span></div>`).join("")}
         ${weakBlocks.length?`<div style="font-size:12.5px;color:#e0533f;margin-top:9px">약했던 블록: ${weakBlocks.map(escapeHtml).join(", ")} — 본격 학습에서 더 자주 나와요</div>`:""}
@@ -8550,6 +8555,7 @@ function bleSummary(){
   $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
     <div class="em">${newB?"🔓":"✅"}</div><h2>${newB?"블록 잠금 해제!":"세션 완료"}</h2>
     ${newB?`<p style="font-family:var(--serif);font-size:21px;color:var(--jade);margin:2px 0 2px">${escapeHtml(newB.block)}</p><p style="font-size:13px;color:var(--muted);margin:0 0 4px">이제 입에 붙이기로 진짜 내 것으로 만들어요</p>`:""}
+    ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("오늘 배운 블록", newB?escapeHtml(newB.block):"—", "var(--jade)")}
       ${row("복습한 블록", reviewed.map(escapeHtml).join(", ")||"—")}
@@ -8662,6 +8668,7 @@ function bleDeepGateReady(set){
   return set.blocks.every(id=>{ const st=s[id]; return st && st.introducedAt && (st.introAttemptCount||0)>=1; });
 }
 function bleDeepStart(){
+  try{ xpSessionStart(); }catch(e){}
   // 본격 학습 진입 조건: Set 1의 5개 블록 전부 소개 + 각 퀵체크 1회 이상
   const set=bleActiveSet();
   if(!bleDeepGateReady(set)){
@@ -8928,6 +8935,7 @@ function bleDeepSummary(){
   $("#sprintScroll").innerHTML=`<div class="rv-done" style="max-width:460px">
     <div class="em">🔁</div><h2>본격 학습 완료</h2>
     <p style="font-size:13px;color:var(--muted)">${res.length}문제 · 블록 인출 성공 ${perfectN}</p>
+    ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("오늘 꺼낸 블록", [...new Set(practiced)].map(escapeHtml).join(", ")||"—", "var(--jade)")}
       ${commLines.length?row("의미는 통했지만 블록 못 씀", commLines.slice(0,3).map(escapeHtml).join("<br>"), "#E2674A"):""}
@@ -10058,6 +10066,7 @@ function openLegacyChunkHub(){
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function blockLessonStart(pid){
+  try{ xpSessionStart(); }catch(e){}
   const learnedBefore=blGetLearned().length;
   let newP = pid? CORE_PHRASES.find(x=>x.id===pid) : blPickNew();
   blTeachP=newP; blItems=[];
@@ -10169,6 +10178,7 @@ function blDone(){
    <h2>${masteredNow?'블록 마스터!':'레슨 완료!'}</h2>
    ${taught?`<p style="font-family:var(--serif);font-size:20px;color:var(--jade);margin:2px 0 4px">${escapeHtml(taught)}</p>`:''}
    <p>통과 ${blPass}/${blItems.length} · 테스트 정답 ${blMixOk}</p>
+   ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
    <div style="font-size:13px;color:var(--muted);margin:6px 0 16px">${masteredNow?'섞어내기에서도 척척 골라냈어요 — 진짜 내 표현이 됐어요 ⭐':'배운 블록은 다음 레슨 테스트에 계속 섞여 나와요. 그래야 진짜 실력이 돼요!'}</div>
    <div class="blk-actions" style="max-width:340px;margin:0 auto;display:flex;flex-direction:column;gap:9px">
      <button class="sh-next" id="blAgain" style="margin:0">다음 블록 배우기 →</button>
@@ -11624,6 +11634,7 @@ const DAILY_ROOM_DAY1 = {
 };
 let dailyRoom=null;
 function startDailyRoom(){
+  try{ xpSessionStart(); }catch(e){}
   const D=DAILY_ROOM_DAY1;
   dailyRoom={ items:D.items, idx:0, said:0, tries:0, place:D.place };
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -11741,9 +11752,11 @@ function dailyRoomDone(){
   try{ awardXP("output", 40, "오늘의 방", "dailyroom:"+DAYN()); }catch(e){}
   try{ hSet("dailyroom:done:"+DAYN(), true); }catch(e){}
   const scroll=$("#sprintScroll");
+  const _xpSum=(function(){try{return xpSummaryHtml()}catch(e){return""}})();
   scroll.innerHTML=`<div class="auto-done" style="max-width:480px;text-align:center">
     <div style="font-size:54px;margin-bottom:6px">🎉</div>
     <h2 style="font-size:23px;font-weight:950;color:#3A2D27;line-height:1.3;margin:0 0 14px">오늘의 방, 처리 완료!</h2>
+    ${_xpSum}
     <div style="background:linear-gradient(135deg,#FFF0E8,#FFE3D5);border:1px solid #FBD6C4;border-radius:18px;padding:18px 20px;margin-bottom:16px">
       <div style="font-size:16px;font-weight:900;color:#F0664A;margin-bottom:6px">Can I get만 하다가<br>Do you have도 됐죠?</div>
       <div style="font-size:14px;color:#8A6F62;line-height:1.6">패턴이 바뀌어도 입에서 나왔어요.<br>외운 게 아니라 <b style="color:#F0664A">상황을 처리</b>한 거예요.</div>
