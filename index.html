@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.27";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.28";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12002,10 +12002,12 @@ function studySendToVocab(en, ko){
 function autoDrillDiscOptions(b){
   if(!b||!b.id) return null;
   const learned=(function(){ try{ return bleUnlockedBlocks().map(x=>x.id); }catch(e){ return []; } })();
+  // 선택지는 '배운 블록'으로 구성(정답 포함) — 배운 만큼, 최대 7개
   const pool=[];
   (b.contrast||[]).concat(learned).forEach(id=>{ if(id!==b.id && BLE_BY_ID[id] && pool.indexOf(id)<0) pool.push(id); });
   if(pool.length<1) return null;
-  const opts=[b.id, ...pool.slice(0,2)];
+  for(let i=pool.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  const opts=[b.id, ...pool.slice(0,6)];   // 정답 1 + 나머지 최대 6 = 최대 7
   for(let i=opts.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [opts[i],opts[j]]=[opts[j],opts[i]]; }
   return opts;
 }
@@ -12204,6 +12206,17 @@ function autoDrillDone(){
   const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
   const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
   const autoNow=autoChunkCount();
+  // 이번에 연습한 블록들 — 어떤 표현을 입에 붙였는지 보여줌(블록별 자동화 성공/시도)
+  const byBlock={};
+  res.forEach(r=>{ const k=r.block||r.id; if(!byBlock[k]) byBlock[k]={total:0,perfect:0}; byBlock[k].total++; if(r.perfect) byBlock[k].perfect++; });
+  const blockKeys=Object.keys(byBlock);
+  const blockListHtml=blockKeys.length?`<div style="background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px 15px;margin:0 0 12px;text-align:left">
+      <div style="font-size:11px;color:#C08763;font-weight:900;margin-bottom:9px">이번에 입에 붙인 블록 ${blockKeys.length}개</div>
+      ${blockKeys.map(k=>{ const v=byBlock[k]; const done=v.perfect===v.total; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #F6E7DD">
+        <span style="font-family:var(--serif);font-size:15px;color:#3A2D27">${done?"✅":"🔸"} ${escapeHtml(k)}</span>
+        <span style="font-size:12px;font-weight:800;color:${done?'#19a06b':'#C08763'}">자동화 ${v.perfect}/${v.total}</span>
+      </div>`; }).join("")}
+    </div>`:"";
   try{ bumpCount("talk"); questBump("talk"); }catch(e){}   // XP는 문항별(autoDrillFinish)에서 적립
   const xpSum=(function(){ try{ return xpSummaryHtml(); }catch(e){ return ""; } })();
   $("#sprintScroll").style.background="";
@@ -12217,6 +12230,7 @@ function autoDrillDone(){
       <div style="flex:1;background:#fff;border:1px solid #F2D4C5;border-radius:15px;padding:13px"><b style="font-size:24px;color:#3A2D27">${autoNow}</b><div style="font-size:11px;color:#A28A7F">자동화 블록</div></div>
     </div>
     <div style="font-size:13px;color:#8A6F62;line-height:1.55;margin:8px 0 8px">통과 ${ok}/${total}. 실패한 문장은 가린 뒤 다시 꺼내게 처리했어요.</div>
+    ${blockListHtml}
     ${xpSum}
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="routine-main" id="autoAgain" style="margin:0">한 번 더 자동화 →</button>
