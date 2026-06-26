@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.13";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.14";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6221,7 +6221,7 @@ function startPronPractice(ref, btn, box){
     wpPronMR.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
     wpPronMR.onstop=async()=>{
       try{ micBeepEnd&&micBeepEnd(); }catch(e){}
-      stream.getTracks().forEach(t=>t.stop()); wpPronRec=false; if(btn) btn.textContent="🎤 다시 발음 채점";
+      stream.getTracks().forEach(t=>t.stop()); wpPronRec=false; if(btn) btn.textContent="🎤 다시 말해보기";
       const raw=new Blob(chunks,{type:am});
       if(raw.size<1000){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">🔇 소리가 안 잡혔어요. 마이크에 가까이서 또렷하게.</div>`; return; }
       if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">채점 중…</div>`;
@@ -11773,10 +11773,11 @@ function studyPanelHtml(en, ko, id){
     <div class="study-words">${chips.join("")}</div>
     <div class="study-wordinfo" style="display:none"></div>
     <div class="study-acts">
+      <button class="study-act" data-act="listen">🔊 성우 발음</button>
       <button class="study-act" data-act="rec">🎤 발음 채점</button>
-      <button class="study-act" data-act="pron">🔊 강세·발음</button>
-      <button class="study-act" data-act="ai">🤖 AI에게 질문</button>
-      <button class="study-act" data-act="vocab">📒 단어장 보내기</button>
+      <button class="study-act" data-act="pron">📊 강세 보기</button>
+      <button class="study-act" data-act="ai">🤖 AI 질문</button>
+      <button class="study-act" data-act="vocab">📒 단어장</button>
     </div>
     <div class="study-extra"></div>
   </div>`;
@@ -11795,7 +11796,8 @@ function bindStudyPanel(panel){
   }; });
   panel.querySelectorAll(".study-act").forEach(b=>{ b.onclick=()=>{
     const act=b.getAttribute("data-act");
-    if(act==="rec"){ if(extra) startPronPractice(en, b, extra); }
+    if(act==="listen"){ try{ speakEn(en); }catch(e){} }
+    else if(act==="rec"){ if(extra) startPronPractice(en, b, extra); }
     else if(act==="pron"){ if(extra) extra.innerHTML=extra.innerHTML?"":pronStudyCardHtml(en,"강세·발음"); }
     else if(act==="ai"){ studyAskAI(en, ko); }
     else if(act==="vocab"){ studySendToVocab(en, ko); }
