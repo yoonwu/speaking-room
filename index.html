@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.32";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.33";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4185,9 +4185,7 @@ function scheduleItem(n, ok){
 let curScreen="setup";
 let micEpoch=0;   // 화면/모드 전환마다 +1. 진행 중인 마이크 콜백이 옛 화면에 결과를 쓰는 것을 막는 토큰.
 function pushScreen(which){
-  if(which!=="setup"){
-    try{ if(curScreen==="setup") history.pushState({s:which},""); else history.replaceState({s:which},""); }catch(e){}
-  }
+  // 화면 이동은 중앙 back 핸들러(handleBack)가 sentinel 방식으로 관리 — 여기선 상태만 갱신
   curScreen=which;
   micEpoch++;
 }
@@ -13854,10 +13852,37 @@ function goToSetup(fromPop){
   syncSetupFields();
   const dm=$("#drillModal"); if(dm) dm.remove();
   const pq=$("#pinnedQ"); if(pq) pq.style.display="none";
-  const wasStage = curScreen!=="setup"; curScreen="setup";
-  if(!fromPop && wasStage && history.state && history.state.s){ try{ history.back(); }catch(e){} }
+  curScreen="setup";
 }
-window.addEventListener("popstate", ()=>{ if(curScreen!=="setup") goToSetup(true); });
+// ===== 📱 폰 뒤로가기(하드웨어/제스처) 처리 — sentinel 방식 =====
+// 홈(메인)에서만 "종료하시겠습니까?" 확인, 그 외 모든 화면에선 이전 화면으로(앱 종료 X)
+let _backExitConfirm=false, _allowExit=false;
+function _backTrap(){ try{ history.pushState({trap:1},""); }catch(e){} }
+function _topOverlay(){
+  // 위에 떠 있는 오버레이(블록 허브, 숙련도 목록 등) 중 가장 나중 것
+  const ovs=document.querySelectorAll(".hub-ov");
+  return ovs.length?ovs[ovs.length-1]:null;
+}
+function _modalOpen(){ const m=document.getElementById("modalScrim"); return m && m.classList.contains("show"); }
+function handleBack(){
+  if(_allowExit) return;   // 종료 진행 중 — 재가둠 없이 빠져나감
+  // 1) 종료 확인 모달이 떠 있으면 → '아니오'처럼 닫고 머무름
+  if(_backExitConfirm){ _backExitConfirm=false; closeModal(); _backTrap(); return; }
+  // 2) 떠 있는 오버레이(허브/숙련도) 닫기 → 이전 화면
+  const ov=_topOverlay();
+  if(ov){ ov.remove(); _backTrap(); return; }
+  // 3) 일반 모달 열려 있으면 취소처럼 닫기
+  if(_modalOpen()){ if(typeof _modalOnCancel==="function") _modalOnCancel(); else closeModal(); _backTrap(); return; }
+  // 4) 홈(setup)이 아니면 → 이전 화면(홈)으로, 앱 종료 X
+  if(curScreen!=="setup"){ try{ goToSetup(true); }catch(e){} _backTrap(); return; }
+  // 5) 홈이면 → 종료 확인
+  _backExitConfirm=true; _backTrap();   // 다시 가둬두고 모달 표시
+  openModal({ title:"종료하시겠습니까?", okText:"예", cancelText:"아니오",
+    onOk:()=>{ _backExitConfirm=false; _allowExit=true; try{ window.close(); }catch(e){} try{ history.go(-2); }catch(e){} },
+    onCancel:()=>{ _backExitConfirm=false; } });
+}
+window.addEventListener("popstate", handleBack);
+_backTrap();   // 초기 가둠 — 첫 뒤로가기부터 가로채기
 sendBtn.onclick=sendMessage;
 micBtn.onclick=toggleMic;
 $("#helpBtn").onclick=askHelp;
