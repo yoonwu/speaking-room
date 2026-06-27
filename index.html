@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.33";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.34";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12334,18 +12334,9 @@ function autoDrillDone(){
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
 // 🌎 실전상황 Engine — 실전 상황 시뮬레이션
-const SURVIVAL_ART={
-  sv_ms:"assets/survival/sv_ms.png",
-  sv_clinic:"assets/survival/sv_clinic.png",
-  sv_school:"assets/survival/sv_school.png",
-  sv_bank:"assets/survival/sv_bank.png",
-  sv_phone:"assets/survival/sv_phone.png",
-  sv_hotel:"assets/survival/sv_hotel.png",
-  sv_parcel:"assets/survival/sv_parcel.png",
-  sv_pharm:"assets/survival/sv_pharm.png",
-  sv_immig:"assets/survival/sv_immig.png",
-  sv_net:"assets/survival/sv_net.png"
-};
+// 실전 시나리오 배경 사진(assets/survival/*.png)은 앱에 포함돼 있지 않아 깨진 이미지로 표시됨.
+// → 이미지 대신 시나리오 이모지를 카드 아이콘으로 사용(깨진 이미지 방지). 실제 사진을 넣으면 여기에 경로를 매핑.
+const SURVIVAL_ART={};
 function survivalArt(id){ return SURVIVAL_ART[id]||""; }
 const SURVIVAL=[
  {id:"sv_ms",   emo:"💳", t:"카드 결제 문제", role:"a customer-service agent at a software company (like Microsoft)", ctx:"The learner called customer service because their card expired and a payment/subscription failed. They must explain the problem, verify the account, and get it fixed.", emotion:"polite but a bit impatient, follows a strict verification script", pressure:"a long support queue; the agent wants to move fast"},
