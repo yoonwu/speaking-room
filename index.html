@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.30";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.31";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8064,6 +8064,25 @@ function bleStart(forcedNewId){
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   bleRender();
 }
+// 🔁 한 블록 다시 배우기(복습) — 이해하기 → 패턴 → 그 블록만 집중 인출
+function bleRelearnBlock(id){
+  const b=BLE_BY_ID[id]; if(!b){ return; }
+  try{ xpSessionStart(); }catch(e){}
+  try{ bleEnsureContexts(b); }catch(e){}
+  const items=[];
+  items.push({type:"understand", block:b});
+  items.push({type:"pattern", block:b});
+  // 그 블록만 상황 인출 4회(블록명 숨김) + 속도 인출 1회
+  for(let i=0;i<4;i++){ bleAddSessionPractice(items, [b], "situation", b, {introHidden:true}); }
+  bleAddSessionPractice(items, [b], "speed", b, {limit:8});
+  bleSession={ items, idx:0, newBlock:null, results:[], startedIds:[id], relearn:true };
+  try{ bleBlockState(id); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  bleRender();
+}
 function bleRender(){
   if(!bleSession || bleSession.idx>=bleSession.items.length) return bleSummary();
   const it=bleSession.items[bleSession.idx];
@@ -9100,7 +9119,7 @@ function bleOpenProficiency(){
     const pct=Math.round(si/(stageOrder.length-1)*100);
     const lab=statusOf(st);
     const stars=(function(){ try{ return bleStars(b.id); }catch(e){ return ""; } })();
-    return `<div style="background:#fff;border:1px solid #F2D4C5;border-radius:14px;padding:11px 13px;margin-bottom:8px">
+    return `<button class="bleProfRow" data-id="${b.id}" style="display:block;width:100%;text-align:left;cursor:pointer;background:#fff;border:1px solid #F2D4C5;border-radius:14px;padding:11px 13px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
         <div style="min-width:0">
           <div style="font-family:var(--serif);font-size:16px;color:#3A2D27" data-no-pronko>${escapeHtml(b.block)}</div>
@@ -9112,8 +9131,11 @@ function bleOpenProficiency(){
         </div>
       </div>
       <div style="height:7px;border-radius:99px;background:#F3E7DE;overflow:hidden;margin:8px 0 6px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
-      <div style="font-size:11px;color:#8A6F62">${BLE_STAGE_KO[stage]||stage} · 자동화 ${fast}회 · 인출 ${succ}회 · 연습 상황 ${ctx}개</div>
-    </div>`;
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#8A6F62">${BLE_STAGE_KO[stage]||stage} · 자동화 ${fast}회 · 인출 ${succ}회 · 연습 상황 ${ctx}개</span>
+        <span style="font-size:11px;font-weight:900;color:#F0664A;flex:none">🔁 다시 배우기</span>
+      </div>
+    </button>`;
   }).join(""):`<div style="text-align:center;color:#A28A7F;font-size:14px;padding:30px 0">아직 배운 블록이 없어요.<br>블록을 하나 배워볼까요?</div>`;
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="bleProfOv";
   ov.innerHTML=`<div class="hub-bg"></div>
@@ -9129,6 +9151,12 @@ function bleOpenProficiency(){
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
   $("#bleProfClose").onclick=close;
+  // 블록 누르면 그 블록 다시 배우기(복습) — 허브도 같이 닫고 진입
+  ov.querySelectorAll(".bleProfRow").forEach(btn=>{ btn.onclick=()=>{
+    const id=btn.getAttribute("data-id"); close();
+    const hub=document.getElementById("bleHub"); if(hub) hub.remove();
+    try{ bleRelearnBlock(id); }catch(e){}
+  }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function bleOpenHub(){
