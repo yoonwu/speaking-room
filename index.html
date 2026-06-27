@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.36";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.37";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7136,6 +7136,29 @@ const BLE_EXTRA_ROWS=[
 BLE_EXTRA_ROWS.forEach(r=>{
   BLE_BLOCKS.push({id:r[0], block:r[1], meaningKo:r[2], func:r[3], contrast:[], examples:r[4].map(e=>({situation:e[0], ko:e[1], en:e[2], object:e[3]}))});
 });
+// 🎯 학습 순서 = 필수 코어를 앞쪽으로. 자주 쓰는 생존 기능 먼저, 의미가 비슷한 변주(Could you+동작, 정중도 변형 등)는
+//    코어 뒤쪽(Lv3쯤)으로 밀고, 나머지는 기존 순서 유지(안정 정렬). 세트(BLE_SETS)가 이 순서대로 묶임.
+(function reorderBlocksByPriority(){
+  const PRIORITY=[
+    // 온보딩(세트1) + 가장 자주 쓰는 필수 코어
+    "can_i_get","do_you_have","where_is",
+    "i_need","could_you","can_you_help_me","how_much_is","what_time_is",
+    "i_want_to","i_dont_understand","could_you_speak_slowly","could_you_repeat",
+    "what_does_mean","how_do_i","im_looking_for","i_have_a_problem_with",
+    "it_doesnt_work","can_i_pay","can_i_use","when_does","how_long_does_it_take",
+    // 코어지만 의미가 비슷 → 약간 뒤(Lv3쯤)로
+    "is_there",          // ≈ Do you have
+    "id_like",           // ≈ Can I get
+    "could_you_give_me", // ≈ Could you + 주세요
+    "i_need_to","i_have_to",      // ≈ I need
+    "could_you_check","could_you_show_me","could_you_tell_me"  // Could you+동작 변주
+  ];
+  const rank=new Map(PRIORITY.map((id,i)=>[id,i]));
+  BLE_BLOCKS.sort((a,b)=>{
+    const ra=rank.has(a.id)?rank.get(a.id):1e6, rb=rank.has(b.id)?rank.get(b.id):1e6;
+    return ra-rb;   // 동순위(둘 다 비코어)는 기존 순서 유지 — JS sort는 안정 정렬
+  });
+})();
 const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
 // ⚠️ 늬앙스가 너무 비슷해 '블록 구별' 문제로 같이 내면 안 되는 묶음(둘 다 정답이 될 수 있어 헷갈림).
 //    예) "Can you help me?"(비상 도움요청) vs "Could you...?"(공손한 부탁 틀) — 같은 보기로 섞지 않는다.
