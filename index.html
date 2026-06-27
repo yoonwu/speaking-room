@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.37";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.38";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7136,6 +7136,20 @@ const BLE_EXTRA_ROWS=[
 BLE_EXTRA_ROWS.forEach(r=>{
   BLE_BLOCKS.push({id:r[0], block:r[1], meaningKo:r[2], func:r[3], contrast:[], examples:r[4].map(e=>({situation:e[0], ko:e[1], en:e[2], object:e[3]}))});
 });
+// 🗑️ 실제 생존 회화에서 거의 안 쓰는 블록 정리(과감히 제외) — 격식/문어체·Could you 중복 정중변형·잘 안 하는 조언/의견·무거운 시제·추상/감탄사
+const BLE_RETIRED=new Set([
+  // Could you와 겹치는 정중 변형(너무 격식)
+  "would_you_mind","would_you_be_able_to","would_it_be_possible","is_it_possible_for_me_to","i_was_wondering_if","i_would_appreciate_it_if","could_you_write",
+  // 문어체/비즈니스 말투
+  "to_be_honest","as_far_as_i_know","just_to_confirm","it_depends_on",
+  // 학습자가 잘 안 하는 조언/의견 표명
+  "i_recommend","you_should_try","i_agree_with","i_disagree_with","make_sure_to",
+  // 문법 무거운 시제·보고체(초보 생존엔 과함)
+  "i_have_been","i_used_to","im_supposed_to","i_was_told","i_was_looking_at",
+  // 추상/가정/감탄·리액션(생존 필수 아님)
+  "what_if","i_wish","i_guess","it_might_be","it_seems_like","that_sounds","that_would_be","no_worries","take_your_time","i_have_no_idea","i_dont_mind","id_rather"
+]);
+for(let i=BLE_BLOCKS.length-1;i>=0;i--){ if(BLE_RETIRED.has(BLE_BLOCKS[i].id)) BLE_BLOCKS.splice(i,1); }
 // 🎯 학습 순서 = 필수 코어를 앞쪽으로. 자주 쓰는 생존 기능 먼저, 의미가 비슷한 변주(Could you+동작, 정중도 변형 등)는
 //    코어 뒤쪽(Lv3쯤)으로 밀고, 나머지는 기존 순서 유지(안정 정렬). 세트(BLE_SETS)가 이 순서대로 묶임.
 (function reorderBlocksByPriority(){
