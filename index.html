@@ -322,13 +322,20 @@ body.survival-immersive .topbar{background:linear-gradient(180deg,rgba(31,23,18,
 body.survival-immersive .brand h1,body.survival-immersive .brand h1 span{color:#fff}
 body.survival-immersive .ctx .chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.18);color:#fff}
 body.survival-immersive .iconbtn{color:rgba(255,255,255,.84)}
-.brand{display:flex; align-items:center; gap:10px}
-.brand .dot{width:11px; height:11px; border-radius:50%; background:var(--jade); box-shadow:0 0 0 4px rgba(19,163,127,.15)}
-.brand h1{font-size:16px; font-weight:700; letter-spacing:-.02em}
+.brand{display:flex; align-items:center; gap:10px; min-width:0; overflow:hidden}
+.brand .dot{width:11px; height:11px; border-radius:50%; background:var(--jade); box-shadow:0 0 0 4px rgba(19,163,127,.15); flex:0 0 auto}
+.brand h1{font-size:16px; font-weight:700; letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0}
 .brand h1 span{color:var(--muted); font-weight:500}
-.topbar .ctx{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted)}
-.ctx .chip{background:var(--mist); padding:5px 11px; border-radius:999px; font-weight:600; color:var(--ink-soft); white-space:nowrap}
-.iconbtn{width:34px; height:34px; border-radius:9px; display:grid; place-items:center; color:var(--muted)}
+.topbar .ctx{margin-left:auto; display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); flex:0 0 auto; min-width:0}
+.ctx .chip{background:var(--mist); padding:5px 11px; border-radius:999px; font-weight:600; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:34vw}
+.iconbtn{width:34px; height:34px; border-radius:9px; display:grid; place-items:center; color:var(--muted); flex:0 0 auto}
+/* 좁은 화면(폰): 대화 중에는 토바 공간을 위해 브랜드 부제 숨김 + 칩 더 줄임 */
+@media (max-width:520px){
+  .topbar:has(.ctx[style*="flex"]) .brand h1 span{display:none}
+  .topbar:has(.ctx[style*="flex"]) .ctx{gap:6px}
+  .topbar:has(.ctx[style*="flex"]) .iconbtn{width:32px; height:32px}
+  .topbar:has(.ctx[style*="flex"]) .ctx .chip{max-width:30vw; padding:5px 9px}
+}
 .iconbtn:hover{background:var(--mist); color:var(--text)}
 .iconbtn.on{color:var(--jade)}
 
@@ -1970,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.34";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.35";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
