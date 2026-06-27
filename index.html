@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.35";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.36";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2738,12 +2738,9 @@ function addCoachTurn(text){
   const play=document.createElement("button");
   play.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg> 다시 듣기`;
   play.onclick=()=>speak(text);
-  const tr=document.createElement("button");
-  tr.innerHTML=`🇰🇷 해석`;
-  const trDiv=document.createElement("div"); trDiv.className="ko-trans";
-  tr.onclick=()=>toggleTrans(text, trDiv);
-  acts.appendChild(play); acts.appendChild(tr);
-  wrap.appendChild(acts); wrap.appendChild(trDiv);
+  // 해석은 말풍선 안 '발음·강세 보기' 왼쪽 [🇰🇷 해석] 토글로 제공(pronKoAutoMount) → 여기선 다시 듣기만
+  acts.appendChild(play);
+  wrap.appendChild(acts);
   // 입력창 위에 상대방 말 고정 (타이핑하면서 보이게)
   const pq=$("#pinnedQ"), pqt=$("#pinnedQText");
   if(pq&&pqt){ pqt.textContent=text; pq.style.display="block"; }
@@ -6678,6 +6675,9 @@ function pronKoAutoStyle(){
     .pron-stress-hit{color:#E2674A;font-weight:1000;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:2px}
     .pron-toggle{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;border:1px solid rgba(255,133,104,.32);background:rgba(255,133,104,.08);color:#C0653A;font-family:var(--sans);font-size:11px;font-weight:950;border-radius:999px;cursor:pointer;line-height:1.3;user-select:none}
     .pron-toggle:focus{outline:2px solid rgba(255,133,104,.35);outline-offset:2px}
+    .pron-row{display:inline-flex;flex-wrap:wrap;gap:7px;align-items:center}
+    .ko-trans-toggle{display:inline-flex;align-items:center;gap:4px;margin-top:5px;padding:4px 10px;border:1px solid rgba(90,93,138,.34);background:rgba(90,93,138,.08);color:#4a4d78;font-family:var(--sans);font-size:11px;font-weight:950;border-radius:999px;cursor:pointer;line-height:1.3;user-select:none}
+    .ko-trans-toggle:focus{outline:2px solid rgba(90,93,138,.35);outline-offset:2px}
     .pron-ko-auto .pron-body{display:none}
     .pron-ko-auto.pron-open .pron-body{display:block;margin-top:5px}
   `;
@@ -6708,11 +6708,19 @@ function pronKoAutoMount(el){
   node.className="pron-ko-auto pron-collapsed";
   // 기본은 접힘: [발음·강세 보기] 버튼만 노출 → 누르면 영어/한글 강세 펼침 (집중 방해 방지)
   const inner=pronStudyInnerHtml(txt,"");
-  node.innerHTML=`<span class="pron-toggle" role="button" tabindex="0">🔉 발음·강세 보기</span><span class="pron-body">${inner}</span>`;
+  // 실전회화 등 대화 말풍선이면 발음·강세 보기 '왼쪽'에 [🇰🇷 해석] 토글 추가 → 누르면 한국어 해석
+  const inCoach = !!(el.closest && el.closest(".turn.coach"));
+  const transToggle = inCoach ? `<span class="ko-trans-toggle" role="button" tabindex="0">🇰🇷 해석</span>` : "";
+  node.innerHTML=`<span class="pron-row">${transToggle}<span class="pron-toggle" role="button" tabindex="0">🔉 발음·강세 보기</span></span><span class="pron-body">${inner}</span>${inCoach?'<span class="ko-trans"></span>':''}`;
   const toggle=node.querySelector(".pron-toggle");
   if(toggle){
     toggle.onclick=(event)=>{ event.stopPropagation(); const open=node.classList.toggle("pron-open"); toggle.textContent=open?"발음·강세 닫기":"🔉 발음·강세 보기"; };
     toggle.onkeydown=(event)=>{ if(event.key==="Enter"||event.key===" "){ event.preventDefault(); toggle.click(); } };
+  }
+  const trToggle=node.querySelector(".ko-trans-toggle"), trDiv=node.querySelector(".ko-trans");
+  if(trToggle && trDiv){
+    trToggle.onclick=(event)=>{ event.stopPropagation(); try{ toggleTrans(txt, trDiv); }catch(e){} };
+    trToggle.onkeydown=(event)=>{ if(event.key==="Enter"||event.key===" "){ event.preventDefault(); trToggle.click(); } };
   }
   el.appendChild(node);
 }
