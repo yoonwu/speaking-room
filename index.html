@@ -1970,7 +1970,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.31";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.32";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7028,7 +7028,6 @@ const BLE_EXTRA_ROWS=[
 ["where_is","Where is...","~이 어디예요?","location",[["공항","화장실이 어디예요?","Where is the restroom?","the restroom"],["호텔","엘리베이터가 어디예요?","Where is the elevator?","the elevator"],["쇼핑","계산대가 어디예요?","Where is the checkout?","the checkout"]]],
 ["how_do_i","How do I...","어떻게 ~하죠?","procedure",[["공항","와이파이에 어떻게 연결하죠?","How do I connect to the Wi-Fi?","connect to the Wi-Fi"],["호텔","체크아웃은 어떻게 하죠?","How do I check out?","check out"],["앱","비밀번호를 어떻게 바꾸죠?","How do I change my password?","change my password"]]],
 ["can_you_help_me","Can you help me?","도와주세요 (도움 요청 · 비상 표현)","survival",[["길에서","길을 잃었어요.","Can you help me?",""],["공항","도움이 필요해요.","Can you help me?",""],["가게","저 좀 도와주실 수 있어요?","Can you help me?",""]]],
-["could_i_have","Could I have...","~을 받을 수 있을까요?","polite-request",[["식당","계산서 받을 수 있을까요?","Could I have the check?","the check"],["카페","물 한 잔 받을 수 있을까요?","Could I have some water?","some water"],["호텔","새 수건 받을 수 있을까요?","Could I have a fresh towel?","a fresh towel"]]],
 ["is_there","Is there...","~이 있나요?","availability",[["호텔","근처에 약국이 있나요?","Is there a pharmacy nearby?","a pharmacy nearby"],["공항","셔틀이 있나요?","Is there a shuttle?","a shuttle"],["식당","채식 메뉴가 있나요?","Is there a vegetarian option?","a vegetarian option"]]],
 ["do_i_need_to","Do I need to...","~해야 하나요?","requirement",[["공항","여기서 기다려야 하나요?","Do I need to wait here?","wait here"],["병원","보험 카드를 보여줘야 하나요?","Do I need to show my insurance card?","show my insurance card"],["호텔","지금 결제해야 하나요?","Do I need to pay now?","pay now"]]],
 ["i_have_a_problem_with","I have a problem with...","~에 문제가 있어요","problem",[["호텔","방 키에 문제가 있어요.","I have a problem with my room key.","my room key"],["고객센터","결제에 문제가 있어요.","I have a problem with my payment.","my payment"],["공항","수하물에 문제가 있어요.","I have a problem with my luggage.","my luggage"]]],
@@ -7128,7 +7127,7 @@ const BLE_BY_ID=Object.fromEntries(BLE_BLOCKS.map(b=>[b.id,b]));
 // ⚠️ 늬앙스가 너무 비슷해 '블록 구별' 문제로 같이 내면 안 되는 묶음(둘 다 정답이 될 수 있어 헷갈림).
 //    예) "Can you help me?"(비상 도움요청) vs "Could you...?"(공손한 부탁 틀) — 같은 보기로 섞지 않는다.
 const BLE_NOMIX_GROUPS=[
-  ["can_i_get","could_i_have","id_like"],   // 물건 요청 — 거의 동의어
+  ["can_i_get","id_like"],                   // 물건 요청 — 거의 동의어
   ["could_you","can_you_help_me"],          // 부탁/도움 — 비상표현 vs 공손한 부탁
   ["do_you_have","is_there"],               // 있는지 묻기 — 거의 동의어
 ];
@@ -9267,7 +9266,6 @@ const CORE_PHRASES=[
  {id:"how_do_i_015",phrase:"How do I...?",ko:"어떻게 ~해요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"여기서 어떻게 주문해요?",en:"How do I order here?"},{ko:"예약 어떻게 해요?",en:"How do I make an appointment?"},{ko:"등록 어떻게 해요?",en:"How do I register?"},{ko:"역까지 어떻게 가요?",en:"How do I get to the station?"},{ko:"이거 어떻게 취소해요?",en:"How do I cancel?"}]},
  {id:"what_time_016",phrase:"What time...?",ko:"몇 시에 ~?",level:1,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"몇 시에 닫아요?",en:"What time do you close?"},{ko:"제 예약 몇 시예요?",en:"What time is my appointment?"},{ko:"몇 시에 시작해요?",en:"What time does it start?"},{ko:"체크아웃 몇 시예요?",en:"What time is checkout?"},{ko:"몇 시에 열어요?",en:"What time do you open?"}]},
  {id:"i_have_a_017",phrase:"I have a...",ko:"~이 있어요 / ~이 아파요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"예약했어요.",en:"I have a reservation."},{ko:"머리가 아파요.",en:"I have a headache."},{ko:"질문이 있어요.",en:"I have a question."},{ko:"예약이 있어요.",en:"I have a booking."},{ko:"문제가 있어요.",en:"I have a problem."}]},
- {id:"can_i_have_018",phrase:"Can I have...?",ko:"~ 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","travel","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴 주시겠어요?",en:"Can I have the menu?"},{ko:"영수증 주시겠어요?",en:"Can I have a receipt?"},{ko:"펜 좀 주시겠어요?",en:"Can I have a pen?"},{ko:"제 열쇠 주시겠어요?",en:"Can I have my key?"},{ko:"성함 알려주시겠어요?",en:"Can I have your name?"}]},
  {id:"sorry_but_019",phrase:"I'm sorry, but...",ko:"죄송하지만 ~",level:2,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"죄송한데 이거 차가워요.",en:"I'm sorry, but this is cold."},{ko:"죄송한데 제가 늦었어요.",en:"I'm sorry, but I'm late."},{ko:"죄송한데 못 가요.",en:"I'm sorry, but I can't come."},{ko:"죄송한데 방이 더러워요.",en:"I'm sorry, but the room is dirty."},{ko:"죄송한데 이거 잘못됐어요.",en:"I'm sorry, but this is wrong."}]},
  {id:"not_working_020",phrase:"It's not working.",ko:"작동이 안 돼요.",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"카드 단말기가 안 돼요.",en:"The card machine's not working."},{ko:"이게 작동이 안 돼요.",en:"This isn't working."},{ko:"컴퓨터가 안 돼요.",en:"The computer's not working."},{ko:"에어컨이 안 돼요.",en:"The AC isn't working."},{ko:"앱이 안 돼요.",en:"My app's not working."}]},
  {id:"show_me_021",phrase:"Can you show me...?",ko:"보여 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴 보여 주시겠어요?",en:"Can you show me the menu?"},{ko:"어디인지 보여 주시겠어요?",en:"Can you show me where?"},{ko:"길 좀 보여 주시겠어요?",en:"Can you show me the way?"},{ko:"방 보여 주시겠어요?",en:"Can you show me the room?"},{ko:"어떻게 하는지 보여 주시겠어요?",en:"Can you show me how?"}]},
@@ -12555,7 +12553,7 @@ function profSkillStats(){
 }
 
 const DAILY_EXPRESSIONS=[
- "where_can_i_006","how_much_010","help_me_014","can_i_have_018",
+ "where_can_i_006","how_much_010","help_me_014","can_i_get_002",
  "what_time_016","dont_understand_009","one_moment_025","excuse_me_024",
  "id_like_to_001","looking_for_013","what_mean_034","problem_with_036",
  "is_there_012","ill_take_042","recommend_041","not_working_020",
