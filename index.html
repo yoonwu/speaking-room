@@ -1083,6 +1083,9 @@ body{background:var(--paper); color:var(--text)}
 .eng-tx b{display:block;font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.25)}
 .eng-tx i{font-size:12.5px;color:rgba(255,255,255,.95);font-style:normal;font-weight:600;margin-top:3px;display:block}
 .eng-ar{position:relative;z-index:1;font-size:20px;color:#fff;font-weight:900;width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.eng-cnt{position:relative;z-index:1;flex:none;display:none;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:5px 9px;margin-right:4px;border-radius:13px;background:rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.3);line-height:1.05}
+.eng-cnt b{font-size:16px;font-weight:950;color:#fff}
+.eng-cnt i{font-size:9.5px;font-style:normal;color:rgba(255,255,255,.9);font-weight:700;margin-top:1px}
 /* ===== 🗺️ 월드: 각 카드 = 하나의 세계 속 장소(다크 네온) ===== */
 .eng{min-height:74px}
 .worldlabel{font-size:12.5px;font-weight:800;color:var(--ink-soft);letter-spacing:.01em;margin:2px 2px 8px;opacity:.92}
@@ -1731,6 +1734,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <button class="eng eng-core eng-core-chunk" id="chunkCard">
           <span class="eng-emo">🧱</span>
           <span class="eng-tx"><b>블록영어</b><i>자주 쓰는 말 덩어리를 배워요</i></span>
+          <span class="eng-cnt" id="chunkCount"></span>
           <span class="eng-ar">›</span>
         </button>
         <button class="eng eng-out eng-core eng-core-speak" id="engOut">
@@ -1977,7 +1981,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.40";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.41";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12668,21 +12672,26 @@ function startDailyExprPractice(){
   }catch(e){ console.warn("dailyExprPractice err", e); }
 }
 function renderAcqStats(){
+  // 🧱 홈 '블록영어' 카드에 마스터/배운 블록 수 표시
+  try{
+    const cc=$("#chunkCount");
+    if(cc){
+      const lb=getLearnedBlocks();
+      const mn=lb.filter(b=>{ const st=b.state||{}; return st.stage==="ready_for_real" || ((st.fastCount||0)>=3 && (st.successCount||0)>=3 && ((st.contextsUsed||[]).length)>=3); }).length;
+      if(lb.length>0){ cc.innerHTML=`<b>${mn}/${lb.length}</b><i>마스터/배운</i>`; cc.style.display="flex"; }
+      else cc.style.display="none";
+    }
+  }catch(e){}
+  // 🎯 이 영역은 '오늘의 퀘스트'로 표시
   const box=$("#acqStats"); if(!box) return;
-  const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
-  // 🧱 블록 통계는 BLE를 기준으로 보여준다.
-  const ready=Math.max(getReadyForRealBlocks().length, (ledgerStats().automaticExpressions||0));
-  const skill=profSkillStats();
-  const tiles=[
-    {ic:"📚", v:"Lv."+skill.wordLevel, l:"단어", n:skill.wordKnown},
-    {ic:"🎧", v:"Lv."+skill.listenLevel, l:"듣기", n:skill.listenPerfect},
-    {ic:"🗣️", v:"Lv."+skill.speakLevel, l:"말하기", n:skill.speakPerfect},
-    {ic:"⚡", v:skill.automaticExpressions, l:"자동화 블록", n:0}
-  ];
+  const {goals,meta}=questDefs(); const q=questGet(); const c=q.c||{};
+  const keys=Object.keys(goals);
+  const doneN=keys.filter(k=>(c[k]||0)>=goals[k]).length;
+  const allDone=doneN===keys.length;
   box.innerHTML=`<div class="skillcard">
-    <div class="skillcard-h">스킬 레벨${ready>0?` · 실전 준비 <b style="color:#19a06b">${ready}개</b>`:""}</div>
+    <div class="skillcard-h">🎯 오늘의 퀘스트${allDone?` · <b style="color:#19a06b">완료! 🏆</b>`:` · <b style="color:#F0664A">${doneN}/${keys.length}</b>`}</div>
     <div class="skillcard-row">
-      ${tiles.map(t=>`<div class="skilltile"><span class="st-ic">${t.ic}</span><b>${t.v}</b><span class="st-l">${t.l}${t.n>0?` · ${t.n}`:""}</span></div>`).join("")}
+      ${keys.map(k=>{ const cur=Math.min(goals[k], c[k]||0); const done=cur>=goals[k]; return `<div class="skilltile"><span class="st-ic">${meta[k].emo}</span><b style="${done?'color:#19a06b':''}">${cur}/${goals[k]}</b><span class="st-l">${meta[k].t}</span></div>`; }).join("")}
     </div>
   </div>`;
 }
