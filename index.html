@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.39";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.40";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9250,7 +9250,7 @@ function bleOpenHub(){
        <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`배운 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`한 번에 하나씩 차근차근 — 많이 아는 것보다 아는 걸 입에 붙이는 게 중요해요!`}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:11px 0 13px">
-       <div class="bl-sumcell" id="bleKnownCell" style="cursor:pointer"><b style="color:#F0664A">${(function(){try{return getLearnedBlocks().length}catch(e){return introN}})()}</b><i style="color:#8A6F62">아는 블록 ›</i></div>
+       <div class="bl-sumcell" id="bleKnownCell" style="cursor:pointer"><b style="color:#F0664A">${(function(){try{const lb=getLearnedBlocks();const mn=lb.filter(b=>{const st=b.state||{};return st.stage==="ready_for_real"||((st.fastCount||0)>=3&&(st.successCount||0)>=3&&((st.contextsUsed||[]).length)>=3);}).length;return mn+"/"+lb.length;}catch(e){return "0/"+introN;}})()}</b><i style="color:#8A6F62">마스터 / 배운 ›</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return NEWBLOCK_DAILY_CAP-newBlocksToday()}catch(e){return 3}})()}</b><i style="color:#8A6F62">오늘 더 배우기</i></div>
      </div>
@@ -13911,7 +13911,13 @@ function handleBack(){
   if(_allowExit) return;   // 종료 진행 중 — 재가둠 없이 빠져나감
   // 1) 종료 확인 모달이 떠 있으면 → '아니오'처럼 닫고 머무름
   if(_backExitConfirm){ _backExitConfirm=false; closeModal(); _backTrap(); return; }
-  // 2) 떠 있는 오버레이(허브/숙련도) 닫기 → 이전 화면
+  // 2) 프로필 시트 열려 있으면 닫기
+  const ps=document.getElementById("profScrim");
+  if(ps && ps.classList.contains("show")){ try{ closeProfile(); }catch(e){ ps.classList.remove("show"); } _backTrap(); return; }
+  // 2-1) 실전 월드맵 선택 시트
+  const sv=document.getElementById("svPick");
+  if(sv){ sv.remove(); _backTrap(); return; }
+  // 2-2) 떠 있는 오버레이(허브/숙련도) 닫기 → 이전 화면
   const ov=_topOverlay();
   if(ov){ ov.remove(); _backTrap(); return; }
   // 3) 일반 모달 열려 있으면 취소처럼 닫기
