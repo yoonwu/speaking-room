@@ -1981,7 +1981,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.41";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.42";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10457,17 +10457,9 @@ function gateNewBlock(proceed){
       okText:"🔥 입에 붙이기 →", cancelText:"홈으로", onOk:toAuto });
     return;
   }
-  // 해금 잠금 검사 → 통과 시 학습
-  const checkLockThenLearn=()=>{
-    let gate={open:true}; try{ gate=newBlockGate(); }catch(e){}
-    if(!gate.open){
-      openModal({title:"새 블록은 조금 뒤에 🔒",
-        html:`<div style="line-height:1.72;font-size:14.5px">배운 블록 <b>${Math.max(1,(gate.lockedCount||1)-1)}개</b>를 입에붙이기/실전에서 더 써야 새 블록이 열려요.<br><b style="color:#F0664A">아는 걸 입에 붙이는 게 먼저!</b></div>`,
-        okText:"🔥 입에 붙이기 →", cancelText:"나중에", onOk:toAuto });
-      return;
-    }
-    doLearn();
-  };
+  // 해금 잠금 제거 — 하루 3개 상한(및 5블록 미만 면제)이 새 블록의 유일한 게이트.
+  // (기존 '실전에서 써먹어야 해금' 잠금은 입에붙이기로 실제 해금이 안 돼서 2개 배운 뒤 매일 3개가 영영 막히던 버그 → 제거)
+  const checkLockThenLearn=()=>{ doLearn(); };
   // 2) 복습 우선 — due 있으면 권유(취소하면 새 블록 진행)
   let due=[]; try{ due=getDueReviewBlocks()||[]; }catch(e){}
   if(due.length){
@@ -10667,15 +10659,16 @@ function blockCollectionHtml(){
   const moreMsg = d.count<5
     ? `하나 더 쌓으면 복습이 더 넓어져요.`
     : `블록을 쌓을수록, 복습이 더 다양하고 실전처럼 변해요.`;
-  // 새 블록 해금 진행 — 실전에서 써먹어야 열린다는 걸 보여줌
+  // 새 블록 하루 상한 안내 — 오늘 몇 개 더 배울 수 있는지
   let gateLine="";
   try{
-    const g=newBlockGate();
-    if(g.open){
-      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.2);border-radius:11px;font-size:12px;color:#19a06b;font-weight:800;text-align:center">🔓 새 블록 열려 있어요 — 하나 더 쌓을 수 있어요</div>`;
+    const introN=bleIntroducedCount();
+    const remain = introN<5 ? -1 : Math.max(0, NEWBLOCK_DAILY_CAP - newBlocksToday());
+    if(remain!==0){
+      const txt = remain<0 ? "새 블록 열려 있어요 — 계속 배울 수 있어요" : `오늘 새 블록 <b>${remain}개</b> 더 배울 수 있어요`;
+      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.2);border-radius:11px;font-size:12px;color:#19a06b;font-weight:800;text-align:center">🔓 ${txt}</div>`;
     } else {
-      const n=Math.max(1, g.lockedCount-1);
-      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(255,133,104,.08);border:1px solid rgba(255,133,104,.2);border-radius:11px;font-size:12px;color:#C0653A;font-weight:800;text-align:center">🔒 새 블록 해금까지 — 배운 블록을 실전에서 <b>${n}번</b> 더 써먹기</div>`;
+      gateLine=`<div style="margin-top:12px;padding:9px 12px;background:rgba(255,133,104,.08);border:1px solid rgba(255,133,104,.2);border-radius:11px;font-size:12px;color:#C0653A;font-weight:800;text-align:center">✅ 오늘 새 블록 3개 다 배웠어요 — 내일 또 열려요</div>`;
     }
   }catch(e){}
   return `<div style="margin:18px 0 6px;text-align:left;background:rgba(255,255,255,.5);border:1px solid rgba(255,133,104,.18);border-radius:18px;padding:16px">
