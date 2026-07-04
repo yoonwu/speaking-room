@@ -1981,7 +1981,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.42";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.43";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8606,6 +8606,8 @@ function bleStartUnlockRepair(block){
 function bleSummary(){
   TTS&&TTS.cancel();
   { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
+  // 🎯 오늘의 퀘스트: 블록영어 집계 (세션당 1회 — 재렌더 중복 방지)
+  if(bleSession && !bleSession._qBumped){ bleSession._qBumped=true; try{ bumpCount("block"); questBump("chunk"); }catch(e){} }
   const res=bleSession.results;
   // 세트 인트로 완료 → 본격 학습 안내
   if(bleSession.isSetIntro){
@@ -9032,6 +9034,8 @@ function bleDeepSummary(){
   { const _ss=$("#sprintScroll"); if(_ss) _ss.style.background=""; }
   const res=bleDeep?bleDeep.results:[];
   if(!res.length){ goToSetup(); return; }
+  // 🎯 오늘의 퀘스트: 꺼내기(talk) 집계 (세션당 1회)
+  if(bleDeep && !bleDeep._qBumped){ bleDeep._qBumped=true; try{ bumpCount("talk"); questBump("talk"); }catch(e){} }
   // ===== 영어로 꺼내기 전용 요약 =====
   if(bleDeep && bleDeep.outputMode){ return bleOutputSummary(res); }
   const byId={};
@@ -10696,6 +10700,7 @@ function blockCollectionHtml(){
 }
 function ctDone(){
   TTS&&TTS.cancel();
+  try{ bumpCount("block"); questBump("chunk"); }catch(e){}   // 🎯 오늘의 퀘스트: 블록영어 집계
   const mastered = ctPass>=7;
   if(mastered){ weakClear(ctPid); try{ cpRegisterLearned(ctPhrase); }catch(e){} }   // 🔗 오늘의 블록 → 배운 블록 등록
   else { const w=weakGet(); if(w[ctPid]){ w[ctPid].miss=Math.max(1, 10-ctPass); weakSet(w); } }
@@ -12359,7 +12364,8 @@ function autoDrillDone(){
         <span style="font-size:12px;font-weight:800;color:${done?'#19a06b':'#C08763'}">자동화 ${v.perfect}/${v.total}</span>
       </div>`; }).join("")}
     </div>`:"";
-  try{ bumpCount("talk"); questBump("talk"); }catch(e){}   // XP는 문항별(autoDrillFinish)에서 적립
+  // 🎯 입에 붙이기는 '블록영어' 활동 → chunk 집계 (세션당 1회, XP는 문항별 autoDrillFinish에서)
+  if(!autoDrill._qBumped){ autoDrill._qBumped=true; try{ bumpCount("block"); questBump("chunk"); }catch(e){} }
   const xpSum=(function(){ try{ return xpSummaryHtml(); }catch(e){ return ""; } })();
   $("#sprintScroll").style.background="";
   $("#sprintScroll").innerHTML=`<div class="auto-done">
