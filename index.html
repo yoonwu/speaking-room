@@ -1981,7 +1981,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.43";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.44";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9302,7 +9302,22 @@ function bleOpenHub(){
   { const kc=$("#bleKnownCell"); if(kc) kc.onclick=()=>bleOpenProficiency(); }
   { const ab=$("#bleAutoBtn"); if(ab) ab.onclick=()=>{ close(); startAutoDrill(); }; }
   { const _dh=$("#bleDeepHubBtn"); if(_dh) _dh.onclick=()=>{ close(); bleDeepStart(); }; }
-  ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=goLearn; });
+  // 블록 행 클릭: 이미 배운(소개 완료) 블록이면 "한 번 더 배우기?" 확인 → 복습(bleRelearnBlock). 소개 전이면 새 블록 학습.
+  ov.querySelectorAll(".chk-row").forEach(btn=>{ btn.onclick=()=>{
+    const id=btn.getAttribute("data-id");
+    const introduced=(function(){ try{ return bleBlockIntroduced(id); }catch(e){ return false; } })();
+    if(introduced && BLE_BY_ID[id]){
+      const b=BLE_BY_ID[id];
+      openModal({
+        title:"이 블록, 한 번 더 배울까요?",
+        html:`<div style="line-height:1.7;font-size:14.5px"><b style="font-family:var(--serif);font-size:17px;color:#F0664A">${escapeHtml(b.block)}</b><br><span style="color:var(--muted)">${escapeHtml(b.meaningKo||"")}</span><br><br>오랜만이라면 처음처럼 차근차근 복습해요.<br>(설명 → 패턴 → 집중 인출)</div>`,
+        okText:"🔁 한 번 더 배우기", cancelText:"아니요",
+        onOk:()=>{ close(); try{ bleRelearnBlock(id); }catch(e){} }
+      });
+    } else {
+      goLearn();
+    }
+  }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 
