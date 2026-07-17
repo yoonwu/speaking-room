@@ -1656,12 +1656,16 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-wordhint .wh-en{font-size:18px;color:#E0664A;font-weight:900;margin-top:3px}
 .auto-input{width:100%;margin-top:10px;border:1.5px solid #F2D4C5;border-radius:14px;padding:13px 14px;font-size:16px;background:#fff;color:#2F241F;display:none}
 .study-panel{margin-top:12px;text-align:left}
-.study-words{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:9px}
-.study-word{background:#fff;border:1px solid #E9D7CB;color:#5A463D;border-radius:10px;padding:6px 11px;font-size:14px;font-weight:800;cursor:pointer}
-.study-word.added{background:rgba(25,160,107,.12);border-color:rgba(25,160,107,.4);color:#19a06b}
-.study-wordinfo{background:#FFF8F3;border:1px solid #F1DDD0;border-radius:11px;padding:9px 12px;font-size:13.5px;color:#5A463D;line-height:1.5;margin-bottom:9px}
-.study-acts{display:flex;gap:7px;flex-wrap:wrap;justify-content:center}
-.study-act{background:#fff;border:1px solid #E9D7CB;color:#8A6F62;border-radius:11px;padding:9px 12px;font-size:12.5px;font-weight:900;cursor:pointer}
+.study-words{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-bottom:11px}
+.study-words-label{font-size:11px;font-weight:900;color:#C0A46B;letter-spacing:.03em}
+/* 단어 = 형광펜 하이라이트 + 점선 밑줄 (눌러서 뜻 보기) — 기능 버튼과 확실히 구분 */
+.study-word{background:rgba(255,205,92,.22);border:none;border-bottom:2px dashed #DBA53C;color:#6B4E1E;border-radius:7px 7px 0 0;padding:4px 8px 3px;font-size:15px;font-weight:850;font-family:var(--serif);cursor:pointer}
+.study-word.added{background:rgba(25,160,107,.14);border-bottom-color:#19a06b;color:#177A54}
+.study-wordinfo{background:#FFFBEA;border:1px solid #EFDDAE;border-radius:11px;padding:9px 12px;font-size:13.5px;color:#6B4E1E;line-height:1.5;margin-bottom:9px}
+.study-acts{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;border-top:1px dashed #EBD9CC;padding-top:11px}
+/* 기능 = 알약형 도구 버튼 */
+.study-act{background:#F3E7DD;border:none;color:#7A6055;border-radius:999px;padding:9px 14px;font-size:12.5px;font-weight:900;cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,.05)}
+.study-act:active{background:#EBD9CC}
 .study-extra{margin-top:9px}
 .wp-more{margin-top:10px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .wp-more>summary{list-style:none;cursor:pointer;padding:13px 16px;font-size:13.5px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between}
@@ -1981,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.45";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.46";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12127,7 +12131,7 @@ function studyPanelHtml(en, ko, id){
   const seen=new Set(), chips=[];
   bleContentWords(en).forEach(w=>{ if(seen.has(w)||w.length<2)return; seen.add(w); chips.push(`<button class="study-word" data-w="${escapeAttr(w)}">${escapeHtml(w)}</button>`); });
   return `<div class="study-panel" data-en="${escapeAttr(en)}" data-ko="${escapeAttr(ko||"")}">
-    <div class="study-words">${chips.join("")}</div>
+    <div class="study-words">${chips.length?`<span class="study-words-label">🔍 단어 뜻</span>`:""}${chips.join("")}</div>
     <div class="study-wordinfo" style="display:none"></div>
     <div class="study-acts">
       <button class="study-act" data-act="listen">🔊 다시 듣기</button>
