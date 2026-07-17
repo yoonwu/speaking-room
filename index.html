@@ -1731,32 +1731,12 @@ body{background:var(--paper)!important;color:var(--text)}
           <div id="autoLvlSub" style="font-size:10.5px;color:var(--muted);margin-top:4px">문제를 풀수록 더 정확해져요</div>
         </div>
         <!-- 🗺️ 모험 지도 -->
-        <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
-        <div class="engrid enghero">
-        <button class="eng eng-core eng-core-chunk" id="chunkCard">
-          <span class="eng-emo">🧱</span>
-          <span class="eng-tx"><b>블록영어</b><i>자주 쓰는 말 덩어리를 배워요</i></span>
-          <span class="eng-cnt" id="chunkCount"></span>
-          <span class="eng-ar">›</span>
-        </button>
+        <!-- 루틴과 중복되는 카드(블록영어/단어/듣기)는 제거 — 루틴 칸이 진입점. 루틴에 없는 스피킹 훈련장만 유지 -->
+        <div class="engrid enghero" style="grid-template-columns:1fr">
         <button class="eng eng-out eng-core eng-core-speak" id="engOut">
           <span class="help-q" data-tut="output">?</span>
           <span class="eng-emo">⚔️</span>
           <span class="eng-tx"><b>스피킹 훈련장</b><i>영어로 꺼내기 · 스피드런 · 실전회화</i></span>
-          <span class="eng-ar">›</span>
-        </button>
-        </div>
-        <div class="engrid engsub">
-        <button class="eng eng-side" id="vocabCard">
-          <span class="help-q" data-tut="vocab">?</span>
-          <span class="eng-emo">💬</span>
-          <span class="eng-tx"><b>단어</b><i>말하기 재료 익히기</i></span>
-          <span class="eng-ar">›</span>
-        </button>
-        <button class="eng eng-in eng-side" id="engListen">
-          <span class="help-q" data-tut="listen">?</span>
-          <span class="eng-emo">👂</span>
-          <span class="eng-tx"><b>듣기 훈련장</b><i>상황 듣기 · 연음</i></span>
           <span class="eng-ar">›</span>
         </button>
         </div>
@@ -1774,7 +1754,7 @@ body{background:var(--paper)!important;color:var(--text)}
       <div id="weakHome" style="display:none;margin-bottom:11px"></div>
 
       <!-- 아이 파닉스 (초등 저학년) -->
-      <button id="kidCard" style="position:relative"><span class="help-q" data-tut="phonics">?</span><span class="ke">🏰</span><span class="kt"><b>발음 교정 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
+      <button id="kidCard" style="position:relative;display:none"><span class="help-q" data-tut="phonics">?</span><span class="ke">🏰</span><span class="kt"><b>발음 교정 아카데미</b><i>파닉스 · 글자 소리 · 단어 읽기 · 발음 별점 ⭐</i></span><span class="ka">›</span></button>
 
       <!-- 다시 만날 표현 (STEP 8 · 미래 인출) -->
       <div class="rvbanner" id="rvBanner" style="display:none">
@@ -1983,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.59";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.60";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10600,11 +10580,6 @@ function openListenHub(){
      <button class="hub-opt" data-go="dictation">
        <span class="hub-emo">✍️</span>
        <span class="hub-tx"><b>받아쓰기</b><i>들은 대로 말해 빈칸 채우기 · 진단용</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="booster">
-       <span class="hub-emo">🎧</span>
-       <span class="hub-tx"><b>연음 부스터</b><i>붙어 들리는 영어 소리를 익혀요</i></span>
        <span class="hub-ar">›</span>
      </button>
    </div>`;
