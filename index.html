@@ -1986,7 +1986,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.56";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.57";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2251,35 +2251,70 @@ function parseJSON(text){
 
 /* ============ prompt builders ============ */
 // 문제 난이도 D1~D60 → 기존 10개 큰 단계 프롬프트/속도로 매핑
-function diffLevel(){ return Math.max(1, Math.min(60, Math.round(Number(state.lvl)||1))); }
+// 사용자가 고른 레벨(state.lvl)은 '초기값/보정값' — 실제 출제는 능력별 자동 레벨(아래 AUTO LEVEL)이 결정
+let _lvlOverride=null;   // 모드별 자동 레벨을 기존 levelHint/levelCap/levelRate 체인에 주입하는 오버라이드
+function diffLevel(){ return Math.max(1, Math.min(60, Math.round(Number(_lvlOverride!=null?_lvlOverride:state.lvl)||1))); }
 function diffMacro(){ return Math.max(1, Math.min(10, Math.ceil(diffLevel()/6))); }
 function lvlBucket(){ const v=diffMacro(); return v<=3?"초급":(v>=7?"고급":"중급"); }
 function syncLevel(){ state.level=lvlBucket(); }
-// ===== 📈 적응형 난이도 — 완벽하게 맞춘 만큼 자동으로 조금씩 상승, 연속으로 틀리면 살짝 하강 =====
-function adaptSetLvl(n){
-  n=Math.max(1,Math.min(60,Math.round(n)));
-  const prev=diffLevel(); if(n===prev) return;
-  state.lvl=n; syncLevel();
-  try{ hSet("speakingroom:lvl", n); }catch(e){}
-  try{ const lr=$("#lvlRange"); if(lr) lr.value=n; const el=$("#lvlLabel"); if(el) el.textContent=levelName(); }catch(e){}
-  try{ updateLevelBadges(); }catch(e){}
-  try{ bleShowHintToast(n>prev ? ("📈 잘하고 있어서 난이도가 살짝 올라갔어요 — "+levelName()) : ("🌱 난이도를 살짝 낮췄어요 — 차근차근! "+levelName())); }catch(e){}
+// 오버라이드 스코프 실행 — fn 안에서 diffLevel()이 v를 반환 (프롬프트 생성·TTS 속도 등)
+function withLvl(v, fn){ const prev=_lvlOverride; _lvlOverride=v; try{ return fn(); } finally{ _lvlOverride=prev; } }
+/* ===== 📈 AUTO LEVEL — 능력별 자동 난이도 (레벨 = 배운 블록을 얼마나 빠르고 안정적으로 꺼내는가)
+   word(단어 이해) / listen(듣고 이해) / block(블록 인출) / speed(3초 시작) — 서로 독립적으로 오르내림.
+   perfect 6연속 → +1, miss 3연속 → -1, ok = 상승 게이지만 리셋. 사용자 슬라이더는 재보정(전체 리셋)용. */
+const AL_KEY="speakingroom:autolvl";
+const AL_SKILLS=["word","listen","block","speed"];
+const AL_TOAST={
+  word:{up:"📈 단어가 좋아져서 조금 더 어려워져요",down:"🌱 단어를 살짝 쉽게 갈게요"},
+  listen:{up:"👂 귀가 트여서 듣기가 조금 어려워져요",down:"🌱 듣기를 살짝 쉽게 갈게요"},
+  block:{up:"🧱 블록이 안정돼서 조금 더 어려워져요",down:"🌱 블록 연습을 살짝 쉽게 갈게요"},
+  speed:{up:"⚡ 빨라져서 제한이 살짝 빡빡해져요",down:"🌱 시간 여유를 조금 더 줄게요"}
+};
+function alGet(){
+  let d=null; try{ d=hGet(AL_KEY,null); }catch(e){}
+  if(!d || typeof d!=="object" || d.word==null){
+    const base=Math.max(1,Math.min(60,Math.round(Number(state.lvl)||1)));
+    d={word:base, listen:base, block:base, speed:base, st:{}};
+    try{ hSet(AL_KEY,d); }catch(e){}
+  }
+  if(!d.st) d.st={};
+  return d;
 }
-// perfect(한 번에·힌트 없이 정답)=상승 게이지 / miss(오답·포기)=하강 게이지 / ok(맞혔지만 힌트·재시도)=중립(상승 게이지만 리셋)
-function wpAdaptRecord(kind){
+function alSave(d){ try{ hSet(AL_KEY,d); }catch(e){} }
+// 능력별 자동 레벨 기록 — kind: "perfect" | "ok" | "miss"
+function autoLvlRecord(skill, kind){
   try{
-    let st=hGet("speakingroom:wp_adapt",{up:0,miss:0})||{up:0,miss:0};
-    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; if(st.up>=6){ st.up=0; adaptSetLvl(diffLevel()+1); } }
-    else if(kind==="miss"){ st.miss=(st.miss||0)+1; st.up=0; if(st.miss>=3){ st.miss=0; adaptSetLvl(diffLevel()-1); } }
+    if(AL_SKILLS.indexOf(skill)<0) return;
+    const d=alGet(); const st=d.st[skill]||{up:0,miss:0};
+    let delta=0;
+    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; if(st.up>=6){ st.up=0; delta=1; } }
+    else if(kind==="miss"){ st.miss=(st.miss||0)+1; st.up=0; if(st.miss>=3){ st.miss=0; delta=-1; } }
     else { st.up=0; }
-    hSet("speakingroom:wp_adapt", st);
+    d.st[skill]=st;
+    if(delta){
+      const nv=Math.max(1,Math.min(60,(d[skill]||1)+delta));
+      if(nv!==d[skill]){ d[skill]=nv; try{ bleShowHintToast(AL_TOAST[skill][delta>0?"up":"down"]); }catch(e){} }
+    }
+    alSave(d);
   }catch(e){}
 }
+// 자동 레벨 조회 — 출제/속도 결정의 중심
+function getAutoLevels(){
+  const d=alGet();
+  const word=d.word||1, listen=d.listen||1, block=d.block||1, speed=d.speed||1;
+  return { wordLevel:word, listenLevel:listen, blockRecallLevel:block, speedLevel:speed,
+           overallLevel:Math.max(1,Math.min(60,Math.round(word*0.25+listen*0.25+block*0.3+speed*0.2))) };
+}
+// 사용자 슬라이더 = 재보정: 4개 능력 레벨을 그 값으로 리셋
+function alRebase(n){ const base=Math.max(1,Math.min(60,Math.round(n)||1)); const d=alGet(); AL_SKILLS.forEach(k=>d[k]=base); d.st={}; alSave(d); }
+// (구) 단어 전용 적응형 — 자동 레벨로 위임
+function wpAdaptRecord(kind){ autoLvlRecord("word", kind); }
+function adaptSetLvl(n){ /* deprecated — autoLvlRecord가 능력별로 조정 */ }
 const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1",7:"B1+",8:"B2",9:"C1",10:"원어민"};
 function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
 // 모든 진행 화면 상단에 현재 난이도 작게 표시
 function updateLevelBadges(){
-  let txt="D"+diffLevel();
+  let txt; try{ txt="D"+getAutoLevels().overallLevel; }catch(e){ txt="D"+diffLevel(); }
   try{ txt+=" · 단어Lv."+userWordLevel(); }catch(e){}
   ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
 }
@@ -2613,7 +2648,7 @@ function buildSetup(){
   if(lr){ lr.max=60;
     try{ const sv=hGet("speakingroom:lvl",null); if(sv!=null) state.lvl=Math.max(1,Math.min(60,+sv||1)); }catch(e){}   // 저장된 난이도 복원(적응형 포함)
     lr.value=diffLevel();
-    const upd=()=>{ state.lvl=+lr.value; syncLevel(); try{ hSet("speakingroom:lvl", state.lvl); }catch(e){} const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
+    const upd=()=>{ state.lvl=+lr.value; syncLevel(); try{ hSet("speakingroom:lvl", state.lvl); }catch(e){} try{ alRebase(state.lvl); }catch(e){} const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
     lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -3350,6 +3385,7 @@ function listenMaterials(){
 // 실전 구어 한 문장 생성
 let lsBoosterMode=false;
 function listenSentenceSys(){
+  return withLvl(getAutoLevels().listenLevel, ()=>{   // 🎯 듣기 출제는 자동 listenLevel 기준
   const seed=Math.floor(Math.random()*100000);
   const prev = lsPrevReply ? `This is a continuing conversation. The other person just said: "${lsPrevReply}". Produce the NEXT natural spoken line that follows it.` : "Begin a fresh real-life spoken moment.";
   const booster = (lsBoosterMode && diffMacro()>=5) ? "CRITICAL FOCUS — this is EAR TRAINING for connected speech. The sentence MUST be packed with real reductions/contractions/linking that trip up Korean learners: e.g. wanna, gonna, gotta, wudja(would you), didja(did you), gimme, lemme, kinda, 'I'll', 'you're', dropped/linked sounds. Make it sound exactly like fast casual native speech." : "";
@@ -3378,6 +3414,7 @@ levelCap(),
 (lsRecent.length? "DO NOT repeat or closely paraphrase any of these already-used sentences (make something clearly different in meaning and words):\n- "+lsRecent.slice(-15).join("\n- ") : ""),
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻","block":"the learned block reused, or empty"}'
   ].join("\n");
+  });
 }
 async function lsGenerate(){
   lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
@@ -3497,15 +3534,16 @@ function renderListenPlay(){
 let ttsWarmed=false;
 function lsSpeak(slow, onEnd){
   if(!lsItem) return;
+  const _lr=withLvl(getAutoLevels().listenLevel, ()=>levelRate(slow));
   // 1) 서버 원어민 음성(Azure Neural) 우선 — 첫 자음 잘림 원천 차단
-  svSpeak(lsItem.en||"", levelRate(slow), onEnd).then(ok=>{
+  svSpeak(lsItem.en||"", _lr, onEnd).then(ok=>{
     if(ok) return;
     // 2) 폴백: 브라우저 TTS
     if(!TTS||!SSU) return;
     TTS.cancel();
     const doSpeak=()=>{
       const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
-      u.rate = levelRate(slow);
+      u.rate = _lr;
       if(onEnd) u.onend=()=>setTimeout(onEnd, 250);
       TTS.speak(u);
     };
@@ -3537,6 +3575,7 @@ function sqDiffRule(){
   return "DIFFICULTY D"+d+"/60 (advanced): audio is a 2~3 turn dialogue (consecutive natural lines, no speaker labels). Inference questions. ALL choices must sound plausible; only careful listening distinguishes them.";
 }
 function sqSys(){
+  return withLvl(getAutoLevels().listenLevel, ()=>{   // 🎯 상황듣기 출제는 자동 listenLevel 기준
   const seed=Math.floor(Math.random()*100000);
   const qtype=sqNextType();
   const mat=(typeof listenMaterials==="function")?listenMaterials():null;
@@ -3552,6 +3591,7 @@ matLine,
 (sqRecent.length? "Do NOT reuse or closely paraphrase these recent audio sentences:\n- "+sqRecent.slice(-12).join("\n- ") : ""),
 'Return ONLY JSON: {"scene_ko":"카페 계산대에서 직원이 말합니다.","audio_en":"Do you need a receipt?","audio_ko":"영수증 필요하세요?","question_type":"'+qtype+'","question_ko":"상대가 무슨 뜻으로 말했나요?","choices":["...","...","..."],"answer_index":0,"explanation_ko":"...","focus":"receipt / need"}'
   ].join("\n");
+  });
 }
 function sqValid(o){ return o && o.audio_en && o.question_ko && Array.isArray(o.choices) && o.choices.length===3 && o.answer_index>=0 && o.answer_index<=2; }
 function sqShuffleChoices(o){
@@ -3602,11 +3642,12 @@ async function sqGenerate(){
 }
 function sqSpeak(slow){
   if(!sqItem) return;
-  svSpeak(sqItem.audio_en, levelRate(slow)).then(ok=>{
+  const r=withLvl(getAutoLevels().listenLevel, ()=>levelRate(slow));
+  svSpeak(sqItem.audio_en, r).then(ok=>{
     if(ok) return;
     if(!TTS||!SSU) return;
     TTS.cancel();
-    setTimeout(()=>{ const u=new SSU(sqItem.audio_en); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=levelRate(slow); TTS.speak(u); }, 220);
+    setTimeout(()=>{ const u=new SSU(sqItem.audio_en); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); }, 220);
   });
 }
 function sqLedger(kind, extra){
@@ -3656,6 +3697,8 @@ function sqAnswer(picked){
   const it=sqItem;
   const correct = picked===it.answer_index;
   const firstTry = correct && sqReplay===0 && !sqSlow;
+  try{ autoLvlRecord("listen", correct?(firstTry?"perfect":"ok"):"miss"); }catch(e){}
+  if(!correct){ sqTypes.push(it.question_type); }   // 틀린 유형을 다음에 다시
   // 선택지 마킹
   document.querySelectorAll(".sq-choice").forEach(b=>{
     const i=parseInt(b.dataset.i,10); b.style.pointerEvents="none";
@@ -3760,6 +3803,7 @@ function lsCheckAnswer(){
     try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
     try{ profRecordListenPerfect(lsItem.en, lsItem.ko); }catch(e){}
     lsLedgerMark("understood");
+    try{ autoLvlRecord("listen","ok"); }catch(e){}
     renderListenCorrect();
   } else {
     lsRunAnalysis();
@@ -3897,7 +3941,7 @@ async function lsRunAnalysis(){
   //    시도(답을 말한 경우)만 소액 XP, 답 보기(빈 답)는 무보상. 퀘스트는 정답에서만 오름.
   if(!lsAwarded){
     lsAwarded=true;
-    if(lsAnswer){ awardXP("listen",3,"듣기 시도","lstry:"+lsCount); lsLedgerMark("missed"); }
+    if(lsAnswer){ awardXP("listen",3,"듣기 시도","lstry:"+lsCount); lsLedgerMark("missed"); try{ autoLvlRecord("listen","miss"); }catch(e){} }
     else { lsLedgerMark("revealed"); }
   }
   const orig=lsItem.en||"";
@@ -4808,7 +4852,7 @@ const SEED_VOCAB = {
 };
 function vbankGet(){ return hGet("speakingroom:vbank",{}); }
 // 레벨별로 캐시 분리 — 레벨 바꾸면 다른 난이도 단어가 나오게
-function bankKey(themeId){ return themeId+"@D"+diffLevel(); }
+function bankKey(themeId){ let w=1; try{ w=getAutoLevels().wordLevel; }catch(e){ w=diffLevel(); } return themeId+"@D"+w; }
 function vbankSave(b){ hSet("speakingroom:vbank",b); }
 function ensureSeed(themeId){
   if(diffMacro()>=4) return;   // 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
@@ -4843,9 +4887,12 @@ function vocabWordLevelRule(bandOverride){
   return (map[v]||map[1])+microLine;
 }
 function vocabPrompt(theme){
+  return withLvl(getAutoLevels().wordLevel, ()=>{   // 🎯 단어 출제는 자동 wordLevel 기준
   const seed=Math.floor(Math.random()*100000);
   const recent=(vocabSeenRecent||[]).slice(-40);
-  const avoidLine = recent.length ? ("AVOID these recently used words (do NOT generate any of them): "+recent.join(", ")+". Generate fresh, different words.") : "";
+  let mastered=[]; try{ mastered=Object.values(srsAll()).filter(x=>x&&x.en&&(x.stage==="strong"||x.stage==="mastered")).map(x=>x.en).slice(0,30); }catch(e){}
+  const avoidAll=[...new Set([...recent, ...mastered])];
+  const avoidLine = avoidAll.length ? ("AVOID these words the learner already knows well or saw recently (do NOT generate any of them): "+avoidAll.join(", ")+". Generate fresh, different words.") : "";
   const freqLine=commonFreqPromptLine(theme);
   return [
 "Create a vocabulary set for a Korean learner. Loose theme context: "+theme.topic+".",
@@ -4861,6 +4908,7 @@ levelCap(),
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'. The 'answer' MUST equal the target 'word' (do not test a different word in the blank).",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
   ].filter(Boolean).join("\n");
+  });
 }
 async function aiVocabSet(theme){
   const data=await callClaude(vocabPrompt(theme),[{role:"user",content:"Create the vocabulary set now."}], FAST_MODEL);
@@ -5781,7 +5829,12 @@ function wpResume(){
 }
 function wpStart(words){
   try{ xpSessionStart(); }catch(e){}
-  const ws=uniqueVocabWords(words||[]).filter(w=>w&&w.word).slice(0,VOCAB_SET_SIZE);
+  // 🎯 이미 탄탄/마스터인 단어는 새 학습에서 제외 (최근 실패 없고 14일 안 지난 것) — 14일 지나면 유지보수로 허용
+  const _fresh=(w)=>{ try{ const si=srsGet(w.word); if(!si) return true; const strong=(si.stage==="strong"||si.stage==="mastered"); if(!strong) return true; if((si.miss||0)>0 && (si.lastT||0) && (Date.now()-(si.lastT||0))<3*86400000) return true; return !si.lastT || (Date.now()-si.lastT)>=14*86400000; }catch(e){ return true; } };
+  let _in=uniqueVocabWords(words||[]).filter(w=>w&&w.word);
+  const _filtered=_in.filter(_fresh);
+  if(_filtered.length>=5) _in=_filtered;   // 다 걸러지면(대부분 마스터) 원본 유지 — 빈 세트 방지
+  const ws=_in.slice(0,VOCAB_SET_SIZE);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
   // 한 세트 안에서는 한 단어를 맞히면 다시 내지 않는다. 예문 확장은 결과 카드에서만 보여준다.
   const usedAnswers=new Set();
@@ -7770,7 +7823,19 @@ function bleLightningItems(n){
   }
   return out.slice(0,n||10);
 }
-function bleNextNewBlock(){ const s=bleGetState(); return BLE_BLOCKS.find(b=>!s[b.id] || !s[b.id].unlocked)||null; }
+function bleBlockBand(b){ try{ const ws=bleContentWords(String(b.block||"").replace(/\.\.\.|\?/g," ")); if(!ws.length) return 1; return Math.max.apply(null, ws.map(w=>wordLevelOf(w))); }catch(e){ return 1; } }
+function bleNextNewBlock(){
+  const s=bleGetState();
+  const cand=BLE_BLOCKS.filter(b=>!s[b.id] || !s[b.id].unlocked);
+  if(!cand.length) return null;
+  // 🎯 새 블록은 blockRecallLevel 기준: 너무 쉬운/갑자기 어려운 블록 제외 (없으면 순서 폴백)
+  try{
+    const alb=Math.max(1, Math.ceil(getAutoLevels().blockRecallLevel/10));   // 1~6 밴드
+    const fit=cand.find(b=>{ const bd=bleBlockBand(b); return bd>=alb-2 && bd<=alb+1; });
+    if(fit) return fit;
+  }catch(e){}
+  return cand[0];
+}
 function bleLearnedIds(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>b.id); }
 // 잠금해제된(7단계 코스 클리어) 블록만
 function bleUnlockedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&(s[b.id].unlocked||s[b.id].introducedAt)); }
@@ -9225,6 +9290,8 @@ async function bleFinishRetrieveDeep(it, heard){
   }
   speakEn(j.naturalAnswer||ex.en);
   try{ if(bleDeep&&bleDeep.outputMode) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기)
+  try{ autoLvlRecord("block", j.targetBlockSuccess?(fast?"perfect":"ok"):"miss"); }catch(e){}
+  try{ if(j.targetBlockSuccess && typeof ms==="number") autoLvlRecord("speed", ms<=3000?"perfect":(ms<=5000?"ok":"miss")); }catch(e){}
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, source:"output_training", userAnswer:heard, suggestedAnswer:j.naturalAnswer||ex.en, naturalAnswer:j.naturalAnswer||ex.en, confusedWith:j.confusedWith});
   try{
     const nat=j.naturalAnswer||ex.en;
@@ -11889,7 +11956,7 @@ function adGrade(block, ex, heard){
   return {ok, blockHit, slotHit, slot, hit, heardNorm:h};
 }
 function adLimits(){
-  const d=diffLevel();
+  let d; try{ d=getAutoLevels().speedLevel; }catch(e){ d=diffLevel(); }   // ⚡ 제한시간은 speedLevel 기준
   if(d<=12) return [8,6,5,4,3];
   if(d<=36) return [6,5,4,3,3];
   return [5,4,3,2.5,2.5];
@@ -11926,15 +11993,29 @@ function autoDrillBlocks(focusIds){
     return focus.concat(rest).slice(0,10);
   }
   if(!learned.length){ try{ return bleUnlockedBlocks().slice(0,5); }catch(e){ return []; } }
-  // 10개 이하 → 배운 블록 전부 (저숙련 순)
+  // 10개 이하 → 배운 블록 전부 (약점 우선 정렬)
   if(learned.length<=10) return learned.slice().sort((a,b)=>adProf(a)-adProf(b));
-  // 10개 초과 → 최근 안 나온 것 우선, 부족분은 저숙련(어려워하는) 것으로 채움(중복 허용)
-  const recent=hGet("speakingroom:ad_recent",[])||[];
-  const fresh=learned.filter(b=>recent.indexOf(b.id)<0).sort((a,b)=>adProf(a)-adProf(b));
-  let pick=fresh.slice(0,10);
-  if(pick.length<10){ const rest=learned.filter(b=>pick.indexOf(b)<0).sort((a,b)=>adProf(a)-adProf(b)); pick=pick.concat(rest.slice(0,10-pick.length)); }
-  try{ hSet("speakingroom:ad_recent", pick.map(b=>b.id).concat(recent).slice(0,20)); }catch(e){}
-  return pick;
+  // 🎯 10개 초과 → 스마트 랜덤: 약점 40% / 최근 배운 25% / 오래 안 본 20% / 마스터 유지보수 10% / 도전 5%
+  const st=(function(){try{return bleGetState()}catch(e){return{}}})();
+  const info=b=>st[b.id]||{};
+  const isWeak=b=>{ const t=info(b); return (t.consecFails||0)>0 || ((t.failCount||0)>0 && (t.failCount||0)>=(t.successCount||0)); };
+  const isMastered=b=>{ const t=info(b); return t.stage==="ready_for_real" || ((t.fastCount||0)>=3&&(t.successCount||0)>=3&&((t.contextsUsed||[]).length)>=3); };
+  const pickN=(arr,k,taken)=>{ const out=[]; for(const b of arr){ if(out.length>=k) break; if(!taken.has(b.id)){ taken.add(b.id); out.push(b); } } return out; };
+  const taken=new Set(); let pick=[];
+  const weak=bleShuffle(learned.filter(isWeak));
+  const mastered=learned.filter(isMastered);
+  const mid=learned.filter(b=>!isWeak(b)&&!isMastered(b));
+  const recent=mid.slice().sort((a,b)=>(info(b).introducedAt||0)-(info(a).introducedAt||0));
+  const stale=mid.slice().sort((a,b)=>(info(a).lastSeenAt||0)-(info(b).lastSeenAt||0));
+  pick=pick.concat(pickN(weak,4,taken));                        // 약점 4
+  pick=pick.concat(pickN(recent,3,taken));                      // 최근 배운 3 (≈25%)
+  pick=pick.concat(pickN(stale,2,taken));                       // 오래 안 본 2
+  pick=pick.concat(pickN(bleShuffle(mastered),1,taken));        // 마스터 유지보수 1 (낮은 빈도)
+  // 도전 1: 배운 것 중 가장 어려운 밴드 블록 (안 뽑혔으면)
+  try{ const hard=learned.slice().sort((a,b)=>bleBlockBand(b)-bleBlockBand(a))[0]; if(hard && !taken.has(hard.id) && pick.length<10){ taken.add(hard.id); pick.push(hard); } }catch(e){}
+  // 부족분은 저숙련 순으로 채움
+  if(pick.length<10){ const rest=learned.filter(b=>!taken.has(b.id)).sort((a,b)=>adProf(a)-adProf(b)); pick=pick.concat(rest.slice(0,10-pick.length)); }
+  return pick.slice(0,10);
 }
 // 같은 블록 항목이 연속(또는 바로 근처)으로 나오지 않게 재배치 — 남은 개수 많은 블록 우선, 직전 블록은 회피
 function adSpread(arr){
@@ -12672,10 +12753,14 @@ function autoDrillFinish(heard, meta){
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
-  // 제대로 못 맞춘(자동화 미완성) 문항은 맨 뒤로 다시 보내 반복 — 같은 문항 최대 2회까지(총 문항 수가 늘어남: 0/12→0/13…)
+  // 🎯 자동 레벨 기록 — block(인출)·speed(3초 시작)는 독립
+  try{ autoLvlRecord("block", g.ok?(fast?"perfect":"ok"):"miss"); }catch(e){}
+  try{ if(g.ok) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
+  // 못 맞춘 문항 재등장: 1차 실패 → 2~3문제 뒤, 또 실패 → 세션 끝나기 전 한 번 더
   if(!perfect && (it._requeues||0)<2){
     const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _requeues:(it._requeues||0)+1, _requeued:true});
-    autoDrill.items.push(clone);
+    if((it._requeues||0)===0){ const at=Math.min(autoDrill.items.length, autoDrill.idx+2+((Math.random()*2)|0)); autoDrill.items.splice(at,0,clone); }
+    else { autoDrill.items.push(clone); }
   }
   if(perfect){
     if(stat) stat.innerHTML=`<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
