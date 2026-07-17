@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.47";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.48";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3413,91 +3413,53 @@ function listenInstantSentence(){
     return arr[(Math.random()*arr.length)|0];
   }catch(e){ return null; }
 }
-// 1) 듣기 (자막 없이)
+// 1)+2) 듣기+말하기 통합 한 화면 — 듣고 바로 그 자리에서 들린 대로 말함 (화면 전환 없음)
 function renderListenPlay(){
+  TTS&&TTS.cancel();
   const topicName = state.topic.id==="custom"?"직접 입력":state.topic.t;
   const emo = state.topic.emo||"🎧";
   // 상단 통일 헤더 갱신
   const lsModeEl=$("#lsModeTag"); if(lsModeEl) lsModeEl.textContent="🎧 "+emo+" "+topicName;
   const lsProgEl=$("#lsTopProg"); if(lsProgEl) lsProgEl.textContent=lsCount+"번째";
   const lsBarEl=$("#lsBarFill"); if(lsBarEl) lsBarEl.style.width=Math.min(100,(lsCount%10)*10)+"%";
-  $("#listenScroll").innerHTML=`<div class="lcard lcard-full lp2">
-    <div class="lp2-hero">
-      <div class="lp2-emo">${emo}</div>
-      <div class="lp2-topic">${escapeHtml(topicName)}</div>
-      <div class="lp2-chips">
-        <span class="lp2-lvl">${escapeHtml(levelName())}</span>
-        <span class="lp2-chip">🎧 듣기</span>
-        <span class="lp2-chip">${lsCount}번째 문장</span>
-      </div>
-      <div class="lp2-instr">잘 듣고 <b>들린 대로</b> 말해보세요 · 자막 없이 귀로만 👂</div>
-    </div>
-    <div class="lp2-listen">
-      <button class="bigplay lp2-play" id="lsPlay" aria-label="듣기">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <div class="lp2-playlabel">눌러서 듣기</div>
-      <button class="lp2-slow" id="lsSlow">🐢 천천히 듣기</button>
-    </div>
-    <button class="sh-next lp2-cta" id="lsToDict">🎤 정답 말하기 →</button>
-    <button class="ls-skip lp2-skip" id="lsSkip">잘 모르겠어요 — 답 보기</button>
-  </div>`;
-  $("#listenScroll").scrollTop=0;
-  setTimeout(()=>lsSpeak(false),650);   // 워밍업 여유 (앞소리 잘림 방지)
-  $("#lsPlay").onclick=()=>lsSpeak(false);
-  $("#lsSlow").onclick=()=>lsSpeak(true);
-  $("#lsToDict").onclick=renderListenDictation;
-  $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
-}
-let ttsWarmed=false;
-function lsSpeak(slow){
-  if(!TTS||!SSU||!lsItem) return;
-  TTS.cancel();
-  const doSpeak=()=>{
-    const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
-    u.rate = levelRate(slow);
-    TTS.speak(u);
-  };
-  // 첫 발화 직전 무음 워밍업 — 엔진이 첫 단어 앞부분을 먹는 문제 방지
-  if(!ttsWarmed){
-    ttsWarmed=true;
-    try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
-    setTimeout(doSpeak, 260);
-  } else {
-    setTimeout(doSpeak, 60);
-  }
-}
-// 2) 받아쓰기 — 단어별 누적: 들린 단어는 채워져 고정, 안 들린 빈칸만 다시
-function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
-function renderListenDictation(){
-  TTS&&TTS.cancel();
   lsTargets=(lsItem.en||"").split(/\s+/).filter(Boolean);
   lsFilled=lsTargets.map(()=>false);
-  $("#listenScroll").innerHTML=`<div class="lcard">
-    <div class="lmeta" style="text-align:center">🎤 들은 대로 말하기 · ${lsCount}번째</div>
-    <div style="text-align:center;font-size:14px;color:var(--muted);margin:6px 0 14px">방금 들은 문장을 <b style="color:var(--jade)">소리 내어 말해보세요.</b> 들린 단어가 초록색으로 채워져요. 안 들린 <b>빈칸만</b> 다시 들어도 돼요!</div>
-    <button class="bigplay" id="lsPlay2" style="margin-bottom:14px">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      <span>🔊 다시 듣기</span>
-    </button>
-    <div id="lsSlots" class="dict-slots"></div>
-    <div id="lsProg" style="text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 2px"></div>
+  $("#listenScroll").innerHTML=`<div class="lcard lcard-full lp2">
+    <div class="lp2-hero" style="padding-bottom:6px">
+      <div class="lp2-chips">
+        <span class="lp2-lvl">${escapeHtml(levelName())}</span>
+        <span class="lp2-chip">${emo} ${escapeHtml(topicName)}</span>
+        <span class="lp2-chip">${lsCount}번째 문장</span>
+      </div>
+      <div class="lp2-instr">잘 듣고 <b>들린 대로</b> 바로 말해보세요 👂 들린 단어가 초록으로 채워져요 — 안 들린 <b>빈칸만</b> 다시 들어도 돼요</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0 6px">
+      <button class="bigplay lp2-play" id="lsPlay" aria-label="듣기" style="width:74px;height:74px;flex:none">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="lp2-slow" id="lsSlow" style="margin:0">🐢 천천히</button>
+    </div>
+    <div id="lsSlots" class="dict-slots" style="margin-top:10px"></div>
+    <div id="lsProg" style="text-align:center;font-size:12.5px;color:var(--muted);margin:8px 0 2px"></div>
     <button class="bigplay" id="lsDictMic" style="width:100%;margin-top:10px;background:var(--jade);color:#ffffff">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>
       <span>🎤 들은 대로 말하기</span>
     </button>
-    <button id="lsDictType" style="width:100%;margin-top:10px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
+    <button id="lsDictType" style="width:100%;margin-top:9px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">⌨️ 글로 쓰기</button>
     <input id="lsTypeIn" style="display:none;width:100%;margin-top:8px;padding:12px;border:1.5px solid var(--line);border-radius:12px;background:var(--mist);color:var(--text);font-size:16px" placeholder="들린 단어 입력 후 Enter">
-    <button class="sh-next" id="lsCheck" style="margin-top:12px">채점하기 →</button>
-    <button class="rv-stop" id="lsBackToPlay">← 다시 듣기로</button>
+    <button class="sh-next" id="lsCheck" style="margin-top:11px">채점하기 →</button>
+    <button class="ls-skip lp2-skip" id="lsSkip" style="margin-top:8px">잘 모르겠어요 — 답 보기</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
   lsRenderSlots();
-  $("#lsPlay2").onclick=()=>lsSpeak(false);
-  $("#lsBackToPlay").onclick=renderListenPlay;
+  // 자동 재생 → 끝나면 마이크 자동 시작 (한 화면에서 슉슉)
+  setTimeout(()=>lsSpeak(false, ()=>{ const m=$("#lsDictMic"); if(m && !qzRecording) m.click(); }), 650);
+  $("#lsPlay").onclick=()=>lsSpeak(false);
+  $("#lsSlow").onclick=()=>lsSpeak(true);
+  $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
   $("#lsCheck").onclick=()=>{ lsAnswer=lsTargets.filter((w,i)=>lsFilled[i]).join(" "); lsCheckAnswer(); };
   const mic=$("#lsDictMic"); const micLbl=mic.querySelector("span");
-  mic.onclick=function(){ if(qzRecording){ return; } mic.classList.add("rec"); if(micLbl) micLbl.textContent="🎙️ 듣는 중…";
+  mic.onclick=function(){ if(qzRecording){ return; } TTS&&TTS.cancel(); mic.classList.add("rec"); if(micLbl) micLbl.textContent="🎙️ 듣는 중…";
     micFillCb((t)=>{ mic.classList.remove("rec"); if(micLbl) micLbl.textContent="🎤 들은 대로 말하기";
       const added=lsFillFromHeard(t);
       const done=lsFilled.every(Boolean);
@@ -3509,9 +3471,29 @@ function renderListenDictation(){
   $("#lsDictType").onclick=()=>{ const ti=$("#lsTypeIn"); ti.style.display="block"; ti.focus(); };
   $("#lsTypeIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); lsFillFromHeard(e.target.value); e.target.value="";
     if(lsFilled.every(Boolean)){ lsAnswer=lsTargets.join(" "); lsCheckAnswer(); } }});
-  // 화면 뜨자마자 마이크 자동 시작 (정답 말하기 = 바로 말하기)
-  setTimeout(()=>{ const m=$("#lsDictMic"); if(m && !qzRecording) m.click(); }, 250);
 }
+let ttsWarmed=false;
+function lsSpeak(slow, onEnd){
+  if(!TTS||!SSU||!lsItem) return;
+  TTS.cancel();
+  const doSpeak=()=>{
+    const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
+    u.rate = levelRate(slow);
+    if(onEnd) u.onend=()=>setTimeout(onEnd, 250);
+    TTS.speak(u);
+  };
+  // 첫 발화 직전 무음 워밍업 — 엔진이 첫 단어 앞부분을 먹는 문제 방지
+  if(!ttsWarmed){
+    ttsWarmed=true;
+    try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
+    setTimeout(doSpeak, 260);
+  } else {
+    setTimeout(doSpeak, 60);
+  }
+}
+// (구) 받아쓰기 별도 화면 — 듣기 화면에 통합됨. 혹시 남은 호출은 통합 화면으로.
+function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
+function renderListenDictation(){ renderListenPlay(); }
 function lsRenderSlots(){
   const box=$("#lsSlots"); if(!box) return;
   box.innerHTML=lsTargets.map((w,i)=> lsFilled[i]
