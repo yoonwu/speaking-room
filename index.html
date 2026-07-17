@@ -1720,6 +1720,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <!-- 🧱 오늘의 영어 블록 — 홈 최상단 메인 (앱 정체성) -->
         <div id="dailyCard"></div>
         <!-- 습득 지표 — 프로필 바로 아래 (짧게) -->
+        <div id="routineCard" style="margin:2px 0 14px"></div>
         <div id="acqStats" style="margin:2px 0 14px"></div>
         <!-- 난이도 -->
         <div class="difcard" style="border-radius:14px;padding:11px 14px;margin-bottom:13px">
@@ -1985,7 +1986,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.55";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.56";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3651,6 +3652,7 @@ function sqRender(){
 }
 function sqAnswer(picked){
   if(sqAnswered || !sqItem) return; sqAnswered=true;
+  try{ rtBump("listen"); }catch(e){}   // 📋 오늘 루틴: 상황 듣기
   const it=sqItem;
   const correct = picked===it.answer_index;
   const firstTry = correct && sqReplay===0 && !sqSlow;
@@ -3751,6 +3753,7 @@ function lsAllCorrect(){
 }
 // 채점 게이트: 다 맞으면 분석 건너뛰고 선택지, 틀리면 AI 분석
 function lsCheckAnswer(){
+  try{ rtBump("dict"); }catch(e){}   // 📋 오늘 루틴: 받아쓰기
   if(lsAllCorrect()){
     if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답 ✅","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
     // 🎧 들은 블록/표현을 SRS 강화 + 세션 추적 (학습 루프 연결)
@@ -5978,6 +5981,7 @@ function wpSubmit(q, answer){
   if(correct){
     flashResult(true);
     srsPass(q.word.word, q.word.ko, ctxTag);
+    try{ rtBump("vocab"); }catch(e){}   // 📋 오늘 루틴: 단어
     const fast=elapsed<4 && !q._wrongCount && !q._hintUsed;
     awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
     if(q.idxInWord===0 && !isRetry && !q._wrongCount && !q._hintUsed){ bumpCount("vocab"); questBump("vocab"); }
@@ -9220,6 +9224,7 @@ async function bleFinishRetrieveDeep(it, heard){
     if(named.length && stat){ stat.innerHTML+=`<div style="font-size:12px;color:#C08763;margin-top:6px">📝 모르는 단어로 저장: ${named.map(w=>escapeHtml(w.ko)+"="+escapeHtml(w.en)).join(", ")} — 단어 학습에 나와요</div>`; }
   }
   speakEn(j.naturalAnswer||ex.en);
+  try{ if(bleDeep&&bleDeep.outputMode) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기)
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, source:"output_training", userAnswer:heard, suggestedAnswer:j.naturalAnswer||ex.en, naturalAnswer:j.naturalAnswer||ex.en, confusedWith:j.confusedWith});
   try{
     const nat=j.naturalAnswer||ex.en;
@@ -12659,6 +12664,7 @@ function autoDrillFinish(heard, meta){
   const initSec=initMs/1000;
   const g=adGrade(it.block, it.ex, heard);
   const fast=initSec<=it.limit;
+  try{ rtBump("drill"); }catch(e){}   // 📋 오늘 루틴: 블록 랜덤 반복
   const perfect=g.ok && fast;
   const result=g.ok ? "PERFECT" : "MISS";
   // 난이도 기반 XP (문항별): 자동화 성공=perfect, 뜻만 맞음=hit, 실패=miss
@@ -13050,7 +13056,56 @@ function startDailyExprPractice(){
     startSession();
   }catch(e){ console.warn("dailyExprPractice err", e); }
 }
+/* ===== 📋 오늘 루틴 — 이것만 하면 하루 끝 (메인: 블록 랜덤 반복 12) ===== */
+function rtKey(){ return "speakingroom:rt:"+DAYN(); }
+function rtGet(){ try{ const d=hGet(rtKey(),null); return d&&typeof d==="object"?d:{}; }catch(e){ return {}; } }
+function rtBump(k,n){ try{ const d=rtGet(); d[k]=(d[k]||0)+(n||1); hSet(rtKey(),d); renderRoutineCard(); }catch(e){} }
+const RT_STEPS=[
+  {k:"vocab", emo:"💬", t:"단어",           goal:10, sub:"말할 재료 워밍업",              go:()=>startVocabCoach()},
+  {k:"newblk",emo:"🧱", t:"새 블록",         goal:1,  sub:"오늘 입에 붙일 패턴 1개",        go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
+  {k:"drill", emo:"🔥", t:"블록 랜덤 반복",   goal:12, sub:"오늘의 핵심 — 입에 붙을 때까지", main:true, go:()=>startAutoDrill()},
+  {k:"listen",emo:"👂", t:"상황 듣기",       goal:7,  sub:"듣고 뜻·의도·행동 고르기",       go:()=>startSituationListening()},
+  {k:"dict",  emo:"✍️", t:"받아쓰기",        goal:2,  sub:"정밀 진단 2문제만",             go:()=>startMainTraining()},
+  {k:"speak", emo:"⚔️", t:"스피킹",          goal:5,  sub:"3초 안에 꺼내기",               go:()=>startOutputEngine()},
+  {k:"real",  emo:"🌎", t:"실전회화",        goal:1,  sub:"짧은 미션 1개로 마무리",         go:()=>openSurvival()}
+];
+function rtCount(k, d){
+  if(k==="newblk"){ try{ return newBlocksToday(); }catch(e){ return 0; } }
+  return (d&&d[k])||0;
+}
+function renderRoutineCard(){
+  const box=$("#routineCard"); if(!box) return;
+  const d=rtGet();
+  const doneN=RT_STEPS.filter(s=>rtCount(s.k,d)>=s.goal).length;
+  const allDone=doneN>=RT_STEPS.length;
+  // 전부 완료 시 1회 보너스
+  if(allDone && !d._bonus){ d._bonus=true; try{ hSet(rtKey(),d); }catch(e){} try{ awardXP("output",30,"오늘 루틴 완료 🏆","rt:"+DAYN()); }catch(e){} }
+  const rows=RT_STEPS.map((s,i)=>{
+    const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:${s.main?"12px 13px":"9px 13px"};border-radius:13px;cursor:pointer;margin-bottom:6px;
+      background:${done?"rgba(25,160,107,.08)":s.main?"linear-gradient(135deg,#FFF2EA,#FFE5D8)":"var(--surface)"};
+      border:${s.main&&!done?"2px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
+      <span style="flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:${done?"15px":"13px"};background:${done?"#19a06b":"var(--mist)"};color:${done?"#fff":"var(--muted)"};font-weight:900">${done?"✓":i+1}</span>
+      <span style="flex:none;font-size:${s.main?"20px":"17px"}">${s.emo}</span>
+      <span style="flex:1;min-width:0">
+        <b style="display:block;font-size:${s.main?"15px":"13.5px"};color:${done?"#177A54":"var(--text)"}">${s.t} ${s.goal>1?s.goal+(s.k==="vocab"?"개":"문제"):s.goal+"개"}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11px">★ 메인</i>':""}</b>
+        <i style="display:block;font-style:normal;font-size:11px;color:var(--muted)">${s.sub}</i>
+      </span>
+      <b style="flex:none;font-size:13px;color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
+    </button>`;
+  }).join("");
+  box.innerHTML=`<div class="skillcard" style="padding:14px 14px 10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <b style="font-size:14.5px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">— 완료! 🏆</span>':""}</b>
+      <span style="font-size:12px;font-weight:900;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
+    </div>
+    ${rows}
+    <div style="font-size:11px;color:var(--muted);text-align:center;padding:5px 0 3px">${allDone?"오늘 할 일 끝! 더 하는 건 자유예요 😎":"이것만 하면 오늘 끝 — 더 하고 싶으면 얼마든지"}</div>
+  </div>`;
+  box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
+}
 function renderAcqStats(){
+  try{ renderRoutineCard(); }catch(e){}
   // 🧱 홈 '블록영어' 카드에 마스터/배운 블록 수 표시
   try{
     const cc=$("#chunkCount");
@@ -13956,6 +14011,7 @@ async function endAndEvaluate(){
       if(r.solved) awardXP("survival",12,"🟢 문제 해결!");          // 진짜 해결했을 때만
       if(rec>=70 && overall>=60) awardXP("survival",10,"혼란 회복 🔄"); // 회복도 통했을 때만
       questBump("survival");
+      try{ rtBump("real"); }catch(e){}   // 📋 오늘 루틴: 실전회화
       goToSetup();
       const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#FF8568':v>=45?'#e6ad4a':'#e0533f'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
       const plist=(Array.isArray(r.phrases)?r.phrases:[]).filter(p=>p&&p.en).map(p=>`• ${p.en}${p.ko?" — "+p.ko:""}`).join("\n");
