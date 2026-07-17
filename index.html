@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.51";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.52";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3525,13 +3525,32 @@ function lsRenderSlots(){
   const pr=$("#lsProg"); if(pr) pr.textContent = n>=tot ? "다 들었어요! 🎉 채점할게요" : `들린 단어 ${n} / ${tot} · 빈칸만 더 들어보세요`;
 }
 // 들린 텍스트에서 일치하는 단어를 (순서대로, 가장 왼쪽 빈칸부터) 채움 — 이미 채운 건 유지
+// 축약형 동치 — "I'll"과 "I will", "gonna"와 "going to"는 같은 답으로 인정 (억울한 오답 방지)
+const EN_CONTRACTIONS=[["i'll","i will"],["you'll","you will"],["he'll","he will"],["she'll","she will"],["we'll","we will"],["they'll","they will"],["it'll","it will"],["that'll","that will"],
+["i'm","i am"],["you're","you are"],["we're","we are"],["they're","they are"],
+["i've","i have"],["you've","you have"],["we've","we have"],["they've","they have"],
+["i'd","i would"],["you'd","you would"],["he'd","he would"],["she'd","she would"],["we'd","we would"],
+["can't","cannot"],["won't","will not"],["don't","do not"],["doesn't","does not"],["didn't","did not"],["isn't","is not"],["aren't","are not"],["wasn't","was not"],["weren't","were not"],["haven't","have not"],["hasn't","has not"],["couldn't","could not"],["wouldn't","would not"],["shouldn't","should not"],
+["it's","it is"],["that's","that is"],["there's","there is"],["what's","what is"],["where's","where is"],["who's","who is"],["how's","how is"],["let's","let us"],
+["gonna","going to"],["wanna","want to"],["gotta","got to"],["lemme","let me"],["gimme","give me"],["kinda","kind of"],["sorta","sort of"]];
+// 문자열의 축약/확장 변형들 반환 (원문·전부확장·전부축약)
+function contractionVariants(text){
+  const low=" "+String(text||"").toLowerCase()+" ";
+  let exp=low, con=low;
+  EN_CONTRACTIONS.forEach(([c,e])=>{ exp=exp.split(" "+c+" ").join(" "+e+" "); con=con.split(" "+e+" ").join(" "+c+" "); });
+  const out=[low.trim()]; if(exp.trim()!==out[0]) out.push(exp.trim()); if(con.trim()!==out[0]&&con.trim()!==exp.trim()) out.push(con.trim());
+  return out;
+}
 function lsFillFromHeard(heardText){
-  const heard=String(heardText||"").split(/\s+/).map(lsWordNorm).filter(Boolean);
   let added=0;
-  heard.forEach(hw=>{
-    for(let i=0;i<lsTargets.length;i++){
-      if(!lsFilled[i] && lsWordNorm(lsTargets[i])===hw){ lsFilled[i]=true; added++; break; }
-    }
+  // 들은 문장의 축약/확장 변형 모두로 매칭 — "I will"이라 말해도 타겟 "I'll" 채움 (반대도)
+  contractionVariants(heardText).forEach(variant=>{
+    const heard=variant.split(/\s+/).map(lsWordNorm).filter(Boolean);
+    heard.forEach(hw=>{
+      for(let i=0;i<lsTargets.length;i++){
+        if(!lsFilled[i] && lsWordNorm(lsTargets[i])===hw){ lsFilled[i]=true; added++; break; }
+      }
+    });
   });
   lsRenderSlots();
   return added;
@@ -3685,7 +3704,13 @@ function renderListenCorrect(){
 // 3) 오답 분석 + 4) 연음 설명 (동시 호출)
 async function lsRunAnalysis(){
   TTS&&TTS.cancel();
-  if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
+  // 🎯 지표 분리: 여기는 오답/답 보기 경로 — '정답' XP·퀘스트 없음.
+  //    시도(답을 말한 경우)만 소액 XP, 답 보기(빈 답)는 무보상. 퀘스트는 정답에서만 오름.
+  if(!lsAwarded){
+    lsAwarded=true;
+    if(lsAnswer){ awardXP("listen",3,"듣기 시도","lstry:"+lsCount); lsLedgerMark("missed"); }
+    else { lsLedgerMark("revealed"); }
+  }
   const orig=lsItem.en||"";
   // 🚀 먼저 로컬 정보로 즉시 화면 표시 (빨강 하이라이트는 AI 없이 가능) — 대기 0초
   lsAnalysis={correct_sentence:orig,missed_words:[],mistakes:[],listening_reason:"",pronunciation_tip:"",native_pattern:""};
@@ -5696,7 +5721,13 @@ function wpKeepTrying(q, answer){
 function wpSubmit(q, answer){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
-  const correct = !!answer && wpMatch(ans, target);
+  // 축약형 동치 포함 채점 — "I'll"·"I will", "gonna"·"going to" 모두 정답
+  const correct = !!answer && (function(){
+    try{
+      const tv=contractionVariants(q.blank.answer).map(normAns);
+      return contractionVariants(answer).map(normAns).some(av=>tv.some(t=>wpMatch(av,t)));
+    }catch(e){ return wpMatch(ans, target); }
+  })();
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
   // 오답은 정답지로 넘기지 않는다. 같은 문제에서 최대한 다시 생각하게 둔다.
   if(answer && !correct){
