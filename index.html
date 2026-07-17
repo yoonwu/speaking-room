@@ -1611,7 +1611,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .routine-go{font-size:18px;color:#189E79;font-weight:950}
 .routine-main{width:100%;margin-top:14px;border:none;border-radius:15px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:16px;font-weight:950;padding:15px;cursor:pointer;box-shadow:0 14px 26px -18px rgba(24,158,121,.7)}
 .routine-main:active{transform:scale(.985)}
-.block-hero.learn-block{background:linear-gradient(155deg,#FF7F66,#189E79)!important;border-radius:22px!important;border:none!important;padding:18px!important;box-shadow:0 18px 34px -20px rgba(24,158,121,.65)!important}
+.block-hero.learn-block{background:linear-gradient(155deg,#0F2B23,#1FA37C)!important;border-radius:22px!important;border:none!important;padding:18px!important;box-shadow:0 18px 34px -20px rgba(24,158,121,.65)!important}
 .block-hero.learn-block .bh-badge{background:rgba(255,255,255,.18);color:#fff}
 .block-hero.learn-block .bh-due{background:rgba(255,255,255,.18);color:#fff;border-radius:99px;padding:5px 10px;font-size:11.5px;font-weight:900}
 .block-hero.learn-block .bh-block{font-size:29px;color:#fff;letter-spacing:-.02em}
@@ -1678,7 +1678,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-done .em{font-size:42px;margin-bottom:8px}
 
 /* ===== 개발자 스킵 버튼 ===== */
-#devSkip{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:99998;background:rgba(30,20,15,.72);color:#ffeede;font-size:11px;font-weight:900;border:none;border-radius:99px;padding:7px 13px;cursor:pointer;backdrop-filter:blur(6px);letter-spacing:.02em;pointer-events:auto;box-shadow:0 4px 16px -6px rgba(0,0,0,.6)}
+#devSkip{display:none!important;position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:99998;background:rgba(30,20,15,.72);color:#ffeede;font-size:11px;font-weight:900;border:none;border-radius:99px;padding:7px 13px;cursor:pointer;backdrop-filter:blur(6px);letter-spacing:.02em;pointer-events:auto;box-shadow:0 4px 16px -6px rgba(0,0,0,.6)}
 #devSkip:active{opacity:.6}
 </style>
 </head>
@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.67";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.68";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13221,14 +13221,14 @@ function renderRoutineCard(){
   const tiles=RT_STEPS.map((s,i)=>{
     if(i===main) return "";
     const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal; const pc=Math.round(cur/s.goal*100);
-    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 13px;border-radius:15px;cursor:pointer;
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-radius:16px;cursor:pointer;
       background:${done?"rgba(25,160,107,.08)":"#ECF7F2"};border:1px solid ${done?"rgba(25,160,107,.28)":"var(--line)"}">
-      <span style="flex:none;width:38px;height:38px;display:grid;place-items:center;font-size:19px;border-radius:12px;background:${done?"rgba(25,160,107,.14)":"rgba(43,189,148,.12)"}">${done?"✅":s.emo}</span>
+      <span style="flex:none;width:44px;height:44px;display:grid;place-items:center;font-size:22px;border-radius:13px;background:${done?"rgba(25,160,107,.14)":"rgba(43,189,148,.12)"}">${done?"✅":s.emo}</span>
       <span style="flex:1;min-width:0">
-        <b style="display:block;font-size:14px;color:${done?"#177A54":"var(--text)"}">${s.t}</b>
-        <span style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="flex:1;height:4px;border-radius:99px;background:var(--mist);overflow:hidden;max-width:150px"><span style="display:block;height:100%;width:${pc}%;background:#2BBD94"></span></span><span style="font-size:10.5px;font-weight:800;color:${done?"#19a06b":"var(--muted)"}">${cur}/${s.goal}${done?" 완료":""}</span></span>
+        <b style="display:block;font-size:16px;color:${done?"#177A54":"var(--text)"}">${s.t}</b>
+        <span style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="flex:1;height:6px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${pc}%;background:#2BBD94"></span></span><span style="flex:none;font-size:12.5px;font-weight:900;color:${done?"#19a06b":"var(--text)"}">${cur}/${s.goal}${done?" 완료":""}</span></span>
       </span>
-      <span style="flex:none;font-size:14px;color:var(--muted)">›</span>
+      <span style="flex:none;font-size:16px;color:var(--muted)">›</span>
     </button>`;
   }).join("");
   box.innerHTML=`<div class="skillcard" style="padding:14px;border:1px solid ${allDone?"rgba(25,160,107,.4)":"var(--line)"};border-radius:18px;box-shadow:var(--soft2)">
