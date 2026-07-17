@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.54";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.55";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7692,6 +7692,18 @@ function bleStars(id){
 function getLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>({...b, state:s[b.id]})); }
 // 소개(introducedAt)된 블록 수 — 실전 진입 최소치(5개) 판정용
 function bleIntroducedCount(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>{ const st=s[b.id]; return st && st.introducedAt; }).length; }
+// 배운 블록 — 같은 라벨 중복(cp_ 브릿지 vs BLE 원본)은 숙련도 높은 쪽 하나만
+function bleLearnedUnique(){
+  const byLabel=new Map();
+  try{
+    getLearnedBlocks().forEach(b=>{
+      const key=String(b.block||"").toLowerCase().replace(/[^a-z']/g,"");
+      const cur=byLabel.get(key);
+      if(!cur || adProf(b)>adProf(cur)) byLabel.set(key, b);
+    });
+  }catch(e){}
+  return [...byLabel.values()];
+}
 function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount).map(b=>({...b,state:s[b.id]})); }
 function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
 function getReadyForRealBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].stage==="ready_for_real").map(b=>({...b,state:s[b.id]})); }
@@ -9475,7 +9487,7 @@ function bleOutputSummary(res){
 
 // 🧱 내가 아는 블록 + 숙련도 목록 (아는 블록 카드 클릭 시)
 function bleOpenProficiency(){
-  const learned=getLearnedBlocks().slice().sort((a,b)=>adProf(b)-adProf(a));
+  const learned=bleLearnedUnique().sort((a,b)=>adProf(b)-adProf(a));
   const stageOrder=["new","learning","retrieved","active","strong","fast","ready_for_real"];
   const statusOf=(st)=>{
     if(!st||!st.introducedAt) return {t:"소개 전", c:"#B0958A"};
@@ -9545,12 +9557,10 @@ function bleOpenHub(){
     if((st.successCount||0)>0) return {t:"연습 중", c:"#F0664A"};
     return {t:"소개 완료", c:"#C08763"};
   };
-  // 목록 = 배운 블록 '전부'(세트 무관) + 현재 세트의 소개 전 블록
+  // 목록 = '배운 블록만' (마스터/배운 카운트와 동일 소스). 라벨 중복은 bleLearnedUnique가 정리.
   const listBlocks=(function(){
-    const seen=new Set(), out=[];
-    try{ getLearnedBlocks().forEach(b=>{ if(!seen.has(b.id)&&BLE_BY_ID[b.id]){ seen.add(b.id); out.push(BLE_BY_ID[b.id]); } }); }catch(e){}
-    setBlocks.forEach(b=>{ if(!seen.has(b.id)){ seen.add(b.id); out.push(b); } });
-    return out;
+    const out=bleLearnedUnique();
+    return out.length ? out : setBlocks;   // 아무것도 안 배웠으면 현재 세트라도 표시
   })();
   const rows=listBlocks.map(b=>{ const st=statusOf(b);
     return `<button class="chk-row" data-id="${b.id}" data-no-pronko>
@@ -9581,7 +9591,7 @@ function bleOpenHub(){
        <div style="background:#fff;border:1px solid #FBE0D2;border-radius:16px 16px 16px 5px;padding:8px 13px;font-size:12.5px;color:#5A463C;font-weight:600;line-height:1.4">${introDone?`배운 블록을 섞어서 상황에 맞게 꺼내볼까요?`:`한 번에 하나씩 차근차근 — 많이 아는 것보다 아는 걸 입에 붙이는 게 중요해요!`}</div>
      </div>
      <div class="bl-summary" style="background:transparent;margin:11px 0 13px">
-       <div class="bl-sumcell" id="bleKnownCell" style="cursor:pointer"><b style="color:#F0664A">${(function(){try{const lb=getLearnedBlocks();const mn=lb.filter(b=>{const st=b.state||{};return st.stage==="ready_for_real"||((st.fastCount||0)>=3&&(st.successCount||0)>=3&&((st.contextsUsed||[]).length)>=3);}).length;return mn+"/"+lb.length;}catch(e){return "0/"+introN;}})()}</b><i style="color:#8A6F62">마스터 / 배운 ›</i></div>
+       <div class="bl-sumcell" id="bleKnownCell" style="cursor:pointer"><b style="color:#F0664A">${(function(){try{const lb=bleLearnedUnique();const mn=lb.filter(b=>{const st=b.state||{};return st.stage==="ready_for_real"||((st.fastCount||0)>=3&&(st.successCount||0)>=3&&((st.contextsUsed||[]).length)>=3);}).length;return mn+"/"+lb.length;}catch(e){return "0/"+introN;}})()}</b><i style="color:#8A6F62">마스터 / 배운 ›</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${dueN}</b><i style="color:#8A6F62">복습 예정</i></div>
        <div class="bl-sumcell"><b style="color:#F0664A">${(function(){try{return NEWBLOCK_DAILY_CAP-newBlocksToday()}catch(e){return 3}})()}</b><i style="color:#8A6F62">오늘 더 배우기</i></div>
      </div>
@@ -9613,7 +9623,7 @@ function bleOpenHub(){
        ${hasAnyLearned?`<div style="display:block;width:100%;text-align:center;margin-top:11px;background:#F0664A;color:#fff;font-size:15px;font-weight:900;border-radius:13px;padding:13px">지금 시작 →</div>`:""}
      </button>
 
-     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${listBlocks.length}개 · 상태</div>
+     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">배운 블록 ${listBlocks.length}개 · 상태</div>
      <div class="chk-list">${rows}</div>
    </div>`;
   document.body.appendChild(ov);
@@ -13045,7 +13055,7 @@ function renderAcqStats(){
   try{
     const cc=$("#chunkCount");
     if(cc){
-      const lb=getLearnedBlocks();
+      const lb=bleLearnedUnique();
       const mn=lb.filter(b=>{ const st=b.state||{}; return st.stage==="ready_for_real" || ((st.fastCount||0)>=3 && (st.successCount||0)>=3 && ((st.contextsUsed||[]).length)>=3); }).length;
       if(lb.length>0){ cc.innerHTML=`<b>${mn}/${lb.length}</b><i>마스터/배운</i>`; cc.style.display="flex"; }
       else cc.style.display="none";
