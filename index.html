@@ -1983,7 +1983,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.58";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.59";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13169,9 +13169,9 @@ function rtKey(){ return "speakingroom:rt:"+DAYN(); }
 function rtGet(){ try{ const d=hGet(rtKey(),null); return d&&typeof d==="object"?d:{}; }catch(e){ return {}; } }
 function rtBump(k,n){ try{ const d=rtGet(); d[k]=(d[k]||0)+(n||1); hSet(rtKey(),d); renderRoutineCard(); }catch(e){} }
 const RT_STEPS=[
+  {k:"drill", emo:"🔥", t:"블록 반복 — 오늘의 핵심", goal:12, main:true, go:()=>startAutoDrill()},
   {k:"vocab", emo:"💬", t:"단어",         goal:10, go:()=>startVocabCoach()},
   {k:"newblk",emo:"🧱", t:"새 블록",       goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
-  {k:"drill", emo:"🔥", t:"블록 반복",     goal:12, main:true, go:()=>startAutoDrill()},
   {k:"listen",emo:"👂", t:"상황 듣기",     goal:7,  go:()=>startSituationListening()},
   {k:"dict",  emo:"✍️", t:"받아쓰기",      goal:2,  go:()=>startMainTraining()}
 ];
@@ -13188,12 +13188,12 @@ function renderRoutineCard(){
   if(allDone && !d._bonus){ d._bonus=true; try{ hSet(rtKey(),d); }catch(e){} try{ awardXP("output",30,"오늘 루틴 완료 🏆","rt:"+DAYN()); }catch(e){} }
   const rows=RT_STEPS.map((s,i)=>{
     const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
-    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:7px;width:100%;text-align:left;padding:7px 10px;border-radius:11px;cursor:pointer;
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:7px;width:100%;text-align:left;padding:${s.main?"10px 12px":"7px 10px"};border-radius:11px;cursor:pointer;${s.main?"grid-column:1 / -1;":""}
       background:${done?"rgba(25,160,107,.08)":s.main?"linear-gradient(135deg,#FFF2EA,#FFE5D8)":"var(--surface)"};
-      border:${s.main&&!done?"1.5px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
-      <span style="flex:none;font-size:15px">${done?"✅":s.emo}</span>
-      <b style="flex:1;min-width:0;font-size:12.5px;color:${done?"#177A54":"var(--text)"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:10px">★</i>':""}</b>
-      <b style="flex:none;font-size:11.5px;color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
+      border:${s.main&&!done?"2px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
+      <span style="flex:none;font-size:${s.main?"18px":"15px"}">${done?"✅":s.emo}</span>
+      <b style="flex:1;min-width:0;font-size:${s.main?"14px":"12.5px"};color:${done?"#177A54":"var(--text)"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11px">★</i>':""}</b>
+      <b style="flex:none;font-size:${s.main?"13px":"11.5px"};color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
     </button>`;
   }).join("");
   box.innerHTML=`<div class="skillcard" style="padding:11px 12px 8px">
@@ -13218,18 +13218,8 @@ function renderAcqStats(){
       else cc.style.display="none";
     }
   }catch(e){}
-  // 🎯 이 영역은 '오늘의 퀘스트'로 표시
-  const box=$("#acqStats"); if(!box) return;
-  const {goals,meta}=questDefs(); const q=questGet(); const c=q.c||{};
-  const keys=Object.keys(goals);
-  const doneN=keys.filter(k=>(c[k]||0)>=goals[k]).length;
-  const allDone=doneN===keys.length;
-  box.innerHTML=`<div class="skillcard">
-    <div class="skillcard-h">🎯 오늘의 퀘스트${allDone?` · <b style="color:#19a06b">완료! 🏆</b>`:` · <b style="color:#F0664A">${doneN}/${keys.length}</b>`}</div>
-    <div class="skillcard-row">
-      ${keys.map(k=>{ const cur=Math.min(goals[k], c[k]||0); const done=cur>=goals[k]; return `<div class="skilltile"><span class="st-ic">${meta[k].emo}</span><b style="${done?'color:#19a06b':''}">${cur}/${goals[k]}</b><span class="st-l">${meta[k].t}</span></div>`; }).join("")}
-    </div>
-  </div>`;
+  // 오늘의 퀘스트 카드 — 오늘 루틴으로 대체되어 제거
+  const box=$("#acqStats"); if(box){ box.innerHTML=""; box.style.display="none"; }
 }
 function applyAgeUI(){
   const kc=$("#kidCard"), si=document.querySelector(".setup-inner"), rv=$("#rvBanner");
