@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.46";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.47";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -9233,7 +9233,14 @@ function bleOpenHub(){
     if((st.successCount||0)>0) return {t:"연습 중", c:"#F0664A"};
     return {t:"소개 완료", c:"#C08763"};
   };
-  const rows=setBlocks.map(b=>{ const st=statusOf(b);
+  // 목록 = 배운 블록 '전부'(세트 무관) + 현재 세트의 소개 전 블록
+  const listBlocks=(function(){
+    const seen=new Set(), out=[];
+    try{ getLearnedBlocks().forEach(b=>{ if(!seen.has(b.id)&&BLE_BY_ID[b.id]){ seen.add(b.id); out.push(BLE_BY_ID[b.id]); } }); }catch(e){}
+    setBlocks.forEach(b=>{ if(!seen.has(b.id)){ seen.add(b.id); out.push(b); } });
+    return out;
+  })();
+  const rows=listBlocks.map(b=>{ const st=statusOf(b);
     return `<button class="chk-row" data-id="${b.id}" data-no-pronko>
       <span class="chk-main">
         <span class="chk-en" data-no-pronko>${escapeHtml(b.block)}</span>
@@ -9294,7 +9301,7 @@ function bleOpenHub(){
        ${hasAnyLearned?`<div style="display:block;width:100%;text-align:center;margin-top:11px;background:#F0664A;color:#fff;font-size:15px;font-weight:900;border-radius:13px;padding:13px">지금 시작 →</div>`:""}
      </button>
 
-     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${setBlocks.length}개 · 상태</div>
+     <div style="font-size:12px;font-weight:800;color:#C08763;margin:2px 2px 8px">블록 ${listBlocks.length}개 · 상태</div>
      <div class="chk-list">${rows}</div>
    </div>`;
   document.body.appendChild(ov);
