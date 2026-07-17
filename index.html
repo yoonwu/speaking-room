@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.66";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.67";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13221,15 +13221,14 @@ function renderRoutineCard(){
   const tiles=RT_STEPS.map((s,i)=>{
     if(i===main) return "";
     const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal; const pc=Math.round(cur/s.goal*100);
-    if(done) return `<button class="rt-row" data-i="${i}" style="text-align:left;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.28);border-radius:14px;padding:11px 12px;cursor:pointer">
-      <div style="display:flex;justify-content:space-between"><span style="font-size:18px">${s.emo}</span><span style="font-size:13px">✅</span></div>
-      <b style="display:block;font-size:13px;color:#177A54;margin-top:6px">${s.t}</b>
-      <span style="font-size:11px;font-weight:800;color:#19a06b">${cur}/${s.goal} 완료</span>
-    </button>`;
-    return `<button class="rt-row" data-i="${i}" style="text-align:left;background:#ECF7F2;border:1px solid var(--line);border-radius:14px;padding:11px 12px;cursor:pointer">
-      <div style="display:flex;justify-content:space-between"><span style="font-size:18px">${s.emo}</span><span style="font-size:12px;color:var(--muted)">›</span></div>
-      <b style="display:block;font-size:13px;color:var(--text);margin-top:6px">${s.t}</b>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="flex:1;height:4px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${pc}%;background:#2BBD94"></span></span><span style="font-size:10.5px;font-weight:800;color:var(--muted)">${cur}/${s.goal}</span></div>
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 13px;border-radius:15px;cursor:pointer;
+      background:${done?"rgba(25,160,107,.08)":"#ECF7F2"};border:1px solid ${done?"rgba(25,160,107,.28)":"var(--line)"}">
+      <span style="flex:none;width:38px;height:38px;display:grid;place-items:center;font-size:19px;border-radius:12px;background:${done?"rgba(25,160,107,.14)":"rgba(43,189,148,.12)"}">${done?"✅":s.emo}</span>
+      <span style="flex:1;min-width:0">
+        <b style="display:block;font-size:14px;color:${done?"#177A54":"var(--text)"}">${s.t}</b>
+        <span style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="flex:1;height:4px;border-radius:99px;background:var(--mist);overflow:hidden;max-width:150px"><span style="display:block;height:100%;width:${pc}%;background:#2BBD94"></span></span><span style="font-size:10.5px;font-weight:800;color:${done?"#19a06b":"var(--muted)"}">${cur}/${s.goal}${done?" 완료":""}</span></span>
+      </span>
+      <span style="flex:none;font-size:14px;color:var(--muted)">›</span>
     </button>`;
   }).join("");
   box.innerHTML=`<div class="skillcard" style="padding:14px;border:1px solid ${allDone?"rgba(25,160,107,.4)":"var(--line)"};border-radius:18px;box-shadow:var(--soft2)">
@@ -13237,7 +13236,7 @@ function renderRoutineCard(){
       <b style="font-size:15px;color:var(--text)">오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
       <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:900;color:${allDone?"#19a06b":"var(--text)"}"><span style="display:inline-flex;gap:3px">${dots}</span>${doneN}/${RT_STEPS.length}</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${hero}${tiles}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${hero}${tiles}</div>
     <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:9px 0 1px;font-weight:700">${allDone?"오늘 끝! 더 하는 건 자유 😎":"전부 완료 시 보너스 +30 XP 🏆"}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
