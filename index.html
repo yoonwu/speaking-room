@@ -1981,7 +1981,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.44";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.45";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11607,9 +11607,10 @@ function adSpread(arr){
   }
   return out;
 }
-function autoDrillBuildItems(blocks){
+function autoDrillBuildItems(blocks, target){
   const limits=adLimits(), items=[];
-  const TARGET=12, MAXN=16;
+  // 문제 수: 사용자가 고른 값(7/10/15/직접입력, 3~30). 미지정 시 마지막 선택(기본 10)
+  const TARGET=Math.max(3, Math.min(30, target || hGet("speakingroom:ad_count",10) || 10));
   // 배운 블록 '전부' 출제 — 숙련도 낮은 블록은 2번씩(더 자주), 익숙한 블록은 1번
   blocks.forEach(b=>{
     const reps=adProf(b)<3?2:1;
@@ -11618,17 +11619,17 @@ function autoDrillBuildItems(blocks){
       items.push({block:b, ex, limit:limits[Math.min(r,limits.length-1)], rep:r+1, recall:false});
     }
   });
-  // 12문제가 안 되면 블록을 더 돌려(저숙련 블록 우선) 채움
+  // 목표 수가 안 되면 블록을 더 돌려(저숙련 블록 우선) 채움
   if(items.length<TARGET && blocks.length){
     const order=blocks.slice().sort((a,b)=>adProf(a)-adProf(b));
     let i=0, guard=0;
-    while(items.length<TARGET && guard++<80){
+    while(items.length<TARGET && guard++<120){
       const b=order[i++%order.length];
       items.push({block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), limit:limits[0], rep:1, recall:false});
     }
   }
-  // 블록이 뭉치지 않게 섞고, 한 세션은 12 ~ 16문제로 제한
-  const sliced=bleShuffle(items).slice(0, Math.max(TARGET, Math.min(MAXN, items.length)));
+  // 블록이 뭉치지 않게 섞고, 정확히 목표 문제 수로 제한
+  const sliced=bleShuffle(items).slice(0, TARGET);
   // 반복은 텀을 줘서 같은 블록이 바로 이어 나오지 않게(남은 개수 많은 블록 우선·직전 블록 회피)
   const final=adSpread(sliced);
   // 3~4문제에 한 번 '블록 구별' 라운드 — 고를 블록(contrast/학습블록)이 있을 때만
@@ -12085,8 +12086,34 @@ function startAutoDrill(focusIds){
     });
     return;
   }
+  // 🔢 문제 수 선택 (7/10/15 + 직접 입력) — 마지막 선택 기억
+  const last=hGet("speakingroom:ad_count",10)||10;
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="adCountOv";
+  const presetBtn=(n)=>`<button class="adCntBtn" data-n="${n}" style="flex:1;padding:16px 0;border-radius:15px;border:2px solid ${n===last?'#F0664A':'#F2D4C5'};background:${n===last?'linear-gradient(135deg,#FFF2EA,#FFE5D8)':'#fff'};cursor:pointer"><b style="display:block;font-size:22px;color:${n===last?'#F0664A':'#3A2D27'}">${n}</b><span style="font-size:11px;color:#A28A7F">문제</span></button>`;
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet" style="background:#EAE3DD">
+     <div class="hub-grab"></div>
+     <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">🔥 입에 붙이기 — 몇 문제 할까요?</div>
+     <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">틀리거나 늦은 문제는 뒤에 다시 나와서 실제로는 조금 더 나올 수 있어요.</div>
+     <div style="display:flex;gap:9px;margin-bottom:11px">${presetBtn(7)}${presetBtn(10)}${presetBtn(15)}</div>
+     <div style="display:flex;gap:9px;margin-bottom:6px">
+       <input id="adCntIn" type="number" inputmode="numeric" min="3" max="30" placeholder="직접 입력 (3~30)" style="flex:1;padding:14px;border:1.5px solid #F2D4C5;border-radius:14px;background:#fff;color:#3A2D27;font-size:16px;font-weight:800;text-align:center">
+       <button id="adCntGo" style="flex:none;padding:14px 22px;border:none;border-radius:14px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:15px;font-weight:950;cursor:pointer">시작 →</button>
+     </div>
+   </div>`;
+  document.body.appendChild(ov);
+  const closeOv=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=closeOv;
+  const go=(n)=>{ n=Math.max(3,Math.min(30,Math.round(n)||10)); try{ hSet("speakingroom:ad_count",n); }catch(e){} closeOv(); startAutoDrillRun(blocks,n); };
+  ov.querySelectorAll(".adCntBtn").forEach(b=>{ b.onclick=()=>go(parseInt(b.getAttribute("data-n"),10)); });
+  const inp=ov.querySelector("#adCntIn");
+  ov.querySelector("#adCntGo").onclick=()=>go(inp.value?parseInt(inp.value,10):last);
+  inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(parseInt(inp.value,10)||last); } });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function startAutoDrillRun(blocks, count){
   blocks.forEach(b=>bleEnsureContexts(b));
-  autoDrill={items:autoDrillBuildItems(blocks), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
+  autoDrill={items:autoDrillBuildItems(blocks, count), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
