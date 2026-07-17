@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.62";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.63";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13172,11 +13172,11 @@ function rtKey(){ return "speakingroom:rt:"+DAYN(); }
 function rtGet(){ try{ const d=hGet(rtKey(),null); return d&&typeof d==="object"?d:{}; }catch(e){ return {}; } }
 function rtBump(k,n){ try{ const d=rtGet(); d[k]=(d[k]||0)+(n||1); hSet(rtKey(),d); renderRoutineCard(); }catch(e){} }
 const RT_STEPS=[
-  {k:"drill", emo:"🔥", t:"블록 반복 — 오늘의 핵심", goal:12, main:true, go:()=>startAutoDrill()},
-  {k:"vocab", emo:"💬", t:"단어",         goal:10, go:()=>startVocabCoach()},
-  {k:"newblk",emo:"🧱", t:"새 블록",       goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
-  {k:"listen",emo:"👂", t:"상황 듣기",     goal:7,  go:()=>startSituationListening()},
-  {k:"dict",  emo:"✍️", t:"받아쓰기",      goal:2,  go:()=>startMainTraining()}
+  {k:"drill", emo:"🔥", t:"블록 반복", sub:"오늘의 핵심 — 입에 붙을 때까지", goal:12, main:true, go:()=>startAutoDrill()},
+  {k:"vocab", emo:"💬", t:"단어", sub:"말할 재료 채우기", goal:10, go:()=>startVocabCoach()},
+  {k:"newblk",emo:"🧱", t:"새 블록", sub:"오늘 새로 익힐 패턴 1개", goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
+  {k:"listen",emo:"👂", t:"상황 듣기", sub:"듣고 뜻·의도 고르기", goal:7,  go:()=>startSituationListening()},
+  {k:"dict",  emo:"✍️", t:"받아쓰기", sub:"정밀 진단 2문제", goal:2,  go:()=>startMainTraining()}
 ];
 function rtCount(k, d){
   if(k==="newblk"){ try{ return newBlocksToday(); }catch(e){ return 0; } }
@@ -13191,12 +13191,16 @@ function renderRoutineCard(){
   if(allDone && !d._bonus){ d._bonus=true; try{ hSet(rtKey(),d); }catch(e){} try{ awardXP("output",30,"오늘 루틴 완료 🏆","rt:"+DAYN()); }catch(e){} }
   const rows=RT_STEPS.map((s,i)=>{
     const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
-    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:7px;width:100%;text-align:left;padding:${s.main?"10px 12px":"7px 10px"};border-radius:11px;cursor:pointer;${s.main?"grid-column:1 / -1;":""}
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:${s.main?"14px 15px":"12px 15px"};border-radius:16px;cursor:pointer;
       background:${done?"rgba(25,160,107,.08)":s.main?"linear-gradient(135deg,#FFF2EA,#FFE5D8)":"var(--surface)"};
       border:${s.main&&!done?"2px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
-      <span style="flex:none;font-size:${s.main?"18px":"15px"}">${done?"✅":s.emo}</span>
-      <b style="flex:1;min-width:0;font-size:${s.main?"14px":"12.5px"};color:${done?"#177A54":"var(--text)"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11px">★</i>':""}</b>
-      <b style="flex:none;font-size:${s.main?"13px":"11.5px"};color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
+      <span style="flex:none;width:${s.main?"46px":"40px"};height:${s.main?"46px":"40px"};display:grid;place-items:center;font-size:${s.main?"24px":"20px"};border-radius:13px;background:${done?"rgba(25,160,107,.14)":"#FFE0D2"}">${done?"✅":s.emo}</span>
+      <span style="flex:1;min-width:0">
+        <b style="display:block;font-size:${s.main?"16px":"14.5px"};color:${done?"#177A54":"var(--text)"}">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11.5px">★ 오늘의 핵심</i>':""}</b>
+        <i style="display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:1px">${s.sub||""}</i>
+      </span>
+      <b style="flex:none;font-size:${s.main?"15px":"13px"};color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
+      <span style="flex:none;font-size:16px;color:var(--muted)">›</span>
     </button>`;
   }).join("");
   const pct=Math.round(RT_STEPS.reduce((a,st)=>a+Math.min(1,rtCount(st.k,d)/st.goal),0)/RT_STEPS.length*100);
@@ -13206,7 +13210,7 @@ function renderRoutineCard(){
       <span style="font-size:13px;font-weight:950;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
     </div>
     <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#F0664A)"></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rows}</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${rows}</div>
     <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:6px 0 1px">${allDone?"오늘 끝! 더 하는 건 자유 😎":"이것만 하면 오늘 끝 — 위에서부터 차례로"}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
