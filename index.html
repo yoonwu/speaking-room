@@ -1717,10 +1717,10 @@ body{background:var(--paper)!important;color:var(--text)}
       <div class="home" id="homeCard">
         <!-- 🎮 HERO ZONE -->
         <div class="hero" id="heroZone" title="내 프로필"></div>
-        <!-- 🧱 오늘의 영어 블록 — 홈 최상단 메인 (앱 정체성) -->
-        <div id="dailyCard"></div>
-        <!-- 습득 지표 — 프로필 바로 아래 (짧게) -->
+        <!-- 📋 오늘 루틴 — 홈 메인 -->
         <div id="routineCard" style="margin:2px 0 14px"></div>
+        <!-- 🧱 오늘의 영어 블록 — 루틴 아래 (루틴의 '새 블록'과 별개인 오늘의 표현) -->
+        <div id="dailyCard"></div>
         <div id="acqStats" style="margin:2px 0 14px"></div>
         <!-- 난이도 (자동 조절 — 조작 UI 아님, 상태 안내) -->
         <div class="difcard" style="border-radius:14px;padding:10px 14px;margin-bottom:13px">
@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.64";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.65";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2267,7 +2267,7 @@ function alProbeLevel(skill){
   const i=(d.n&&d.n[skill])||0;
   const pm=((d.pm||{})[skill])||0;        // 배치 중 miss 누적
   const lastMiss=!!((d.lm||{})[skill]);   // 직전 문제 miss 여부
-  const LADDER=[6,12,24,6,36];
+  const LADDER=[3,12,24,6,36];   // 완전 초보 배려: D3로 시작해 성공 경험 먼저
   let v = i<LADDER.length ? LADDER[i] : Math.max(6,(d[skill]||1)) + (i%2===1?4:0);   // 이후: 현재 레벨 + 약간의 탐색
   if(pm>=2) v=Math.min(v,8);              // 초반 miss 2회+ → 쉬운 문제 중심으로 안정화
   if(lastMiss) v=Math.min(v,6);           // 틀린 직후엔 반드시 쉬운 문제 (연속 어려움 금지)
@@ -4884,7 +4884,8 @@ function vbankGet(){ return hGet("speakingroom:vbank",{}); }
 function bankKey(themeId){ let w=1; try{ w=getAutoLevels().wordLevel; }catch(e){ w=diffLevel(); } return themeId+"@D"+w; }
 function vbankSave(b){ hSet("speakingroom:vbank",b); }
 function ensureSeed(themeId){
-  if(diffMacro()>=4) return;   // 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
+  let m; try{ m=Math.max(1,Math.min(10,Math.ceil(getAutoLevels().wordLevel/6))); }catch(e){ m=diffMacro(); }
+  if(m>=4) return;   // (자동 wordLevel 기준) 중급 이상은 시드(초급 카페단어) 안 씀 — AI 생성만
   const b=vbankGet();
   if(b[bankKey(themeId)]===undefined && SEED_VOCAB[themeId]){ b[bankKey(themeId)]=SEED_VOCAB[themeId].map(s=>s.slice()); vbankSave(b); }
 }
@@ -5606,7 +5607,8 @@ function seedVocabWords(){
 }
 const VOCAB_SET_SIZE=12;
 function starterSet(){
-  const lvl=diffMacro();
+  // 🎯 자동 wordLevel 기준 (D1~60 → 매크로 1~10 환산)
+  let lvl; try{ lvl=Math.max(1,Math.min(10,Math.ceil(getAutoLevels().wordLevel/6))); }catch(e){ lvl=diffMacro(); }
   const bandKey = lvl<=3 ? "low" : lvl<=6 ? "mid" : "high";
   const band = (STARTER_VOCAB[bandKey]||[]).concat(starterExtraWords(bandKey));
   const currentThemeSeeds = state.vocabTheme && SEED_VOCAB[state.vocabTheme.id]
@@ -13102,8 +13104,8 @@ const DAILY_EXPRESSIONS=[
  "can_i_change_028","how_do_i_015"
 ];
 function dailyAllowedLevel(){
-  // 난이도 슬라이더(diffMacro 1~10) → 허용 블록 레벨(CORE_PHRASES level 1·2·3)
-  const m=diffMacro();
+  // 🎯 자동 blockRecallLevel 기준 → 허용 블록 레벨(CORE_PHRASES level 1·2·3)
+  let m; try{ m=Math.max(1,Math.min(10,Math.ceil(getAutoLevels().blockRecallLevel/6))); }catch(e){ m=diffMacro(); }
   if(m<=2) return 1;        // 입문·기초 → level 1 블록만
   if(m<=5) return 2;        // 초급~중급 → level ≤2
   return 3;                 // 그 이상 → 전체
