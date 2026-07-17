@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.63";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.64";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13189,29 +13189,54 @@ function renderRoutineCard(){
   const allDone=doneN>=RT_STEPS.length;
   // 전부 완료 시 1회 보너스
   if(allDone && !d._bonus){ d._bonus=true; try{ hSet(rtKey(),d); }catch(e){} try{ awardXP("output",30,"오늘 루틴 완료 🏆","rt:"+DAYN()); }catch(e){} }
-  const rows=RT_STEPS.map((s,i)=>{
-    const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
-    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:${s.main?"14px 15px":"12px 15px"};border-radius:16px;cursor:pointer;
-      background:${done?"rgba(25,160,107,.08)":s.main?"linear-gradient(135deg,#FFF2EA,#FFE5D8)":"var(--surface)"};
-      border:${s.main&&!done?"2px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
-      <span style="flex:none;width:${s.main?"46px":"40px"};height:${s.main?"46px":"40px"};display:grid;place-items:center;font-size:${s.main?"24px":"20px"};border-radius:13px;background:${done?"rgba(25,160,107,.14)":"#FFE0D2"}">${done?"✅":s.emo}</span>
-      <span style="flex:1;min-width:0">
-        <b style="display:block;font-size:${s.main?"16px":"14.5px"};color:${done?"#177A54":"var(--text)"}">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11.5px">★ 오늘의 핵심</i>':""}</b>
-        <i style="display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:1px">${s.sub||""}</i>
-      </span>
-      <b style="flex:none;font-size:${s.main?"15px":"13px"};color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
-      <span style="flex:none;font-size:16px;color:var(--muted)">›</span>
+  // 🎯 2a 스타일: 핵심 퀘스트 = 코랄 그라데이션 히어로, 나머지 = 2열 타일
+  const dots=RT_STEPS.map(s=>{
+    const cur=rtCount(s.k,d); const done=cur>=s.goal;
+    return `<i style="width:8px;height:8px;border-radius:50%;background:${done?"#19a06b":cur>0?"#F0664A":"#EBCDBB"}"></i>`;
+  }).join("");
+  const main=RT_STEPS.findIndex(s=>s.main);
+  const hero=(()=>{
+    const s=RT_STEPS[main]; const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
+    const pc=Math.round(cur/s.goal*100);
+    if(done) return `<button class="rt-row" data-i="${main}" style="grid-column:1/-1;position:relative;overflow:hidden;text-align:left;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.28);border-radius:16px;padding:13px 14px;cursor:pointer">
+      <div style="position:absolute;right:-18px;top:-20px;font-size:74px;opacity:.12">${s.emo}</div>
+      <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#19a06b">오늘의 핵심 퀘스트</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><b style="flex:1;font-size:17px;color:#177A54">${s.t} 완료 ✅</b><b style="font-size:14px;color:#19a06b">${cur}/${s.goal}</b></div>
+      <div style="height:6px;border-radius:99px;background:rgba(25,160,107,.15);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:100%;background:#19a06b"></span></div>
+    </button>`;
+    return `<button class="rt-row" data-i="${main}" style="grid-column:1/-1;position:relative;overflow:hidden;text-align:left;background:linear-gradient(135deg,#FF8568,#F0664A);border:none;border-radius:16px;padding:13px 14px;cursor:pointer;box-shadow:0 12px 26px -12px rgba(240,102,74,.6)">
+      <div style="position:absolute;right:-18px;top:-20px;font-size:74px;opacity:.2">${s.emo}</div>
+      <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.85)">오늘의 핵심 퀘스트</span>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <b style="flex:1;font-size:17px;color:#fff">${s.t}</b>
+        <b style="font-size:14px;color:#fff">${cur}<span style="opacity:.7;font-weight:700">/${s.goal}</span></b>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;margin-top:2px">${s.sub||""}</div>
+      <div style="height:6px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:${pc}%;background:#fff;transition:width .6s cubic-bezier(.22,1,.36,1)"></span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><span style="font-size:11px;color:rgba(255,255,255,.8);font-weight:700">${cur>0?(s.goal-cur)+"개 남았어요":"완료 시 +12 XP"}</span><span style="font-size:11.5px;font-weight:900;color:#F0664A;background:#fff;padding:5px 13px;border-radius:99px">GO ›</span></div>
+    </button>`;
+  })();
+  const tiles=RT_STEPS.map((s,i)=>{
+    if(i===main) return "";
+    const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal; const pc=Math.round(cur/s.goal*100);
+    if(done) return `<button class="rt-row" data-i="${i}" style="text-align:left;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.28);border-radius:14px;padding:11px 12px;cursor:pointer">
+      <div style="display:flex;justify-content:space-between"><span style="font-size:18px">${s.emo}</span><span style="font-size:13px">✅</span></div>
+      <b style="display:block;font-size:13px;color:#177A54;margin-top:6px">${s.t}</b>
+      <span style="font-size:11px;font-weight:800;color:#19a06b">${cur}/${s.goal} 완료</span>
+    </button>`;
+    return `<button class="rt-row" data-i="${i}" style="text-align:left;background:#FFF2E9;border:1px solid var(--line);border-radius:14px;padding:11px 12px;cursor:pointer">
+      <div style="display:flex;justify-content:space-between"><span style="font-size:18px">${s.emo}</span><span style="font-size:12px;color:var(--muted)">›</span></div>
+      <b style="display:block;font-size:13px;color:var(--text);margin-top:6px">${s.t}</b>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="flex:1;height:4px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${pc}%;background:#FF8568"></span></span><span style="font-size:10.5px;font-weight:800;color:var(--muted)">${cur}/${s.goal}</span></div>
     </button>`;
   }).join("");
-  const pct=Math.round(RT_STEPS.reduce((a,st)=>a+Math.min(1,rtCount(st.k,d)/st.goal),0)/RT_STEPS.length*100);
-  box.innerHTML=`<div class="skillcard" style="padding:13px 13px 9px;border:2px solid ${allDone?"rgba(25,160,107,.45)":"#FF8568"};border-radius:18px;box-shadow:0 14px 30px -16px rgba(240,102,74,.45)">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-      <b style="font-size:16px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
-      <span style="font-size:13px;font-weight:950;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
+  box.innerHTML=`<div class="skillcard" style="padding:14px;border:1px solid ${allDone?"rgba(25,160,107,.4)":"var(--line)"};border-radius:18px;box-shadow:var(--soft2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <b style="font-size:15px;color:var(--text)">오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:900;color:${allDone?"#19a06b":"var(--text)"}"><span style="display:inline-flex;gap:3px">${dots}</span>${doneN}/${RT_STEPS.length}</span>
     </div>
-    <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#F0664A)"></div></div>
-    <div style="display:flex;flex-direction:column;gap:8px">${rows}</div>
-    <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:6px 0 1px">${allDone?"오늘 끝! 더 하는 건 자유 😎":"이것만 하면 오늘 끝 — 위에서부터 차례로"}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${hero}${tiles}</div>
+    <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:9px 0 1px;font-weight:700">${allDone?"오늘 끝! 더 하는 건 자유 😎":"전부 완료 시 보너스 +30 XP 🏆"}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
 }
