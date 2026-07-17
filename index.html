@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.52";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.53";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3495,22 +3495,28 @@ function renderListenPlay(){
 }
 let ttsWarmed=false;
 function lsSpeak(slow, onEnd){
-  if(!TTS||!SSU||!lsItem) return;
-  TTS.cancel();
-  const doSpeak=()=>{
-    const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
-    u.rate = levelRate(slow);
-    if(onEnd) u.onend=()=>setTimeout(onEnd, 250);
-    TTS.speak(u);
-  };
-  // 첫 발화 직전 무음 워밍업 + cancel 직후 충분한 텀 — 엔진이 첫 자음(Can의 C 등)을 먹는 문제 방지
-  if(!ttsWarmed){
-    ttsWarmed=true;
-    try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
-    setTimeout(doSpeak, 300);
-  } else {
-    setTimeout(doSpeak, 220);
-  }
+  if(!lsItem) return;
+  // 1) 서버 원어민 음성(Azure Neural) 우선 — 첫 자음 잘림 원천 차단
+  svSpeak(lsItem.en||"", levelRate(slow), onEnd).then(ok=>{
+    if(ok) return;
+    // 2) 폴백: 브라우저 TTS
+    if(!TTS||!SSU) return;
+    TTS.cancel();
+    const doSpeak=()=>{
+      const u=new SSU(lsItem.en||""); if(enVoice) u.voice=enVoice; u.lang="en-US";
+      u.rate = levelRate(slow);
+      if(onEnd) u.onend=()=>setTimeout(onEnd, 250);
+      TTS.speak(u);
+    };
+    // 첫 발화 직전 무음 워밍업 + cancel 직후 충분한 텀 — 엔진이 첫 자음(Can의 C 등)을 먹는 문제 방지
+    if(!ttsWarmed){
+      ttsWarmed=true;
+      try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
+      setTimeout(doSpeak, 300);
+    } else {
+      setTimeout(doSpeak, 220);
+    }
+  });
 }
 // (구) 받아쓰기 별도 화면 — 듣기 화면에 통합됨. 혹시 남은 호출은 통합 화면으로.
 function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
@@ -4310,15 +4316,49 @@ function reviewDone(){
   $("#rvBarFill").style.width="100%"; $("#rvProgTxt").textContent="완료";
   $("#rvDoneBtn").onclick=goToSetup;
 }
+// ===== 🔊 서버 원어민 TTS (Azure Neural, 워커 /tts) — 실패·미배포 시 브라우저 TTS 자동 폴백 =====
+const SV_TTS_VOICE="en-US-JennyNeural";
+let _svAudio=null; const _svCache=new Map();
+function svStop(){ try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); _svAudio=null; } }catch(e){} }
+// 기존 코드의 TTS.cancel() 호출 전부가 서버 오디오도 같이 멈추게 래핑
+if(typeof TTS!=="undefined" && TTS && TTS.cancel){ try{ const _c=TTS.cancel.bind(TTS); TTS.cancel=function(){ svStop(); _c(); }; }catch(e){} }
+let _svDead=false;   // /tts 미배포(404)면 세션 동안 재시도 안 함
+async function svSpeak(text, rate, onEnd){
+  text=String(text||"").trim();
+  if(!text || _svDead || /[\uac00-\ud7a3]/.test(text)) return false;
+  const r100=Math.max(0.4, Math.min(1.4, Number(rate)||1));
+  const key=SV_TTS_VOICE+"|"+r100.toFixed(2)+"|"+text;
+  try{
+    let url=_svCache.get(key);
+    if(!url){
+      const res=await fetch(PROXY_URL+"/tts?voice="+encodeURIComponent(SV_TTS_VOICE)+"&rate="+r100.toFixed(2)+"&text="+encodeURIComponent(text));
+      if(res.status===404){ _svDead=true; return false; }   // 워커에 /tts 없음 → 이번 세션은 폴백 고정
+      if(!res.ok) return false;
+      if((res.headers.get("Content-Type")||"").indexOf("audio")<0) return false;
+      const blob=await res.blob(); if(!blob || blob.size<200) return false;
+      url=URL.createObjectURL(blob); _svCache.set(key,url);
+      if(_svCache.size>150){ const k0=_svCache.keys().next().value; try{ URL.revokeObjectURL(_svCache.get(k0)); }catch(e){} _svCache.delete(k0); }
+    }
+    try{ TTS&&TTS.cancel(); }catch(e){}
+    const a=new Audio(url); _svAudio=a;
+    if(onEnd) a.onended=()=>setTimeout(onEnd, 250);
+    await a.play();   // 자동재생 차단 등 실패 시 catch → 폴백
+    return true;
+  }catch(e){ return false; }
+}
 function speakEn(text){
-  if(!TTS||!SSU) return;
   if(/[\uac00-\ud7a3]/.test(text)){ speakSmart(text); return; } // 한글 포함이면 한·영 자동 분리
-  TTS.cancel();
-  // Chrome/안드로이드 버그: cancel 직후 speak하면 첫 음절이 짤림 → 지연 후 재생
-  setTimeout(()=>{
-    const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
-    TTS.speak(u);
-  }, 130);
+  // 1) 서버 원어민 음성 → 실패 시 2) 브라우저 TTS 폴백
+  svSpeak(text, 0.95).then(ok=>{
+    if(ok) return;
+    if(!TTS||!SSU) return;
+    TTS.cancel();
+    // Chrome/안드로이드 버그: cancel 직후 speak하면 첫 음절이 짤림 → 지연 후 재생
+    setTimeout(()=>{
+      const u=new SSU(text); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
+      TTS.speak(u);
+    }, 130);
+  });
 }
 function speakKo(text){
   if(!TTS||!SSU) return;
