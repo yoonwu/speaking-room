@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.48";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.49";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3433,10 +3433,8 @@ function renderListenPlay(){
       </div>
       <div class="lp2-instr">잘 듣고 <b>들린 대로</b> 바로 말해보세요 👂 들린 단어가 초록으로 채워져요 — 안 들린 <b>빈칸만</b> 다시 들어도 돼요</div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0 6px">
-      <button class="bigplay lp2-play" id="lsPlay" aria-label="듣기" style="width:74px;height:74px;flex:none">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      </button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin:10px 0 6px">
+      <button id="lsPlay" style="flex:none;display:inline-flex;align-items:center;gap:7px;padding:12px 22px;border:none;border-radius:999px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px -10px rgba(240,102,74,.6)">🔊 다시 듣기</button>
       <button class="lp2-slow" id="lsSlow" style="margin:0">🐢 천천히</button>
     </div>
     <div id="lsSlots" class="dict-slots" style="margin-top:10px"></div>
