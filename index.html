@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.60";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.61";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2260,20 +2260,44 @@ function alGet(){
   return d;
 }
 function alPlacing(skill){ try{ const d=alGet(); return !(d.placed&&d.placed[skill]); }catch(e){ return false; } }
+// 배치 중 출제 레벨 — 사다리 D6→D12→D24→D6→D36 (쉬운 성공 경험과 상한 탐색을 섞음). 시험이 아니라 수준 찾아가기.
+function alProbeLevel(skill){
+  const d=alGet();
+  if(d.placed && d.placed[skill]) return d[skill];
+  const i=(d.n&&d.n[skill])||0;
+  const pm=((d.pm||{})[skill])||0;        // 배치 중 miss 누적
+  const lastMiss=!!((d.lm||{})[skill]);   // 직전 문제 miss 여부
+  const LADDER=[6,12,24,6,36];
+  let v = i<LADDER.length ? LADDER[i] : Math.max(6,(d[skill]||1)) + (i%2===1?4:0);   // 이후: 현재 레벨 + 약간의 탐색
+  if(pm>=2) v=Math.min(v,8);              // 초반 miss 2회+ → 쉬운 문제 중심으로 안정화
+  if(lastMiss) v=Math.min(v,6);           // 틀린 직후엔 반드시 쉬운 문제 (연속 어려움 금지)
+  return Math.max(1, Math.min(60, v));
+}
 function alSave(d){ try{ hSet(AL_KEY,d); }catch(e){} }
 // 능력별 자동 레벨 기록 — kind: "perfect" | "ok" | "miss"
 function autoLvlRecord(skill, kind){
   try{
     if(AL_SKILLS.indexOf(skill)<0) return;
     const d=alGet();
-    // 🚀 배치 모드: 처음 몇 문제로 시작 난이도를 빠르게 배치 — perfect +2 / miss -1 (즉시, 스트릭 없음)
+    // 🚀 배치 모드: 사다리 탐색 — 탐색 문제를 perfect로 맞히면 그 근처로 즉시 점프
     if(!(d.placed&&d.placed[skill])){
+      const q=alProbeLevel(skill);   // 이 문제가 출제된 탐색 레벨 (n 증가 전 = 출제 시점과 동일)
+      d.pm=d.pm||{}; d.lm=d.lm||{};
+      if(kind==="perfect"){
+        const floor = q>=36?30 : q>=24?20 : q>=12?10 : 0;   // 중급 이상 즉시 점프
+        d[skill]=Math.min(60, Math.max((d[skill]||1)+2, floor));
+        d.lm[skill]=false;
+      } else if(kind==="miss"){
+        d[skill]=Math.max(1,(d[skill]||1)-1);
+        d.pm[skill]=(d.pm[skill]||0)+1;
+        d.lm[skill]=true;            // 다음 문제는 쉬운 걸로 (실패감 완화)
+      } else {
+        d.lm[skill]=false;
+      }
       d.n[skill]=(d.n[skill]||0)+1;
-      if(kind==="perfect") d[skill]=Math.min(60,(d[skill]||1)+2);
-      else if(kind==="miss") d[skill]=Math.max(1,(d[skill]||1)-1);
       const risen=(d[skill]||1)-(((d.base||{})[skill])||1);
-      // 종료: 샘플 10개 채움 or 이미 +8 이상 빠른 상승 적용
-      if((d.n[skill]||0)>=10 || risen>=8){ d.placed=d.placed||{}; d.placed[skill]=true; }
+      // 종료: 샘플 10개 or (탐색 5문제 이상 + 충분한 상승) — D36 탐색까지는 돌게
+      if((d.n[skill]||0)>=10 || ((d.n[skill]||0)>=5 && risen>=8)){ d.placed=d.placed||{}; d.placed[skill]=true; }
       alSave(d);
       try{ renderAutoLvlStatus(); }catch(e){}
       return;   // 배치 중엔 일반 스트릭·토스트 생략 (조용히)
@@ -2306,7 +2330,8 @@ function renderAutoLvlStatus(){
 // 자동 레벨 조회 — 출제/속도 결정의 중심
 function getAutoLevels(){
   const d=alGet();
-  const word=d.word||1, listen=d.listen||1, block=d.block||1, speed=d.speed||1;
+  const lv=k=>{ if(d.placed&&d.placed[k]) return d[k]||1; try{ return alProbeLevel(k); }catch(e){ return d[k]||1; } };
+  const word=lv("word"), listen=lv("listen"), block=lv("block"), speed=lv("speed");
   return { wordLevel:word, listenLevel:listen, blockRecallLevel:block, speedLevel:speed,
            overallLevel:Math.max(1,Math.min(60,Math.round(word*0.25+listen*0.25+block*0.3+speed*0.2))) };
 }
