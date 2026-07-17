@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.61";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.62";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4474,7 +4474,8 @@ function normalizeDeck(){
 function dueCount(){ const t=Date.now(); return state.notes.filter(n=>(n.due||0)<=t).length; }
 function refreshRvBanner(){
   const c=dueCount(), has=state.notes.length>0;
-  $("#rvBanner").style.display = has?"flex":"none";
+  { const rb=$("#rvBanner"); if(rb) rb.style.display="none"; }   // 홈 단순화로 숨김
+  if(false) $("#rvBanner").style.display = has?"flex":"none";
   $("#rvCount").textContent=c;
   $("#rvStart").disabled = c===0;
   $("#rvSpeed").disabled = state.notes.length===0;
@@ -11180,6 +11181,8 @@ function ctDone(){
 // 🔥 홈 약점 블록 위젯 — 탭하면 즉시 재훈련
 function renderWeakHome(){
   const box=$("#weakHome"); if(!box) return;
+  // 홈 단순화 — 복습·약점·재사용 위젯 숨김 (복습은 루틴의 블록 반복이 자동으로 약점 우선 출제)
+  box.style.display="none"; box.innerHTML=""; return;
   const weak=weakList(3);
   const st=srsStats();
   let html="";
@@ -13196,13 +13199,15 @@ function renderRoutineCard(){
       <b style="flex:none;font-size:${s.main?"13px":"11.5px"};color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
     </button>`;
   }).join("");
-  box.innerHTML=`<div class="skillcard" style="padding:11px 12px 8px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <b style="font-size:13.5px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
-      <span style="font-size:11.5px;font-weight:900;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
+  const pct=Math.round(RT_STEPS.reduce((a,st)=>a+Math.min(1,rtCount(st.k,d)/st.goal),0)/RT_STEPS.length*100);
+  box.innerHTML=`<div class="skillcard" style="padding:13px 13px 9px;border:2px solid ${allDone?"rgba(25,160,107,.45)":"#FF8568"};border-radius:18px;box-shadow:0 14px 30px -16px rgba(240,102,74,.45)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+      <b style="font-size:16px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
+      <span style="font-size:13px;font-weight:950;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
     </div>
+    <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#F0664A)"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rows}</div>
-    <div style="font-size:10px;color:var(--muted);text-align:center;padding:5px 0 1px">${allDone?"오늘 끝! 더 하는 건 자유 😎":"이것만 하면 오늘 끝"}</div>
+    <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:6px 0 1px">${allDone?"오늘 끝! 더 하는 건 자유 😎":"이것만 하면 오늘 끝 — 위에서부터 차례로"}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
 }
@@ -13365,8 +13370,10 @@ function renderHome(){
   try{ renderWeakHome(); }catch(e){}
   renderAcqStats();
   // continue
+  // 이어서 연습하기 카드 — 홈 단순화로 숨김 (루틴이 유일 동선)
   const last=hGet("speakingroom:last",null); const cc=$("#continueCard");
-  if(last&&last.emo){ cc.style.display="flex"; $("#contEmo").textContent=last.emo; $("#contDesc").textContent=last.label||""; }
+  if(cc) cc.style.display="none";
+  if(false && last&&last.emo){ cc.style.display="flex"; $("#contEmo").textContent=last.emo; $("#contDesc").textContent=last.label||""; }
   else cc.style.display="none";
   // version
   const vf=$("#verFoot"); if(vf){ vf.textContent="3초영어 "+APP_VERSION+" · "+APP_BUILD+"  ·  ↻ 업데이트 확인"; vf.style.cursor="pointer"; vf.onclick=forceUpdate; }
