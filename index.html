@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.53";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.54";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3521,6 +3521,186 @@ function lsSpeak(slow, onEnd){
 // (구) 받아쓰기 별도 화면 — 듣기 화면에 통합됨. 혹시 남은 호출은 통합 화면으로.
 function lsWordNorm(w){ return String(w||"").toLowerCase().replace(/[^a-z0-9']/g,"").replace(/'/g,""); }
 function renderListenDictation(){ renderListenPlay(); }
+
+/* ===== 👂 상황 듣기 (메인 듣기 모드) — 듣고 뜻/의도/정보/행동/상황을 고른다. 말하기 없음 ===== */
+let sqItem=null, sqCount=0, sqPrefetch=null, sqPrefetching=false, sqRecent=[], sqTypes=[], sqReplay=0, sqSlow=false, sqAnswered=false, sqAwarded=false;
+function sqNextType(){
+  if(!sqTypes.length) sqTypes=bleShuffle(["meaning","intent","info","action","situation"]);
+  return sqTypes.pop();
+}
+function sqDiffRule(){
+  const d=diffLevel();
+  if(d<=12) return "DIFFICULTY D"+d+"/60 (beginner): audio is ONE short clear sentence in a simple situation. Choices only slightly confusing — but never childish; use realistic near-misses.";
+  if(d<=30) return "DIFFICULTY D"+d+"/60 (elementary): audio is one sentence or two short sentences. Test distinctions of numbers/time/place/request. Wrong choices must be semantically CLOSE near-misses.";
+  if(d<=45) return "DIFFICULTY D"+d+"/60 (intermediate): audio may be a 2-turn mini dialogue (two sentences, no speaker labels — just consecutive natural lines). Test key info and what the listener should DO. All choices plausible.";
+  return "DIFFICULTY D"+d+"/60 (advanced): audio is a 2~3 turn dialogue (consecutive natural lines, no speaker labels). Inference questions. ALL choices must sound plausible; only careful listening distinguishes them.";
+}
+function sqSys(){
+  const seed=Math.floor(Math.random()*100000);
+  const qtype=sqNextType();
+  const mat=(typeof listenMaterials==="function")?listenMaterials():null;
+  const matLine=(mat && mat.blocks.length)?("Prefer reusing the learner's studied expressions when natural (not mandatory): "+mat.blocks.slice(0,10).join("; ")):"";
+  return [
+"You create ONE listening-comprehension question for a Korean learner. This is EAR training: the learner hears English audio (they never see the text first) and answers a Korean multiple-choice question.",
+grammarRule(),
+sqDiffRule(),
+"question_type for THIS question: \""+qtype+"\" — meaning(전체 뜻)/intent(질문·요청·제안·거절·안내 의도)/info(숫자·시간·장소·메뉴·가격·수량)/action(듣고 사용자가 해야 할 행동)/situation(어디서 벌어진 말인지).",
+"CHOICES RULES: exactly 3 Korean choices. Wrong choices must be semantically CLOSE and realistically confusable (never absurd). Not childish even at low difficulty.",
+matLine,
+"Topic context: everyday survival situations (cafe, store, hotel, airport, hospital, phone, school...). Variety seed "+seed+".",
+(sqRecent.length? "Do NOT reuse or closely paraphrase these recent audio sentences:\n- "+sqRecent.slice(-12).join("\n- ") : ""),
+'Return ONLY JSON: {"scene_ko":"카페 계산대에서 직원이 말합니다.","audio_en":"Do you need a receipt?","audio_ko":"영수증 필요하세요?","question_type":"'+qtype+'","question_ko":"상대가 무슨 뜻으로 말했나요?","choices":["...","...","..."],"answer_index":0,"explanation_ko":"...","focus":"receipt / need"}'
+  ].join("\n");
+}
+function sqValid(o){ return o && o.audio_en && o.question_ko && Array.isArray(o.choices) && o.choices.length===3 && o.answer_index>=0 && o.answer_index<=2; }
+function sqShuffleChoices(o){
+  const idx=[0,1,2]; for(let i=2;i>0;i--){ const j=(Math.random()*(i+1))|0; [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  o.choices=idx.map(i=>o.choices[i]);
+  o.answer_index=idx.indexOf(o.answer_index);
+  return o;
+}
+async function sqFetchOne(){
+  for(let t=0;t<3;t++){
+    try{
+      const data=await callClaude(sqSys(),[{role:"user",content:"Create the question now."}], FAST_MODEL);
+      const o=parseJSON(extractText(data));
+      if(sqValid(o) && sqRecent.indexOf(o.audio_en)<0) return sqShuffleChoices(o);
+    }catch(e){}
+  }
+  return null;
+}
+function sqPrefetchNext(){
+  if(sqPrefetching) return; sqPrefetching=true;
+  sqFetchOne().then(o=>{ sqPrefetching=false; if(o) sqPrefetch=o; }).catch(()=>{ sqPrefetching=false; });
+}
+function startSituationListening(){
+  showTutorial("listen", false, ()=>{
+    lsBoosterMode=false; state.engine="input";
+    state.mode="listen"; state.topic=autoTopic();
+    markPractice({mode:"listen", id:"situation", emo:"👂", label:"상황 듣기"});
+    setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen"); try{updateLevelBadges();}catch(e){}
+    $("#ctxBar").style.display="flex";
+    $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none"; $("#evalBtn").style.display="none";
+    $("#ctxScn").textContent="상황 듣기";
+    $("#ctxLvl").textContent=levelName()+" · 듣기";
+    $("#lnext").style.display="none";
+    sqCount=0; sqRecent=[]; sqPrefetch=null; sqPrefetching=false; sqTypes=[];
+    try{ xpSessionStart(); }catch(e){}
+    sqGenerate();
+  });
+}
+async function sqGenerate(){
+  sqReplay=0; sqSlow=false; sqAnswered=false; sqAwarded=false;
+  const lsModeEl=$("#lsModeTag"); if(lsModeEl) lsModeEl.textContent="👂 상황 듣기";
+  if(sqPrefetch){ sqItem=sqPrefetch; sqPrefetch=null; sqCount++; sqRecent.push(sqItem.audio_en); sqRender(); sqPrefetchNext(); return; }
+  $("#listenScroll").innerHTML=`<div class="lloading">문제를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
+  const o=await sqFetchOne();
+  if(!o){ $("#listenScroll").innerHTML=`<div class="lloading">문제를 만들지 못했어요.<br><button class="sh-next" id="sqRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`; const r=$("#sqRetry"); if(r) r.onclick=sqGenerate; return; }
+  sqItem=o; sqCount++; sqRecent.push(o.audio_en);
+  sqRender(); sqPrefetchNext();
+}
+function sqSpeak(slow){
+  if(!sqItem) return;
+  svSpeak(sqItem.audio_en, levelRate(slow)).then(ok=>{
+    if(ok) return;
+    if(!TTS||!SSU) return;
+    TTS.cancel();
+    setTimeout(()=>{ const u=new SSU(sqItem.audio_en); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=levelRate(slow); TTS.speak(u); }, 220);
+  });
+}
+function sqLedger(kind, extra){
+  try{
+    ledgerRecordListeningEvent(Object.assign({
+      text:sqItem.audio_en, ko:sqItem.audio_ko||"", context:sqItem.scene_ko||"situation",
+      blockId:null, relatedExpressionId:null,
+      heard:kind==="heard", understood:kind==="understood", eventType:kind
+    }, extra||{}));
+  }catch(e){}
+}
+const SQ_TYPE_KO={meaning:"뜻",intent:"의도",info:"정보",action:"행동",situation:"상황"};
+function sqRender(){
+  const it=sqItem;
+  const lsProgEl=$("#lsTopProg"); if(lsProgEl) lsProgEl.textContent=sqCount+"번째";
+  const lsBarEl=$("#lsBarFill"); if(lsBarEl) lsBarEl.style.width=Math.min(100,(sqCount%10)*10)+"%";
+  $("#listenScroll").innerHTML=`<div class="lcard lcard-full lp2">
+    <div class="lp2-hero" style="padding-bottom:4px">
+      <div class="lp2-chips">
+        <span class="lp2-lvl">${escapeHtml(levelName())}</span>
+        <span class="lp2-chip">👂 ${SQ_TYPE_KO[it.question_type]||"듣기"}</span>
+        <span class="lp2-chip">${sqCount}번째</span>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:15.5px;font-weight:800;color:#7A6055;margin:8px 0 2px">${escapeHtml(it.scene_ko||"")}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:9px;margin:12px 0 4px">
+      <button id="sqPlay" style="flex:none;display:inline-flex;align-items:center;gap:7px;padding:13px 26px;border:none;border-radius:999px;background:linear-gradient(135deg,#FF8568,#F0664A);color:#fff;font-size:16px;font-weight:950;cursor:pointer;box-shadow:0 8px 18px -10px rgba(240,102,74,.6)">🔊 듣기</button>
+      <button class="lp2-slow" id="sqSlowBtn" style="margin:0">🐢 천천히</button>
+    </div>
+    <div style="text-align:center;font-size:16px;font-weight:900;color:#3A2D27;margin:14px 0 10px">${escapeHtml(it.question_ko||"")}</div>
+    <div id="sqChoices" style="display:flex;flex-direction:column;gap:9px">
+      ${it.choices.map((c,i)=>`<button class="sq-choice" data-i="${i}" style="text-align:left;padding:14px 15px;border-radius:14px;background:#fff;border:1.5px solid var(--line);font-size:15px;color:var(--text);cursor:pointer;line-height:1.45">${escapeHtml(c)}</button>`).join("")}
+    </div>
+    <button class="ls-skip lp2-skip" id="sqDunno" style="margin-top:10px">잘 모르겠어요</button>
+    <div id="sqResult"></div>
+  </div>`;
+  $("#listenScroll").scrollTop=0;
+  setTimeout(()=>sqSpeak(false), 500);   // 자동 1회 재생 (원문 비노출)
+  $("#sqPlay").onclick=()=>{ if(!sqAnswered) sqReplay++; sqSpeak(false); };
+  $("#sqSlowBtn").onclick=()=>{ if(!sqAnswered) sqSlow=true; sqSpeak(true); };
+  document.querySelectorAll(".sq-choice").forEach(b=>{ b.onclick=()=>sqAnswer(parseInt(b.dataset.i,10)); });
+  $("#sqDunno").onclick=()=>sqAnswer(null);
+}
+function sqAnswer(picked){
+  if(sqAnswered || !sqItem) return; sqAnswered=true;
+  const it=sqItem;
+  const correct = picked===it.answer_index;
+  const firstTry = correct && sqReplay===0 && !sqSlow;
+  // 선택지 마킹
+  document.querySelectorAll(".sq-choice").forEach(b=>{
+    const i=parseInt(b.dataset.i,10); b.style.pointerEvents="none";
+    if(i===it.answer_index){ b.style.borderColor="#19a06b"; b.style.background="rgba(25,160,107,.08)"; }
+    else if(i===picked){ b.style.borderColor="#e0533f"; b.style.background="rgba(224,83,63,.07)"; }
+    else b.style.opacity=".55";
+  });
+  const dn=$("#sqDunno"); if(dn) dn.style.display="none";
+  // 보상: 첫 듣기+첫 선택 정답 최고 / 다시 듣고 정답 보통 / 천천히 듣고 정답 낮음 / 틀림·모름 참여만
+  if(!sqAwarded){
+    sqAwarded=true;
+    if(correct){
+      const xp = firstTry?12 : sqSlow?5 : 8;
+      awardXP("listen", xp, firstTry?"상황 듣기 ⚡한 번에!":"상황 듣기 정답 ✅", "sq:"+sqCount);
+      bumpCount("listen"); questBump("listen");
+      try{ profRecordListenPerfect(it.audio_en, it.audio_ko); }catch(e){}
+      sqLedger("understood", {replayCount:sqReplay, slowUsed:sqSlow, firstTryCorrect:firstTry, questionType:it.question_type, focus:it.focus||"", wrongChoice:null});
+    } else {
+      if(picked!=null) awardXP("listen", 1, "듣기 시도", "sqtry:"+sqCount);
+      sqLedger("missed", {replayCount:sqReplay, slowUsed:sqSlow, firstTryCorrect:false, questionType:it.question_type, focus:it.focus||"", wrongChoice:picked!=null?it.choices[picked]:"(모름)"});
+    }
+  }
+  // 정답 공개 (같은 화면) — 이제서야 영어 원문 노출
+  const rb=$("#sqResult");
+  if(rb){
+    rb.innerHTML=`<div style="margin-top:14px;background:#fff;border:1px solid ${correct?"#BFE6D4":"#F2D4C5"};border-radius:16px;padding:14px 16px;text-align:center">
+      <div style="font-size:13px;font-weight:950;color:${correct?"#19a06b":"#e0533f"};margin-bottom:8px">${correct?(firstTry?"⚡ 한 번에 정답!":"✅ 정답!"):(picked==null?"💡 정답 확인":"❌ 아쉬워요")}</div>
+      <div style="font-family:var(--serif);font-size:20px;color:var(--text);line-height:1.45" data-no-pronko>${tappableEn(it.audio_en)}</div>
+      <div style="font-size:13.5px;color:var(--muted);margin-top:5px">${escapeHtml(it.audio_ko||"")}</div>
+      ${it.explanation_ko?`<div style="font-size:13px;color:#7A6055;line-height:1.55;margin-top:9px;border-top:1px dashed var(--line);padding-top:8px">${escapeHtml(it.explanation_ko)}</div>`:""}
+      ${it.focus?`<div style="font-size:11.5px;color:#B0958A;margin-top:6px">🔑 ${escapeHtml(it.focus)}</div>`:""}
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+        <button class="wp-spd" id="sqReplayBtn" style="flex:1">🔊 다시 듣기</button>
+        <button class="wp-spd" id="sqToDict" style="flex:1">✍️ 받아쓰기로 확인</button>
+      </div>
+      <button class="sh-next" id="sqNext" style="margin-top:10px">다음 문제 →</button>
+    </div>`;
+    $("#sqReplayBtn").onclick=()=>sqSpeak(false);
+    $("#sqNext").onclick=()=>sqGenerate();
+    $("#sqToDict").onclick=()=>{
+      // 이 문장 그대로 받아쓰기 모드로 (기존 흐름 재사용)
+      lsItem={en:it.audio_en, ko:it.audio_ko||"", block:null}; lsAnswer=""; lsAwarded=false; lsCount++;
+      renderListenPlay();
+    };
+    try{ rb.scrollIntoView({block:"nearest",behavior:"smooth"}); }catch(e){}
+  }
+}
 function lsRenderSlots(){
   const box=$("#lsSlots"); if(!box) return;
   box.innerHTML=lsTargets.map((w,i)=> lsFilled[i]
@@ -10307,9 +10487,14 @@ function openListenHub(){
      <div class="hub-grab"></div>
      <div class="hub-title">👂 듣기 훈련장</div>
      <div class="hub-sub">영어가 들리게 소리를 익혀요</div>
-     <button class="hub-opt" data-go="listen">
+     <button class="hub-opt" data-go="situation">
        <span class="hub-emo">👂</span>
-       <span class="hub-tx"><b>상황 듣기</b><i>실제 상황 대화를 듣고 이해해요</i></span>
+       <span class="hub-tx"><b>상황 듣기</b><i>듣고 뜻·정보·행동을 고르는 훈련 ★ 메인</i></span>
+       <span class="hub-ar">›</span>
+     </button>
+     <button class="hub-opt" data-go="dictation">
+       <span class="hub-emo">✍️</span>
+       <span class="hub-tx"><b>받아쓰기</b><i>들은 대로 말해 빈칸 채우기 · 진단용</i></span>
        <span class="hub-ar">›</span>
      </button>
      <button class="hub-opt" data-go="booster">
@@ -10321,7 +10506,7 @@ function openListenHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="listen") startMainTraining(); else startBooster(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="situation") startSituationListening(); else if(g==="dictation") startMainTraining(); else startBooster(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openLegacyChunkHubBasic(){
