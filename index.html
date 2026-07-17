@@ -1722,16 +1722,13 @@ body{background:var(--paper)!important;color:var(--text)}
         <!-- 습득 지표 — 프로필 바로 아래 (짧게) -->
         <div id="routineCard" style="margin:2px 0 14px"></div>
         <div id="acqStats" style="margin:2px 0 14px"></div>
-        <!-- 난이도 -->
-        <div class="difcard" style="border-radius:14px;padding:11px 14px;margin-bottom:13px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
-            <span style="font-size:13px;font-weight:800;color:var(--text)">난이도</span>
-            <span id="lvlLabel" style="font-size:13px;font-weight:800;color:var(--jade)">Lv.1 · 입문</span>
+        <!-- 난이도 (자동 조절 — 조작 UI 아님, 상태 안내) -->
+        <div class="difcard" style="border-radius:14px;padding:10px 14px;margin-bottom:13px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:13px;font-weight:800;color:var(--text)">🎚 난이도 자동 조절 중</span>
+            <span id="autoLvlLine" style="font-size:11.5px;font-weight:800;color:#C0653A"></span>
           </div>
-          <input type="range" id="lvlRange" min="1" max="60" step="1" value="1" style="width:100%;accent-color:#FF8568">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px">
-            <span>입문</span><span>중간</span><span>원어민</span>
-          </div>
+          <div id="autoLvlSub" style="font-size:10.5px;color:var(--muted);margin-top:4px">문제를 풀수록 더 정확해져요</div>
         </div>
         <!-- 🗺️ 모험 지도 -->
         <div class="worldlabel">🗺️ 오늘은 어디로 떠날까?</div>
@@ -1986,7 +1983,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.57";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.58";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2278,14 +2275,30 @@ function alGet(){
     try{ hSet(AL_KEY,d); }catch(e){}
   }
   if(!d.st) d.st={};
+  // 🚀 빠른 시작 배치 필드 — 없으면 배치 모드 시작(신규/기존 모두 첫 문제들로 초기 레벨을 빠르게 잡음)
+  if(!d.n){ d.n={}; d.placed=d.placed||{}; d.base={word:d.word,listen:d.listen,block:d.block,speed:d.speed}; try{ hSet(AL_KEY,d); }catch(e){} }
   return d;
 }
+function alPlacing(skill){ try{ const d=alGet(); return !(d.placed&&d.placed[skill]); }catch(e){ return false; } }
 function alSave(d){ try{ hSet(AL_KEY,d); }catch(e){} }
 // 능력별 자동 레벨 기록 — kind: "perfect" | "ok" | "miss"
 function autoLvlRecord(skill, kind){
   try{
     if(AL_SKILLS.indexOf(skill)<0) return;
-    const d=alGet(); const st=d.st[skill]||{up:0,miss:0};
+    const d=alGet();
+    // 🚀 배치 모드: 처음 몇 문제로 시작 난이도를 빠르게 배치 — perfect +2 / miss -1 (즉시, 스트릭 없음)
+    if(!(d.placed&&d.placed[skill])){
+      d.n[skill]=(d.n[skill]||0)+1;
+      if(kind==="perfect") d[skill]=Math.min(60,(d[skill]||1)+2);
+      else if(kind==="miss") d[skill]=Math.max(1,(d[skill]||1)-1);
+      const risen=(d[skill]||1)-(((d.base||{})[skill])||1);
+      // 종료: 샘플 10개 채움 or 이미 +8 이상 빠른 상승 적용
+      if((d.n[skill]||0)>=10 || risen>=8){ d.placed=d.placed||{}; d.placed[skill]=true; }
+      alSave(d);
+      try{ renderAutoLvlStatus(); }catch(e){}
+      return;   // 배치 중엔 일반 스트릭·토스트 생략 (조용히)
+    }
+    const st=d.st[skill]||{up:0,miss:0};
     let delta=0;
     if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; if(st.up>=6){ st.up=0; delta=1; } }
     else if(kind==="miss"){ st.miss=(st.miss||0)+1; st.up=0; if(st.miss>=3){ st.miss=0; delta=-1; } }
@@ -2296,6 +2309,18 @@ function autoLvlRecord(skill, kind){
       if(nv!==d[skill]){ d[skill]=nv; try{ bleShowHintToast(AL_TOAST[skill][delta>0?"up":"down"]); }catch(e){} }
     }
     alSave(d);
+    try{ renderAutoLvlStatus(); }catch(e){}
+  }catch(e){}
+}
+// 홈의 자동 난이도 상태 안내 (조작 UI 아님)
+function renderAutoLvlStatus(){
+  const el=$("#autoLvlLine"); if(!el) return;
+  try{
+    const a=getAutoLevels(); const d=alGet();
+    el.textContent="단어 D"+a.wordLevel+" · 듣기 D"+a.listenLevel+" · 블록 D"+a.blockRecallLevel+" · 속도 D"+a.speedLevel;
+    const sub=$("#autoLvlSub");
+    const placing=AL_SKILLS.some(k=>!(d.placed&&d.placed[k]));
+    if(sub) sub.textContent=placing?"처음 몇 문제로 시작 난이도를 맞추고 있어요 — 문제를 풀수록 더 정확해져요":"문제를 풀수록 더 정확해져요";
   }catch(e){}
 }
 // 자동 레벨 조회 — 출제/속도 결정의 중심
@@ -2314,6 +2339,7 @@ const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1"
 function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
 // 모든 진행 화면 상단에 현재 난이도 작게 표시
 function updateLevelBadges(){
+  try{ renderAutoLvlStatus(); }catch(e){}
   let txt; try{ txt="D"+getAutoLevels().overallLevel; }catch(e){ txt="D"+diffLevel(); }
   try{ txt+=" · 단어Lv."+userWordLevel(); }catch(e){}
   ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
@@ -2643,13 +2669,10 @@ function buildSetup(){
   c.onclick=()=>pickScn("custom",c);
   grid.appendChild(c);
 
-  // 난이도 슬라이더 D1~D60
-  const lr=$("#lvlRange");
-  if(lr){ lr.max=60;
-    try{ const sv=hGet("speakingroom:lvl",null); if(sv!=null) state.lvl=Math.max(1,Math.min(60,+sv||1)); }catch(e){}   // 저장된 난이도 복원(적응형 포함)
-    lr.value=diffLevel();
-    const upd=()=>{ state.lvl=+lr.value; syncLevel(); try{ hSet("speakingroom:lvl", state.lvl); }catch(e){} try{ alRebase(state.lvl); }catch(e){} const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
-    lr.addEventListener("input",upd); upd(); }
+  // 난이도 슬라이더 제거 — 자동 조절 상태만 표시 (state.lvl은 초기 보정값으로만 내부 유지)
+  try{ const sv=hGet("speakingroom:lvl",null); if(sv!=null) state.lvl=Math.max(1,Math.min(60,+sv||1)); }catch(e){}
+  syncLevel();
+  try{ renderAutoLvlStatus(); }catch(e){}
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
       $("#levels").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
@@ -13146,13 +13169,11 @@ function rtKey(){ return "speakingroom:rt:"+DAYN(); }
 function rtGet(){ try{ const d=hGet(rtKey(),null); return d&&typeof d==="object"?d:{}; }catch(e){ return {}; } }
 function rtBump(k,n){ try{ const d=rtGet(); d[k]=(d[k]||0)+(n||1); hSet(rtKey(),d); renderRoutineCard(); }catch(e){} }
 const RT_STEPS=[
-  {k:"vocab", emo:"💬", t:"단어",           goal:10, sub:"말할 재료 워밍업",              go:()=>startVocabCoach()},
-  {k:"newblk",emo:"🧱", t:"새 블록",         goal:1,  sub:"오늘 입에 붙일 패턴 1개",        go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
-  {k:"drill", emo:"🔥", t:"블록 랜덤 반복",   goal:12, sub:"오늘의 핵심 — 입에 붙을 때까지", main:true, go:()=>startAutoDrill()},
-  {k:"listen",emo:"👂", t:"상황 듣기",       goal:7,  sub:"듣고 뜻·의도·행동 고르기",       go:()=>startSituationListening()},
-  {k:"dict",  emo:"✍️", t:"받아쓰기",        goal:2,  sub:"정밀 진단 2문제만",             go:()=>startMainTraining()},
-  {k:"speak", emo:"⚔️", t:"스피킹",          goal:5,  sub:"3초 안에 꺼내기",               go:()=>startOutputEngine()},
-  {k:"real",  emo:"🌎", t:"실전회화",        goal:1,  sub:"짧은 미션 1개로 마무리",         go:()=>openSurvival()}
+  {k:"vocab", emo:"💬", t:"단어",         goal:10, go:()=>startVocabCoach()},
+  {k:"newblk",emo:"🧱", t:"새 블록",       goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
+  {k:"drill", emo:"🔥", t:"블록 반복",     goal:12, main:true, go:()=>startAutoDrill()},
+  {k:"listen",emo:"👂", t:"상황 듣기",     goal:7,  go:()=>startSituationListening()},
+  {k:"dict",  emo:"✍️", t:"받아쓰기",      goal:2,  go:()=>startMainTraining()}
 ];
 function rtCount(k, d){
   if(k==="newblk"){ try{ return newBlocksToday(); }catch(e){ return 0; } }
@@ -13167,25 +13188,21 @@ function renderRoutineCard(){
   if(allDone && !d._bonus){ d._bonus=true; try{ hSet(rtKey(),d); }catch(e){} try{ awardXP("output",30,"오늘 루틴 완료 🏆","rt:"+DAYN()); }catch(e){} }
   const rows=RT_STEPS.map((s,i)=>{
     const cur=Math.min(s.goal, rtCount(s.k,d)); const done=cur>=s.goal;
-    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:${s.main?"12px 13px":"9px 13px"};border-radius:13px;cursor:pointer;margin-bottom:6px;
+    return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:7px;width:100%;text-align:left;padding:7px 10px;border-radius:11px;cursor:pointer;
       background:${done?"rgba(25,160,107,.08)":s.main?"linear-gradient(135deg,#FFF2EA,#FFE5D8)":"var(--surface)"};
-      border:${s.main&&!done?"2px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
-      <span style="flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:${done?"15px":"13px"};background:${done?"#19a06b":"var(--mist)"};color:${done?"#fff":"var(--muted)"};font-weight:900">${done?"✓":i+1}</span>
-      <span style="flex:none;font-size:${s.main?"20px":"17px"}">${s.emo}</span>
-      <span style="flex:1;min-width:0">
-        <b style="display:block;font-size:${s.main?"15px":"13.5px"};color:${done?"#177A54":"var(--text)"}">${s.t} ${s.goal>1?s.goal+(s.k==="vocab"?"개":"문제"):s.goal+"개"}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:11px">★ 메인</i>':""}</b>
-        <i style="display:block;font-style:normal;font-size:11px;color:var(--muted)">${s.sub}</i>
-      </span>
-      <b style="flex:none;font-size:13px;color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
+      border:${s.main&&!done?"1.5px solid #FF8568":"1px solid "+(done?"rgba(25,160,107,.3)":"var(--line)")}">
+      <span style="flex:none;font-size:15px">${done?"✅":s.emo}</span>
+      <b style="flex:1;min-width:0;font-size:12.5px;color:${done?"#177A54":"var(--text)"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.t}${s.main?' <i style="font-style:normal;color:#F0664A;font-size:10px">★</i>':""}</b>
+      <b style="flex:none;font-size:11.5px;color:${done?"#19a06b":s.main?"#F0664A":"var(--muted)"}">${cur}/${s.goal}</b>
     </button>`;
   }).join("");
-  box.innerHTML=`<div class="skillcard" style="padding:14px 14px 10px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <b style="font-size:14.5px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">— 완료! 🏆</span>':""}</b>
-      <span style="font-size:12px;font-weight:900;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
+  box.innerHTML=`<div class="skillcard" style="padding:11px 12px 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <b style="font-size:13.5px;color:var(--text)">📋 오늘 루틴 ${allDone?'<span style="color:#19a06b">완료! 🏆</span>':""}</b>
+      <span style="font-size:11.5px;font-weight:900;color:${allDone?"#19a06b":"#F0664A"}">${doneN}/${RT_STEPS.length}</span>
     </div>
-    ${rows}
-    <div style="font-size:11px;color:var(--muted);text-align:center;padding:5px 0 3px">${allDone?"오늘 할 일 끝! 더 하는 건 자유예요 😎":"이것만 하면 오늘 끝 — 더 하고 싶으면 얼마든지"}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${rows}</div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;padding:5px 0 1px">${allDone?"오늘 끝! 더 하는 건 자유 😎":"이것만 하면 오늘 끝"}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
 }
