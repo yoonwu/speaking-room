@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.49";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.50";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3480,13 +3480,13 @@ function lsSpeak(slow, onEnd){
     if(onEnd) u.onend=()=>setTimeout(onEnd, 250);
     TTS.speak(u);
   };
-  // 첫 발화 직전 무음 워밍업 — 엔진이 첫 단어 앞부분을 먹는 문제 방지
+  // 첫 발화 직전 무음 워밍업 + cancel 직후 충분한 텀 — 엔진이 첫 자음(Can의 C 등)을 먹는 문제 방지
   if(!ttsWarmed){
     ttsWarmed=true;
     try{ const w=new SSU(" "); w.volume=0; w.rate=1; TTS.speak(w); }catch(e){}
-    setTimeout(doSpeak, 260);
+    setTimeout(doSpeak, 300);
   } else {
-    setTimeout(doSpeak, 60);
+    setTimeout(doSpeak, 220);
   }
 }
 // (구) 받아쓰기 별도 화면 — 듣기 화면에 통합됨. 혹시 남은 호출은 통합 화면으로.
@@ -3635,22 +3635,25 @@ function renderPatternPanel(o, en){
 function renderListenCorrect(){
   TTS&&TTS.cancel();
   const orig=(lsItem&&lsItem.en)||"";
-  $("#listenScroll").innerHTML=`<div class="lcard" style="text-align:center">
+  // 화면 전환 없이 문제 카드 안에서 결과 표시: 입력 도구는 숨기고 그 자리에 결과 삽입
+  ["lsDictMic","lsDictType","lsTypeIn","lsCheck","lsSkip"].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display="none"; });
+  const pr=$("#lsProg"); if(pr) pr.textContent="";
+  const card=document.querySelector("#listenScroll .lcard");
+  if(!card){ lsPrevReply=lsItem.en||""; lsGenerate(); return; }
+  const old=document.getElementById("lsResult"); if(old) old.remove();
+  const box=document.createElement("div"); box.id="lsResult"; box.style.cssText="text-align:center;margin-top:6px";
+  box.innerHTML=`
     <div class="lmeta">✅ 완벽하게 들었어요!</div>
-    <div style="font-family:var(--serif);font-size:24px;line-height:1.5;color:var(--jade);margin:14px 0 4px">${tappableEn(orig)}</div>
-    <div style="font-size:11.5px;color:var(--muted);margin-bottom:6px">👆 단어를 누르면 뜻·발음이 나와요</div>
-    ${lsItem.ko?`<div style="font-size:14px;color:var(--muted);margin-bottom:10px">${escapeHtml(lsItem.ko)}</div>`:""}
-    <div style="font-size:13px;color:var(--muted);margin:6px 0 14px">📈 인출 속도와 귀가 좋아지고 있어요</div>
+    <div style="font-family:var(--serif);font-size:23px;line-height:1.5;color:var(--jade);margin:10px 0 4px">${tappableEn(orig)}</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:5px">👆 단어를 누르면 뜻·발음이 나와요</div>
+    ${lsItem.ko?`<div style="font-size:14px;color:var(--muted);margin-bottom:8px">${escapeHtml(lsItem.ko)}</div>`:""}
     <div class="lctrls" style="justify-content:center;margin-bottom:4px">
-      <button id="lcReplay">🔊 다시 듣기</button>
       <button id="lcAnalyze">🔍 연음 분석 보기</button>
     </div>
     <button class="sh-next" id="lcNext">다음 문제 →</button>
     <button class="rv-stop" id="lcOut" style="margin-top:6px">그만하기</button>
-  </div>
-  <div id="learnPanel" class="learn-panel"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
-  $("#listenScroll").scrollTop=0;
-  $("#lcReplay").onclick=()=>lsSpeak(false);
+    <div id="learnPanel" class="learn-panel" style="text-align:left"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
+  card.appendChild(box);
   $("#lcAnalyze").onclick=()=>lsRunAnalysis();
   $("#lcNext").onclick=()=>{ lsPrevReply=lsItem.en||""; lsGenerate(); };   // 바로 새 듣기 문장
   $("#lcOut").onclick=()=>goToSetup();
