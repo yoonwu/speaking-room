@@ -1985,7 +1985,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.50";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.51";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-06-24";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2254,6 +2254,26 @@ function diffLevel(){ return Math.max(1, Math.min(60, Math.round(Number(state.lv
 function diffMacro(){ return Math.max(1, Math.min(10, Math.ceil(diffLevel()/6))); }
 function lvlBucket(){ const v=diffMacro(); return v<=3?"초급":(v>=7?"고급":"중급"); }
 function syncLevel(){ state.level=lvlBucket(); }
+// ===== 📈 적응형 난이도 — 완벽하게 맞춘 만큼 자동으로 조금씩 상승, 연속으로 틀리면 살짝 하강 =====
+function adaptSetLvl(n){
+  n=Math.max(1,Math.min(60,Math.round(n)));
+  const prev=diffLevel(); if(n===prev) return;
+  state.lvl=n; syncLevel();
+  try{ hSet("speakingroom:lvl", n); }catch(e){}
+  try{ const lr=$("#lvlRange"); if(lr) lr.value=n; const el=$("#lvlLabel"); if(el) el.textContent=levelName(); }catch(e){}
+  try{ updateLevelBadges(); }catch(e){}
+  try{ bleShowHintToast(n>prev ? ("📈 잘하고 있어서 난이도가 살짝 올라갔어요 — "+levelName()) : ("🌱 난이도를 살짝 낮췄어요 — 차근차근! "+levelName())); }catch(e){}
+}
+// perfect(한 번에·힌트 없이 정답)=상승 게이지 / miss(오답·포기)=하강 게이지 / ok(맞혔지만 힌트·재시도)=중립(상승 게이지만 리셋)
+function wpAdaptRecord(kind){
+  try{
+    let st=hGet("speakingroom:wp_adapt",{up:0,miss:0})||{up:0,miss:0};
+    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; if(st.up>=6){ st.up=0; adaptSetLvl(diffLevel()+1); } }
+    else if(kind==="miss"){ st.miss=(st.miss||0)+1; st.up=0; if(st.miss>=3){ st.miss=0; adaptSetLvl(diffLevel()-1); } }
+    else { st.up=0; }
+    hSet("speakingroom:wp_adapt", st);
+  }catch(e){}
+}
 const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1",7:"B1+",8:"B2",9:"C1",10:"원어민"};
 function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
 // 모든 진행 화면 상단에 현재 난이도 작게 표시
@@ -2589,7 +2609,10 @@ function buildSetup(){
 
   // 난이도 슬라이더 D1~D60
   const lr=$("#lvlRange");
-  if(lr){ lr.max=60; lr.value=diffLevel(); const upd=()=>{ state.lvl=+lr.value; syncLevel(); const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
+  if(lr){ lr.max=60;
+    try{ const sv=hGet("speakingroom:lvl",null); if(sv!=null) state.lvl=Math.max(1,Math.min(60,+sv||1)); }catch(e){}   // 저장된 난이도 복원(적응형 포함)
+    lr.value=diffLevel();
+    const upd=()=>{ state.lvl=+lr.value; syncLevel(); try{ hSet("speakingroom:lvl", state.lvl); }catch(e){} const el=$("#lvlLabel"); if(el) el.textContent=levelName(); updateLevelBadges(); try{ renderDailyCard(); }catch(e){} };
     lr.addEventListener("input",upd); upd(); }
   $("#levels").querySelectorAll("button").forEach(b=>{
     b.onclick=()=>{
@@ -5684,6 +5707,7 @@ function wpSubmit(q, answer){
       q._missLogged=true;
       try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
     }
+    if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }   // 📈 적응형: 오답
     wpKeepTrying(q, answer);
     return;
   }
@@ -5706,10 +5730,13 @@ function wpSubmit(q, answer){
     const fast=elapsed<4 && !q._wrongCount && !q._hintUsed;
     awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
     if(q.idxInWord===0 && !isRetry && !q._wrongCount && !q._hintUsed){ bumpCount("vocab"); questBump("vocab"); }
+    // 📈 적응형: 한 번에·힌트 없이 맞힘 = perfect(상승 게이지), 그 외 정답 = 중립
+    if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord((!q._wrongCount && !q._hintUsed && !isRetry)?"perfect":"ok"); }
     q._retryNow=false;
   } else {
     // 포기(정답 보기)
     if(!q._missLogged) srsFail(q.word.word, q.word.ko, ctxTag);
+    if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }   // 📈 적응형: 포기
     if(!isRetry) wpRescheduleFail(q);
   }
   try{ const arr=hGet("speakingroom:recall",[]); arr.push(Math.round(elapsed*10)/10); hSet("speakingroom:recall", arr.slice(-60)); }catch(e){}
@@ -5737,6 +5764,57 @@ function wpRescheduleFail(q){
 function wpResult(q, answer, correct, elapsed, gaveUp){
   const a=q.blank.answer; const full=q.blank.en.replace("[ ___ ]", a);
   const si=srsGet(q.word.word); const stage=si?si.stage:"new";
+  // 화면 전환 없이 문제 화면 안에서 결과 표시: 빈칸을 정답으로 채우고, 입력 도구 자리에 결과 삽입
+  const stageEl=document.querySelector("#vbBody .wp-stage"), dockEl=document.querySelector("#vbBody .wp-dock");
+  if(stageEl && dockEl){
+    dockEl.style.display="none";
+    const stEl=$("#wpStatus"); if(stEl) stEl.style.display="none";
+    const hp=$("#wpHintPanel"); if(hp) hp.style.display="none";
+    stageEl.querySelectorAll(".wp-blank").forEach(sp=>{ const b=document.createElement("b"); b.style.color="var(--jade)"; b.textContent=a; sp.replaceWith(b); });
+    const box=document.createElement("div"); box.id="wpResultBox";
+    box.innerHTML=`
+    <div class="mbtab" style="margin-top:10px">${correct?"✅ 정답!":"💡 정답 확인"}</div>
+    <div class="mbcard" style="padding:15px 18px;text-align:center">
+      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
+      <div style="font-family:var(--serif);font-size:28px;color:var(--jade);font-weight:700;line-height:1.15">${escapeHtml(a)}</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:11px">
+        <button class="wp-spd" id="wpSay" style="flex:1">🔊 듣기</button>
+        <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
+      </div>
+      <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
+      ${(!correct)?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
+    </div>
+    <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>
+    <details class="wp-more">
+      <summary>📚 더 알아보기 — 발음 속도 · 예문 · 비슷한 표현 · AI 질문</summary>
+      <div class="wp-more-inner">
+        <div style="margin-bottom:9px"><div style="font-size:12.5px;font-weight:800;color:var(--text);margin-bottom:7px">🎧 발음 듣기</div>
+          <div style="display:flex;gap:8px">
+            <button class="wp-spd" data-r="0.6">🐢 느리게</button>
+            <button class="wp-spd" data-r="1.0">🚶 보통</button>
+            <button class="wp-spd" data-r="1.3">🏃 빠르게</button>
+          </div>
+        </div>
+        ${(()=>{ const idx=SRS_STAGES.indexOf(stage); const pct=Math.round(idx/(SRS_STAGES.length-1)*100);
+          return `<div style="margin-bottom:9px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12.5px;font-weight:800;color:var(--text)">🧠 기억 단계 · ${srsStageLabel(stage)}</span><span style="font-size:11px;color:var(--muted)">사용 ${si?si.uses||0:0}회</span></div>
+            <div style="height:7px;border-radius:99px;background:var(--mist);overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#FF8568,#FF9E7A)"></div></div>
+          </div>`; })()}
+        <div id="wpLearnCard"></div>
+        <button class="dict-ask" id="wpAsk" style="margin-top:6px;width:100%">💬 이 표현에 대해 AI에게 질문하기</button>
+      </div>
+    </details>`;
+    stageEl.appendChild(box);
+    setTimeout(()=>speakEn(full),260);
+    $("#wpSay").onclick=()=>speakEn(full);
+    const askB=$("#wpAsk"); if(askB) askB.onclick=()=>openAskAI(q.word.word, full);
+    box.querySelectorAll(".wp-spd[data-r]").forEach(b=>{ b.onclick=()=>{ const r=parseFloat(b.dataset.r); if(TTS&&SSU){ TTS.cancel(); const u=new SSU(full); if(enVoice)u.voice=enVoice; u.lang="en-US"; u.rate=r; TTS.speak(u); } }; });
+    { const pb=$("#wpPron"); if(pb) pb.onclick=function(){ startPronPractice(full, pb, $("#wpPronResult")); }; }
+    $("#wpNextBtn").onclick=()=>{ wpPos++; wpNext(); };
+    if(correct) wpLoadLearnCard(q.word.word, q.word.ko, q.word);
+    return;
+  }
+  // 폴백(문제 화면이 없을 때만): 기존 전체 교체 방식
   const card=document.createElement("div");
   card.innerHTML=`
     <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
