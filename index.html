@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.73";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.74";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6540,7 +6540,7 @@ function micBeepEnd(){
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
-const VAD_OPTS={maxMs:12000, silenceMs:600, minSpeechMs:280, thresh:0.02};
+const VAD_OPTS={maxMs:15000, silenceMs:600, minSpeechMs:200, thresh:0.012};   // 아이 목소리(작음·고음) 감지: thresh↓, 짧은 답: minSpeechMs↓, 긴 문장: maxMs↑
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
