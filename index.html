@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.69";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.70";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3714,8 +3714,20 @@ function sqRender(){
   </div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>sqSpeak(false), 500);   // 자동 1회 재생 (원문 비노출)
-  $("#sqPlay").onclick=()=>{ if(!sqAnswered) sqReplay++; sqSpeak(false); };
-  $("#sqSlowBtn").onclick=()=>{ if(!sqAnswered) sqSlow=true; sqSpeak(true); };
+  // 다시 듣기(천천히 포함) 최대 3회 — 4번째 시도는 '못 알아들은 것'으로 간주해 오답 처리
+  const sqListenGuard=(slow)=>{
+    if(sqAnswered){ sqSpeak(slow); return; }
+    if(sqReplay>=3){
+      try{ bleShowHintToast("👂 3번까지만 다시 들을 수 있어요 — 이번엔 정답을 확인해요"); }catch(e){}
+      sqAnswer(null);
+      return;
+    }
+    sqReplay++; if(slow) sqSlow=true;
+    const pb=$("#sqPlay"); if(pb) pb.textContent="🔊 다시 듣기 "+(3-sqReplay>0?("("+(3-sqReplay)+"번 남음)"):"(마지막)");
+    sqSpeak(slow);
+  };
+  $("#sqPlay").onclick=()=>sqListenGuard(false);
+  $("#sqSlowBtn").onclick=()=>sqListenGuard(true);
   document.querySelectorAll(".sq-choice").forEach(b=>{ b.onclick=()=>sqAnswer(parseInt(b.dataset.i,10)); });
   $("#sqDunno").onclick=()=>sqAnswer(null);
 }
