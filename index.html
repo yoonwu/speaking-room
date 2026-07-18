@@ -1736,7 +1736,7 @@ body{background:var(--paper)!important;color:var(--text)}
         <button class="eng eng-out eng-core eng-core-speak" id="engOut">
           <span class="help-q" data-tut="output">?</span>
           <span class="eng-emo">⚔️</span>
-          <span class="eng-tx"><b>스피킹 훈련장</b><i>영어로 꺼내기 · 스피드런 · 실전회화</i></span>
+          <span class="eng-tx"><b>스피킹 훈련장</b><i>🌎 실전회화 — 배운 블록을 진짜 대화에서!</i></span>
           <span class="eng-ar">›</span>
         </button>
         </div>
@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.74";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.75";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -10586,6 +10586,11 @@ function openSpeakHub(){
      <div class="hub-grab"></div>
      <div class="hub-title">⚔️ 스피킹 훈련장</div>
      <div class="hub-sub">배운 블록을 말로 써봐요</div>
+     <button class="hub-opt" data-go="real" style="background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)">
+       <span class="hub-emo" style="background:rgba(255,255,255,.2)">🌎</span>
+       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">실전회화 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.18);border-radius:99px;padding:2px 8px;margin-left:4px">★ 최종 목표</i></b><i style="color:rgba(255,255,255,.85)">배운 블록을 AI와 실제 상황처럼 — 여기서 진짜 내 것이 돼요</i></span>
+       <span class="hub-ar" style="background:#fff;color:#189E79">›</span>
+     </button>
      <button class="hub-opt" data-go="auto">
        <span class="hub-emo">🔥</span>
        <span class="hub-tx"><b>입에 붙이기</b><i>배운 표현을 빠르게 반복해 자동으로 나오게</i></span>
@@ -10599,11 +10604,6 @@ function openSpeakHub(){
      <button class="hub-opt" data-go="sprint">
        <span class="hub-emo">⚡</span>
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="real">
-       <span class="hub-emo">🌎</span>
-       <span class="hub-tx"><b>실전회화</b><i>AI와 실제 상황처럼 대화해요</i></span>
        <span class="hub-ar">›</span>
      </button>
    </div>`;
