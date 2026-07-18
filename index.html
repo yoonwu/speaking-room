@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.72";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.73";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8095,13 +8095,10 @@ function bleFreshContextEx2(b, opts){
   let base;
   if(allowed.length){ base=allowed; }
   else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
-  // 🧱 블록은 블록 써먹는 곳 — 슬롯은 '아는 단어' 우선 (기초 생존단어 + 초고빈도 + SRS에서 이미 아는 단어.
-  //    단어 데이터가 쌓일수록 이 풀이 자동으로 넓어짐. 모르는 단어 슬롯은 아는 풀이 다 떨어졌을 때만.)
-  const known=e=>{ try{ return bleContentWords(String(e.object||"")).every(w=>wordAllowedForUser(w,1)); }catch(err){ return false; } };
+  // 🧱 슬롯 난이도는 bleSlotAllowed(slotUwl = 단어레벨의 60%)가 이미 확 낮춰줌 — 여기선 새로움만 우선 (같은 슬롯 과반복 방지)
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
-  const freshKnown=fresh.filter(known), nrKnown=notRecent.filter(known);
-  const pool = freshKnown.length?freshKnown : nrKnown.length?nrKnown : (fresh.length?fresh:(notRecent.length?notRecent:base));
+  const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
   const pick=pool[(Math.random()*pool.length)|0];
   if(opts.remember!==false) bleRememberContext(b.id,pick);
   return pick;
@@ -8344,8 +8341,8 @@ function wordAllowedForUser(w, uwl){
   return false;
 }
 // 문장이 유저 레벨에 맞나 — 모르는 단어 slack개까지 허용(점진 도입)
-function sentenceAllowedForUser(en, slack){
-  const uwl=userWordLevel();
+function sentenceAllowedForUser(en, slack, uwlOverride){
+  const uwl=uwlOverride!=null?uwlOverride:userWordLevel();
   const words=bleContentWords(String(en||""));
   if(!words.length) return true;
   let over=0; words.forEach(w=>{ if(!wordAllowedForUser(w,uwl)) over++; });
@@ -8361,17 +8358,20 @@ function slotHasIntensifier(object){
 }
 // 슬롯 단어 수 (긴 의견·절일수록 초보에겐 부담)
 function slotWordCount(object){ return String(object||"").trim().split(/\s+/).filter(Boolean).length; }
+// 슬롯 단어 레벨 = 내 단어 레벨의 60% (최소 1) — 블록 훈련의 단어는 항상 내 수준보다 한참 쉬워야 함.
+// 단어가 쌓이면 이 값도 따라 올라가서 자연히 넓어짐. (아는 SRS 단어는 레벨 무관 항상 허용)
+function slotUwl(){ return Math.max(1, Math.round(userWordLevel()*0.6)); }
 function bleSlotAllowed(object){
-  const uwl=userWordLevel();
+  const uwl=slotUwl();
   if(uwl<=2){
     if(slotHasIntensifier(object)) return false;        // 초보: 강조어/비교급 슬롯 제외
     if(slotWordCount(object)>4) return false;            // 초보: 5단어↑ 긴 의견절 제외("this class is right for me")
   }
-  return sentenceAllowedForUser(object, 0);
+  return sentenceAllowedForUser(object, 0, uwl);
 }
 // 슬롯 난이도 = 모르는 내용어 수 + 강조어 + 길이 가중 (낮을수록 쉬움)
 function bleSlotHardness(object){
-  const uwl=userWordLevel();
+  const uwl=slotUwl();
   let h=bleContentWords(String(object||"")).filter(w=>!wordAllowedForUser(w,uwl)).length;
   if(slotHasIntensifier(object)) h+=2;
   h+=Math.max(0, slotWordCount(object)-4);   // 4단어 초과분만큼 가중(짧고 구체적인 문장 우선)
