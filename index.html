@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.70";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.71";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5816,18 +5816,14 @@ function wpHintSimilarSentences(w, currentBlank){
 }
 function wpRenderHintPanel(q, spellHtml){
   const panel=$("#wpHintPanel"); if(!panel) return;
-  const syn=wpHintSynonyms(q.word);
-  const sims=wpHintSimilarSentences(q.word, q.blank);
   panel.style.display="block";
+  // 동의어·비슷한 문장은 답이 그대로 노출되는 경우가 많아 힌트에서 제거 — 정답 후 '더 알아보기'에서만 공개
   panel.innerHTML=`
-    <div style="font-size:13px;font-weight:900;color:var(--text);margin-bottom:8px">💡 힌트 보기</div>
-    <div style="font-size:13.5px;color:var(--text);line-height:1.55;background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:9px">
+    <div style="font-size:13px;font-weight:900;color:var(--text);margin-bottom:8px">💡 힌트 보기 <span style="font-weight:700;color:var(--muted);font-size:11px">(힌트를 보면 이 단어는 복습으로 넘어가요)</span></div>
+    <div style="font-size:13.5px;color:var(--text);line-height:1.55;background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:10px 12px">
       ${spellHtml}
       ${q.word.ko?`<div style="margin-top:6px;color:var(--muted)">뜻: ${escapeHtml(q.word.ko)}</div>`:""}
-    </div>
-    ${syn.length?`<div style="font-size:12px;font-weight:800;color:var(--muted);margin:8px 0 6px">동의어 · 비슷한 말</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px">${syn.map(s=>`<span style="font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 11px;color:var(--text)">${escapeHtml(s)}</span>`).join("")}</div>`:""}
-    ${sims.length?`<div style="font-size:12px;font-weight:800;color:var(--muted);margin:8px 0 6px">비슷한 문장</div>${sims.map(s=>`<button class="wp-line" data-say="${escapeAttr(s.full)}"><span style="display:block">${escapeHtml(s.en)}</span>${s.ko?`<span style="display:block;font-size:13px;color:var(--muted);margin-top:3px;font-family:var(--sans)">${escapeHtml(s.ko)}</span>`:""}</button>`).join("")}`:""}`;
-  panel.querySelectorAll(".wp-line").forEach(b=>{ b.onclick=()=>{ const t=b.dataset.say; if(t) speakEn(t); }; });
+    </div>`;
 }
 // ===== 단어 학습 이어하기 (중간에 꺼져도 복원) =====
 const WP_PROG_KEY="speakingroom:wp_progress";
@@ -6076,13 +6072,21 @@ function wpSubmit(q, answer){
   const ctxTag=(state.vocabTheme&&state.vocabTheme.id)||"daily";
   if(correct){
     flashResult(true);
-    srsPass(q.word.word, q.word.ko, ctxTag);
-    try{ rtBump("vocab"); }catch(e){}   // 📋 오늘 루틴: 단어
-    const fast=elapsed<4 && !q._wrongCount && !q._hintUsed;
-    awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
-    if(q.idxInWord===0 && !isRetry && !q._wrongCount && !q._hintUsed){ bumpCount("vocab"); questBump("vocab"); }
-    // 📈 적응형: 한 번에·힌트 없이 맞힘 = perfect(상승 게이지), 그 외 정답 = 중립
-    if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord((!q._wrongCount && !q._hintUsed && !isRetry)?"perfect":"ok"); }
+    // 💡 힌트를 봤으면 '모르는 단어' 취급 — SRS 실패 기록 + 뒤에서 재출제 + 레벨 하강 신호
+    if(q._hintUsed){
+      if(!q._missLogged){ srsFail(q.word.word, q.word.ko, ctxTag); q._missLogged=true; }
+      if(!isRetry) wpRescheduleFail(q);
+      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }
+      awardXP("vocab", 3, "단어 연습(힌트)", "wp:"+q.word.word+":"+q.idxInWord+":h");
+    } else {
+      srsPass(q.word.word, q.word.ko, ctxTag);
+      try{ rtBump("vocab"); }catch(e){}   // 📋 오늘 루틴: 단어 (힌트 없이 맞힌 것만)
+      const fast=elapsed<4 && !q._wrongCount;
+      awardXP("vocab", fast?12:8, "단어 인출 ✅", "wp:"+q.word.word+":"+q.idxInWord+(isRetry?":r":""));
+      if(q.idxInWord===0 && !isRetry && !q._wrongCount){ bumpCount("vocab"); questBump("vocab"); }
+      // 📈 적응형: 한 번에 맞힘 = perfect, 재시도 정답 = 중립
+      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord((!q._wrongCount && !isRetry)?"perfect":"ok"); }
+    }
     q._retryNow=false;
   } else {
     // 포기(정답 보기)
@@ -8932,7 +8936,7 @@ function bleWireRetrieve(it){
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(!v)return; inp.disabled=true; if(timer)clearInterval(timer); bleFinishRetrieve(it, v); } });
   };
   $("#bleHint").onclick=()=>{ bleShowHintToast('💡 '+escapeHtml(bleSituationHint(b))); };
-  { const _bw=$("#bleWord"); if(_bw) _bw.onclick=()=>bleRevealWord(it); }
+  { const _bw=$("#bleWord"); if(_bw) _bw.onclick=()=>{ it._hintUsed=true; bleRevealWord(it); }; }
   bleWireFocusTools(it);
 }
 async function bleFinishRetrieve(it, heard){
@@ -9333,8 +9337,8 @@ async function bleFinishRetrieveDeep(it, heard){
   }
   speakEn(j.naturalAnswer||ex.en);
   try{ if(bleDeep&&bleDeep.outputMode) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기)
-  try{ autoLvlRecord("block", j.targetBlockSuccess?(fast?"perfect":"ok"):"miss"); }catch(e){}
-  try{ if(j.targetBlockSuccess && typeof ms==="number") autoLvlRecord("speed", ms<=3000?"perfect":(ms<=5000?"ok":"miss")); }catch(e){}
+  try{ autoLvlRecord("block", it._hintUsed?"miss":(j.targetBlockSuccess?(fast?"perfect":"ok"):"miss")); }catch(e){}
+  try{ if(j.targetBlockSuccess && typeof ms==="number" && !it._hintUsed) autoLvlRecord("speed", ms<=3000?"perfect":(ms<=5000?"ok":"miss")); }catch(e){}
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, source:"output_training", userAnswer:heard, suggestedAnswer:j.naturalAnswer||ex.en, naturalAnswer:j.naturalAnswer||ex.en, confusedWith:j.confusedWith});
   try{
     const nat=j.naturalAnswer||ex.en;
@@ -11033,7 +11037,7 @@ function ctNext(){
     if(!ctSpoke) ctSpoke=Date.now();
     inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const t=inp.value.trim(); if(!t) return; inp.disabled=true; ctScore(it, t); } });
   };
-  $("#ctWord").onclick=()=>ctShowWords(it);
+  $("#ctWord").onclick=()=>{ it._hintUsed=true; ctShowWords(it); };
 }
 // 🔤 정답의 핵심 단어 + 뜻 공개 → 본 단어는 '모르는 단어'로 SRS 등록 (뱉기 막힘 방지 + 단어 학습 연결)
 function ctShowWords(it){
@@ -11065,9 +11069,9 @@ function ctScore(it, heard, meta){
   const elapsed=Math.max(0.1,((ctSpoke||Date.now())-ctT0)/1000);
   const grade=spGrade(heard, it, elapsed);
   const ok=(grade!=="miss");
-  if(ok) ctPass++;
-  // 난이도 기반 XP — 정답일수록·어려울수록 더 (문항별)
-  try{ awardXP("output", xpForResult(it.en, grade), "오늘의 블록", "ct:"+String(it.en||"").toLowerCase().slice(0,28)); }catch(e){}
+  if(ok && !it._hintUsed) ctPass++;   // 💡 단어 보기(힌트) 후 정답은 통과로 안 침 (모름 취급)
+  // 난이도 기반 XP — 정답일수록·어려울수록 더 (문항별). 힌트 사용 시 소액
+  try{ awardXP("output", it._hintUsed?3:xpForResult(it.en, grade), it._hintUsed?"오늘의 블록(힌트)":"오늘의 블록", "ct:"+String(it.en||"").toLowerCase().slice(0,28)); }catch(e){}
   const stat=$("#ctStat");
   if(stat){
     const lbl = grade==="perfect"?`<span style="color:#ffd17a;font-weight:900">⚡ PERFECT</span>`
@@ -12756,6 +12760,7 @@ function autoDrillRender(recallMode){
 // 🔤 슬롯(빈칸) 단어만 살짝 보여주기 — 턴은 안 끝냄. 본 단어 = 모르는 단어 → 내부 등록
 function autoDrillShowWord(){
   const it=autoDrill&&autoDrill.items[autoDrill.idx]; if(!it) return;
+  it._hintUsed=true;   // 💡 단어를 봤으면 이 문항은 자동화 성공으로 치지 않음
   const slot=String((it.ex&&it.ex.object)||"").trim();
   const showEn=slot||String((it.ex&&it.ex.en)||"").trim();
   if(!showEn) return;
@@ -12786,16 +12791,16 @@ function autoDrillFinish(heard, meta){
   const g=adGrade(it.block, it.ex, heard);
   const fast=initSec<=it.limit;
   try{ rtBump("drill"); }catch(e){}   // 📋 오늘 루틴: 블록 랜덤 반복
-  const perfect=g.ok && fast;
+  const perfect=g.ok && fast && !it._hintUsed;   // 💡 힌트(단어 보기) 사용 시 자동화 성공 아님
   const result=g.ok ? "PERFECT" : "MISS";
   // 난이도 기반 XP (문항별): 자동화 성공=perfect, 뜻만 맞음=hit, 실패=miss
   try{ awardXP("output", xpForResult((it.ex&&it.ex.en)||"", perfect?"perfect":(g.ok?"hit":"miss")), "입에 붙이기", "auto:"+String((it.ex&&it.ex.en)||"").toLowerCase().slice(0,28)); }catch(e){}
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
-  // 🎯 자동 레벨 기록 — block(인출)·speed(3초 시작)는 독립
-  try{ autoLvlRecord("block", g.ok?(fast?"perfect":"ok"):"miss"); }catch(e){}
-  try{ if(g.ok) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
+  // 🎯 자동 레벨 기록 — block(인출)·speed(3초 시작)는 독립. 힌트 사용 = 모름(miss)
+  try{ autoLvlRecord("block", it._hintUsed?"miss":(g.ok?(fast?"perfect":"ok"):"miss")); }catch(e){}
+  try{ if(g.ok && !it._hintUsed) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
   // 못 맞춘 문항 재등장: 1차 실패 → 2~3문제 뒤, 또 실패 → 세션 끝나기 전 한 번 더
   if(!perfect && (it._requeues||0)<2){
     const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _requeues:(it._requeues||0)+1, _requeued:true});
