@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.71";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.72";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8095,9 +8095,13 @@ function bleFreshContextEx2(b, opts){
   let base;
   if(allowed.length){ base=allowed; }
   else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
+  // 🧱 블록은 블록 써먹는 곳 — 슬롯은 '아는 단어' 우선 (기초 생존단어 + 초고빈도 + SRS에서 이미 아는 단어.
+  //    단어 데이터가 쌓일수록 이 풀이 자동으로 넓어짐. 모르는 단어 슬롯은 아는 풀이 다 떨어졌을 때만.)
+  const known=e=>{ try{ return bleContentWords(String(e.object||"")).every(w=>wordAllowedForUser(w,1)); }catch(err){ return false; } };
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
-  const pool=fresh.length?fresh:(notRecent.length?notRecent:base);
+  const freshKnown=fresh.filter(known), nrKnown=notRecent.filter(known);
+  const pool = freshKnown.length?freshKnown : nrKnown.length?nrKnown : (fresh.length?fresh:(notRecent.length?notRecent:base));
   const pick=pool[(Math.random()*pool.length)|0];
   if(opts.remember!==false) bleRememberContext(b.id,pick);
   return pick;
