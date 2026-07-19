@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.75";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.76";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-17";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13223,8 +13223,8 @@ function renderRoutineCard(){
   }).join("");
   const main=RT_STEPS.findIndex(s=>s.main);
   const hero=(()=>{
-    const s=RT_STEPS[main]; const G=rtGoalOf(s); const cur=Math.min(G, rtCount(s.k,d)); const done=cur>=G;
-    const pc=Math.round(cur/G*100);
+    const s=RT_STEPS[main]; const G=rtGoalOf(s); const cur=rtCount(s.k,d); const done=cur>=G;
+    const pc=Math.min(100, Math.round(cur/G*100));
     if(done) return `<button class="rt-row" data-i="${main}" style="grid-column:1/-1;position:relative;overflow:hidden;text-align:left;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.28);border-radius:16px;padding:13px 14px;cursor:pointer">
       <div style="position:absolute;right:-18px;top:-20px;font-size:74px;opacity:.12">${s.emo}</div>
       <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#19a06b">오늘의 핵심 퀘스트</span>
@@ -13240,12 +13240,12 @@ function renderRoutineCard(){
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,.75);font-weight:700;margin-top:2px">${s.sub||""}</div>
       <div style="height:6px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:${pc}%;background:#fff;transition:width .6s cubic-bezier(.22,1,.36,1)"></span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><span style="font-size:11px;color:rgba(255,255,255,.8);font-weight:700">${cur>0?(G-cur)+"개 남았어요":"오늘의 메인 훈련"}</span><span style="font-size:11.5px;font-weight:900;color:#189E79;background:#fff;padding:5px 13px;border-radius:99px">GO ›</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px"><span style="font-size:11px;color:rgba(255,255,255,.8);font-weight:700">${cur>0?(cur>=G?"초과 달성 중 🔥":(G-cur)+"개 남았어요"):"오늘의 메인 훈련"}</span><span style="font-size:11.5px;font-weight:900;color:#189E79;background:#fff;padding:5px 13px;border-radius:99px">GO ›</span></div>
     </button>`;
   })();
   const tiles=RT_STEPS.map((s,i)=>{
     if(i===main) return "";
-    const G=rtGoalOf(s); const cur=Math.min(G, rtCount(s.k,d)); const done=cur>=G; const pc=Math.round(cur/G*100);
+    const G=rtGoalOf(s); const cur=rtCount(s.k,d); const done=cur>=G; const pc=Math.min(100, Math.round(cur/G*100));
     return `<button class="rt-row" data-i="${i}" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-radius:16px;cursor:pointer;
       background:${done?"rgba(25,160,107,.08)":"#ECF7F2"};border:1px solid ${done?"rgba(25,160,107,.28)":"var(--line)"}">
       <span style="flex:none;width:44px;height:44px;display:grid;place-items:center;font-size:22px;border-radius:13px;background:${done?"rgba(25,160,107,.14)":"rgba(43,189,148,.12)"}">${done?"✅":s.emo}</span>
