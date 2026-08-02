@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.79";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.80";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3631,6 +3631,37 @@ function sqShuffleChoices(o){
   o.answer_index=idx.indexOf(o.answer_index);
   return o;
 }
+/* ===== 👂 상황듣기 내장 문제 뱅크 — 앱 시작 시 프리로드, 출제 0초. AI는 뱅크 없을 때 폴백 ===== */
+const SQ_BANK_URL="sq-bank.json";
+const SQ_SEEN_KEY="speakingroom:sq_seen";
+let sqBank=null;
+async function sqBankLoad(){
+  if(sqBank) return;
+  try{
+    const r=await fetch(SQ_BANK_URL,{cache:"default"});
+    if(r.ok){ const d=await r.json(); if(Array.isArray(d)&&d.length){ sqBank=d; try{localStorage.setItem("speakingroom:sq_bank",JSON.stringify(d));}catch(e){} return; } }
+  }catch(e){}
+  // 네트워크 실패 → 마지막으로 저장해둔 사본 (완전 오프라인 대비)
+  try{ const d=JSON.parse(localStorage.getItem("speakingroom:sq_bank")||"null"); if(Array.isArray(d)&&d.length) sqBank=d; }catch(e){}
+}
+function sqSeenGet(){ try{ const a=JSON.parse(localStorage.getItem(SQ_SEEN_KEY)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function sqSeenAdd(en){ try{ const a=sqSeenGet(); a.push(en); localStorage.setItem(SQ_SEEN_KEY, JSON.stringify(a.slice(-600))); }catch(e){} }
+function sqBankBand(){ const d=withLvl(getAutoLevels().listenLevel, diffLevel); return d<=12?1:(d<=30?2:(d<=45?3:4)); }
+function sqBankPick(){
+  if(!sqBank||!sqBank.length) return null;
+  const band=sqBankBand();
+  let pool=sqBank.filter(it=>it.b===band);
+  if(!pool.length) pool=sqBank;
+  const seen=new Set(sqSeenGet().concat(sqRecent));
+  const qtype=sqNextType();
+  let cand=pool.filter(it=>it.t===qtype&&!seen.has(it.e));
+  if(!cand.length) cand=pool.filter(it=>!seen.has(it.e));
+  if(!cand.length){ try{localStorage.setItem(SQ_SEEN_KEY,"[]");}catch(e){} cand=pool.filter(it=>sqRecent.indexOf(it.e)<0); }
+  if(!cand.length) cand=pool;
+  const it=cand[(Math.random()*cand.length)|0];
+  sqSeenAdd(it.e);
+  return sqShuffleChoices({scene_ko:it.s, audio_en:it.e, audio_ko:it.k, question_type:it.t, question_ko:it.q, choices:it.c.slice(), answer_index:it.a, explanation_ko:it.x, focus:it.f});
+}
 let sqLastErr="";
 async function sqFetchOne(){
   sqLastErr="";
@@ -3670,6 +3701,10 @@ function startSituationListening(){
 async function sqGenerate(){
   sqReplay=0; sqSlow=false; sqAnswered=false; sqAwarded=false;
   const lsModeEl=$("#lsModeTag"); if(lsModeEl) lsModeEl.textContent="👂 상황 듣기";
+  // 0) 내장 뱅크 — 로딩 0초 즉시 출제 (AI 호출 없음)
+  if(!sqBank) await sqBankLoad();
+  const bo=sqBankPick();
+  if(bo){ sqItem=bo; sqCount++; sqRecent.push(bo.audio_en); sqRender(); return; }
   if(sqPrefetch){ sqItem=sqPrefetch; sqPrefetch=null; sqCount++; sqRecent.push(sqItem.audio_en); sqRender(); sqPrefetchNext(); return; }
   $("#listenScroll").innerHTML=`<div class="lloading">문제를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   const o=await sqFetchOne();
@@ -14232,6 +14267,7 @@ checkForUpdate();   // 폰/PC 자동 최신화
 setTimeout(maybeShowOnboarding, 400);   // 🚀 첫 실행이면 온보딩 표시
 // 🚀 백그라운드 예열: 앱 켜자마자 단어 세트 미리 준비 (첫 진입도 즉시 AI 단어)
 setTimeout(()=>{ try{
+  sqBankLoad();   // 👂 상황듣기 내장 문제 뱅크 프리로드
   prefetchVocab(state.vocabTheme);
   prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
 }catch(e){} }, 1500);
