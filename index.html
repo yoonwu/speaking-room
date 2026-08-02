@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.77";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.78";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3628,13 +3628,19 @@ function sqShuffleChoices(o){
   o.answer_index=idx.indexOf(o.answer_index);
   return o;
 }
+let sqLastErr="";
 async function sqFetchOne(){
+  sqLastErr="";
   for(let t=0;t<3;t++){
     try{
       const data=await callClaude(sqSys(),[{role:"user",content:"Create the question now."}], FAST_MODEL);
-      const o=parseJSON(extractText(data));
-      if(sqValid(o) && sqRecent.indexOf(o.audio_en)<0) return sqShuffleChoices(o);
-    }catch(e){}
+      let o=null;
+      try{ o=parseJSON(extractText(data)); }catch(pe){ sqLastErr="응답 형식 오류"; continue; }
+      if(!sqValid(o)){ sqLastErr="응답 형식 오류"; continue; }
+      // 최근 문장과 중복이면 재시도하되, 마지막 시도는 중복이라도 출제 (실패보다 반복이 낫다)
+      if(sqRecent.indexOf(o.audio_en)>=0 && t<2){ sqLastErr="중복 문제"; continue; }
+      return sqShuffleChoices(o);
+    }catch(e){ sqLastErr=(e&&e.message)||"연결 실패"; }
   }
   return null;
 }
@@ -3664,7 +3670,7 @@ async function sqGenerate(){
   if(sqPrefetch){ sqItem=sqPrefetch; sqPrefetch=null; sqCount++; sqRecent.push(sqItem.audio_en); sqRender(); sqPrefetchNext(); return; }
   $("#listenScroll").innerHTML=`<div class="lloading">문제를 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   const o=await sqFetchOne();
-  if(!o){ $("#listenScroll").innerHTML=`<div class="lloading">문제를 만들지 못했어요.<br><button class="sh-next" id="sqRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`; const r=$("#sqRetry"); if(r) r.onclick=sqGenerate; return; }
+  if(!o){ $("#listenScroll").innerHTML=`<div class="lloading">문제를 만들지 못했어요.<br><span style="font-size:12px;opacity:.65">원인: ${sqLastErr||"알 수 없는 오류"}</span><br><button class="sh-next" id="sqRetry" style="max-width:240px;margin-top:14px">다시 시도</button></div>`; const r=$("#sqRetry"); if(r) r.onclick=sqGenerate; return; }
   sqItem=o; sqCount++; sqRecent.push(o.audio_en);
   sqRender(); sqPrefetchNext();
 }
