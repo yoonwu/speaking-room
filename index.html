@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.87";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.88";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3963,7 +3963,7 @@ function renderListenPlay(){
   $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
   $("#lsCheck").onclick=()=>{ lsAnswer=lsTargets.filter((w,i)=>lsFilled[i]).join(" "); lsCheckAnswer(); };
   const mic=$("#lsDictMic"); const micLbl=mic.querySelector("span");
-  mic.onclick=function(){ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } TTS&&TTS.cancel(); mic.classList.add("rec"); if(micLbl) micLbl.textContent="🎙️ 듣는 중…";
+  mic.onclick=function(){ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } TTS&&TTS.cancel(); mic.classList.add("rec"); if(micLbl) micLbl.textContent="🎙️ 듣는 중… (다 말하면 탭)";
     micFillCb((t)=>{ mic.classList.remove("rec"); if(micLbl) micLbl.textContent="🎤 들은 대로 말하기";
       const added=lsFillFromHeard(t);
       const done=lsFilled.every(Boolean);
@@ -7002,13 +7002,17 @@ const VAD_OPTS={maxMs:15000, silenceMs:600, minSpeechMs:200, thresh:0.012};   //
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
+  // minTotalMs: 말을 시작한 뒤 이만큼 지나기 전에는 무음이 와도 끊지 않음
+  //   (긴 문장을 단어 단위로 끊어 말하는 아이가 첫 단어만 녹음되는 문제 방지)
+  // noSpeechMs: 아예 말이 없으면 끝까지 기다리지 않고 일찍 종료
+  const minTotalMs=opts.minTotalMs||0, noSpeechMs=opts.noSpeechMs||0;
   const onSpeechStart=typeof opts.onSpeechStart==="function"?opts.onSpeechStart:null;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;
     const ac=new AC(); const src=ac.createMediaStreamSource(stream);
     const an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
     const buf=new Uint8Array(an.fftSize);
-    const t0=Date.now(); let lastLoud=0, spoke=false, started=false, done=false;
+    const t0=Date.now(); let lastLoud=0, firstLoud=0, spoke=false, started=false, done=false;
     function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
     function tick(){
       if(done)return;
@@ -7017,10 +7021,13 @@ function attachVAD(stream, onStop, opts){
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
       if(rms>thresh){
         lastLoud=now;
+        if(!firstLoud) firstLoud=now;
         if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
         if(now-t0>minSpeechMs) spoke=true;
       }
-      if(spoke && lastLoud && (now-lastLoud)>silenceMs){ return fin(); }
+      if(spoke && lastLoud && (now-lastLoud)>silenceMs
+         && (!minTotalMs || (now-(firstLoud||t0))>=minTotalMs)){ return fin(); }
+      if(!spoke && noSpeechMs && (now-t0)>noSpeechMs){ return fin(); }   // 말이 없으면 그만 기다림
       if(now-t0>maxMs){ return fin(); }
       requestAnimationFrame(tick);
     }
@@ -7059,9 +7066,15 @@ async function micFillCb(rawCb, refText){
       cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
-    // 문장(3단어 이상)을 말하는 과제는 단어 사이 멈춤이 길어 600ms면 중간에 끊김 → 넉넉하게
+    // 문장을 말하는 과제는 단어 사이 멈춤이 길다. 목표 문장이 길수록 더 기다리고,
+    // '말한 시간이 문장 길이에 비해 너무 짧으면' 무음이 와도 끊지 않는다(앞부분만 녹음되는 문제 방지).
     const _w=String(refText||"").trim().split(/\s+/).filter(Boolean).length;
-    const _vad = _w>=3 ? {...VAD_OPTS, silenceMs:1400, maxMs:20000} : VAD_OPTS;
+    const _vad = _w>=3
+      ? {...VAD_OPTS,
+         silenceMs: Math.min(3000, 1000+_w*200),     // 예: 5단어 2.0초 · 13단어 3.0초
+         minTotalMs: Math.min(9000, _w*300),          // 문장 길이의 최소 발화 시간 확보
+         maxMs: 25000, noSpeechMs: 7000}
+      : {...VAD_OPTS, noSpeechMs: 6000};
     attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
   }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
