@@ -1742,7 +1742,7 @@ body{background:var(--paper)!important;color:var(--text)}
         </div>
         <button id="rankHomeBtn" style="width:100%;margin:0 0 13px;padding:13px 15px;display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--text);font-size:14.5px;font-weight:800;cursor:pointer;text-align:left">
           <span style="font-size:19px">🏆</span>
-          <span style="flex:1">랭킹 보기<span style="display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px">이번 주 · 연속 학습 · 블록 · 실력 레벨</span></span>
+          <span style="flex:1">랭킹 보기<span style="display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px">이번 주 · 연속 학습 · 블록 · 레벨 · 훈련 시간</span></span>
           <span style="color:var(--muted)">›</span>
         </button>
         <button class="continue" id="continueCard" style="display:none">
@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.82";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.83";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2076,7 +2076,14 @@ function syncSummary(){
     let blocks=0; try{ blocks=getLearnedBlocks().length; }catch(e){}
     let lvl=1; try{ lvl=profSkillStats().overallLevel; }catch(e){}
     let week=0; try{ week=xpWeek(); }catch(e){}
-    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak:st.n||0, week, blocks, lvl};
+    let mins=0, cats={}, allMins=0;
+    try{
+      try{ ttFlush(); }catch(e2){}
+      const w=ttSum(7); mins=ttMin(ttTotalOf(w));
+      Object.keys(w).forEach(c=>{ const m=ttMin(w[c]); if(m>0) cats[c]=m; });
+      allMins=ttMin(ttTotalOf(ttSum(0)));
+    }catch(e){}
+    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak:st.n||0, week, blocks, lvl, mins, allMins, cats};
   }catch(e){ return null; }
 }
 function syncStatusText(){
@@ -2092,6 +2099,82 @@ try{
   _ls.setItem=function(k,v){ _set(k,v); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
   _ls.removeItem=function(k){ _rm(k); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
 }catch(e){}
+/* ===== ⏱ 훈련 시간 기록 =====
+   그냥 켜두기만 하면 안 쌓이고, 실제로 훈련하는 동안에만 쌓임.
+   - 훈련 화면에 있을 것 (홈/프로필에서는 멈춤)
+   - 화면이 켜져 있고 앱이 앞에 있을 것
+   - 최근 45초 안에 조작이 있었거나, 말하는 중(녹음)·듣는 중(음성 재생)일 것 */
+const TT_LOG_KEY="speakingroom:timelog";     // {"<날짜>":{분야:초}} — 최근 30일
+const TT_TOTAL_KEY="speakingroom:timetotal"; // {분야:초} — 전체 누적
+const TT_IDLE_MS=45000;
+const TT_TICK_MS=5000;
+const TT_CATS={
+  block:{emo:"🧱",t:"블록 영어"}, drill:{emo:"🔁",t:"반복 학습"}, listen:{emo:"🎧",t:"듣기"},
+  vocab:{emo:"📖",t:"단어"},     speak:{emo:"⚔️",t:"스피킹"},   talk:{emo:"🌎",t:"실전 회화"},
+  phonics:{emo:"🏰",t:"발음"}
+};
+let ttCat=null, ttLastAct=0, ttTimer=null, ttCarry=0;
+function ttTouch(){ ttLastAct=Date.now(); }
+function ttFlush(){
+  if(ttCarry<1||!ttCat){ ttCarry=0; return; }
+  const add=Math.round(ttCarry), cat=ttCat;
+  ttCarry=0;
+  try{
+    const log=hGet(TT_LOG_KEY,{})||{}; const day=String(DAYN());
+    if(!log[day]||typeof log[day]!=="object") log[day]={};
+    log[day][cat]=(Number(log[day][cat])||0)+add;
+    const days=Object.keys(log).sort();
+    while(days.length>30){ delete log[days.shift()]; }
+    hSet(TT_LOG_KEY,log);
+    const tot=hGet(TT_TOTAL_KEY,{})||{};
+    tot[cat]=(Number(tot[cat])||0)+add;
+    hSet(TT_TOTAL_KEY,tot);
+  }catch(e){}
+}
+function ttTick(){
+  if(!ttCat) return;
+  const now=Date.now();
+  // 말하는 중·듣는 중이면 손을 안 대도 훈련 중으로 인정
+  try{ if(typeof qzRecording!=="undefined" && qzRecording) ttLastAct=now; }catch(e){}
+  try{ if(TTS && TTS.speaking) ttLastAct=now; }catch(e){}
+  if(document.visibilityState!=="visible") return;   // 화면 꺼짐·다른 앱 → 측정 안 함
+  if(now-ttLastAct>TT_IDLE_MS) return;               // 켜두기만 한 상태 → 측정 안 함
+  ttCarry+=TT_TICK_MS/1000;
+  if(ttCarry>=30) ttFlush();                          // 30초마다만 저장 (쓰기 부담↓)
+}
+function ttStart(cat){
+  if(!TT_CATS[cat]) cat="block";
+  if(ttCat && ttCat!==cat) ttFlush();                 // 분야가 바뀌면 이전 분야부터 정산
+  ttCat=cat; ttTouch();
+  if(!ttTimer) ttTimer=setInterval(ttTick, TT_TICK_MS);
+}
+function ttStop(){ ttFlush(); ttCat=null; if(ttTimer){ clearInterval(ttTimer); ttTimer=null; } }
+// 분야별 합계 (days=1이면 오늘, 7이면 최근 7일, 0이면 전체 누적)
+function ttSum(days){
+  const out={};
+  try{
+    if(!days){ const tot=hGet(TT_TOTAL_KEY,{})||{}; Object.keys(TT_CATS).forEach(c=>{ if(tot[c]) out[c]=Number(tot[c])||0; }); return out; }
+    const log=hGet(TT_LOG_KEY,{})||{}; const now=new Date();
+    for(let i=0;i<days;i++){
+      const x=new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+      const k=String(x.getFullYear()*10000+(x.getMonth()+1)*100+x.getDate());
+      const day=log[k]; if(!day) continue;
+      Object.keys(day).forEach(c=>{ out[c]=(out[c]||0)+(Number(day[c])||0); });
+    }
+  }catch(e){}
+  return out;
+}
+function ttTotalOf(obj){ return Object.keys(obj||{}).reduce((a,k)=>a+(Number(obj[k])||0),0); }
+function ttMin(sec){ return Math.round((Number(sec)||0)/60); }
+function ttFmt(sec){
+  const m=ttMin(sec);
+  if(m<60) return m+"분";
+  return Math.floor(m/60)+"시간 "+(m%60)+"분";
+}
+["pointerdown","keydown","touchstart"].forEach(ev=>{
+  try{ document.addEventListener(ev, ttTouch, {passive:true, capture:true}); }catch(e){}
+});
+
 /* ===== 🏆 랭킹 — 같은 워커를 쓰는 친구들끼리 순위 비교 =====
    여러 판을 두는 이유: 한 판만 있으면 오래 한 사람이 늘 1등이라
    늦게 시작한 아이가 따라잡을 곳이 없어짐. 주간판은 매주 리셋. */
@@ -2099,7 +2182,8 @@ const RANK_BOARDS=[
   {k:"week",   emo:"🔥", t:"이번 주",   unit:"XP",  sub:"최근 7일 동안 모은 XP — 매주 새로 시작해요"},
   {k:"streak", emo:"📅", t:"연속 학습", unit:"일",  sub:"하루도 빠지지 않고 이어온 날"},
   {k:"blocks", emo:"🧱", t:"배운 블록", unit:"개",  sub:"입에 붙인 영어 블록 개수"},
-  {k:"lvl",    emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"}
+  {k:"lvl",    emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"},
+  {k:"mins",   emo:"⏱", t:"훈련 시간", unit:"분",  sub:"이번 주 실제로 훈련한 시간 — 켜두기만 하면 안 쌓여요", detail:true}
 ];
 let rankTab="week", rankRows=null, rankErr="";
 function rankClose(){ const ov=document.getElementById("rankOv"); if(ov) ov.remove(); }
@@ -2121,11 +2205,46 @@ async function rankOpen(){
   }catch(e){ rankErr="연결에 실패했어요."; }
   rankRender();
 }
+// ⏱ 자세히 보기 — 어떤 분야를 몇 분 했는지
+function rankDetail(nick){
+  const row=(rankRows||[]).find(r=>r.n===nick); if(!row) return;
+  const mine=(row.n===syncNick());
+  const cats=(row.cats&&typeof row.cats==="object")?row.cats:{};
+  const week=Object.keys(cats).reduce((a,k)=>a+(Number(cats[k])||0),0);
+  const rows=Object.keys(TT_CATS)
+    .map(c=>({c, m:Number(cats[c])||0}))
+    .filter(x=>x.m>0).sort((a,b)=>b.m-a.m);
+  const maxM=rows.length?rows[0].m:1;
+  const body=rows.length
+    ? rows.map(x=>`<div style="margin-bottom:10px">
+        <div style="display:flex;align-items:baseline;gap:7px;font-size:13.5px;font-weight:800;color:var(--text,#1c1410)">
+          <span>${TT_CATS[x.c].emo}</span><span style="flex:1">${TT_CATS[x.c].t}</span>
+          <span style="color:#189E79">${x.m}분</span>
+          <span style="font-size:11px;color:var(--muted,#8a7f78);font-weight:700">${week?Math.round(x.m/week*100):0}%</span>
+        </div>
+        <div style="height:8px;border-radius:99px;background:var(--mist,#f1ebe5);overflow:hidden;margin-top:5px">
+          <i style="display:block;height:100%;width:${Math.max(4,Math.round(x.m/maxM*100))}%;background:linear-gradient(90deg,#2BBD94,#189E79)"></i>
+        </div></div>`).join("")
+    : `<div style="text-align:center;padding:22px 8px;color:var(--muted,#8a7f78);font-size:13px;line-height:1.7">이번 주 훈련 기록이 아직 없어요.<br>훈련을 시작하면 분야별로 쌓여요!</div>`;
+  const ov=document.createElement("div"); ov.id="rankDetailOv";
+  ov.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(15,43,35,.6);display:flex;align-items:center;justify-content:center;padding:22px";
+  ov.innerHTML=`<div style="background:var(--card,#fff);color:var(--text,#1c1410);max-width:380px;width:100%;max-height:82vh;overflow-y:auto;border-radius:20px;padding:20px 18px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:4px">
+        <div style="flex:1;font-size:17px;font-weight:900">⏱ ${escapeHtml(row.name||row.n)}${mine?" (나)":""}</div>
+        <button id="rankDetClose" style="width:30px;height:30px;border:0;border-radius:50%;background:var(--card2,#f6f1ec);color:var(--muted,#8a7f78);font-size:14px;font-weight:800;cursor:pointer">✕</button>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted,#8a7f78);margin-bottom:15px">이번 주 <b style="color:#189E79">${week}분</b>${row.allMins?` · 전체 누적 ${row.allMins}분`:""}</div>
+      ${body}
+    </div>`;
+  ov.addEventListener("click",e=>{ if(e.target.id==="rankDetailOv") ov.remove(); });
+  document.body.appendChild(ov);
+  const cb=document.getElementById("rankDetClose"); if(cb) cb.onclick=()=>ov.remove();
+}
 function rankRender(){
   const sheet=document.getElementById("rankSheet"); if(!sheet) return;
   const me=syncNick();
   const board=RANK_BOARDS.find(b=>b.k===rankTab)||RANK_BOARDS[0];
-  const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="flex:1;padding:9px 4px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:12px;font-weight:800;cursor:pointer">${b.emo}<br>${b.t}</button>`).join("");
+  const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="flex:1;padding:9px 2px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:11px;font-weight:800;cursor:pointer;line-height:1.35">${b.emo}<br>${b.t}</button>`).join("");
   let body="";
   if(rankErr){
     body=`<div style="text-align:center;padding:26px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">${escapeHtml(rankErr)}<br><span style="font-size:12px">공부 기록은 안전하게 저장돼 있어요.</span></div>`;
@@ -2140,10 +2259,11 @@ function rankRender(){
       body=rows.map((r,i)=>{
         const mine=(r.n===me);
         const val=Number(r[board.k])||0;
-        return `<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:7px;border-radius:13px;background:${mine?"linear-gradient(135deg,#E9F8F2,#D6F0E5)":"var(--card2,#f6f1ec)"};border:1.5px solid ${mine?"#2BBD94":"transparent"}">
+        return `<div ${board.detail?`class="rank-row" data-rn="${escapeHtml(r.n||"")}" style="cursor:pointer;`:'style="'}display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:7px;border-radius:13px;background:${mine?"linear-gradient(135deg,#E9F8F2,#D6F0E5)":"var(--card2,#f6f1ec)"};border:1.5px solid ${mine?"#2BBD94":"transparent"}">
           <span style="width:26px;text-align:center;font-size:${i<3?"17px":"13px"};font-weight:900;color:var(--muted,#8a7f78)">${i<3?medal[i]:(i+1)}</span>
           <span style="flex:1;min-width:0;font-size:14.5px;font-weight:800;color:var(--text,#1c1410);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.name||r.n||"친구")}${mine?' <span style="font-size:11px;color:#189E79">나</span>':""}</span>
           <span style="font-size:15px;font-weight:900;color:#189E79">${val}<span style="font-size:11px;color:var(--muted,#8a7f78);font-weight:700">${board.unit}</span></span>
+          ${board.detail?'<span style="color:var(--muted,#8a7f78);font-size:13px">›</span>':""}
         </div>`;
       }).join("");
       const myIdx=rows.findIndex(r=>r.n===me);
@@ -2164,6 +2284,8 @@ function rankRender(){
     ${body}`;
   const cb=document.getElementById("rankClose"); if(cb) cb.onclick=rankClose;
   Array.prototype.forEach.call(sheet.querySelectorAll(".rank-tab"), b=>{ b.onclick=()=>{ rankTab=b.dataset.rk; rankRender(); }; });
+  Array.prototype.forEach.call(sheet.querySelectorAll(".rank-row"), b=>{ b.onclick=()=>rankDetail(b.dataset.rn); });
+  if(board.detail){ const h=document.createElement("div"); h.style.cssText="text-align:center;font-size:11.5px;color:var(--muted,#8a7f78);margin-top:9px"; h.textContent="이름을 누르면 분야별 시간을 볼 수 있어요"; sheet.appendChild(h); }
 }
 function syncCloseGate(){ const ov=document.getElementById("syncGate"); if(ov) ov.remove(); }
 function syncOpenGate(isSwitch){
@@ -2221,7 +2343,7 @@ async function syncGateSubmit(isSwitch){
   try{ maybeShowOnboarding(); }catch(e){}
 }
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState==="hidden"){ syncBeacon(); return; }
+  if(document.visibilityState==="hidden"){ try{ ttFlush(); }catch(e){} syncBeacon(); return; }
   // 앱으로 돌아왔을 때 — 저장할 게 없고 홈이면 다른 기기에서 한 공부를 반영
   if(!syncNick()||syncDirty) return;
   const home=document.getElementById("setup");
@@ -3232,7 +3354,7 @@ function convoRecordWeakTargets(ev, usedIds, userText){
 }
 
 /* ============ conversation flow ============ */
-async function startSession(){
+async function startSession(){ try{ ttStart("talk"); }catch(e){}
   if(state.scn) markPractice({mode:"talk", id:state.scn.id, emo:state.scn.emo||"🗣️", label:(state.scn.id==="custom"?"직접 입력 회화":(state.scn.t||"회화"))});
   setup.style.display="none"; stage.style.display="flex"; $("#ctxBar").style.display="flex";
   clearSurvivalBackdrop();
@@ -3619,7 +3741,7 @@ async function lsPrefetchNext(){
   lsPrefetching=false;
 }
 
-function startListening(){
+function startListening(){ try{ ttStart("listen"); }catch(e){}
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:state.topic.emo||"🎧", label:(state.topic.id==="custom"?"직접 입력 듣기":(state.topic.t||"듣기")+" 듣기")});
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen"); try{updateLevelBadges();}catch(e){}
   $("#ctxBar").style.display="flex";
@@ -3924,7 +4046,7 @@ function sqPrefetchNext(){
   if(sqPrefetching) return; sqPrefetching=true;
   sqFetchOne().then(o=>{ sqPrefetching=false; if(o) sqPrefetch=o; }).catch(()=>{ sqPrefetching=false; });
 }
-function startSituationListening(){
+function startSituationListening(){ try{ ttStart("listen"); }catch(e){}
   showTutorial("listen", false, ()=>{
     lsBoosterMode=false; state.engine="input";
     state.mode="listen"; state.topic=autoTopic();
@@ -4693,7 +4815,7 @@ function renderRetell(){
 
 /* ---- 흘려듣기: 자동으로 계속 이어지는 핸즈프리 듣기 ---- */
 let floodOn=false, floodCount=0;
-function startFlood(){
+function startFlood(){ try{ ttStart("listen"); }catch(e){}
   if(state.topic) markPractice({mode:"listen", id:state.topic.id, emo:"🎧", label:(state.topic.t||"")+" 흘려듣기"});
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="flex"; pushScreen("listen"); try{updateLevelBadges();}catch(e){}
   $("#ctxBar").style.display="flex"; $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none";
@@ -5936,7 +6058,7 @@ function fillVocabSet(set){
   const extra=starterSet().filter(w=>!have.has(vocabWordKey(w)));
   return uniqueVocabWords(base.concat(extra)).slice(0,VOCAB_SET_SIZE);
 }
-function startVocab(noResume){
+function startVocab(noResume){ try{ ttStart("vocab"); }catch(e){}
   if(noResume && typeof wpClearProgress==="function") wpClearProgress();
   if(!noResume && wpResumeData()){ return wpResume(); }   // 미완료 세트 있으면 이어하기
   state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
@@ -6140,7 +6262,7 @@ function wpResumeData(){
     return d;
   }catch(e){ return null; }
 }
-function wpResume(){
+function wpResume(){ try{ ttStart("vocab"); }catch(e){}
   const d=wpResumeData(); if(!d){ startVocab(true); return; }
   state.vocabTheme=d.theme||state.vocabTheme||nextVocabTheme();
   markPractice({mode:"vocab", id:(state.vocabTheme&&state.vocabTheme.id)||"resume", emo:"📖", label:"단어"});
@@ -8832,7 +8954,7 @@ function bleBuildSetIntro(set){
   bleSession={ items, idx:0, newBlock:null, results:[], startedIds:blocks.map(b=>b.id), setId:set.id, isSetIntro:true };
   return bleSession;
 }
-function bleStartSetIntro(setId){
+function bleStartSetIntro(setId){ try{ ttStart("block"); }catch(e){}
   try{ xpSessionStart(); }catch(e){}
   const set=setId?BLE_SETS.find(s=>s.id===setId):bleActiveSet();
   bleBuildSetIntro(set);
@@ -8842,7 +8964,7 @@ function bleStartSetIntro(setId){
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   bleRender();
 }
-function bleStart(forcedNewId){
+function bleStart(forcedNewId){ try{ ttStart("block"); }catch(e){}
   try{ xpSessionStart(); }catch(e){}
   bleBuildSession(forcedNewId);
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -8852,7 +8974,7 @@ function bleStart(forcedNewId){
   bleRender();
 }
 // 🔁 한 블록 다시 배우기(복습) — 이해하기 → 패턴 → 그 블록만 집중 인출
-function bleRelearnBlock(id){
+function bleRelearnBlock(id){ try{ ttStart("block"); }catch(e){}
   const b=BLE_BY_ID[id]; if(!b){ return; }
   try{ xpSessionStart(); }catch(e){}
   try{ bleEnsureContexts(b); }catch(e){}
@@ -9539,7 +9661,7 @@ function bleDeepGateReady(set){
   BLE_BLOCKS.forEach(b=>{ const st=s[b.id]; if(st && st.introducedAt && (st.introAttemptCount||0)>=1) n++; });
   return n>=5;
 }
-function bleDeepStart(){
+function bleDeepStart(){ try{ ttStart("block"); }catch(e){}
   try{ xpSessionStart(); }catch(e){}
   // 본격 학습 진입 조건: Set 1의 5개 블록 전부 소개 + 각 퀵체크 1회 이상
   const set=bleActiveSet();
@@ -10497,7 +10619,7 @@ function openSprintPicker(){
   $("#spClose").onclick=()=>sc.remove();
   sc.onclick=(e)=>{ if(e.target===sc) sc.remove(); };
 }
-function startSprint(len){
+function startSprint(len){ try{ ttStart("speak"); }catch(e){}
   const n=SPRINT_LEN[len]||20;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none"; $("#phonics").style.display="none";
@@ -11021,7 +11143,7 @@ function openLegacyChunkHub(){
   ov.querySelectorAll(".chk-row").forEach(b=>{ b.onclick=()=>{ close(); blockLessonStart(b.dataset.pid); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
-function blockLessonStart(pid){
+function blockLessonStart(pid){ try{ ttStart("block"); }catch(e){}
   try{ xpSessionStart(); }catch(e){}
   const learnedBefore=blGetLearned().length;
   let newP = pid? CORE_PHRASES.find(x=>x.id===pid) : blPickNew();
@@ -11231,7 +11353,7 @@ function gateNewBlock(proceed){
   }
   checkLockThenLearn();
 }
-function startChunkTraining(pid){
+function startChunkTraining(pid){ try{ ttStart("block"); }catch(e){}
   const p=CORE_PHRASES.find(x=>x.id===pid);
   if(!p){ goToSetup(); return; }
   ctPid=pid; ctChunk=p.phrase; ctPhrase=p; ctIdx=0; ctPass=0;
@@ -11520,7 +11642,7 @@ function renderWeakHome(){
   const rt=$("#reuseToday"); if(rt) rt.onclick=()=>openSurvival();
   box.querySelectorAll(".weakHomeItem").forEach(b=>{ b.onclick=()=>startChunkTraining(b.dataset.pid); });
 }
-function openPhonics(){
+function openPhonics(){ try{ ttStart("phonics"); }catch(e){}
   if(!tutSeenAll().phonics){ showTutorial("phonics", false, ()=>openPhonics()); return; }
   phAttempts=0;
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
@@ -12194,7 +12316,7 @@ function startOutputEngine(){
   });
 }
 // 영어로 꺼내기 전용 진입: Deep 엔진을 output 모드(10문제 고정)로 구동
-function bleDeepStartOutput(){
+function bleDeepStartOutput(){ try{ ttStart("block"); }catch(e){}
   const set=bleActiveSet();
   if(!bleDeepGateReady(set)){ bleStartSetIntro(set.id); return; }
   bleCheckSetIntro(set);
@@ -12439,7 +12561,7 @@ function buildFirstRunQueue(){
   q.push({type:"done"});
   return q;
 }
-function startFirstRun(){
+function startFirstRun(){ try{ ttStart("block"); }catch(e){}
   firstRun={ queue:buildFirstRunQueue(), idx:0, said:0, t0:0, tries:0 };
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -12641,7 +12763,7 @@ const DAILY_ROOM_DAY1 = {
   ]
 };
 let dailyRoom=null;
-function startDailyRoom(){
+function startDailyRoom(){ try{ ttStart("block"); }catch(e){}
   try{ xpSessionStart(); }catch(e){}
   const D=DAILY_ROOM_DAY1;
   dailyRoom={ items:D.items, idx:0, said:0, tries:0, place:D.place };
@@ -12869,7 +12991,7 @@ function startAutoDrill(focusIds){
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(parseInt(inp.value,10)||last); } });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
-function startAutoDrillRun(blocks, count){
+function startAutoDrillRun(blocks, count){ try{ ttStart("drill"); }catch(e){}
   blocks.forEach(b=>bleEnsureContexts(b));
   autoDrill={items:autoDrillBuildItems(blocks, count), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
   try{ xpSessionStart(); }catch(e){}
@@ -14818,7 +14940,7 @@ function devSkipStep(){
   }catch(e){ console.warn("devSkip err",e); }
 }
 
-function goToSetup(fromPop){
+function goToSetup(fromPop){ try{ ttStop(); }catch(e){}
   micEpoch++;
   floodOn=false; if(typeof TTS!=="undefined" && TTS) TTS.cancel();
   const _ss=$("#sprintScroll"); if(_ss){ _ss.style.background=""; _ss.classList.remove("fillv"); }
