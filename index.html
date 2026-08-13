@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.86";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.87";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3759,11 +3759,15 @@ async function lsPrefetchNext(){
   if(lsPrefetching || lsPrefetch) return;
   lsPrefetching=true;
   try{
+    let tooLong=null;
     for(let try_=0; try_<3; try_++){
       const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
       const it=parseJSON(extractText(data));
-      if(it && it.en && !lsIsDup(it.en)){ lsPrefetch=it; break; }
+      if(!it || !it.en || lsIsDup(it.en)) continue;
+      if(lsLenOK(it.en)){ lsPrefetch=it; break; }
+      if(!tooLong || lsWordN(it.en)<lsWordN(tooLong.en)) tooLong=it;
     }
+    if(!lsPrefetch && tooLong) lsPrefetch=tooLong;
   }catch(e){}
   lsPrefetching=false;
 }
@@ -3832,6 +3836,7 @@ booster,
 prev,
 levelHint(),
 levelCap(),
+"HARD LENGTH LIMIT: at most "+lsMaxWords()+" words in the English sentence. Count the words before you answer. A sentence longer than this is WRONG — the learner has to repeat it from memory after one listen.",
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
 (lsRecent.length? "DO NOT repeat or closely paraphrase any of these already-used sentences (make something clearly different in meaning and words):\n- "+lsRecent.slice(-15).join("\n- ") : ""),
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻","block":"the learned block reused, or empty"}'
@@ -3858,11 +3863,17 @@ async function lsGenerate(){
   }
   $("#listenScroll").innerHTML=`<div class="lloading">첫 문장을 준비하는 중…<div class="typing"><i></i><i></i><i></i></div></div>`;
   try{
-    let it=null;
+    let it=null, tooLong=null;
     for(let try_=0; try_<3; try_++){
       const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
-      it=parseJSON(extractText(data));
-      if(it && it.en && !lsIsDup(it.en)) break;
+      const c=parseJSON(extractText(data));
+      if(!c || !c.en || lsIsDup(c.en)) continue;
+      if(lsLenOK(c.en)){ it=c; break; }
+      if(!tooLong || lsWordN(c.en)<lsWordN(tooLong.en)) tooLong=c;   // 길이 초과분 중 가장 짧은 것 보관
+    }
+    if(!it){
+      const short=listenInstantSentence();               // 배운 블록에서 짧은 문장으로 대체
+      it = (short && short.en && lsLenOK(short.en)) ? short : tooLong;
     }
     lsItem=it;
     if(!lsItem || !lsItem.en) throw new Error("empty");
@@ -3875,6 +3886,16 @@ async function lsGenerate(){
   }
 }
 // 듣기 첫 문장 즉시용 — 배운 블록 예문 또는 레벨 맞는 CORE_PHRASES 예문
+// 📏 받아쓰기 문장 길이 상한 — 프롬프트만으론 AI가 어길 수 있어 코드로 막는다.
+// 문장이 길면 아이가 앞부분만 듣고 뒤는 통째로 놓쳐서 훈련이 안 됨.
+function lsWordN(en){ return String(en||"").trim().split(/\s+/).filter(Boolean).length; }
+function lsMaxWords(){
+  return withLvl(getAutoLevels().listenLevel, ()=>{
+    const d=diffLevel();
+    return d<=6?5 : d<=12?6 : d<=18?7 : d<=24?8 : d<=36?10 : 12;
+  });
+}
+function lsLenOK(en){ const n=lsWordN(en); return n>0 && n<=lsMaxWords(); }
 function listenInstantSentence(){
   try{
     const lvl=diffMacro();
@@ -3891,8 +3912,10 @@ function listenInstantSentence(){
       CORE_PHRASES.forEach(p=>{ if(p.examples){ p.examples.forEach(ex=>{ if(ex.en && ex.ko) cands.push({en:ex.en, ko:ex.ko, block:p.phrase}); }); } });
     }
     if(!cands.length) return null;
-    const fresh=cands.filter(c=>!lsIsDup(c.en));
-    const arr=fresh.length?fresh:cands;
+    const fit=cands.filter(c=>lsLenOK(c.en));
+    const pool=fit.length?fit:cands;                    // 다 걸러지면 원래 후보 유지
+    const fresh=pool.filter(c=>!lsIsDup(c.en));
+    const arr=fresh.length?fresh:pool;
     return arr[(Math.random()*arr.length)|0];
   }catch(e){ return null; }
 }
