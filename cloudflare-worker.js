@@ -102,11 +102,19 @@ export default {
         if (body.sum && typeof body.sum === "object") {
           const sum = body.sum;
           const num = (v) => { const x = Number(v); return Number.isFinite(x) ? Math.max(0, Math.round(x)) : 0; };
+          // 분야별 훈련 시간(분) — 알려진 분야만, 숫자로 정리
+          const cats = {};
+          if (sum.cats && typeof sum.cats === "object") {
+            ["block", "drill", "listen", "vocab", "speak", "talk", "phonics"].forEach((c) => {
+              const v = num(sum.cats[c]); if (v > 0) cats[c] = v;
+            });
+          }
           const row = {
             n: nick,
             name: String(sum.name || nick).slice(0, 12),
             xp: num(sum.xp), lv: num(sum.lv), streak: num(sum.streak),
-            week: num(sum.week), blocks: num(sum.blocks), lvl: num(sum.lvl), t,
+            week: num(sum.week), blocks: num(sum.blocks), lvl: num(sum.lvl),
+            mins: num(sum.mins), allMins: num(sum.allMins), cats, t,
           };
           try { ctx.waitUntil(env.USERDATA.put("b:" + nick, JSON.stringify(row))); } catch (e) {}
         }
