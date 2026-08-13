@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.85";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.86";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12428,6 +12428,25 @@ function adSlotWords(ex, block){
   const fromEn=adWords(ex.en||"").filter(w=>!AD_STOP.has(w)&&w.length>1&&!blockWords.has(w));
   return fromEn.slice(-3);
 }
+// 🔤 "단어만 보기"에 보여줄 말 — 이 문항에서 '새로 넣는 부분'만.
+// ex.object가 없으면 블록 패턴을 걷어낸 나머지를 쓴다. (예전엔 정답 문장을 통째로 보여줬음)
+function adWordHint(it){
+  const ex=(it&&it.ex)||{};
+  const slot=String(ex.object||"").trim();
+  if(slot) return slot;
+  const en=String(ex.en||"").trim(); if(!en) return "";
+  const pattern=String((it.block&&it.block.block)||"").replace(/\.\.\./g," ");   // '...'는 공백으로 (단어가 붙지 않게)
+  const bset=new Set(adWords(pattern));
+  if(!bset.size) return "";
+  const words=en.split(/\s+/).filter(Boolean);
+  let a=0, b=words.length;
+  while(a<b && bset.has(adNorm(words[a]))) a++;      // 앞쪽 블록 부분 제거
+  while(b>a && bset.has(adNorm(words[b-1]))) b--;    // 뒤쪽 블록 부분 제거
+  const rest=words.slice(a,b).join(" ").replace(/^[\s,]+/,"").replace(/[\s,?.!]+$/,"").trim();
+  if(!rest) return "";                                // 문장 전체가 곧 블록 → 보여줄 단어 없음
+  if(adNorm(rest)===adNorm(en)) return "";            // 블록과 안 겹침 → 통째 노출 방지
+  return rest;
+}
 function adGrade(block, ex, heard){
   const h=adNorm(heard);
   const hWords=h.split(" ").filter(Boolean);
@@ -13197,15 +13216,19 @@ function autoDrillRender(recallMode){
   $("#autoShow").onclick=()=>{ if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; } const cur=autoDrill.items[autoDrill.idx]; if(cur) autoDrillShowResult(cur, true); };
   $("#autoWord").onclick=()=>autoDrillShowWord();
   // 힌트(단어/정답 보기)는 7초 뒤에만 등장 — 끝까지 스스로 풀 기회 보장
-  autoDrill.hintTimer=setTimeout(()=>{ const r=document.getElementById("autoHintRow"); if(r) r.style.display="flex"; }, 7000);
+  autoDrill.hintTimer=setTimeout(()=>{
+    const r=document.getElementById("autoHintRow"); if(r) r.style.display="flex";
+    // 통째로 쓰는 표현(넣을 슬롯이 없음)은 '단어만 보기'를 감춘다 — 누르면 정답이 되어버리므로
+    const wb=document.getElementById("autoWord");
+    if(wb) wb.style.display = adWordHint(autoDrill.items[autoDrill.idx]) ? "" : "none";
+  }, 7000);
 }
 // 🔤 슬롯(빈칸) 단어만 살짝 보여주기 — 턴은 안 끝냄. 본 단어 = 모르는 단어 → 내부 등록
 function autoDrillShowWord(){
   const it=autoDrill&&autoDrill.items[autoDrill.idx]; if(!it) return;
+  const showEn=adWordHint(it);
+  if(!showEn) return;   // 보여줄 슬롯이 없는 문항 — 정답을 통째로 노출하지 않음
   it._hintUsed=true;   // 💡 단어를 봤으면 이 문항은 자동화 성공으로 치지 않음
-  const slot=String((it.ex&&it.ex.object)||"").trim();
-  const showEn=slot||String((it.ex&&it.ex.en)||"").trim();
-  if(!showEn) return;
   // 처음 누를 때만 "모르는 단어"로 SRS 등록(중복 방지)
   if(!it._wordShown){
     it._wordShown=true;
