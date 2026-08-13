@@ -1,7 +1,9 @@
 // ============================================================
-//  스피킹 룸 — Cloudflare Worker 프록시 v5
-//  GET  /version   → 배포 확인용 ("worker-v5" 반환)
-//  GET  /tts       → Azure Neural TTS (원어민 음성, 캐시) ★ v5 신규
+//  스피킹 룸 — Cloudflare Worker 프록시 v6
+//  GET  /version   → 배포 확인용 ("worker-v6" 반환)
+//  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
+//  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
+//  GET  /tts       → Azure Neural TTS (원어민 음성, 캐시)
 //  POST /          → Anthropic Claude
 //  POST /stt       → Azure STT
 //  POST /pronounce → Azure 발음 채점
@@ -10,8 +12,13 @@
 //     (Workers & Pages → speaking-room → Edit code)에 붙여넣고 Save & Deploy.
 //     비밀키는 코드에 없고 워커 환경변수(env)에 있음: ANTHROPIC_API_KEY,
 //     AZURE_SPEECH_KEY, AZURE_SPEECH_REGION(기본 koreacentral)
+//
+//  ★ v6 추가 준비물 — KV 저장소 바인딩 (대시보드에서 1회 설정)
+//     Workers & Pages → speaking-room → Settings → Bindings → Add → KV namespace
+//     Variable name: USERDATA   /   KV namespace: 새로 만들기(예: speaking-room-data)
+//     (바인딩이 없으면 /u 는 503을 돌려주고, 앱은 기기 저장만으로 정상 동작합니다)
 // ============================================================
-const WORKER_VERSION = "worker-v5";
+const WORKER_VERSION = "worker-v6";
 
 export default {
   async fetch(request, env, ctx) {
@@ -30,7 +37,55 @@ export default {
       return new Response(WORKER_VERSION, { headers: { ...cors, "Content-Type": "text/plain" } });
     }
 
-    // ── ⓪ Azure Neural TTS (v5 신규) ──────────────────────
+    // ── ⓪ 학습 데이터 저장/불러오기 (v6 신규) ───────────────
+    //  GET  /u?n=닉네임  → {t: 저장시각, d: {키:값}}  (없으면 t:0, d:null)
+    //  POST /u?n=닉네임  → 본문 {t, d} 저장. 직전 버전은 :prev 로 1개 보관
+    if (path === "/u" && (request.method === "GET" || request.method === "POST")) {
+      const jsonHeaders = { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" };
+      try {
+        // 닉네임 정규화: 소문자 + 공백제거 (대소문자/공백 달라도 같은 계정)
+        const nick = (url.searchParams.get("n") || "").trim().toLowerCase().replace(/\s+/g, "");
+        if (!nick || nick.length > 24) {
+          return new Response(JSON.stringify({ error: "bad nickname" }), { status: 400, headers: jsonHeaders });
+        }
+        if (!env.USERDATA) {
+          return new Response(JSON.stringify({ error: "KV binding USERDATA not configured" }), { status: 503, headers: jsonHeaders });
+        }
+        const key = "u:" + nick;
+
+        if (request.method === "GET") {
+          const saved = await env.USERDATA.get(key);
+          if (!saved) return new Response(JSON.stringify({ t: 0, d: null }), { status: 200, headers: jsonHeaders });
+          return new Response(saved, { status: 200, headers: jsonHeaders });
+        }
+
+        // POST — 저장
+        const raw = await request.text();
+        if (raw.length > 4_000_000) {
+          return new Response(JSON.stringify({ error: "too large" }), { status: 413, headers: jsonHeaders });
+        }
+        let body = null;
+        try { body = JSON.parse(raw); } catch (e) {
+          return new Response(JSON.stringify({ error: "bad json" }), { status: 400, headers: jsonHeaders });
+        }
+        if (!body || typeof body !== "object" || !body.d || typeof body.d !== "object") {
+          return new Response(JSON.stringify({ error: "bad payload" }), { status: 400, headers: jsonHeaders });
+        }
+        const t = Number(body.t) || Date.now();
+        const store = JSON.stringify({ t, d: body.d });
+        // 직전 버전 1개 백업 (실수로 덮어써도 복구 가능)
+        try {
+          const prev = await env.USERDATA.get(key);
+          if (prev) ctx.waitUntil(env.USERDATA.put(key + ":prev", prev));
+        } catch (e) {}
+        await env.USERDATA.put(key, store);
+        return new Response(JSON.stringify({ ok: true, t }), { status: 200, headers: jsonHeaders });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders });
+      }
+    }
+
+    // ── ① Azure Neural TTS ────────────────────────────────
     //  GET /tts?text=...&voice=en-US-JennyNeural&rate=0.95
     //  같은 문장은 Cloudflare 캐시에서 즉시 반환 (Azure 호출은 문장당 1회)
     if (request.method === "GET" && path === "/tts") {
@@ -82,7 +137,7 @@ export default {
 
     if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: cors });
 
-    // ── ① Anthropic Claude ────────────────────────────────
+    // ── ② Anthropic Claude ────────────────────────────────
     if (path === "/" || path === "/anthropic") {
       try {
         const body = await request.text();
@@ -101,7 +156,7 @@ export default {
       }
     }
 
-    // ── ② Azure STT ───────────────────────────────────────
+    // ── ③ Azure STT ───────────────────────────────────────
     if (path === "/stt") {
       try {
         const audio = await request.arrayBuffer();
@@ -118,7 +173,7 @@ export default {
       }
     }
 
-    // ── ③ Azure 발음 채점 ──────────────────────────────────
+    // ── ④ Azure 발음 채점 ──────────────────────────────────
     if (path === "/pronounce") {
       try {
         let refText = "";

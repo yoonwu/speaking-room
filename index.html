@@ -1963,7 +1963,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.80";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.81";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -1987,6 +1987,158 @@ if (typeof window !== "undefined" && !window.storage) {
     async list(){ return {keys:[]}; }
   };
 }
+
+/* ===== 닉네임 계정 + 기기 간 자동 동기화 (폰/PC 어디서든 이어서) ===== */
+const SYNC_NICK_KEY="speakingroom:sync_nick";   // 서버 키가 되는 정규화 닉네임
+const SYNC_NAME_KEY="speakingroom:sync_name";   // 화면에 보여줄 원래 표기
+const SYNC_T_KEY="speakingroom:sync_t";         // 서버와 마지막으로 맞춘 시각
+// 동기화 제외 — 용량 큰 기기 캐시, 개발용 토큰, 동기화 메타 자체
+const SYNC_SKIP=[SYNC_NICK_KEY,SYNC_NAME_KEY,SYNC_T_KEY,"speakingroom:sq_bank"];
+let syncDirty=false, syncTimer=null, syncBusy=false, syncApplying=false, syncLastErr="";
+function syncSkipKey(k){ return SYNC_SKIP.indexOf(k)>=0 || String(k).indexOf("sr_gh_")===0; }
+function syncNick(){ try{ return localStorage.getItem(SYNC_NICK_KEY)||""; }catch(e){ return ""; } }
+function syncDisplayName(){ try{ return localStorage.getItem(SYNC_NAME_KEY)||syncNick(); }catch(e){ return ""; } }
+function syncNormalize(v){ return String(v||"").trim().toLowerCase().replace(/\s+/g,"").slice(0,24); }
+function syncCollect(){
+  const d={};
+  try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k||syncSkipKey(k)) continue; d[k]=localStorage.getItem(k); } }catch(e){}
+  return d;
+}
+// 서버 상태를 이 기기에 그대로 반영 (서버에 없는 키는 지워서 기기 간 상태를 일치시킴)
+function syncApply(d){
+  if(!d||typeof d!=="object") return;
+  try{
+    const keep=Object.keys(d), drop=[];
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&!syncSkipKey(k)&&keep.indexOf(k)<0) drop.push(k); }
+    drop.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+    keep.forEach(k=>{ if(syncSkipKey(k)) return; try{ localStorage.setItem(k, d[k]); }catch(e){} });
+  }catch(e){}
+}
+function syncSetMeta(k,v){ syncApplying=true; try{ localStorage.setItem(k,v); } finally{ syncApplying=false; } }
+async function syncPull(){
+  const n=syncNick(); if(!n) return {ok:false};
+  try{
+    const r=await fetch(PROXY_URL+"/u?n="+encodeURIComponent(n)+"&_="+Date.now(), {cache:"no-store"});
+    if(!r.ok){ syncLastErr="불러오기 실패 ("+r.status+")"; return {ok:false}; }
+    const o=await r.json();
+    if(!o || !o.d) return {ok:true, adopted:false, empty:true};
+    const localT=Number(localStorage.getItem(SYNC_T_KEY)||0);
+    if(Number(o.t)>localT){
+      syncApplying=true;
+      try{ syncApply(o.d); localStorage.setItem(SYNC_T_KEY, String(Number(o.t)||Date.now())); } finally{ syncApplying=false; }
+      syncDirty=false; syncLastErr="";
+      return {ok:true, adopted:true};
+    }
+    return {ok:true, adopted:false, empty:false};
+  }catch(e){ syncLastErr="연결 실패"; return {ok:false}; }
+}
+async function syncPush(){
+  const n=syncNick(); if(!n||syncBusy) return false;
+  syncBusy=true;
+  const t=Date.now();
+  try{
+    const r=await fetch(PROXY_URL+"/u?n="+encodeURIComponent(n), {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({t, d:syncCollect()})});
+    if(!r.ok){ syncLastErr="저장 실패 ("+r.status+")"; return false; }
+    syncSetMeta(SYNC_T_KEY, String(t));
+    syncDirty=false; syncLastErr="";
+    return true;
+  }catch(e){ syncLastErr="연결 실패"; return false; }
+  finally{ syncBusy=false; }
+}
+// 앱을 닫는 순간엔 fetch가 취소될 수 있어 sendBeacon으로 확실히 보냄
+function syncBeacon(){
+  const n=syncNick(); if(!n||!syncDirty) return;
+  try{
+    const t=Date.now();
+    const body=new Blob([JSON.stringify({t, d:syncCollect()})],{type:"application/json"});
+    if(navigator.sendBeacon && navigator.sendBeacon(PROXY_URL+"/u?n="+encodeURIComponent(n), body)){
+      syncSetMeta(SYNC_T_KEY, String(t)); syncDirty=false;
+    }
+  }catch(e){}
+}
+function syncMarkDirty(){
+  if(!syncNick()) return;
+  syncDirty=true;
+  if(syncTimer) clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{ syncTimer=null; syncPush(); }, 4000);   // 공부 중엔 4초 쉴 때마다 저장
+}
+function syncStatusText(){
+  if(!syncNick()) return "";
+  const t=Number(localStorage.getItem(SYNC_T_KEY)||0);
+  if(!t) return "아직 서버에 저장된 기록이 없어요";
+  const d=new Date(t), p=n=>String(n).padStart(2,"0");
+  return "마지막 저장: "+(d.getMonth()+1)+"월 "+d.getDate()+"일 "+p(d.getHours())+":"+p(d.getMinutes())+(syncDirty?" · 저장할 내용 있음":"");
+}
+// 어떤 경로로 저장되든 자동으로 동기화되도록 localStorage 쓰기를 감지
+try{
+  const _ls=window.localStorage, _set=_ls.setItem.bind(_ls), _rm=_ls.removeItem.bind(_ls);
+  _ls.setItem=function(k,v){ _set(k,v); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
+  _ls.removeItem=function(k){ _rm(k); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
+}catch(e){}
+function syncCloseGate(){ const ov=document.getElementById("syncGate"); if(ov) ov.remove(); }
+function syncOpenGate(isSwitch){
+  syncCloseGate();
+  const ov=document.createElement("div"); ov.id="syncGate";
+  ov.style.cssText="position:fixed;inset:0;z-index:99998;background:linear-gradient(160deg,#0F2B23,#1FA37C);display:flex;align-items:center;justify-content:center;padding:24px";
+  ov.innerHTML='<div style="background:#fff;color:#1c1410;max-width:340px;width:100%;border-radius:22px;padding:26px 22px;box-shadow:0 30px 70px -25px rgba(0,0,0,.5)">'
+    +'<div style="font-size:34px;text-align:center">☁️</div>'
+    +'<div style="font-weight:900;font-size:19px;text-align:center;margin-top:8px">'+(isSwitch?"닉네임 바꾸기":"닉네임을 정해주세요")+'</div>'
+    +'<div style="font-size:13px;color:#8a7f78;text-align:center;line-height:1.6;margin-top:8px">같은 닉네임으로 들어오면<br>폰·PC 어디서든 공부 기록이 이어져요.</div>'
+    +'<input id="syncNickInput" maxlength="12" autocomplete="off" placeholder="예: 지훈" style="width:100%;box-sizing:border-box;margin-top:16px;padding:14px;border-radius:14px;border:2px solid #eadfd6;font-size:16px;font-weight:700;text-align:center;background:#faf6f2;color:#1c1410">'
+    +'<div id="syncGateMsg" style="font-size:12.5px;color:#d9534f;text-align:center;min-height:18px;margin-top:8px"></div>'
+    +'<button id="syncGateGo" style="width:100%;padding:15px;border:0;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:16px;font-weight:900;cursor:pointer">시작하기</button>'
+    +(isSwitch?'<button id="syncGateCancel" style="width:100%;margin-top:8px;padding:12px;border:0;border-radius:12px;background:transparent;color:#8a7f78;font-size:13.5px;font-weight:700;cursor:pointer">취소</button>':'')
+    +'</div>';
+  document.body.appendChild(ov);
+  const inp=document.getElementById("syncNickInput");
+  if(inp){ inp.value=syncDisplayName()||""; setTimeout(()=>{ try{ inp.focus(); }catch(e){} }, 120);
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); syncGateSubmit(isSwitch); } }); }
+  const go=document.getElementById("syncGateGo"); if(go) go.onclick=()=>syncGateSubmit(isSwitch);
+  const ca=document.getElementById("syncGateCancel"); if(ca) ca.onclick=syncCloseGate;
+}
+async function syncGateSubmit(isSwitch){
+  const inp=document.getElementById("syncNickInput");
+  const msg=document.getElementById("syncGateMsg");
+  const btn=document.getElementById("syncGateGo");
+  const raw=((inp&&inp.value)||"").trim();
+  const nick=syncNormalize(raw);
+  if(nick.length<2){ if(msg){ msg.style.color="#d9534f"; msg.textContent="2글자 이상 적어주세요."; } return; }
+  if(btn){ btn.disabled=true; btn.textContent="연결 중…"; }
+  if(msg){ msg.style.color="#8a7f78"; msg.textContent="기록을 확인하고 있어요…"; }
+  const prev=syncNick();
+  const changed=(prev!==nick);
+  // 계정을 바꾸는 경우 — 쓰던 계정 기록부터 서버에 저장하고 넘어감
+  if(isSwitch && prev && changed){ try{ await syncPush(); }catch(e){} }
+  syncSetMeta(SYNC_NICK_KEY, nick);
+  syncSetMeta(SYNC_NAME_KEY, raw.slice(0,12));
+  if(changed) syncSetMeta(SYNC_T_KEY, "0");
+  const r=await syncPull();
+  if(!r.ok){
+    // 서버 연결 실패 — 기기 저장만으로도 공부는 계속할 수 있게
+    if(msg){ msg.style.color="#d9534f"; msg.textContent=(syncLastErr||"연결 실패")+" · 지금은 이 기기에만 저장돼요."; }
+    if(btn){ btn.disabled=false; btn.textContent="이대로 시작하기"; btn.onclick=()=>{ syncCloseGate(); try{ maybeShowOnboarding(); }catch(e){} }; }
+    return;
+  }
+  if(r.adopted){ location.reload(); return; }
+  if(r.empty && isSwitch && prev && changed){
+    // 처음 쓰는 닉네임 — 앞사람 기록이 남지 않도록 비우고 새로 시작
+    syncApplying=true; try{ syncApply({}); } finally{ syncApplying=false; }
+    location.reload(); return;
+  }
+  await syncPush();   // 서버가 비어 있으면 이 기기 기록을 시작점으로 올림
+  syncCloseGate();
+  try{ renderHome(); }catch(e){}
+  try{ maybeShowOnboarding(); }catch(e){}
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState==="hidden"){ syncBeacon(); return; }
+  // 앱으로 돌아왔을 때 — 저장할 게 없고 홈이면 다른 기기에서 한 공부를 반영
+  if(!syncNick()||syncDirty) return;
+  const home=document.getElementById("setup");
+  if(!home || home.style.display==="none") return;
+  syncPull().then(r=>{ if(r&&r.adopted) location.reload(); });
+});
+window.addEventListener("pagehide", syncBeacon);
 
 /* safe Web Speech handles (some mobile webviews lack the bare globals) */
 const TTS = (typeof window!=="undefined" && window.speechSynthesis) ? window.speechSynthesis : null;
@@ -14008,6 +14160,18 @@ function renderProfile(){
       <div style="font-size:13px;color:var(--text);font-weight:700;letter-spacing:.02em">${qLine}</div>
     </div>
     <div class="stat-grid">${stats.map(s=>`<div class="stat"><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}</div></div></div>`).join("")}</div>
+    <div class="prof-h">☁️ 계정 · 기기 연동</div>
+    <div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14.5px;font-weight:800;color:var(--text)">${syncNick()?escapeHtml(syncDisplayName()):"연동 안 함"}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.5">${syncNick()?"폰·PC 어디서든 이 닉네임으로 이어서 공부해요":"닉네임을 정하면 다른 기기와 기록이 이어져요"}</div>
+        </div>
+        <button id="syncSwitchBtn" style="flex:0 0 auto;padding:9px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text);font-size:12.5px;font-weight:800;cursor:pointer">${syncNick()?"변경":"연동하기"}</button>
+      </div>
+      ${syncNick()?`<div id="syncStatLine" style="font-size:11.5px;color:var(--muted);margin-top:9px">${escapeHtml(syncStatusText())}</div>
+      <button id="syncNowBtn" style="width:100%;margin-top:9px;padding:11px;border:0;border-radius:11px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:13.5px;font-weight:800;cursor:pointer">지금 저장하기</button>`:""}
+    </div>
     <div class="prof-h">📖 튜토리얼 다시보기</div>
     <button class="tut-li" id="onbReopen" style="margin-bottom:8px"><span class="tli-ico">🚀</span><span class="tli-t">처음 사용법 다시 보기</span><span class="tli-ar">›</span></button>
     <div class="tut-list">${TUT_ORDER.map(k=>{ const t=TUTORIALS[k]; return `<button class="tut-li" data-tut="${k}"><span class="tli-ico">${t.icon}</span><span class="tli-t">${escapeHtml(t.title)}</span><span class="tli-ar">›</span></button>`; }).join("")}</div>
@@ -14022,6 +14186,13 @@ function renderProfile(){
   $("#profNameEdit").onclick=editName;
   { const ob=$("#onbReopen"); if(ob) ob.onclick=()=>{ closeProfile(); openOnboarding(); }; }
   { const rb=$("#resetData"); if(rb) rb.onclick=resetLearningData; }
+  { const sb=$("#syncSwitchBtn"); if(sb) sb.onclick=()=>{ closeProfile(); syncOpenGate(!!syncNick()); }; }
+  { const nb=$("#syncNowBtn"); if(nb) nb.onclick=async()=>{
+      nb.disabled=true; nb.textContent="저장 중…";
+      const ok=await syncPush();
+      nb.textContent=ok?"저장 완료 ✓":(syncLastErr||"저장 실패");
+      setTimeout(()=>{ nb.disabled=false; nb.textContent="지금 저장하기"; const sl=$("#syncStatLine"); if(sl) sl.textContent=syncStatusText(); }, 1500);
+    }; }
   $$(".tut-li").forEach(b=>{ b.onclick=()=>showTutorial(b.dataset.tut, true); });
 }
 function resetLearningData(){
@@ -14037,6 +14208,7 @@ function resetLearningData(){
         for(let i=0;i<localStorage.length;i++){
           const k=localStorage.key(i);
           if(!k) continue;
+          if(syncSkipKey(k)) continue;   // 닉네임·연동 정보는 초기화해도 유지
           if(k.indexOf("speakingroom:")===0 || k.indexOf("dailyroom:")===0
              || k==="firstrun_done" || k==="onboarding_v1_completed"){ kill.push(k); }
         }
@@ -14264,7 +14436,12 @@ try{ ledgerMigrateOnce(); }catch(e){}
 renderHome();
 syncSetupFields();
 checkForUpdate();   // 폰/PC 자동 최신화
-setTimeout(maybeShowOnboarding, 400);   // 🚀 첫 실행이면 온보딩 표시
+// ☁️ 닉네임이 없으면 먼저 정하게 하고, 있으면 다른 기기 기록부터 확인
+if(!syncNick()){ setTimeout(()=>syncOpenGate(false), 200); }
+else{
+  setTimeout(maybeShowOnboarding, 400);   // 🚀 첫 실행이면 온보딩 표시
+  setTimeout(()=>{ syncPull().then(r=>{ if(r&&r.adopted) location.reload(); }); }, 300);
+}
 // 🚀 백그라운드 예열: 앱 켜자마자 단어 세트 미리 준비 (첫 진입도 즉시 AI 단어)
 setTimeout(()=>{ try{
   sqBankLoad();   // 👂 상황듣기 내장 문제 뱅크 프리로드
