@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.88";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.89";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4623,7 +4623,7 @@ function renderOutput(){
   wireProgressFooter($("#listenScroll"));
   loT0=Date.now();
   const inp=$("#loInput"), stat=$("#loStat");
-  $("#loMic").onclick=function(){ const b=this; if(b.classList.contains("live"))return; b.classList.add("live"); stat.textContent="🎙️ 듣고 있어요…";
+  $("#loMic").onclick=function(){ const b=this; if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(b.classList.contains("live"))return; b.classList.add("live"); stat.textContent="🎙️ 듣고 있어요…";
     micFillCb((t)=>{ b.classList.remove("live"); if(t){ loSubmit(t); } else { stat.textContent="다시 한 번 말해보세요"; } }); };
   $("#loKbd").onclick=()=>{ inp.style.display="block"; inp.focus(); };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) loSubmit(v); }});
@@ -6406,7 +6406,7 @@ function wpAsk(q){
   let liveRecog=null;
   try{ liveRecog = new(window.webkitSpeechRecognition || window.SpeechRecognition); }catch(e){}
   
-  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(b.classList.contains("live"))return; b.classList.add("live"); status.style.color=""; status.textContent="듣고 있어요…";
+  $("#wpMic").onclick=()=>{ const b=$("#wpMic"); if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(b.classList.contains("live"))return; b.classList.add("live"); status.style.color=""; status.textContent="듣고 있어요…";
     let interimText="";
     // 실시간 인식 시도 (Chrome/안드로이드)
     if(liveRecog){
@@ -6755,7 +6755,7 @@ function renderVoIntro(w){
   $("#vbBody").innerHTML=""; $("#vbBody").appendChild(card);
   setTimeout(()=>speakEn(w.word),320);
   $("#voHear").onclick=()=>speakEn(w.word);
-  $("#voRepeat").onclick=()=>{ const b=$("#voRepeat"), s=$("#voStatus"); b.classList.add("live"); s.textContent="듣고 있어요…";
+  $("#voRepeat").onclick=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } const b=$("#voRepeat"), s=$("#voStatus"); b.classList.add("live"); s.textContent="듣고 있어요…";
     micFillCb((t)=>{ b.classList.remove("live"); if(t){ s.textContent='"'+t+'" — 좋아요! 이제 문장으로 👇'; s.style.color="var(--jade)"; } else { s.textContent="다시 한 번 따라 말해보세요"; } }, (w&&w.word)||""); };
   $("#voSkipRep").onclick=()=>renderVoUse(w);
   $("#voToUse").onclick=()=>renderVoUse(w);
@@ -6792,7 +6792,7 @@ function renderVoUse(w){
   $("#voHint2").onclick=()=>{ hintN++; const m=sit.model;
     if(hintN===1) status.textContent="힌트: "+m.split(/\s+/).slice(0,2).join(" ")+" …";
     else status.innerHTML="모범: <b>"+escapeHtml(m)+"</b>"; status.style.color="var(--muted)"; };
-  $("#voUseMic").onclick=()=>{ const b=$("#voUseMic"); if(b.classList.contains("live")) return;
+  $("#voUseMic").onclick=()=>{ const b=$("#voUseMic"); if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(b.classList.contains("live")) return;
     b.classList.add("live"); status.textContent="듣고 있어요…"; status.style.color="var(--muted)";
     micFillCb((t)=>{ b.classList.remove("live"); if(t){ voSubmit(w, t); } else { status.textContent="다시 말해보세요"; } }); };
   $("#voKbd2").onclick=()=>{ inp.style.display="block"; inp.focus(); };
@@ -7002,31 +7002,52 @@ const VAD_OPTS={maxMs:15000, silenceMs:600, minSpeechMs:200, thresh:0.012};   //
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
   const maxMs=opts.maxMs||8000, silenceMs=opts.silenceMs||1000, minSpeechMs=opts.minSpeechMs||250, thresh=opts.thresh||0.02;
-  // minTotalMs: 말을 시작한 뒤 이만큼 지나기 전에는 무음이 와도 끊지 않음
-  //   (긴 문장을 단어 단위로 끊어 말하는 아이가 첫 단어만 녹음되는 문제 방지)
+  // expectWords: 말해야 할 단어 수. '다 말한 것 같으면' 짧은 무음(silenceMs)에 바로 끝내고,
+  //   아직 덜 말한 것 같으면 긴 무음(maxSilenceMs)까지 기다린다.
+  //   → 빨리 말한 사람은 기다리는 시간이 없고, 단어마다 쉬는 아이는 중간에 안 끊긴다.
   // noSpeechMs: 아예 말이 없으면 끝까지 기다리지 않고 일찍 종료
-  const minTotalMs=opts.minTotalMs||0, noSpeechMs=opts.noSpeechMs||0;
+  const expectWords=opts.expectWords||0, maxSilenceMs=opts.maxSilenceMs||2600, noSpeechMs=opts.noSpeechMs||0;
   const onSpeechStart=typeof opts.onSpeechStart==="function"?opts.onSpeechStart:null;
   try{
     const AC=window.AudioContext||window.webkitAudioContext;
     const ac=new AC(); const src=ac.createMediaStreamSource(stream);
     const an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
     const buf=new Uint8Array(an.fftSize);
-    const t0=Date.now(); let lastLoud=0, firstLoud=0, spoke=false, started=false, done=false;
+    const t0=Date.now(); let lastLoud=0, spoke=false, started=false, done=false;
+    let voicedMs=0, bursts=0, inBurst=false, lastTick=Date.now();
+    // 다 말했는지 추정: ① 단어 수만큼 끊어 말했거나 ② 한 번에 쭉 말했는데 총량이 충분하거나
+    //                  ③ 몇 덩어리로 나눠 말했는데 총량이 넉넉하거나
+    function looksDone(){
+      if(expectWords<=0) return true;
+      if(bursts>=expectWords) return true;              // 단어 수만큼 끊어 말했다 = 다 말함
+      // 말 덩어리가 길면 '이어서 말하는' 스타일 → 끊어 말한 횟수 대신 총 발화량으로 판단.
+      // (단어마다 끊는 아이는 이 분기로 오지 않으므로 중간에 잘리지 않는다)
+      const avg = bursts ? voicedMs/bursts : 0;
+      if(avg>=700 && voicedMs>=expectWords*280) return true;
+      return false;
+    }
     function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
       let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
+      const dt=Math.min(120, now-lastTick); lastTick=now;
       if(rms>thresh){
-        lastLoud=now;
-        if(!firstLoud) firstLoud=now;
+        if(!inBurst){ inBurst=true; bursts++; }        // 말 덩어리 개수 (단어를 끊어 말한 횟수)
+        lastLoud=now; voicedMs+=dt;                    // 쉬는 시간은 빼고 '말한 시간'만 누적
         if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
         if(now-t0>minSpeechMs) spoke=true;
+      } else if(inBurst && (now-lastLoud)>180){
+        inBurst=false;                                  // 단어 사이 끊김
       }
-      if(spoke && lastLoud && (now-lastLoud)>silenceMs
-         && (!minTotalMs || (now-(firstLoud||t0))>=minTotalMs)){ return fin(); }
+      if(spoke && lastLoud){
+        const quiet=now-lastLoud;
+        // 다 말한 것 같으면 곧바로 종료 → 빨리 말한 사람이 기다리지 않음
+        if(quiet>silenceMs && looksDone()) return fin();
+        // 덜 말한 것 같아도 오래 조용하면 종료 (중간에 멈춘 경우)
+        if(quiet>maxSilenceMs) return fin();
+      }
       if(!spoke && noSpeechMs && (now-t0)>noSpeechMs){ return fin(); }   // 말이 없으면 그만 기다림
       if(now-t0>maxMs){ return fin(); }
       requestAnimationFrame(tick);
@@ -7053,7 +7074,10 @@ async function micFillCb(rawCb, refText){
     qzMR.onstop=async()=>{
       micBeepEnd();
       meta.stopAt=Date.now();
-      stream.getTracks().forEach(t=>t.stop()); qzRecording=false;
+      stream.getTracks().forEach(t=>t.stop());
+      // 자동 종료와 버튼 탭이 겹치는 구간 보호: 종료 후 0.5초 동안은 다시 시작되지 않음
+      // (qzRecording을 유지하므로 이 사이의 탭은 각 버튼의 '녹음 중' 분기에서 그냥 무시된다)
+      setTimeout(()=>{ qzRecording=false; }, 500);
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000){ cb("", meta); return; }
       // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수). WAV 실패시 원본 폴백 내장
       if(refText){
@@ -7071,10 +7095,11 @@ async function micFillCb(rawCb, refText){
     const _w=String(refText||"").trim().split(/\s+/).filter(Boolean).length;
     const _vad = _w>=3
       ? {...VAD_OPTS,
-         silenceMs: Math.min(3000, 1000+_w*200),     // 예: 5단어 2.0초 · 13단어 3.0초
-         minTotalMs: Math.min(9000, _w*300),          // 문장 길이의 최소 발화 시간 확보
+         silenceMs: 900,                              // 다 말했다고 판단되면 0.9초 만에 종료
+         expectWords: _w,                             // 이 문장을 다 말했는지 판단하는 기준
+         maxSilenceMs: 2600,                          // 덜 말했어도 2.6초 조용하면 종료
          maxMs: 25000, noSpeechMs: 7000}
-      : {...VAD_OPTS, noSpeechMs: 6000};
+      : {...VAD_OPTS, maxSilenceMs: 1600, noSpeechMs: 6000};
     attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
   }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
@@ -7169,7 +7194,10 @@ async function micFill(inp, btn, restoreLabel){
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
       micBeepEnd();
-      stream.getTracks().forEach(t=>t.stop()); qzRecording=false; btn.textContent=lbl;
+      stream.getTracks().forEach(t=>t.stop());
+      // 자동 종료와 버튼 탭이 겹치는 구간 보호: 종료 후 0.5초 동안은 다시 시작되지 않음
+      // (qzRecording을 유지하므로 이 사이의 탭은 각 버튼의 '녹음 중' 분기에서 그냥 무시된다)
+      setTimeout(()=>{ qzRecording=false; }, 500); btn.textContent=lbl;
       const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
       btn.textContent="🔄";
       try{
@@ -12754,6 +12782,7 @@ function firstRunRender(){
   firstRun.hintTimer=hintTimer;
   const mic=$("#frMic");
   mic.onclick=()=>{
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } 
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
     firstRun.t0=Date.now();
     micFillCb((heard)=>{
@@ -12791,7 +12820,7 @@ function firstRunJudge(it, heard){
     if(stat) stat.innerHTML='<span style="color:#E0A300">거의 다 됐어요! 한 번만 더요.</span>';
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
     if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
-      mic.onclick=()=>{ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
+      mic.onclick=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
         micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }, (it&&it.answer)||""); }; }
   }
 }
@@ -12909,6 +12938,7 @@ function dailyRoomRender(){
   const clearHints=()=>{ clearTimeout(h1); clearTimeout(h2); };
   const mic=$("#drMic");
   mic.onclick=()=>{
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } 
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
     micFillCb((heard,meta)=>{ mic.classList.remove("live"); clearHints(); dailyRoomJudge(it, heard||"", meta); }, it.answer);
   };
@@ -12946,7 +12976,7 @@ function dailyRoomJudge(it, heard, meta){
   const pron=meta&&meta.pron;
   const pronLine = pron ? `<br><span style="font-size:12px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#189E79'};font-weight:800">🔊 발음 ${pron.score}점</span>${heard?` <span style="color:#8A6F62;font-size:11.5px">· 내 발음: "${escapeHtml(heard)}"</span>`:""}` : "";
   // 발음 다시 하기 — 점수만 갱신, 진행은 그대로
-  const reSay=()=>{ if(mic){ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; } micFillCb((hd,m)=>{ if(mic) mic.classList.remove("live"); dailyRoom.tries--; dailyRoomJudge(it, hd||"", m); }, it.answer); };
+  const reSay=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(mic){ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; } micFillCb((hd,m)=>{ if(mic) mic.classList.remove("live"); dailyRoom.tries--; dailyRoomJudge(it, hd||"", m); }, it.answer); };
   if(pass){
     dailyRoom.said++;
     try{ speakEn(it.answer); }catch(e){}
