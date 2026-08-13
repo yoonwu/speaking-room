@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.84";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.85";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2185,7 +2185,7 @@ const RANK_BOARDS=[
   {k:"lvl",    emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"},
   {k:"mins",   emo:"⏱", t:"훈련 시간", unit:"분",  sub:"이번 주 실제로 훈련한 시간 — 켜두기만 하면 안 쌓여요", detail:true}
 ];
-let rankTab="week", rankRows=null, rankErr="";
+let rankTab="week", rankRows=null, rankErr="", rankWorkerVer="", rankNeedNick=false;
 function rankClose(){ const ov=document.getElementById("rankOv"); if(ov) ov.remove(); }
 async function rankOpen(){
   rankClose();
@@ -2198,11 +2198,32 @@ async function rankOpen(){
   rankRender();
   // 내 기록을 먼저 올려서 순위표에 최신 상태로 반영
   try{ if(syncNick()) await syncPush(); }catch(e){}
+  rankRows=[]; rankErr="";
+  if(!syncNick()){
+    rankErr="닉네임을 먼저 정해야 순위에 올라가요.";
+    rankNeedNick=true; rankRender(); return;
+  }
+  rankNeedNick=false;
   try{
     const r=await fetch(PROXY_URL+"/board?_="+Date.now(), {cache:"no-store"});
-    if(!r.ok){ rankErr = r.status===503 ? "서버에 랭킹 저장소가 아직 연결되지 않았어요." : ("랭킹을 불러오지 못했어요 ("+r.status+")"); }
-    else{ const j=await r.json(); rankRows=Array.isArray(j)?j:[]; }
-  }catch(e){ rankErr="연결에 실패했어요."; }
+    if(r.ok){ const j=await r.json(); rankRows=Array.isArray(j)?j:[]; }
+    else if(r.status===404){ rankErr="서버(워커)가 아직 예전 버전이에요 — 랭킹 기능이 없는 버전입니다."; }
+    else if(r.status===503){ rankErr="서버에 저장소(USERDATA)가 연결되지 않았어요."; }
+    else{ rankErr="랭킹을 불러오지 못했어요 ("+r.status+")"; }
+  }catch(e){ rankErr="서버에 연결하지 못했어요."; }
+  // 정확한 원인 안내를 위해 워커 버전까지 확인
+  if(rankErr){
+    try{
+      const v=await fetch(PROXY_URL+"/version?_="+Date.now(), {cache:"no-store"});
+      rankWorkerVer = v.ok ? (await v.text()).trim() : ("응답 "+v.status);
+    }catch(e){ rankWorkerVer="연결 실패"; }
+  }
+  // 서버가 안 되더라도 내 기록은 항상 보이게 (이 기기 기준)
+  const mine=rankRows.find(r=>r.n===syncNick());
+  if(!mine){
+    const sum=syncSummary();
+    if(sum) rankRows.push({...sum, n:syncNick(), local:true});
+  }
   rankRender();
 }
 // ⏱ 자세히 보기 — 어떤 분야를 몇 분 했는지
@@ -2246,8 +2267,9 @@ function rankRender(){
   const board=RANK_BOARDS.find(b=>b.k===rankTab)||RANK_BOARDS[0];
   const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="flex:1;padding:9px 2px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:11px;font-weight:800;cursor:pointer;line-height:1.35">${b.emo}<br>${b.t}</button>`).join("");
   let body="";
-  if(rankErr){
-    body=`<div style="text-align:center;padding:26px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">${escapeHtml(rankErr)}<br><span style="font-size:12px">공부 기록은 안전하게 저장돼 있어요.</span></div>`;
+  if(rankNeedNick){
+    body=`<div style="text-align:center;padding:24px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">${escapeHtml(rankErr)}<br>
+      <button id="rankSetNick" style="margin-top:14px;padding:12px 20px;border:0;border-radius:12px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:14px;font-weight:800;cursor:pointer">닉네임 정하기</button></div>`;
   } else if(rankRows===null){
     body=`<div style="text-align:center;padding:30px 10px;color:var(--muted,#8a7f78);font-size:13.5px">순위를 불러오는 중…</div>`;
   } else {
@@ -2261,7 +2283,7 @@ function rankRender(){
         const val=Number(r[board.k])||0;
         return `<div ${board.detail?`class="rank-row" data-rn="${escapeHtml(r.n||"")}" style="cursor:pointer;`:'style="'}display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:7px;border-radius:13px;background:${mine?"linear-gradient(135deg,#E9F8F2,#D6F0E5)":"var(--card2,#f6f1ec)"};border:1.5px solid ${mine?"#2BBD94":"transparent"}">
           <span style="width:26px;text-align:center;font-size:${i<3?"17px":"13px"};font-weight:900;color:var(--muted,#8a7f78)">${i<3?medal[i]:(i+1)}</span>
-          <span style="flex:1;min-width:0;font-size:14.5px;font-weight:800;color:var(--text,#1c1410);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.name||r.n||"친구")}${mine?' <span style="font-size:11px;color:#189E79">나</span>':""}</span>
+          <span style="flex:1;min-width:0;font-size:14.5px;font-weight:800;color:var(--text,#1c1410);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.name||r.n||"친구")}${mine?' <span style="font-size:11px;color:#189E79">나</span>':""}${r.local?' <span style="font-size:10.5px;color:#8a7f78">이 기기</span>':""}</span>
           <span style="font-size:15px;font-weight:900;color:#189E79">${val}<span style="font-size:11px;color:var(--muted,#8a7f78);font-weight:700">${board.unit}</span></span>
           ${board.detail?'<span style="color:var(--muted,#8a7f78);font-size:13px">›</span>':""}
         </div>`;
@@ -2281,8 +2303,13 @@ function rankRender(){
     </div>
     <div style="display:flex;gap:6px;margin-bottom:9px">${tabs}</div>
     <div style="font-size:11.5px;color:var(--muted,#8a7f78);text-align:center;margin-bottom:13px;line-height:1.5">${board.sub}</div>
+    ${(rankErr&&!rankNeedNick)?`<div style="background:#FFF6E9;border:1px solid #F0D9B5;border-radius:12px;padding:11px 13px;margin-bottom:12px;font-size:12.5px;color:#8A6220;line-height:1.65">
+      ⚠️ ${escapeHtml(rankErr)}<br>
+      <span style="font-size:11.5px;opacity:.9">지금은 내 기록만 보여요. ${escapeHtml(rankWorkerVer?("서버 버전: "+rankWorkerVer+" · "):"")}필요한 설정: Cloudflare에 KV 저장소를 만들고 <b>USERDATA</b>로 연결한 뒤 최신 워커 코드 배포</span>
+    </div>`:""}
     ${body}`;
   const cb=document.getElementById("rankClose"); if(cb) cb.onclick=rankClose;
+  { const sn=document.getElementById("rankSetNick"); if(sn) sn.onclick=()=>{ rankClose(); syncOpenGate(false); }; }
   Array.prototype.forEach.call(sheet.querySelectorAll(".rank-tab"), b=>{ b.onclick=()=>{ rankTab=b.dataset.rk; rankRender(); }; });
   Array.prototype.forEach.call(sheet.querySelectorAll(".rank-row"), b=>{ b.onclick=()=>rankDetail(b.dataset.rn); });
   if(board.detail){ const h=document.createElement("div"); h.style.cssText="text-align:center;font-size:11.5px;color:var(--muted,#8a7f78);margin-top:9px"; h.textContent="이름을 누르면 분야별 시간을 볼 수 있어요"; sheet.appendChild(h); }
