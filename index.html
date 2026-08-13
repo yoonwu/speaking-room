@@ -1740,6 +1740,11 @@ body{background:var(--paper)!important;color:var(--text)}
           <span class="eng-ar">›</span>
         </button>
         </div>
+        <button id="rankHomeBtn" style="width:100%;margin:0 0 13px;padding:13px 15px;display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--text);font-size:14.5px;font-weight:800;cursor:pointer;text-align:left">
+          <span style="font-size:19px">🏆</span>
+          <span style="flex:1">랭킹 보기<span style="display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px">이번 주 · 연속 학습 · 블록 · 실력 레벨</span></span>
+          <span style="color:var(--muted)">›</span>
+        </button>
         <button class="continue" id="continueCard" style="display:none">
           <span class="cont-emo" id="contEmo">✈️</span>
           <span class="cont-txt"><span class="cont-t">이어서 연습하기</span><span class="cont-d" id="contDesc"></span></span>
@@ -1963,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.81";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.82";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2037,7 +2042,7 @@ async function syncPush(){
   syncBusy=true;
   const t=Date.now();
   try{
-    const r=await fetch(PROXY_URL+"/u?n="+encodeURIComponent(n), {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({t, d:syncCollect()})});
+    const r=await fetch(PROXY_URL+"/u?n="+encodeURIComponent(n), {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({t, d:syncCollect(), sum:syncSummary()})});
     if(!r.ok){ syncLastErr="저장 실패 ("+r.status+")"; return false; }
     syncSetMeta(SYNC_T_KEY, String(t));
     syncDirty=false; syncLastErr="";
@@ -2050,7 +2055,7 @@ function syncBeacon(){
   const n=syncNick(); if(!n||!syncDirty) return;
   try{
     const t=Date.now();
-    const body=new Blob([JSON.stringify({t, d:syncCollect()})],{type:"application/json"});
+    const body=new Blob([JSON.stringify({t, d:syncCollect(), sum:syncSummary()})],{type:"application/json"});
     if(navigator.sendBeacon && navigator.sendBeacon(PROXY_URL+"/u?n="+encodeURIComponent(n), body)){
       syncSetMeta(SYNC_T_KEY, String(t)); syncDirty=false;
     }
@@ -2061,6 +2066,18 @@ function syncMarkDirty(){
   syncDirty=true;
   if(syncTimer) clearTimeout(syncTimer);
   syncTimer=setTimeout(()=>{ syncTimer=null; syncPush(); }, 4000);   // 공부 중엔 4초 쉴 때마다 저장
+}
+// 🏆 랭킹에 올릴 요약 — 전체 데이터를 뒤지지 않고 순위표를 만들기 위해 함께 전송
+function syncSummary(){
+  try{
+    const p=(typeof getProf==="function")?getProf():{xp:0};
+    const li=(typeof levelInfo==="function")?levelInfo(p.xp||0):{level:1};
+    const st=(typeof hGet==="function")?hGet("speakingroom:streak",{n:0}):{n:0};
+    let blocks=0; try{ blocks=getLearnedBlocks().length; }catch(e){}
+    let lvl=1; try{ lvl=profSkillStats().overallLevel; }catch(e){}
+    let week=0; try{ week=xpWeek(); }catch(e){}
+    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak:st.n||0, week, blocks, lvl};
+  }catch(e){ return null; }
 }
 function syncStatusText(){
   if(!syncNick()) return "";
@@ -2075,6 +2092,79 @@ try{
   _ls.setItem=function(k,v){ _set(k,v); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
   _ls.removeItem=function(k){ _rm(k); if(!syncApplying&&!syncSkipKey(k)) syncMarkDirty(); };
 }catch(e){}
+/* ===== 🏆 랭킹 — 같은 워커를 쓰는 친구들끼리 순위 비교 =====
+   여러 판을 두는 이유: 한 판만 있으면 오래 한 사람이 늘 1등이라
+   늦게 시작한 아이가 따라잡을 곳이 없어짐. 주간판은 매주 리셋. */
+const RANK_BOARDS=[
+  {k:"week",   emo:"🔥", t:"이번 주",   unit:"XP",  sub:"최근 7일 동안 모은 XP — 매주 새로 시작해요"},
+  {k:"streak", emo:"📅", t:"연속 학습", unit:"일",  sub:"하루도 빠지지 않고 이어온 날"},
+  {k:"blocks", emo:"🧱", t:"배운 블록", unit:"개",  sub:"입에 붙인 영어 블록 개수"},
+  {k:"lvl",    emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"}
+];
+let rankTab="week", rankRows=null, rankErr="";
+function rankClose(){ const ov=document.getElementById("rankOv"); if(ov) ov.remove(); }
+async function rankOpen(){
+  rankClose();
+  rankTab="week"; rankRows=null; rankErr="";
+  const ov=document.createElement("div"); ov.id="rankOv";
+  ov.style.cssText="position:fixed;inset:0;z-index:99997;background:rgba(15,43,35,.55);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)";
+  ov.innerHTML='<div id="rankSheet" style="background:var(--card,#fff);color:var(--text,#1c1410);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;border-radius:22px 22px 0 0;padding:18px 16px 26px;box-shadow:0 -20px 60px -20px rgba(0,0,0,.45)"></div>';
+  ov.addEventListener("click",e=>{ if(e.target.id==="rankOv") rankClose(); });
+  document.body.appendChild(ov);
+  rankRender();
+  // 내 기록을 먼저 올려서 순위표에 최신 상태로 반영
+  try{ if(syncNick()) await syncPush(); }catch(e){}
+  try{
+    const r=await fetch(PROXY_URL+"/board?_="+Date.now(), {cache:"no-store"});
+    if(!r.ok){ rankErr = r.status===503 ? "서버에 랭킹 저장소가 아직 연결되지 않았어요." : ("랭킹을 불러오지 못했어요 ("+r.status+")"); }
+    else{ const j=await r.json(); rankRows=Array.isArray(j)?j:[]; }
+  }catch(e){ rankErr="연결에 실패했어요."; }
+  rankRender();
+}
+function rankRender(){
+  const sheet=document.getElementById("rankSheet"); if(!sheet) return;
+  const me=syncNick();
+  const board=RANK_BOARDS.find(b=>b.k===rankTab)||RANK_BOARDS[0];
+  const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="flex:1;padding:9px 4px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:12px;font-weight:800;cursor:pointer">${b.emo}<br>${b.t}</button>`).join("");
+  let body="";
+  if(rankErr){
+    body=`<div style="text-align:center;padding:26px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">${escapeHtml(rankErr)}<br><span style="font-size:12px">공부 기록은 안전하게 저장돼 있어요.</span></div>`;
+  } else if(rankRows===null){
+    body=`<div style="text-align:center;padding:30px 10px;color:var(--muted,#8a7f78);font-size:13.5px">순위를 불러오는 중…</div>`;
+  } else {
+    const rows=rankRows.slice().sort((a,b)=>(Number(b[board.k])||0)-(Number(a[board.k])||0));
+    if(!rows.length){
+      body=`<div style="text-align:center;padding:26px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">아직 참가자가 없어요.<br>공부를 시작하면 여기에 올라와요! 💪</div>`;
+    } else {
+      const medal=["🥇","🥈","🥉"];
+      body=rows.map((r,i)=>{
+        const mine=(r.n===me);
+        const val=Number(r[board.k])||0;
+        return `<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:7px;border-radius:13px;background:${mine?"linear-gradient(135deg,#E9F8F2,#D6F0E5)":"var(--card2,#f6f1ec)"};border:1.5px solid ${mine?"#2BBD94":"transparent"}">
+          <span style="width:26px;text-align:center;font-size:${i<3?"17px":"13px"};font-weight:900;color:var(--muted,#8a7f78)">${i<3?medal[i]:(i+1)}</span>
+          <span style="flex:1;min-width:0;font-size:14.5px;font-weight:800;color:var(--text,#1c1410);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(r.name||r.n||"친구")}${mine?' <span style="font-size:11px;color:#189E79">나</span>':""}</span>
+          <span style="font-size:15px;font-weight:900;color:#189E79">${val}<span style="font-size:11px;color:var(--muted,#8a7f78);font-weight:700">${board.unit}</span></span>
+        </div>`;
+      }).join("");
+      const myIdx=rows.findIndex(r=>r.n===me);
+      if(myIdx>=0){
+        const ahead=myIdx>0?rows[myIdx-1]:null;
+        const gap=ahead?((Number(ahead[board.k])||0)-(Number(rows[myIdx][board.k])||0)):0;
+        body+=`<div style="text-align:center;font-size:12.5px;color:var(--muted,#8a7f78);margin-top:10px;line-height:1.6">${myIdx===0?"1등이에요! 계속 지켜봐요 🏆":`${escapeHtml(ahead.name||ahead.n)}님까지 <b style="color:#189E79">${gap}${board.unit}</b> 남았어요`}</div>`;
+      }
+    }
+  }
+  sheet.innerHTML=`<div style="width:38px;height:4px;border-radius:99px;background:var(--line,#eadfd6);margin:0 auto 14px"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1;font-size:18px;font-weight:900">🏆 랭킹</div>
+      <button id="rankClose" style="width:32px;height:32px;border:0;border-radius:50%;background:var(--card2,#f6f1ec);color:var(--muted,#8a7f78);font-size:15px;font-weight:800;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:9px">${tabs}</div>
+    <div style="font-size:11.5px;color:var(--muted,#8a7f78);text-align:center;margin-bottom:13px;line-height:1.5">${board.sub}</div>
+    ${body}`;
+  const cb=document.getElementById("rankClose"); if(cb) cb.onclick=rankClose;
+  Array.prototype.forEach.call(sheet.querySelectorAll(".rank-tab"), b=>{ b.onclick=()=>{ rankTab=b.dataset.rk; rankRender(); }; });
+}
 function syncCloseGate(){ const ov=document.getElementById("syncGate"); if(ov) ov.remove(); }
 function syncOpenGate(isSwitch){
   syncCloseGate();
@@ -13886,10 +13976,30 @@ function awardXP(cat, base, label, itemKey){
   if(base<1) base=1;
   d.total=(d.total||0)+base; d.cat[cat]=(d.cat[cat]||0)+base;
   hSet("speakingroom:xpday",d);
+  try{ xpLogBump(base); }catch(e){}   // 🏆 주간 랭킹용 날짜별 기록
   addXP(base,label);
   return base;
 }
 function todayXP(){ try{ return xpDayGet().total||0; }catch(e){ return 0; } }
+// 🏆 날짜별 XP 기록 — 주간 랭킹용 (최근 14일만 보관)
+function xpLogBump(n){
+  const log=hGet("speakingroom:xplog",{}) || {};
+  const today=String(DAYN());
+  log[today]=(Number(log[today])||0)+(Number(n)||0);
+  const keys=Object.keys(log).sort();
+  while(keys.length>14){ delete log[keys.shift()]; }
+  hSet("speakingroom:xplog",log);
+}
+function xpWeek(){
+  const log=hGet("speakingroom:xplog",{}) || {};
+  const now=new Date(); let sum=0;
+  for(let i=0;i<7;i++){
+    const x=new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+    const k=String(x.getFullYear()*10000+(x.getMonth()+1)*100+x.getDate());
+    sum+=Number(log[k])||0;
+  }
+  return sum;
+}
 // ===== 📈 레벨링 — 문장 난이도 기반 점수 + 단락 끝 XP/레벨 요약 =====
 // 난이도 1~5: 정답 내용어의 희귀도(단어레벨) + 문장 길이
 function answerDifficulty(en){
@@ -14160,6 +14270,7 @@ function renderProfile(){
       <div style="font-size:13px;color:var(--text);font-weight:700;letter-spacing:.02em">${qLine}</div>
     </div>
     <div class="stat-grid">${stats.map(s=>`<div class="stat"><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}</div></div></div>`).join("")}</div>
+    <button id="profRankBtn" style="width:100%;margin-bottom:14px;padding:13px;border:0;border-radius:13px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:14.5px;font-weight:800;cursor:pointer">🏆 랭킹 보기</button>
     <div class="prof-h">☁️ 계정 · 기기 연동</div>
     <div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -14187,6 +14298,7 @@ function renderProfile(){
   { const ob=$("#onbReopen"); if(ob) ob.onclick=()=>{ closeProfile(); openOnboarding(); }; }
   { const rb=$("#resetData"); if(rb) rb.onclick=resetLearningData; }
   { const sb=$("#syncSwitchBtn"); if(sb) sb.onclick=()=>{ closeProfile(); syncOpenGate(!!syncNick()); }; }
+  { const rb2=$("#profRankBtn"); if(rb2) rb2.onclick=()=>{ closeProfile(); rankOpen(); }; }
   { const nb=$("#syncNowBtn"); if(nb) nb.onclick=async()=>{
       nb.disabled=true; nb.textContent="저장 중…";
       const ok=await syncPush();
@@ -14633,6 +14745,7 @@ async function checkForUpdate(){
 { const vc=$("#vocabCard"); if(vc) vc.onclick=startVocabCoach; }
 { const kc=$("#kidCard"); if(kc) kc.onclick=openPhonics; }
 { const hz=$("#heroZone"); if(hz) hz.onclick=openProfile; }
+{ const rb=$("#rankHomeBtn"); if(rb) rb.onclick=rankOpen; }
 $("#continueCard").onclick=()=>resumeLast(hGet("speakingroom:last",null));
 $("#profScrim").onclick=(e)=>{ if(e.target.id==="profScrim") closeProfile(); };
 { const eb=$("#evalBtn"); if(eb) eb.onclick=endAndEvaluate; }

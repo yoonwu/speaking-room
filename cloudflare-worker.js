@@ -3,6 +3,7 @@
 //  GET  /version   → 배포 확인용 ("worker-v6" 반환)
 //  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
 //  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
+//  GET  /board     → 전체 사용자 랭킹 요약 목록      ★ v6 신규
 //  GET  /tts       → Azure Neural TTS (원어민 음성, 캐시)
 //  POST /          → Anthropic Claude
 //  POST /stt       → Azure STT
@@ -35,6 +36,24 @@ export default {
     // 배포 확인용
     if (request.method === "GET" && path === "/version") {
       return new Response(WORKER_VERSION, { headers: { ...cors, "Content-Type": "text/plain" } });
+    }
+
+    // ── ⓪-B 랭킹 목록 (v6 신규) ─────────────────────────────
+    //  GET /board → [{n:닉네임, name:표시이름, xp, lv, streak, week, blocks, lvl, t}]
+    if (request.method === "GET" && path === "/board") {
+      const jsonHeaders = { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" };
+      try {
+        if (!env.USERDATA) {
+          return new Response(JSON.stringify({ error: "KV binding USERDATA not configured" }), { status: 503, headers: jsonHeaders });
+        }
+        const listed = await env.USERDATA.list({ prefix: "b:", limit: 300 });
+        const rows = await Promise.all(listed.keys.map(async (k) => {
+          try { const v = await env.USERDATA.get(k.name); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+        }));
+        return new Response(JSON.stringify(rows.filter(Boolean)), { status: 200, headers: jsonHeaders });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders });
+      }
     }
 
     // ── ⓪ 학습 데이터 저장/불러오기 (v6 신규) ───────────────
@@ -79,6 +98,18 @@ export default {
           if (prev) ctx.waitUntil(env.USERDATA.put(key + ":prev", prev));
         } catch (e) {}
         await env.USERDATA.put(key, store);
+        // 랭킹용 요약은 따로 작은 키로 (전체 데이터를 읽지 않고 순위표를 만들기 위해)
+        if (body.sum && typeof body.sum === "object") {
+          const sum = body.sum;
+          const num = (v) => { const x = Number(v); return Number.isFinite(x) ? Math.max(0, Math.round(x)) : 0; };
+          const row = {
+            n: nick,
+            name: String(sum.name || nick).slice(0, 12),
+            xp: num(sum.xp), lv: num(sum.lv), streak: num(sum.streak),
+            week: num(sum.week), blocks: num(sum.blocks), lvl: num(sum.lvl), t,
+          };
+          try { ctx.waitUntil(env.USERDATA.put("b:" + nick, JSON.stringify(row))); } catch (e) {}
+        }
         return new Response(JSON.stringify({ ok: true, t }), { status: 200, headers: jsonHeaders });
       } catch (e) {
         return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders });
