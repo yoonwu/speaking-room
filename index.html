@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.83";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.84";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3920,7 +3920,7 @@ function renderListenPlay(){
       const pr=$("#lsProg");
       if(pr && added===0 && !done) pr.textContent=`못 알아들었어요 — 빈칸을 또박또박! (들린 단어 ${lsFilled.filter(Boolean).length}/${lsTargets.length})`;
       if(done){ setTimeout(()=>{ lsAnswer=lsTargets.join(" "); lsCheckAnswer(); }, 600); }
-    });
+    }, (lsItem&&lsItem.en)||"");
   };
   $("#lsDictType").onclick=()=>{ const ti=$("#lsTypeIn"); ti.style.display="block"; ti.focus(); };
   $("#lsTypeIn").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); lsFillFromHeard(e.target.value); e.target.value="";
@@ -6375,7 +6375,7 @@ function wpAsk(q){
         liveRecog.start();
       }catch(e){ liveRecog=null; }
     }
-    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
+    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }, (q&&q.blank&&q.blank.answer)||""); 
   };
   $("#wpKbd").onclick=()=>{
     // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
@@ -6706,7 +6706,7 @@ function renderVoIntro(w){
   setTimeout(()=>speakEn(w.word),320);
   $("#voHear").onclick=()=>speakEn(w.word);
   $("#voRepeat").onclick=()=>{ const b=$("#voRepeat"), s=$("#voStatus"); b.classList.add("live"); s.textContent="듣고 있어요…";
-    micFillCb((t)=>{ b.classList.remove("live"); if(t){ s.textContent='"'+t+'" — 좋아요! 이제 문장으로 👇'; s.style.color="var(--jade)"; } else { s.textContent="다시 한 번 따라 말해보세요"; } }); };
+    micFillCb((t)=>{ b.classList.remove("live"); if(t){ s.textContent='"'+t+'" — 좋아요! 이제 문장으로 👇'; s.style.color="var(--jade)"; } else { s.textContent="다시 한 번 따라 말해보세요"; } }, (w&&w.word)||""); };
   $("#voSkipRep").onclick=()=>renderVoUse(w);
   $("#voToUse").onclick=()=>renderVoUse(w);
 }
@@ -6904,7 +6904,7 @@ function renderVocabQuiz(w){
     if(done) return;
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
     micB.classList.add("live"); status.textContent="듣고 있어요…";
-    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } });
+    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } }, answer||"");
   };
   // 힌트 (수동) — 첫 글자만, 정답은 안 알려줌
   $("#mbHint").onclick=()=>{ if(done) return; status.innerHTML=`💡 첫 글자: <b>${escapeHtml(answer[0].toUpperCase())}</b>`; status.style.color="#e6ad4a"; };
@@ -7009,7 +7009,10 @@ async function micFillCb(rawCb, refText){
       cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
+    // 문장(3단어 이상)을 말하는 과제는 단어 사이 멈춤이 길어 600ms면 중간에 끊김 → 넉넉하게
+    const _w=String(refText||"").trim().split(/\s+/).filter(Boolean).length;
+    const _vad = _w>=3 ? {...VAD_OPTS, silenceMs:1400, maxMs:20000} : VAD_OPTS;
+    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
   }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
 // /pronounce로 음성 인식 (DisplayText) + 발음 점수 추출 — /stt 대체·폴백용
@@ -12675,7 +12678,7 @@ function firstRunRender(){
       mic.classList.remove("live");
       clearTimeout(hintTimer);
       firstRunJudge(it, heard||"");
-    });
+    }, (it&&it.answer)||"");
   };
   const typeBtn=$("#frType");
   if(typeBtn) typeBtn.onclick=()=>{
@@ -12707,7 +12710,7 @@ function firstRunJudge(it, heard){
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
     if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
       mic.onclick=()=>{ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
-        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }); }; }
+        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }, (it&&it.answer)||""); }; }
   }
 }
 function firstRunDone(){
