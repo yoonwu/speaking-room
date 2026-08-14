@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.95";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.96";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6461,7 +6461,7 @@ function wpAsk(q){
         liveRecog.start();
       }catch(e){ liveRecog=null; }
     }
-    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }, (q&&q.blank&&q.blank.answer)||""); 
+    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
   };
   $("#wpKbd").onclick=()=>{
     // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
@@ -6499,8 +6499,12 @@ function wpMatch(ansNorm, targetNorm){
   if(ansNorm===targetNorm) return true;
   const ansWords=ansNorm.split(/\s+/).filter(Boolean);
   const tgtWords=targetNorm.split(/\s+/).filter(Boolean);
-  // 정답의 모든 단어가 답 안에 (어형 변형 허용) 들어있으면 통과
-  return tgtWords.every(tw=> ansWords.some(aw=> wpWordEq(aw, tw) ));
+  // 정답의 모든 단어가 답 안에 (어형 변형 허용) 들어있어야 한다
+  if(!tgtWords.every(tw=> ansWords.some(aw=> wpWordEq(aw, tw) ))) return false;
+  // 관련 없는 말을 잔뜩 해서 우연히 정답이 섞이는 경우 방지 —
+  // 정답 외 덧붙인 말이 정답 길이를 크게 넘으면 인정하지 않는다.
+  const extra = ansWords.length - tgtWords.length;
+  return extra <= Math.max(4, tgtWords.length + 2);
 }
 function wpWordEq(a, b){
   if(a===b) return true;
@@ -6990,7 +6994,7 @@ function renderVocabQuiz(w){
     if(done) return;
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
     micB.classList.add("live"); status.textContent="듣고 있어요…";
-    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } }, answer||"");
+    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } });
   };
   // 힌트 (수동) — 첫 글자만, 정답은 안 알려줌
   $("#mbHint").onclick=()=>{ if(done) return; status.innerHTML=`💡 첫 글자: <b>${escapeHtml(answer[0].toUpperCase())}</b>`; status.style.color="#e6ad4a"; };
@@ -12898,7 +12902,7 @@ function firstRunRender(){
       mic.classList.remove("live");
       clearTimeout(hintTimer);
       firstRunJudge(it, heard||"");
-    }, (it&&it.answer)||"");
+    });
   };
   const typeBtn=$("#frType");
   if(typeBtn) typeBtn.onclick=()=>{
@@ -12930,7 +12934,7 @@ function firstRunJudge(it, heard){
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
     if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
       mic.onclick=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
-        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }, (it&&it.answer)||""); }; }
+        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }); }; }
   }
 }
 function firstRunDone(){
