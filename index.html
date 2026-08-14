@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.103";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.104";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-14";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2018,6 +2018,8 @@ function syncApply(d){
     drop.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
     keep.forEach(k=>{ if(syncSkipKey(k)) return; try{ localStorage.setItem(k, d[k]); }catch(e){} });
   }catch(e){}
+  // 남의 기기에서 온 단어 뜻이 꼬여 있을 수 있다 — 정리 플래그도 같이 딸려오므로 강제로 한 번
+  try{ srsFixWordMeaningsOnce(true); }catch(e){}
 }
 function syncSetMeta(k,v){ syncApplying=true; try{ localStorage.setItem(k,v); } finally{ syncApplying=false; } }
 async function syncPull(){
@@ -6580,7 +6582,7 @@ function wpAsk(q){
         liveRecog.start();
       }catch(e){ liveRecog=null; }
     }
-    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }); 
+    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t,true); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } });
   };
   $("#wpKbd").onclick=()=>{
     // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
@@ -6630,7 +6632,30 @@ function wpWordEq(a, b){
   // 길이 3 이상일 때 어간 비교 (복수 s/es, 과거 ed, ing 무시)
   const stem=w=> w.replace(/(ies|es|s|ed|ing)$/,"");
   if(a.length>=3 && b.length>=3 && stem(a)===stem(b)) return true;
+  // 🎤 음성인식이 비슷한 소리로 잘못 받아쓰는 경우 (for↔four, real↔reel, week↔weak)
+  if(a.length>=3 && b.length>=3 && wpSoundKey(a)===wpSoundKey(b)) return true;
   return false;
+}
+// 발음 뼈대만 남기는 키 — 자음은 살리고 모음은 하나로 뭉갠다
+function wpSoundKey(w){
+  let s=String(w||"").toLowerCase().replace(/[^a-z]/g,"");
+  if(!s) return "";
+  s=s.replace(/^(kn|gn|wr)/,m=>m[1])
+     .replace(/ph/g,"f").replace(/gh/g,"").replace(/ck/g,"k").replace(/qu/g,"kw")
+     .replace(/x/g,"ks").replace(/c(?=[eiy])/g,"s").replace(/c/g,"k")
+     .replace(/sh|ch/g,"S").replace(/th/g,"T")
+     .replace(/e$/,"")
+     .replace(/([a-z])\1+/g,"$1");
+  return s.replace(/[aeiouy]+/g,"a");
+}
+// 세 번 틀린 뒤 쓰는 느슨한 판정 — 정답 단어 절반 이상이 발음으로 맞으면 인정
+function wpCloseEnough(ansNorm, targetNorm){
+  const a=String(ansNorm||"").split(/\s+/).filter(Boolean);
+  const t=String(targetNorm||"").split(/\s+/).filter(Boolean);
+  if(!a.length || !t.length) return false;
+  if(a.length > t.length+3) return false;   // 엉뚱한 말을 잔뜩 한 경우 제외
+  const hit=t.filter(tw=>a.some(aw=>wpWordEq(aw,tw))).length;
+  return hit/t.length >= 0.5;
 }
 function wpKeepTrying(q, answer){
   const status=$("#wpStatus"), inp=$("#wpInput"), panel=$("#wpHintPanel");
@@ -6650,16 +6675,20 @@ function wpKeepTrying(q, answer){
     setTimeout(()=>inp.focus(),60);
   }
 }
-function wpSubmit(q, answer){
+function wpSubmit(q, answer, viaMic){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
   // 축약형 동치 포함 채점 — "I'll"·"I will", "gonna"·"going to" 모두 정답
-  const correct = !!answer && (function(){
+  const strict = !!answer && (function(){
     try{
       const tv=contractionVariants(q.blank.answer).map(normAns);
       return contractionVariants(answer).map(normAns).some(av=>tv.some(t=>wpMatch(av,t)));
     }catch(e){ return wpMatch(ans, target); }
   })();
+  // 🎤 발음이 맞아도 음성인식이 딴 단어로 받아쓰면 영영 못 넘어간다.
+  //    세 번째 시도부터는 충분히 가까우면 인정하되, 힌트 본 것과 같은 '복습 대상'으로 남긴다.
+  if(!strict && answer && viaMic && (q._wrongCount||0)>=2 && wpCloseEnough(ans, target)) q._micClose=true;
+  const correct = strict || !!q._micClose;
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
   // 오답은 정답지로 넘기지 않는다. 같은 문제에서 최대한 다시 생각하게 둔다.
   if(answer && !correct){
@@ -6690,11 +6719,11 @@ function wpSubmit(q, answer){
   if(correct){
     flashResult(true);
     // 💡 힌트를 봤으면 '모르는 단어' 취급 — SRS 실패 기록 + 뒤에서 재출제 + 레벨 하강 신호
-    if(q._hintUsed){
+    if(q._hintUsed || q._micClose){
       if(!q._missLogged){ srsFail(q.word.word, q.word.ko, ctxTag); q._missLogged=true; }
       if(!isRetry) wpRescheduleFail(q);
       if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }
-      awardXP("vocab", 3, "단어 연습(힌트)", "wp:"+q.word.word+":"+q.idxInWord+":h");
+      awardXP("vocab", 3, q._micClose?"단어 연습(비슷하게)":"단어 연습(힌트)", "wp:"+q.word.word+":"+q.idxInWord+":h");
     } else {
       srsPass(q.word.word, q.word.ko, ctxTag);
       try{ rtBump("vocab"); }catch(e){}   // 📋 오늘 루틴: 단어 (힌트 없이 맞힌 것만)
@@ -8940,19 +8969,31 @@ function bleRegisterUnknownWords(list){
   });
 }
 // 이미 잘못 저장된 항목 정리 (예: pills = 지금) — 한 번만 실행
-function srsFixWordMeaningsOnce(){
+const SRS_WORDFIX_VER=3;   // 규칙을 고칠 때마다 올림 → 모든 기기에서 한 번 더 정리된다
+let _freqVals=null;
+function freqMeaningSet(){
+  if(_freqVals) return _freqVals;
+  _freqVals=new Set();
+  try{ if(typeof FREQ_DICT!=="undefined") Object.values(FREQ_DICT).forEach(v=>_freqVals.add(String(v))); }catch(e){}
+  return _freqVals;
+}
+// 잘못 저장된 단어 뜻 정리 (예: pills = 지금)
+// force=true 는 동기화로 남의 기기 데이터가 들어왔을 때 — 플래그가 같이 딸려와도 다시 돌린다
+function srsFixWordMeaningsOnce(force){
   try{
-    if(hGet("speakingroom:srsfix_word_v2",false)) return;
+    if(!force && hGet("speakingroom:srsfix_word_ver",0)>=SRS_WORDFIX_VER) return;
     const all=srsAll(); let fixed=0;
     Object.keys(all).forEach(k=>{
       const it=all[k]; if(!it||!it.en) return;
       if(!/^[a-zA-Z][a-zA-Z'\-]*$/.test(String(it.en).trim())) return;   // 단어 하나만 대상
       const own=ownWordKo(it.en);
-      if(own && it.ko && it.ko!==own){ it.ko=own; fixed++; }
-      else if(!own && it.ko && String(it.ko).split(/\s+/).length>2){ it.ko=""; fixed++; }  // 문장이 들어간 경우
+      if(own){ if(it.ko!==own){ it.ko=own; fixed++; } return; }          // 사전에 있으면 사전 뜻이 정답
+      const ko=String(it.ko||"").trim(); if(!ko) return;
+      // 사전에 없는 단어인데 문장이 통째로 붙었거나 다른 단어의 뜻을 물려받았으면 비운다
+      if(ko.split(/\s+/).length>2 || freqMeaningSet().has(ko)){ it.ko=""; fixed++; }
     });
     if(fixed) srsSave(all);
-    hSet("speakingroom:srsfix_word_v2", true);
+    hSet("speakingroom:srsfix_word_ver", SRS_WORDFIX_VER);
   }catch(e){}
 }
 // 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded, unknownWords}
@@ -9795,10 +9836,16 @@ function bleUnlockGate(block, results){
   const competitionAvailable=!!(bleSession&&bleSession.startedIds&&bleSession.startedIds.filter(id=>id!==block.id).length);
   const speedAttempt=mine.some(r=>r.type==="speed");
   const speedFastOk=mine.some(r=>r.type==="speed" && targetOk(r) && r.fast);
-  const contextN=new Set(mine.filter(targetOk).map(r=>r.contextKey||r.situation).filter(Boolean)).size;
+  // 상황 수는 누적으로 센다 — 한 세션에 2개를 못 채워도 여러 번 하면 채워진다
+  // (세션 결과만 보면 성공률 100%여도 영원히 같은 블록에 갇힌다)
+  const st=(bleGetState()||{})[block.id]||{};
+  const contextN=new Set([...(st.contextsUsed||[]), ...mine.filter(targetOk).map(r=>r.contextKey||r.situation)].filter(Boolean)).size;
   const okN=mine.filter(targetOk).length;
   const rate=mine.length ? okN/mine.length : 0;
-  return {pass:hiddenOk && (!competitionAvailable||mixedOrDiscOk) && speedAttempt && contextN>=2 && rate>=0.60, hiddenOk, mixedOrDiscOk, competitionAvailable, speedAttempt, speedFastOk, contextN, rate, okN, total:mine.length};
+  const core=hiddenOk && (!competitionAvailable||mixedOrDiscOk) && speedAttempt && contextN>=2 && rate>=0.60;
+  // 안전밸브: 여러 번 다시 도전했는데도 막히면, 이번에 제대로 꺼냈으면 열어준다
+  const stuck=(st.unlockRetryCount||0)>=3 && hiddenOk && rate>=0.60;
+  return {pass:core||stuck, stuck, hiddenOk, mixedOrDiscOk, competitionAvailable, speedAttempt, speedFastOk, contextN, rate, okN, total:mine.length};
 }
 function bleStartUnlockRepair(block){
   const poolIds=[...new Set([...bleUnlockedBlocks().map(b=>b.id), block.id])];
@@ -9855,8 +9902,9 @@ function bleSummary(){
     bleBlockState(newB.id);
     const s=bleGetState();
     if(s[newB.id]){
-      s[newB.id].unlocked=!!unlockGate.pass;
-      if(!unlockGate.pass) s[newB.id].unlockRetryCount=(s[newB.id].unlockRetryCount||0)+1;
+      // 한 번 열린 블록은 다시 잠그지 않는다 (다음 세션에서 false로 덮여 같은 블록이 재출제되던 문제)
+      if(unlockGate.pass){ s[newB.id].unlocked=true; s[newB.id].unlockedAt=s[newB.id].unlockedAt||Date.now(); }
+      else s[newB.id].unlockRetryCount=(s[newB.id].unlockRetryCount||0)+1;
       bleSaveState(s);
     }
     if(!unlockGate.pass){
