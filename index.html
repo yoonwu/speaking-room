@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.94";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.95";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7056,10 +7056,8 @@ function attachVAD(stream, onStop, opts){
     function looksDone(){
       if(expectWords<=0) return true;
       if(bursts>=expectWords) return true;              // 단어 수만큼 끊어 말했다 = 다 말함
-      // 말 덩어리가 길면 '이어서 말하는' 스타일 → 끊어 말한 횟수 대신 총 발화량으로 판단.
-      // (단어마다 끊는 아이는 이 분기로 오지 않으므로 중간에 잘리지 않는다)
-      const avg = bursts ? voicedMs/bursts : 0;
-      if(avg>=700 && voicedMs>=expectWords*280) return true;
+      if(bursts<=1 && voicedMs>=expectWords*280) return true;   // 한 번에 쭉 말했다
+      if(voicedMs>=expectWords*430) return true;                // 나눠 말했어도 총량이 충분
       return false;
     }
     function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
@@ -7153,11 +7151,11 @@ async function micFillCb(rawCb, refText){
     const _w=String(refText||"").trim().split(/\s+/).filter(Boolean).length;
     const _vad = _w>=3
       ? {...VAD_OPTS,
-         silenceMs: 900,                              // 다 말했다고 판단되면 0.9초 만에 종료
+         silenceMs: 450,                              // 다 말했다고 판단되면 0.45초 만에 종료
          expectWords: _w,                             // 이 문장을 다 말했는지 판단하는 기준
-         maxSilenceMs: 2600,                          // 덜 말했어도 2.6초 조용하면 종료
+         maxSilenceMs: 1400,                          // 덜 말했어도 1.4초 조용하면 종료
          maxMs: 25000, noSpeechMs: 7000}
-      : {...VAD_OPTS, maxSilenceMs: 1600, noSpeechMs: 6000};
+      : {...VAD_OPTS, silenceMs: 400, maxSilenceMs: 900, noSpeechMs: 6000};
     attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
   }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
@@ -10584,7 +10582,14 @@ function myWordsMarkStudied(words){
 // 블록 DB에서 찾기 (CORE_PHRASES 재활용)
 function lookupChunk(text){
   const t=dictKey(text);
-  const hit=CORE_PHRASES.find(p=>dictKey(p.phrase).replace(/\.\.\.|\?/g,"").trim()===t || dictKey(p.phrase).includes(t)&&t.length>4);
+  // 한 단어를 눌렀는데 그 단어가 들어간 '문장 표현'을 보여주면 정작 단어 뜻이 안 나온다.
+  // 여러 단어를 선택했을 때만 부분 일치를 허용한다.
+  const isPhrase=t.indexOf(" ")>=0;
+  const hit=CORE_PHRASES.find(p=>{
+    const key=dictKey(p.phrase).replace(/\.\.\.|\?/g,"").trim();
+    if(key===t) return true;
+    return isPhrase && key.includes(t) && t.length>4;
+  });
   if(hit) return {type:"chunk", term:hit.phrase, ko:hit.ko, kid:"여러 상황에서 쓰는 표현이에요", ex:(hit.examples||[]).slice(0,3).map(e=>e.en), rel:[], src:"local"};
   return null;
 }
@@ -10594,7 +10599,9 @@ function lookupLocal(text){
   if(!k) return null;
   if(WORD_DB[k]){ const w=WORD_DB[k]; return {type:"word", term:k, ko:w.ko, kid:w.kid, ex:w.ex||[], rel:w.rel||[], src:"local"}; }
   const ch=lookupChunk(text); if(ch) return ch;
-  const cached=dictCacheGet(k); if(cached) return Object.assign({src:"cache"}, cached);
+  // 저장된 항목이라도 단어가 맞는지 확인 (예전에 잘못 저장된 뜻이 그대로 뜨는 것 방지)
+  const cached=dictCacheGet(k);
+  if(cached && dictKey(cached.term||"")===k) return Object.assign({src:"cache"}, cached);
   // 빈출 5천 단어 사전 — 뜻만 즉시 (설명/예문은 없으면 비움)
   if(typeof FREQ_DICT!=="undefined" && FREQ_DICT[k]){ return {type:"word", term:k, ko:FREQ_DICT[k], kid:"", ex:[], rel:[], src:"local"}; }
   return null;
@@ -12592,6 +12599,17 @@ function adWordHint(it){
   if(adNorm(rest)===adNorm(en)) return "";            // 블록과 안 겹침 → 통째 노출 방지
   return rest;
 }
+// 표현 맞추기 화면에 보여줄 한국어 — '그 영어 문장의 뜻'이어야 한다.
+// 슬롯이 없는 블록(문장 전체가 곧 블록)은 예문 ko가 상황 설명인 경우가 있어
+// (예: "길을 잃었어요." → 정답 "Can you help me?") 블록의 뜻으로 대체한다.
+function adPromptKo(it){
+  const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  const ko=String(ex.ko||"").trim();
+  const hasSlot=!!String(ex.object||"").trim();
+  if(hasSlot || !b.meaningKo) return ko;
+  const mean=String(b.meaningKo).replace(/\s*[(（][^)）]*[)）]\s*/g," ").replace(/\s*\/\s*.*$/,"").trim();
+  return mean || ko;
+}
 function adGrade(block, ex, heard){
   const h=adNorm(heard);
   const hWords=h.split(" ").filter(Boolean);
@@ -13298,7 +13316,7 @@ function autoDrillRenderDiscriminate(it){
     </div>
     <div class="auto-kicker">BLOCK CHOICE</div>
     <div class="auto-block">🤔 어떤 표현일까요?</div>
-    <div class="auto-ko">${escapeHtml(it.ex.ko)}</div>
+    <div class="auto-ko">${escapeHtml(adPromptKo(it))}</div>
     <div id="autoDiscOpts" style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
       ${opts.map(id=>`<button class="auto-disc-opt" data-id="${id}" style="padding:15px;border-radius:14px;background:#fff;border:2px solid #C9EBDD;font-family:var(--serif);font-size:19px;color:#3A2D27;cursor:pointer">${escapeHtml((BLE_BY_ID[id]||{}).block||id)}</button>`).join("")}
     </div>
@@ -13343,7 +13361,7 @@ function autoDrillRender(recallMode){
       <span class="auto-chip">말 길이 제외</span>
       <span class="auto-chip">${escapeHtml(bleContextLabel(it.ex))}</span>
     </div>
-    <div class="auto-ko">${escapeHtml(it.ex.ko)}</div>
+    <div class="auto-ko">${escapeHtml(adPromptKo(it))}</div>
     ${answerHtml}
     <div class="auto-stat" id="autoStat">상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.</div>
     <div class="auto-actions">
