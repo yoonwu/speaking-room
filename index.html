@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.99";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.100";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2670,7 +2670,7 @@ function syncLevel(){ state.level=lvlBucket(); }
 function withLvl(v, fn){ const prev=_lvlOverride; _lvlOverride=v; try{ return fn(); } finally{ _lvlOverride=prev; } }
 /* ===== 📈 AUTO LEVEL — 능력별 자동 난이도 (레벨 = 배운 블록을 얼마나 빠르고 안정적으로 꺼내는가)
    word(단어 이해) / listen(듣고 이해) / block(블록 인출) / speed(3초 시작) — 서로 독립적으로 오르내림.
-   perfect 6연속 → +1, miss 3연속 → -1, ok = 상승 게이지만 리셋. 사용자 슬라이더는 재보정(전체 리셋)용. */
+   perfect 4연속 → +1, miss 2누적부터 하락(연속 막힘은 낙폭 확대), ok = 상승 게이지만 리셋. 사용자 슬라이더는 재보정용. */
 const AL_KEY="speakingroom:autolvl";
 const AL_SKILLS=["word","listen","block","speed"];
 const AL_TOAST={
@@ -2780,12 +2780,25 @@ function wpAdaptRecord(kind){ autoLvlRecord("word", kind); }
 function adaptSetLvl(n){ /* deprecated — autoLvlRecord가 능력별로 조정 */ }
 const DIFF_BAND_NAMES={1:"입문",2:"기초",3:"초급+",4:"A2",5:"A2-B1",6:"B1",7:"B1+",8:"B2",9:"C1",10:"원어민"};
 function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro()]||""); }
+function autoSkillLevelName(skill){
+  try{
+    const a=getAutoLevels();
+    const m={word:a.wordLevel,listen:a.listenLevel,block:a.blockRecallLevel,speed:a.speedLevel};
+    return withLvl(m[skill]||a.overallLevel, levelName);
+  }catch(e){ return levelName(); }
+}
 // 모든 진행 화면 상단에 현재 난이도 작게 표시
 function updateLevelBadges(){
   try{ renderAutoLvlStatus(); }catch(e){}
-  let txt; try{ txt="D"+getAutoLevels().overallLevel; }catch(e){ txt="D"+diffLevel(); }
-  try{ txt+=" · 단어Lv."+userWordLevel(); }catch(e){}
-  ["vbLvl","blkLvl","rvLvl","lsLvl","spLvl"].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=txt; });
+  try{
+    const a=getAutoLevels();
+    const put=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
+    put("vbLvl","단어 D"+a.wordLevel);
+    put("blkLvl","블록 D"+a.blockRecallLevel);
+    put("rvLvl","블록 D"+a.blockRecallLevel);
+    put("lsLvl","듣기 D"+a.listenLevel);
+    put("spLvl","블록 D"+a.blockRecallLevel+" · 속도 D"+a.speedLevel);
+  }catch(e){}
 }
 function levelRate(slow){ const v=diffLevel(); const base=0.70 + (v-1)*(0.34/59); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
 // 🛡️ 모든 영어 생성에 적용 — 문법 완전성 강제 (단어 나열식 비문 방지: "dad open bag" 같은 것)
@@ -4139,11 +4152,57 @@ async function sqBankLoad(){
 function sqSeenGet(){ try{ const a=JSON.parse(localStorage.getItem(SQ_SEEN_KEY)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
 function sqSeenAdd(en){ try{ const a=sqSeenGet(); a.push(en); localStorage.setItem(SQ_SEEN_KEY, JSON.stringify(a.slice(-600))); }catch(e){} }
 function sqBankBand(){ const d=withLvl(getAutoLevels().listenLevel, diffLevel); return d<=12?1:(d<=30?2:(d<=45?3:4)); }
+function sqAudioWords(en){ return String(en||"").match(/[A-Za-z]+(?:'[A-Za-z]+)?/g)||[]; }
+function sqBankDifficulty(it){
+  const en=String((it&&it.e)||"");
+  const words=sqAudioWords(en);
+  let score=words.length*10;
+  try{
+    const cw=bleContentWords(en);
+    let sum=0, maxLv=1;
+    cw.forEach(w=>{ const lv=Number(wordLevelOf(w))||1; sum+=lv; if(lv>maxLv) maxLv=lv; });
+    score += sum*2 + maxLv*3;
+  }catch(e){}
+  if(/[;,]/.test(en)) score+=4;
+  if(/\b(because|although|unless|while|before|after|already|still|would|could|should|might|been|until)\b/i.test(en)) score+=6;
+  if(/\b(gonna|wanna|gotta|lemme|gimme|kinda|sorta)\b/i.test(en)) score+=4;
+  return score;
+}
+function sqFinePool(pool,band){
+  if(!Array.isArray(pool)||!pool.length) return pool||[];
+  let d=1; try{ d=withLvl(getAutoLevels().listenLevel, diffLevel); }catch(e){}
+  // Band 1 안에서도 D1~D12가 같은 문제 풀이 되지 않게 실제 문장 난이도를 세분화.
+  // 극초반은 짧은 문장을 우선하고, 이후에는 길이·어휘·구조 난이도로 정렬한 이동 창을 사용한다.
+  if(band===1){
+    const cap=d<=2?5:(d<=4?6:(d<=6?7:99));
+    if(cap<99){
+      const short=pool.filter(it=>sqAudioWords(it.e).length<=cap);
+      // 4단어만 강제하면 오히려 passport/expired 같은 어려운 어휘가 섞인다.
+      // 그래서 D1은 "쉬운 어휘의 4~5단어"부터 시작하고 점진적으로 창을 이동한다.
+      if(short.length>=24) pool=short;
+    }
+  }
+  const ranges={1:[1,12],2:[13,30],3:[31,45],4:[46,60]};
+  const r=ranges[band]||[1,60], lo=r[0], hi=r[1];
+  if(pool.length<24 || hi<=lo) return pool;
+  const sorted=pool.slice().sort((x,y)=>sqBankDifficulty(x)-sqBankDifficulty(y));
+  const rel=Math.max(0,Math.min(1,(d-lo)/(hi-lo)));
+  // 다음 broad band의 '이상하게 쉬운 예외 문장' 때문에 경계에서 난이도가 역주행하지 않도록
+  // 각 밴드의 시작점을 조금 올려 이어 붙인다.
+  const basePos=({1:0,2:0.18,3:0.08,4:0.45})[band]||0;
+  const pos=basePos+(1-basePos)*rel;
+  const win=Math.max(24,Math.min(sorted.length,Math.round(sorted.length*0.18)));
+  // 창의 "중심"을 움직이면 양 끝에서 clamp 때문에 D1/D2가 같은 풀이 되기 쉽다.
+  // 시작점을 직접 0→끝으로 이동시켜 매 D 단계가 실제로 조금씩 어려워지게 한다.
+  const start=Math.max(0,Math.min(sorted.length-win,Math.round(pos*(sorted.length-win))));
+  return sorted.slice(start,start+win);
+}
 function sqBankPick(){
   if(!sqBank||!sqBank.length) return null;
   const band=sqBankBand();
   let pool=sqBank.filter(it=>it.b===band);
   if(!pool.length) pool=sqBank;
+  pool=sqFinePool(pool,band);   // 같은 broad band 안에서도 D값에 따라 실제 문장 난이도 이동
   const seen=new Set(sqSeenGet().concat(sqRecent));
   const qtype=sqNextType();
   let cand=pool.filter(it=>it.t===qtype&&!seen.has(it.e));
@@ -4183,7 +4242,7 @@ function startSituationListening(){ try{ ttStart("listen"); }catch(e){}
     $("#ctxBar").style.display="flex";
     $("#notesToggle").style.display="none"; $("#ttsBtn").style.display="none"; $("#evalBtn").style.display="none";
     $("#ctxScn").textContent="상황 듣기";
-    $("#ctxLvl").textContent=levelName()+" · 듣기";
+    $("#ctxLvl").textContent=autoSkillLevelName("listen")+" · 듣기";
     $("#lnext").style.display="none";
     sqCount=0; sqRecent=[]; sqPrefetch=null; sqPrefetching=false; sqTypes=[];
     try{ xpSessionStart(); }catch(e){}
@@ -4231,7 +4290,7 @@ function sqRender(){
   $("#listenScroll").innerHTML=`<div class="lcard lcard-full lp2">
     <div class="lp2-hero" style="padding-bottom:4px">
       <div class="lp2-chips">
-        <span class="lp2-lvl">${escapeHtml(levelName())}</span>
+        <span class="lp2-lvl">${escapeHtml(autoSkillLevelName("listen"))}</span>
         <span class="lp2-chip">👂 ${SQ_TYPE_KO[it.question_type]||"듣기"}</span>
         <span class="lp2-chip">${sqCount}번째</span>
       </div>
@@ -10002,7 +10061,10 @@ async function bleFinishRetrieveDeep(it, heard){
   }
   speakEn(j.naturalAnswer||ex.en);
   try{ if(bleDeep&&bleDeep.outputMode) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기)
-  try{ autoLvlRecord("block", it._hintUsed?"miss":(j.targetBlockSuccess?(fast?"perfect":"ok"):"miss")); }catch(e){}
+  try{
+    const blockKind=!j.targetBlockSuccess?"miss":((it._hintUsed||it._requeued)?"ok":"perfect");
+    autoLvlRecord("block", blockKind);   // 블록은 "꺼냈는가"만 평가; 속도는 speedLevel이 따로 평가
+  }catch(e){}
   try{ if(j.targetBlockSuccess && typeof ms==="number" && !it._hintUsed) autoLvlRecord("speed", ms<=3000?"perfect":(ms<=5000?"ok":"miss")); }catch(e){}
   bleRecord(b.id, {result:j.result, communicationSuccess:j.communicationSuccess, targetBlockSuccess:j.targetBlockSuccess, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:(it.type==="mixed"||it.type==="speed"), hidden:it.type==="situation", speedAttempt:it.type==="speed", deep:true, source:"output_training", userAnswer:heard, suggestedAnswer:j.naturalAnswer||ex.en, naturalAnswer:j.naturalAnswer||ex.en, confusedWith:j.confusedWith});
   try{
@@ -13482,7 +13544,7 @@ function autoDrillRender(recallMode){
   const inp=$("#autoInput");
   inp.addEventListener("input",()=>{ if(!autoDrill.typedAt) autoDrill.typedAt=Date.now(); });
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
-  $("#autoShow").onclick=()=>{ if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; } const cur=autoDrill.items[autoDrill.idx]; if(cur) autoDrillShowResult(cur, true); };
+  $("#autoShow").onclick=()=>{ if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; } const cur=autoDrill.items[autoDrill.idx]; if(cur){ cur._hintUsed=true; autoDrillShowResult(cur, true, false); } };
   $("#autoWord").onclick=()=>autoDrillShowWord();
   // 힌트(단어/정답 보기)는 7초 뒤에만 등장 — 끝까지 스스로 풀 기회 보장
   autoDrill.hintTimer=setTimeout(()=>{
@@ -13534,26 +13596,29 @@ function autoDrillFinish(heard, meta){
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
-  // 🎯 자동 레벨 기록 — block(인출)·speed(3초 시작)는 독립. 힌트 사용 = 모름(miss)
-  try{ autoLvlRecord("block", it._hintUsed?"miss":(g.ok?(fast?"perfect":"ok"):"miss")); }catch(e){}
+  // 🎯 자동 레벨 기록 — block(인출 정확도)·speed(3초 시작)는 완전히 독립
+  try{
+    const blockKind=!g.ok?"miss":((it._hintUsed||it._requeued)?"ok":"perfect");
+    autoLvlRecord("block", blockKind);   // 느려도 스스로 맞히면 block 성공; 속도는 아래 speedLevel에서만 평가
+  }catch(e){}
   try{ if(g.ok && !it._hintUsed) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
   // 못 맞춘 문항 재등장: 1차 실패 → 2~3문제 뒤, 또 실패 → 세션 끝나기 전 한 번 더
   if(!perfect && (it._requeues||0)<2){
-    const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _requeues:(it._requeues||0)+1, _requeued:true});
+    const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _hintUsed:false, _wordShown:false, _requeues:(it._requeues||0)+1, _requeued:true});
     if((it._requeues||0)===0){ const at=Math.min(autoDrill.items.length, autoDrill.idx+2+((Math.random()*2)|0)); autoDrill.items.splice(at,0,clone); }
     else { autoDrill.items.push(clone); }
   }
   if(perfect){
     if(stat) stat.innerHTML=`<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
     try{ profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
-    autoDrillShowResult(it, false);
+    autoDrillShowResult(it, false, true);
   }else if(g.ok){
     if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. ${it.limit}초 안에 시작해봐요.`;
-    autoDrillShowResult(it, true);
+    autoDrillShowResult(it, true, false);
   }else{
     const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
     if(stat) stat.innerHTML=`<b style="color:#189E79">아직 자동화 전</b><br>${why}`;
-    autoDrillShowResult(it, true);
+    autoDrillShowResult(it, true, false);
   }
   // 내가 말한 발음(인식 결과) + 발음 점수 표시
   const st2=$("#autoStat"); if(st2){
@@ -13563,7 +13628,7 @@ function autoDrillFinish(heard, meta){
   }
 }
 // 답 화면 — 정답 + 학습 패널(단어/강세/AI) 표시. 자동 넘김 없음: 사용자가 직접 넘김
-function autoDrillShowResult(it, canRetry){
+function autoDrillShowResult(it, canRetry, wasPerfect){
   const card=document.querySelector(".auto-card"); if(!card) return;
   const old=card.querySelector("#autoAnswer"); if(old) old.remove();
   const ans=document.createElement("div"); ans.className="auto-answer"; ans.id="autoAnswer";
@@ -13578,13 +13643,14 @@ function autoDrillShowResult(it, canRetry){
       ? `<button class="auto-mic" id="autoRetry">🔄 가리고 다시 말하기</button><button class="auto-sub" id="autoSkip" style="margin-top:8px;width:100%">${last?"결과 보기 →":"다음 →"}</button>`
       : `<button class="auto-mic" id="autoNext">${last?"결과 보기 →":"다음 →"}</button>`;
     const r=$("#autoRetry"); if(r) r.onclick=()=>autoDrillRender(true);
-    const go=()=>{ autoDrillAdvance(perfect, it); };
+    const go=()=>{ autoDrillAdvance(!!wasPerfect, it); };
     const sk=$("#autoSkip"); if(sk) sk.onclick=go;
     const nx=$("#autoNext"); if(nx) nx.onclick=go;
   }
 }
 function autoDrillRevealAndRecall(msg){
   const it=autoDrill&&autoDrill.items[autoDrill.idx]; if(!it) return;
+  it._hintUsed=true;   // 정답을 봤다면 다음 재시도는 clean recall로 치지 않음
   const card=document.querySelector(".auto-card"); if(!card) return;
   const old=card.querySelector("#autoAnswer"); if(old) old.remove();
   const ans=document.createElement("div"); ans.className="auto-answer"; ans.id="autoAnswer";
