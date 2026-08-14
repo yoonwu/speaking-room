@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.91";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.92";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -3796,15 +3796,12 @@ async function lsPrefetchNext(){
   if(lsPrefetching || lsPrefetch) return;
   lsPrefetching=true;
   try{
-    let tooLong=null;
     for(let try_=0; try_<3; try_++){
       const data=await callClaude(listenSentenceSys(),[{role:"user",content:"Create the sentence now."}], FAST_MODEL);
       const it=parseJSON(extractText(data));
       if(!it || !it.en || lsIsDup(it.en)) continue;
-      if(lsLenOK(it.en)){ lsPrefetch=it; break; }
-      if(!tooLong || lsWordN(it.en)<lsWordN(tooLong.en)) tooLong=it;
+      if(lsLenOK(it.en)){ lsPrefetch=it; break; }       // 길이 넘는 문장은 버림
     }
-    if(!lsPrefetch && tooLong) lsPrefetch=tooLong;
   }catch(e){}
   lsPrefetching=false;
 }
@@ -3874,6 +3871,7 @@ prev,
 levelHint(),
 levelCap(),
 "HARD LENGTH LIMIT: at most "+lsMaxWords()+" words in the English sentence. Count the words before you answer. A sentence longer than this is WRONG — the learner has to repeat it from memory after one listen.",
+"If the topic cannot be said naturally within that limit, pick a SIMPLER angle on the same topic (one small concrete moment) — never a longer sentence. No commas joining two clauses at low levels.",
 "Concrete and fresh (variety seed "+seed+"). One sentence only.",
 (lsRecent.length? "DO NOT repeat or closely paraphrase any of these already-used sentences (make something clearly different in meaning and words):\n- "+lsRecent.slice(-15).join("\n- ") : ""),
 'Return ONLY JSON: {"en":"the spoken sentence","ko":"한국어 뜻","block":"the learned block reused, or empty"}'
@@ -3908,10 +3906,7 @@ async function lsGenerate(){
       if(lsLenOK(c.en)){ it=c; break; }
       if(!tooLong || lsWordN(c.en)<lsWordN(tooLong.en)) tooLong=c;   // 길이 초과분 중 가장 짧은 것 보관
     }
-    if(!it){
-      const short=listenInstantSentence();               // 배운 블록에서 짧은 문장으로 대체
-      it = (short && short.en && lsLenOK(short.en)) ? short : tooLong;
-    }
+    if(!it) it = listenInstantSentence(true) || tooLong;   // 배운 블록에서 '길이 맞는' 문장으로 대체
     lsItem=it;
     if(!lsItem || !lsItem.en) throw new Error("empty");
     lsCount++; lsRecord(lsItem.en); lsLedgerMark("heard");
@@ -3933,7 +3928,7 @@ function lsMaxWords(){
   });
 }
 function lsLenOK(en){ const n=lsWordN(en); return n>0 && n<=lsMaxWords(); }
-function listenInstantSentence(){
+function listenInstantSentence(strict){
   try{
     const lvl=diffMacro();
     let cands=[];
@@ -3950,7 +3945,8 @@ function listenInstantSentence(){
     }
     if(!cands.length) return null;
     const fit=cands.filter(c=>lsLenOK(c.en));
-    const pool=fit.length?fit:cands;                    // 다 걸러지면 원래 후보 유지
+    if(strict && !fit.length) return null;              // strict: 길이 넘는 건 절대 안 씀
+    const pool=fit.length?fit:cands;
     const fresh=pool.filter(c=>!lsIsDup(c.en));
     const arr=fresh.length?fresh:pool;
     return arr[(Math.random()*arr.length)|0];
@@ -12406,10 +12402,24 @@ function homeGreeting(){ const h=new Date().getHours();
 function dailyScenario(){ const pool=SCENARIOS.filter(s=>s.id!=="freetalk"); return pool[DAYN()%pool.length]; }
 function missionLabel(s){ const m={cafe:"카페에서 주문하기",resto:"식당에서 주문하기",resto_book:"식당 예약 전화하기",grocery:"마트에서 쇼핑하기",clothes:"옷 가게에서 쇼핑하기",neighbor:"이웃과 스몰톡 하기",newperson:"처음 만난 사람과 대화",clinic:"병원에서 증상 말하기",pharmacy:"약국에서 약 사기",airport:"공항·입국심사 통과하기",hotel:"호텔 체크인하기",taxi:"택시 타고 길 찾기",bank:"은행·관공서 일 보기",phone_cs:"고객센터에 전화하기",interview:"영어로 면접 보기",coworker:"직장 동료와 대화",complaint:"환불·불만 요청하기",friend:"친구와 자유 대화"}; return m[s.id]||(s.t+" 연습하기"); }
 /* ===== 코치형 진입점 (과목 없음 · 70/20/10) ===== */
+// 주제마다 필요한 듣기 레벨 — 뉴스·경제·과학은 문장이 길고 어휘가 어려워서
+// 입문자에게 나오면 아무리 길이를 제한해도 난이도가 안 맞는다.
+const TOPIC_MIN_LVL = {
+  daily:1, shopping:1, travel:1, food:1, family:1,      // 생존 영어
+  health:13, hobby:13, tech:16,                          // 익숙해지면
+  work:25, relationship:25, culture:28, fact:30,         // 중급
+  money:40, news:42, science:45, selfdev:45              // 고급
+};
 function autoTopic(){
-  // 메인 트레이닝 = 매번 자연스러운 실생활 주제 자동 회전
+  // 메인 트레이닝 = 실생활 주제 자동 회전 (단, 지금 실력으로 소화 가능한 주제만)
   const pool = (typeof TOPICS!=="undefined" && TOPICS.length) ? TOPICS : null;
-  if(pool){ const i = hGet("speakingroom:trot",0)%pool.length; hSet("speakingroom:trot", i+1); return pool[i]; }
+  if(pool){
+    let lv=1; try{ lv=getAutoLevels().listenLevel||1; }catch(e){}
+    let arr = pool.filter(t=>(TOPIC_MIN_LVL[t.id]||1)<=lv);
+    if(!arr.length) arr = pool.filter(t=>(TOPIC_MIN_LVL[t.id]||1)<=1);
+    if(!arr.length) arr = pool;
+    const i = hGet("speakingroom:trot",0)%arr.length; hSet("speakingroom:trot", i+1); return arr[i];
+  }
   return {id:"daily", t:"실생활", emo:"💬", topic:"everyday real-life situations"};
 }
 function startMainTraining(){
