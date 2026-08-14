@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.92";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.94";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2179,11 +2179,12 @@ function ttTick(){
 }
 function ttStart(cat){
   if(!TT_CATS[cat]) cat="block";
+  try{ micWarmUp(); }catch(e){}   // 🎤 훈련 진입 시 마이크 미리 준비
   if(ttCat && ttCat!==cat) ttFlush();                 // 분야가 바뀌면 이전 분야부터 정산
   ttCat=cat; ttTouch();
   if(!ttTimer) ttTimer=setInterval(ttTick, TT_TICK_MS);
 }
-function ttStop(){ ttFlush(); ttCat=null; if(ttTimer){ clearInterval(ttTimer); ttTimer=null; } }
+function ttStop(){ try{ micStreamRelease(); }catch(e){} ttFlush(); ttCat=null; if(ttTimer){ clearInterval(ttTimer); ttTimer=null; } }
 // 분야별 합계 (days=1이면 오늘, 7이면 최근 7일, 0이면 전체 누적)
 function ttSum(days){
   const out={};
@@ -4562,6 +4563,7 @@ function renderListenShadow(){
       <button id="lsShDrill">🎤 발음 진단</button>
     </div>
     <button class="sh-next" id="lsToReply">💬 이 상황에서 직접 말하기 →</button>
+    <button class="sh-skip" id="lsShNext" style="width:100%;margin-top:9px;padding:13px;border:1px solid var(--line);border-radius:13px;background:transparent;color:var(--muted);font-size:14px;font-weight:800;cursor:pointer">다음 문제 →</button>
   </div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>lsSpeak(false),320);
@@ -4569,6 +4571,7 @@ function renderListenShadow(){
   $("#lsShSlow").onclick=()=>lsSpeak(true);
   $("#lsShDrill").onclick=()=>openDrill(lsItem.en||"", lsItem.ko||"");
   $("#lsToReply").onclick=lsOutput;
+  { const nx=$("#lsShNext"); if(nx) nx.onclick=()=>{ TTS&&TTS.cancel(); lsGenerate(); }; }
 }
 // 7) AI 대화 이어가기
 async function lsContinue(){
@@ -7023,11 +7026,11 @@ function micBeepEnd(){
     _ac = _ac || new (window.AudioContext||window.webkitAudioContext)();
     if(_ac.state==="suspended") _ac.resume();
     const o=_ac.createOscillator(), g=_ac.createGain(), t=_ac.currentTime;
-    // 낮고 부드러운 2음(G4→B4) 부드럽게 글라이드 — 기분좋은 완료음(소름 X)
-    o.type="sine"; o.frequency.setValueAtTime(392,t); o.frequency.exponentialRampToValueAtTime(494,t+0.13);
-    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.13,t+0.05); g.gain.exponentialRampToValueAtTime(0.0001,t+0.38);
-    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.4);
-    if(navigator.vibrate) navigator.vibrate(16);
+    // 짧고 담백한 '똑' 소리 — 글라이드(우웅) 없이 한 음만 아주 짧게
+    o.type="triangle"; o.frequency.setValueAtTime(660,t);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.09,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+0.11);
+    o.connect(g); g.connect(_ac.destination); o.start(t); o.stop(t+0.12);
+    if(navigator.vibrate) navigator.vibrate(12);
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
@@ -7092,6 +7095,28 @@ function attachVAD(stream, onStop, opts){
     return ()=>clearTimeout(id);
   }
 }
+// 🎤 마이크 스트림 재사용 — 누를 때마다 권한/장치를 새로 여느라 0.5초쯤 늦게 시작되던 문제 해결.
+//    쓰지 않으면 90초 뒤 자동으로 반납해 마이크를 계속 붙잡고 있지 않는다.
+let _micStream=null, _micIdleTimer=null;
+function micStreamRelease(){
+  if(_micIdleTimer){ clearTimeout(_micIdleTimer); _micIdleTimer=null; }
+  if(_micStream){ try{ _micStream.getTracks().forEach(t=>t.stop()); }catch(e){} _micStream=null; }
+}
+function micStreamIdle(){
+  if(_micIdleTimer) clearTimeout(_micIdleTimer);
+  _micIdleTimer=setTimeout(micStreamRelease, 90000);
+}
+async function micStreamGet(){
+  if(_micStream && _micStream.active && _micStream.getAudioTracks().some(t=>t.readyState==="live")){
+    if(_micIdleTimer){ clearTimeout(_micIdleTimer); _micIdleTimer=null; }
+    return _micStream;
+  }
+  micStreamRelease();
+  _micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  return _micStream;
+}
+// 훈련 화면에 들어가면 미리 열어둬서 첫 탭도 즉시 녹음되게
+function micWarmUp(){ try{ micStreamGet().then(()=>micStreamIdle()).catch(()=>{}); }catch(e){} }
 async function micFillCb(rawCb, refText){
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   const startEpoch=micEpoch;
@@ -7099,7 +7124,7 @@ async function micFillCb(rawCb, refText){
   const cb=(t,meta)=>{ if(micEpoch!==startEpoch){ return; } rawCb(t,meta); };
   try{
     const meta={startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null};
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream=await micStreamGet();
     qzChunks=[]; const mime=getBestMime();
     qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
     const am=qzMR.mimeType||mime;
@@ -7107,7 +7132,7 @@ async function micFillCb(rawCb, refText){
     qzMR.onstop=async()=>{
       micBeepEnd();
       meta.stopAt=Date.now();
-      stream.getTracks().forEach(t=>t.stop());
+      micStreamIdle();   // 스트림은 살려두고(다음 탭 즉시 시작) 90초 미사용 시 반납
       // 자동 종료와 버튼 탭이 겹치는 구간 보호: 종료 후 0.5초 동안은 다시 시작되지 않음
       // (qzRecording을 유지하므로 이 사이의 탭은 각 버튼의 '녹음 중' 분기에서 그냥 무시된다)
       setTimeout(()=>{ qzRecording=false; }, 500);
@@ -9069,6 +9094,15 @@ function bleBuildSetIntro(set){
     items.push({type:"understand", block:b, setIntro:true});
     bleEnsureContexts(b);
     items.push({type:"situation", block:b, ex:bleFreshContextEx2(b), introHidden:true, quickCheck:true, setIntro:true});
+  });
+  // 🧱 새 블록은 '여러 상황에서 실제로 꺼내보기'가 핵심 — 상황 인출을 충분히 준다.
+  //    (선택지 몇 번 고르고 끝나면 입에 안 붙는다)
+  introList.forEach(b=>{
+    for(let i=0;i<10;i++){
+      items.push({type:"situation", block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), introHidden:true, setIntro:true});
+      if(i===4) items.push({type:"pattern", block:b, setIntro:true});          // 중간 점검
+    }
+    items.push({type:"speed", block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), introHidden:true, setIntro:true, limit:8});
   });
   // 미니 구별 테스트: 이미 아는 블록 + 이번 블록끼리만 (2개 이상일 때만 — 1개뿐이면 고를 게 없음)
   const introIds=new Set(introList.map(b=>b.id));
@@ -12568,8 +12602,18 @@ function adGrade(block, ex, heard){
   const slot=adSlotWords(ex, block);
   const hit=slot.filter(w=>(" "+h+" ").includes(" "+w+" ") || hWords.some(hw=>adLooseWordEq(hw,w))).length;
   const slotHit=!slot.length || hit>=Math.max(1, Math.ceil(slot.length*0.5));
-  const ok=blockHit && slotHit;
-  return {ok, blockHit, slotHit, slot, hit, heardNorm:h};
+  let ok=blockHit && slotHit, altBlock=null;
+  // 목표 블록은 아니지만 '같은 뜻으로 통하는 블록'을 쓴 경우도 정답 처리.
+  //   예) "봉투 하나 주세요" → Can I get a bag? / Could you give me a bag? 둘 다 실제로 통함.
+  //   비슷한 블록(contrast)에 한해서만 인정하고, 어떤 블록을 썼는지 알려준다.
+  if(!ok && slotHit && !blockHit){
+    const alts=(block.contrast||[]).map(id=>(typeof BLE_BY_ID!=="undefined")?BLE_BY_ID[id]:null).filter(Boolean);
+    for(const ab of alts){
+      const hitAlt=adCoreVariants(ab.block).some(v=>(" "+h+" ").includes(" "+v+" ")) || adSeqInOrder(hWords, adCoreSeq(ab.block));
+      if(hitAlt){ ok=true; altBlock=ab; break; }
+    }
+  }
+  return {ok, blockHit, slotHit, slot, hit, heardNorm:h, altBlock};
 }
 function adLimits(){
   let d; try{ d=getAutoLevels().speedLevel; }catch(e){ d=diffLevel(); }   // ⚡ 제한시간은 speedLevel 기준
@@ -13155,7 +13199,7 @@ function startAutoDrill(focusIds){
 }
 function startAutoDrillRun(blocks, count){ try{ ttStart("drill"); }catch(e){}
   blocks.forEach(b=>bleEnsureContexts(b));
-  autoDrill={items:autoDrillBuildItems(blocks, count), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
+  autoDrill={items:autoDrillBuildItems(blocks, count), blocks:blocks.slice(), idx:0, results:[], t0:0, typedAt:null, speechStartAt:null};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -13370,7 +13414,9 @@ function autoDrillFinish(heard, meta){
   const fast=initSec<=it.limit;
   try{ rtBump("drill"); }catch(e){}   // 📋 오늘 루틴: 블록 랜덤 반복
   const perfect=g.ok && fast && !it._hintUsed;   // 💡 힌트(단어 보기) 사용 시 자동화 성공 아님
+  if(g.altBlock){ try{ bleShowHintToast('👍 <b>'+escapeHtml(g.altBlock.block)+'</b> 도 맞아요 · 오늘 목표는 <b>'+escapeHtml(it.block.block)+'</b>'); }catch(e){} }
   const result=g.ok ? "PERFECT" : "MISS";
+  try{ if(it&&it.block) it._blockId=it.block.id; }catch(e){}
   // 난이도 기반 XP (문항별): 자동화 성공=perfect, 뜻만 맞음=hit, 실패=miss
   try{ awardXP("output", xpForResult((it.ex&&it.ex.en)||"", perfect?"perfect":(g.ok?"hit":"miss")), "입에 붙이기", "auto:"+String((it.ex&&it.ex.en)||"").toLowerCase().slice(0,28)); }catch(e){}
   bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
@@ -13420,7 +13466,7 @@ function autoDrillShowResult(it, canRetry){
       ? `<button class="auto-mic" id="autoRetry">🔄 가리고 다시 말하기</button><button class="auto-sub" id="autoSkip" style="margin-top:8px;width:100%">${last?"결과 보기 →":"다음 →"}</button>`
       : `<button class="auto-mic" id="autoNext">${last?"결과 보기 →":"다음 →"}</button>`;
     const r=$("#autoRetry"); if(r) r.onclick=()=>autoDrillRender(true);
-    const go=()=>{ autoDrill.idx++; autoDrillRender(false); };
+    const go=()=>{ autoDrillAdvance(perfect, it); };
     const sk=$("#autoSkip"); if(sk) sk.onclick=go;
     const nx=$("#autoNext"); if(nx) nx.onclick=go;
   }
@@ -13435,6 +13481,39 @@ function autoDrillRevealAndRecall(msg){
   try{ speakEn(it.ex.en); }catch(e){}
   document.querySelectorAll(".auto-actions button").forEach(b=>b.disabled=true);
   setTimeout(()=>{ autoDrillRender(true); },1500);
+}
+// 자동화 성공한 블록은 남은 문제에서 빼고, 같은 블록이 연달아 나오지 않게 정리
+function autoDrillAdvance(perfect, doneIt){
+  if(!autoDrill){ return; }
+  const rest=()=>autoDrill.items.slice(autoDrill.idx+1);
+  if(perfect && doneIt && doneIt.block){
+    const id=doneIt.block.id;
+    const keep=rest().filter(x=>!(x.block&&x.block.id===id));
+    const dropped=rest().length-keep.length;
+    if(dropped>0){
+      // 뺀 만큼 아직 자동화 못 한 다른 블록으로 채운다 (문제 수는 유지)
+      const doneIds=new Set(autoDrill.results.filter(r=>r.perfect).map(r=>r.id).filter(Boolean));
+      doneIds.add(id);
+      const pool=(autoDrill.blocks||[]).filter(b=>!doneIds.has(b.id));
+      const limits=adLimits();
+      for(let i=0;i<dropped && pool.length;i++){
+        const b=pool[i%pool.length];
+        try{ keep.push({block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), limit:limits[0], rep:1, recall:false}); }catch(e){}
+      }
+      autoDrill.items=autoDrill.items.slice(0, autoDrill.idx+1).concat(keep);
+    }
+  }
+  // 같은 블록이 바로 이어지면 뒤쪽의 다른 블록과 자리 교환
+  const nx=autoDrill.idx+1;
+  if(doneIt && doneIt.block && autoDrill.items[nx] && autoDrill.items[nx].block
+     && autoDrill.items[nx].block.id===doneIt.block.id){
+    for(let j=nx+1;j<autoDrill.items.length;j++){
+      if(autoDrill.items[j].block && autoDrill.items[j].block.id!==doneIt.block.id){
+        const t=autoDrill.items[nx]; autoDrill.items[nx]=autoDrill.items[j]; autoDrill.items[j]=t; break;
+      }
+    }
+  }
+  autoDrill.idx++; autoDrillRender(false);
 }
 function autoDrillNextButton(label){
   const actions=document.querySelector(".auto-actions"); if(!actions) return;
