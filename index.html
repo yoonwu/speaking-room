@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.97";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.99";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2716,11 +2716,11 @@ function autoLvlRecord(skill, kind){
       const q=alProbeLevel(skill);   // 이 문제가 출제된 탐색 레벨 (n 증가 전 = 출제 시점과 동일)
       d.pm=d.pm||{}; d.lm=d.lm||{};
       if(kind==="perfect"){
-        const floor = q>=36?30 : q>=24?20 : q>=12?10 : 0;   // 중급 이상 즉시 점프
+        const floor = q>=36?24 : q>=24?16 : q>=12?8 : 0;   // 한 번 맞힌 것만으로 과하게 올리지 않음
         d[skill]=Math.min(60, Math.max((d[skill]||1)+2, floor));
         d.lm[skill]=false;
-      } else if(kind==="miss"){
-        d[skill]=Math.max(1,(d[skill]||1)-1);
+      } else if(kind==="miss" || kind==="hardmiss"){
+        d[skill]=Math.max(1,(d[skill]||1)-(kind==="hardmiss"?3:2));
         d.pm[skill]=(d.pm[skill]||0)+1;
         d.lm[skill]=true;            // 다음 문제는 쉬운 걸로 (실패감 완화)
       } else {
@@ -2734,11 +2734,17 @@ function autoLvlRecord(skill, kind){
       try{ renderAutoLvlStatus(); }catch(e){}
       return;   // 배치 중엔 일반 스트릭·토스트 생략 (조용히)
     }
-    const st=d.st[skill]||{up:0,miss:0};
+    const st=d.st[skill]||{up:0,miss:0,run:0};
     let delta=0;
-    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; if(st.up>=6){ st.up=0; delta=1; } }
-    else if(kind==="miss"){ st.miss=(st.miss||0)+1; st.up=0; if(st.miss>=3){ st.miss=0; delta=-1; } }
-    else { st.up=0; }
+    // 잘하면 빨리 올리고(4연속), 막히면 훨씬 빨리 내린다(2연속부터, 계속 막히면 더 크게).
+    // 예전엔 3연속 실패마다 -1이라 D23에서 입문까지 60번 실패해야 했음.
+    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; st.run=0; if(st.up>=4){ st.up=0; delta=1; } }
+    else if(kind==="miss" || kind==="hardmiss"){
+      const w = kind==="hardmiss" ? 2 : 1;      // 아예 못 알아들은 경우는 2번으로 침
+      st.miss=(st.miss||0)+w; st.up=0; st.run=(st.run||0)+w;
+      if(st.miss>=2){ st.miss=0; delta = -(1 + Math.min(3, Math.floor((st.run-2)/2))); }
+    }
+    else { st.up=0; st.run=0; }
     d.st[skill]=st;
     if(delta){
       const nv=Math.max(1,Math.min(60,(d[skill]||1)+delta));
@@ -2929,6 +2935,7 @@ function convoTurnEvalDirective(){
   if(typeof state==="undefined" || state.engine!=="survival") return "";
   return [
 "HIDDEN TURN EVALUATION TAG (internal, required): After your visible in-character reply and after any USED tag, append exactly one hidden tag on its own line.",
+"Include a CORRECTION for the learner's last message in the same tag: \"fix\" = the corrected natural English (empty string if their English was already fine), \"fixKo\" = one short Korean sentence explaining what was wrong. Correct only real errors — not style preferences.",
 "Format EXACTLY with valid compact JSON: ⟦TURN_EVAL:{\"communication\":0,\"task\":0,\"completeness\":0,\"fluency\":0,\"blockChoice\":0,\"recovery\":0,\"missing\":[\"\"],\"errorReasons\":[\"\"],\"targetBlocks\":[\"\"],\"missionProgress\":0,\"solved\":false,\"nextTraining\":\"none\",\"suggestedEnglish\":\"\",\"noteKo\":\"\"}⟧",
 "Scores are 0-100. communication = did meaning get across; task = did they move the mission forward; completeness = did they include required details; fluency = did they respond without freezing; blockChoice = did they choose an appropriate learned block/function; recovery = did they clarify after confusion.",
 "Allowed errorReasons: no_meaning, missing_detail, wrong_answer, block_avoid, weak_block, slow_start, korean_escape, unnatural, pronunciation, too_short, vocab_gap. Use an empty array if none.",
@@ -3286,7 +3293,43 @@ async function toggleTrans(text, div){
   _transBusy=false;
 }
 function addMeTurn(text){
-  const {bub}=turnEl("user"); bub.textContent=text; scrollDown();
+  const {wrap,bub}=turnEl("user"); bub.textContent=text; scrollDown();
+  return {wrap,bub};
+}
+// ✏️ 그 턴 바로 교정 — 틀린 문장을 지우고 고친 문장으로 다시 말하게 한다
+let convoLastMe=null;
+function convoShowFix(fix, fixKo){
+  const t=convoLastMe; if(!t||!t.wrap) return;
+  const en=String(fix||"").trim(); if(!en) return;
+  const wrong=String((t.bub&&t.bub.textContent)||"").trim();
+  if(!wrong || en.toLowerCase().replace(/[^a-z0-9 ]/g,"")===wrong.toLowerCase().replace(/[^a-z0-9 ]/g,"")) return;  // 같은 문장이면 표시 안 함
+  const old=t.wrap.querySelector(".turn-fix"); if(old) old.remove();
+  t.bub.style.textDecoration="line-through"; t.bub.style.opacity=".62";
+  const box=document.createElement("div"); box.className="turn-fix";
+  box.style.cssText="max-width:86%;margin:6px 0 2px auto;background:#FFF6E9;border:1px solid #F0D9B5;border-radius:13px;padding:10px 12px;text-align:left";
+  box.innerHTML=`<div style="font-size:12px;color:#8A6220;font-weight:900;margin-bottom:4px">✏️ 이렇게 말해요</div>
+    <div style="font-size:14.5px;font-weight:800;color:#1c1410;line-height:1.45">${escapeHtml(en)}</div>
+    ${fixKo?`<div style="font-size:12px;color:#8A6220;margin-top:5px;line-height:1.5">${escapeHtml(fixKo)}</div>`:""}
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="cvfix-say" style="flex:0 0 auto;padding:8px 11px;border:1px solid #E4CFA8;border-radius:10px;background:#fff;font-size:12.5px;font-weight:800;cursor:pointer">🔊 듣기</button>
+      <button class="cvfix-retry" style="flex:1;padding:8px 11px;border:0;border-radius:10px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:12.5px;font-weight:800;cursor:pointer">🎤 이렇게 다시 말하기</button>
+    </div>`;
+  t.wrap.appendChild(box);
+  const sayBtn=box.querySelector(".cvfix-say"); if(sayBtn) sayBtn.onclick=()=>{ try{ speakEn(en); }catch(e){} };
+  const rt=box.querySelector(".cvfix-retry");
+  if(rt) rt.onclick=()=>{
+    // 틀린 문장은 지우고, 고친 문장을 말해보게 한다 (대화 기록에서도 교체)
+    try{
+      const i=state.convo.map(x=>x.text).lastIndexOf(wrong);
+      if(i>=0) state.convo[i]={role:"user", text:en};
+    }catch(e){}
+    t.bub.textContent=en; t.bub.style.textDecoration=""; t.bub.style.opacity="";
+    box.remove();
+    try{ speakEn(en); }catch(e){}
+    try{ hint.textContent="🎤 마이크를 누르고 이 문장을 말해보세요"; }catch(e){}
+    try{ openDrill(en, fixKo||""); }catch(e){}   // 발음 진단 화면에서 그대로 따라 말하기
+  };
+  scrollDown();
 }
 function showTyping(){
   const d=document.createElement("div"); d.className="turn coach"; d.id="typing";
@@ -3567,7 +3610,7 @@ async function sendMessage(){
     }
     return koreanFallback(text);
   }
-  addMeTurn(text);
+  convoLastMe=addMeTurn(text);
   state.convo.push({role:"user", text});
   questBump("talk");
   // 🗣 블록 사용 감지는 AI 응답을 받은 뒤 의미 기반으로 처리 (substring 선제호출 제거)
@@ -3588,6 +3631,7 @@ async function sendMessage(){
         else { convoTrackBlocks(text); }
       }catch(e){ try{ convoTrackBlocks(text); }catch(e2){} }
       convoRecordTurnEval(turnEval, {userText:text, coachText:txt, usedIds:ids||[]});
+      try{ if(turnEval && turnEval.fix) convoShowFix(turnEval.fix, turnEval.fixKo||""); }catch(e){}
     }
   }catch(e){
     hideTyping(); addCoachTurn("(연결 오류 — 다시 시도해 주세요.)");
@@ -3925,7 +3969,7 @@ function lsWordN(en){ return String(en||"").trim().split(/\s+/).filter(Boolean).
 function lsMaxWords(){
   return withLvl(getAutoLevels().listenLevel, ()=>{
     const d=diffLevel();
-    return d<=6?5 : d<=12?6 : d<=18?7 : d<=24?8 : d<=36?10 : 12;
+    return d<=6?4 : d<=12?5 : d<=18?6 : d<=24?7 : d<=36?9 : 12;
   });
 }
 function lsLenOK(en){ const n=lsWordN(en); return n>0 && n<=lsMaxWords(); }
@@ -4473,8 +4517,13 @@ async function lsRunAnalysis(){
   //    시도(답을 말한 경우)만 소액 XP, 답 보기(빈 답)는 무보상. 퀘스트는 정답에서만 오름.
   if(!lsAwarded){
     lsAwarded=true;
-    if(lsAnswer){ awardXP("listen",3,"듣기 시도","lstry:"+lsCount); lsLedgerMark("missed"); try{ autoLvlRecord("listen","miss"); }catch(e){} }
-    else { lsLedgerMark("revealed"); }
+    if(lsAnswer){
+      awardXP("listen",3,"듣기 시도","lstry:"+lsCount); lsLedgerMark("missed");
+      // 한 칸도 못 들었으면 '많이 어려움'으로 기록 → 난이도가 더 빨리 내려간다
+      const got=(typeof lsFilled!=="undefined" && Array.isArray(lsFilled)) ? lsFilled.filter(Boolean).length : 1;
+      try{ autoLvlRecord("listen", got===0?"hardmiss":"miss"); }catch(e){}
+    }
+    else { lsLedgerMark("revealed"); try{ autoLvlRecord("listen","hardmiss"); }catch(e){} }   // 포기도 반영
   }
   const orig=lsItem.en||"";
   // 🚀 먼저 로컬 정보로 즉시 화면 표시 (빨강 하이라이트는 AI 없이 가능) — 대기 0초
@@ -7529,8 +7578,10 @@ async function toggleMic(){
     mediaRec.start(250);
     listening=true; micBtn.classList.add("live");
     micBeep();
-    hint.textContent="🎤 듣는 중… 다 말하면 자동으로 끝나요";
-    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:15000, silenceMs:300, minSpeechMs:280, thresh:0.02});
+    hint.textContent="🎤 듣는 중… 다 말하면 마이크를 다시 누르세요";
+    // 실전회화는 생각하며 말하는 시간이 길다 → 무음으로 끊지 않고, 사용자가 끌 때까지 녹음.
+    // (안전장치로 최대 60초까지만)
+    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:60000, silenceMs:60000, minSpeechMs:280, thresh:0.02});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
