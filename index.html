@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.101";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.102";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-14";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4306,13 +4306,16 @@ function sqRender(){
     <div id="sqChoices" style="display:none;flex-direction:column;gap:9px">
       ${it.choices.map((c,i)=>`<button class="sq-choice" data-i="${i}" style="text-align:left;padding:14px 15px;border-radius:14px;background:#fff;border:1.5px solid var(--line);font-size:15px;color:var(--text);cursor:pointer;line-height:1.45">${escapeHtml(c)}</button>`).join("")}
     </div>
-    <button class="ls-skip lp2-skip" id="sqDunno" style="margin-top:10px">잘 모르겠어요</button>
+    <button class="ls-skip lp2-skip" id="sqDunno" style="display:none;margin-top:10px">잘 모르겠어요</button>
     <div id="sqResult"></div>
   </div>`;
   $("#listenScroll").scrollTop=0;
   // 보기는 첫 재생이 끝난 뒤에 — 듣기 전에 선택지부터 훑고 역추론하는 걸 막는다
   const sqRenderSeq=sqCount;
-  const sqShowChoices=()=>{ if(sqCount!==sqRenderSeq) return; const c=$("#sqChoices"); if(c) c.style.display="flex"; };
+  const sqShowChoices=()=>{ if(sqCount!==sqRenderSeq) return;
+    const c=$("#sqChoices"); if(c) c.style.display="flex";
+    const d=$("#sqDunno"); if(d && !sqAnswered) d.style.display="";   // '잘 모르겠어요'도 보기와 함께
+  };
   setTimeout(()=>sqSpeak(false, sqShowChoices), 500);   // 자동 1회 재생 (원문 비노출)
   // 다시 듣기(천천히 포함) 최대 3회 — 4번째 시도는 '못 알아들은 것'으로 간주해 오답 처리
   const sqListenGuard=(slow)=>{
