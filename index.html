@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.90";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.91";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2385,6 +2385,8 @@ async function syncGateSubmit(isSwitch){
   if(isSwitch && prev && changed){ try{ await syncPush(); }catch(e){} }
   syncSetMeta(SYNC_NICK_KEY, nick);
   syncSetMeta(SYNC_NAME_KEY, raw.slice(0,12));
+  // 앱에서 부를 이름을 따로 정하지 않았다면 닉네임을 그대로 쓴다 (프로필에 '친구님'으로 남지 않게)
+  try{ if(!hGet("speakingroom:name","")) hSet("speakingroom:name", raw.slice(0,12)); }catch(e){}
   if(changed) syncSetMeta(SYNC_T_KEY, "0");
   const r=await syncPull();
   if(!r.ok){
@@ -14504,7 +14506,7 @@ function openProfile(){ renderProfile(); $("#profScrim").classList.add("show"); 
 function closeProfile(){ $("#profScrim").classList.remove("show"); }
 function renderProfile(){
   const p=getProf(); const li=levelInfo(p.xp);
-  const name=(hGet("speakingroom:name","")||"친구");
+  const name=(hGet("speakingroom:name","")||syncDisplayName()||"친구");
   const st=hGet("speakingroom:streak",{n:0});
   const pct=Math.round(li.inLevel/li.need*100);
   const nr=nextReward(li.level);
