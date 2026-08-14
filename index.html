@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.96";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.97";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-07-22";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8756,14 +8756,53 @@ function bleDetectKoreanWords(heard, expectedEn){
   return koChunks.slice(0,3).map(k=>({en:"", ko:k}));
 }
 // 모르는 단어를 단어공부 DB(SRS)에 "틀린 것"과 동일하게 등록 → 단어 학습에 등장
+// 단어 하나의 뜻 — 사전에 있으면 그것만 쓴다 (문장 뜻을 단어 뜻으로 저장하면 안 됨)
+function ownWordKo(en){
+  const k=String(en||"").toLowerCase().replace(/[^a-z']/g,"");
+  if(!k) return "";
+  const look=(x)=>{
+    try{ if(typeof WORD_DB!=="undefined" && WORD_DB[x] && WORD_DB[x].ko) return WORD_DB[x].ko; }catch(e){}
+    try{ if(typeof FREQ_DICT!=="undefined" && FREQ_DICT[x]) return FREQ_DICT[x]; }catch(e){}
+    return "";
+  };
+  // 원형 그대로 → 복수/변화형 어간까지 (pills → pill, boxes → box, tries → try)
+  const forms=[k];
+  if(/ies$/.test(k)) forms.push(k.replace(/ies$/,"y"));
+  if(/es$/.test(k)) forms.push(k.replace(/es$/,""));
+  if(/s$/.test(k)) forms.push(k.replace(/s$/,""));
+  if(/ed$/.test(k)) forms.push(k.replace(/ed$/,""), k.replace(/ed$/,"e"));
+  if(/ing$/.test(k)) forms.push(k.replace(/ing$/,""), k.replace(/ing$/,"e"));
+  for(const f of forms){ const v=look(f); if(v) return v; }
+  return "";
+}
 function bleRegisterUnknownWords(list){
   if(!Array.isArray(list)||!list.length) return;
   list.forEach(w=>{
     if(!w) return;
-    const en=String(w.en||"").trim(), ko=String(w.ko||"").trim();
+    const en=String(w.en||"").trim();
+    let ko=String(w.ko||"").trim();
     if(!en || !/[a-zA-Z]/.test(en)) return;   // 영어 단어가 있어야 SRS 등록 가능
+    // 🔤 단어 하나를 등록할 때 문장 뜻이 딸려오면 'pills = 지금' 같은 엉뚱한 항목이 생긴다.
+    //    사전에 있는 단어 뜻만 쓰고, 없으면 비워 둔다(나중에 조회해서 채움).
+    if(/^[a-zA-Z][a-zA-Z'\-]*$/.test(en)) ko = ownWordKo(en);
     try{ srsFail(en, ko, "block"); }catch(e){}   // srsFail = 틀린 단어 취급(바로 복습 대상)
   });
+}
+// 이미 잘못 저장된 항목 정리 (예: pills = 지금) — 한 번만 실행
+function srsFixWordMeaningsOnce(){
+  try{
+    if(hGet("speakingroom:srsfix_word_v2",false)) return;
+    const all=srsAll(); let fixed=0;
+    Object.keys(all).forEach(k=>{
+      const it=all[k]; if(!it||!it.en) return;
+      if(!/^[a-zA-Z][a-zA-Z'\-]*$/.test(String(it.en).trim())) return;   // 단어 하나만 대상
+      const own=ownWordKo(it.en);
+      if(own && it.ko && it.ko!==own){ it.ko=own; fixed++; }
+      else if(!own && it.ko && String(it.ko).split(/\s+/).length>2){ it.ko=""; fixed++; }  // 문장이 들어간 경우
+    });
+    if(fixed) srsSave(all);
+    hSet("speakingroom:srsfix_word_v2", true);
+  }catch(e){}
 }
 // 반환: {result, communicationSuccess, targetBlockSuccess, usedBlockId, confusedWith, naturalAnswer, shortFeedbackKo, repairNeeded, unknownWords}
 // 슬롯(핵심 단어) 커버리지 — 'I think'만 하고 'flight/delayed' 빠지면 통과 막기
@@ -10370,9 +10409,9 @@ const CORE_PHRASES=[
  {id:"not_working_020",phrase:"It's not working.",ko:"작동이 안 돼요.",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","banking","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"카드 단말기가 안 돼요.",en:"The card machine's not working."},{ko:"이게 작동이 안 돼요.",en:"This isn't working."},{ko:"컴퓨터가 안 돼요.",en:"The computer's not working."},{ko:"에어컨이 안 돼요.",en:"The AC isn't working."},{ko:"앱이 안 돼요.",en:"My app's not working."}]},
  {id:"show_me_021",phrase:"Can you show me...?",ko:"보여 주시겠어요?",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"메뉴 보여 주시겠어요?",en:"Can you show me the menu?"},{ko:"어디인지 보여 주시겠어요?",en:"Can you show me where?"},{ko:"길 좀 보여 주시겠어요?",en:"Can you show me the way?"},{ko:"방 보여 주시겠어요?",en:"Can you show me the room?"},{ko:"어떻게 하는지 보여 주시겠어요?",en:"Can you show me how?"}]},
  {id:"i_think_022",phrase:"I think...",ko:"~인 것 같아요",level:2,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"이거 잘못된 것 같아요.",en:"I think this is wrong."},{ko:"열이 나는 것 같아요.",en:"I think I have a fever."},{ko:"제 아이가 아픈 것 같아요.",en:"I think my child is sick."},{ko:"뭔가 착오가 있는 것 같아요.",en:"I think there's a mistake."},{ko:"제가 과다청구된 것 같아요.",en:"I think I was overcharged."}]},
- {id:"pay_by_card_023",phrase:"Can I pay by card?",ko:"카드로 계산돼요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"카드로 계산돼요?",en:"Can I pay by card?"},{ko:"여기 카드 되나요?",en:"Do you take cards?"},{ko:"온라인으로 낼 수 있어요?",en:"Can I pay online?"},{ko:"카드로 결제할게요.",en:"I'll pay by card."},{ko:"할부로 낼 수 있어요?",en:"Can I pay in installments?"}]},
+ {id:"pay_by_card_023",phrase:"Can I pay by card?",ko:"카드로 계산돼요?",level:2,tags:["restaurant","hospital","school","hotel","shopping","support","banking","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"카드로 계산돼요?",en:"Can I pay by card?"},{ko:"여기 카드로 낼 수 있어요?",en:"Can I pay by card?"},{ko:"온라인으로 낼 수 있어요?",en:"Can I pay online?"},{ko:"카드로 결제할게요.",en:"I'll pay by card."},{ko:"할부로 낼 수 있어요?",en:"Can I pay in installments?"}]},
  {id:"excuse_me_024",phrase:"Excuse me.",ko:"실례합니다 / 저기요",level:1,tags:["restaurant","hospital","school","hotel","shopping","support","transportation","travel"],kid:true,adult:true,activeState:1,examples:[{ko:"저기요, 준비됐어요.",en:"Excuse me, we're ready."},{ko:"저기요, 질문이 있어요.",en:"Excuse me, I have a question."},{ko:"실례지만 선생님이세요?",en:"Excuse me, are you the teacher?"},{ko:"저기요, 도와주실 수 있어요?",en:"Excuse me, can you help?"},{ko:"저기요, 계세요?",en:"Excuse me, are you there?"}]},
- {id:"one_moment_025",phrase:"One moment, please.",ko:"잠깐만요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"잠깐만요.",en:"One moment, please."},{ko:"잠시만요.",en:"Just a moment."},{ko:"1초만요.",en:"One second, please."},{ko:"잠깐만 기다려 주시겠어요?",en:"Could I have a moment?"},{ko:"잠시만 기다려 주시겠어요?",en:"Can you hold on a second?"}]},
+ {id:"one_moment_025",phrase:"One moment, please.",ko:"잠깐만요",level:1,tags:["restaurant","hospital","school","hotel","support","banking","work","daily"],kid:true,adult:true,activeState:1,examples:[{ko:"잠깐만요.",en:"One moment, please."},{ko:"(계산대에서) 잠시만요.",en:"One moment, please."},{ko:"잠깐만 기다려 주세요.",en:"One moment, please."},{ko:"(전화에서) 잠시만요.",en:"One moment, please."},{ko:"잠깐만 시간 좀 주세요.",en:"One moment, please."}]},
  {id:"do_you_know_026",phrase:"Do you know...?",ko:"~을 아세요?",level:2,tags:["restaurant","hospital","school","hotel","support","transportation","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"여기 뭐가 맛있는지 아세요?",en:"Do you know what's good here?"},{ko:"얼마나 걸리는지 아세요?",en:"Do you know how long it takes?"},{ko:"일정 아세요?",en:"Do you know the schedule?"},{ko:"어디인지 아세요?",en:"Do you know where it is?"},{ko:"제 잔액 아세요?",en:"Do you know my balance?"}]},
  {id:"make_a_027",phrase:"I'd like to make a...",ko:"~을 하고 싶어요 (예약/신청)",level:2,tags:["restaurant","hospital","school","hotel","support","banking","government","travel"],kid:false,adult:true,activeState:1,examples:[{ko:"예약하고 싶어요.",en:"I'd like to make a reservation."},{ko:"진료 예약하고 싶어요.",en:"I'd like to make an appointment."},{ko:"선생님과 면담 예약하고 싶어요.",en:"I'd like to make an appointment with the teacher."},{ko:"예약하고 싶어요.",en:"I'd like to make a booking."},{ko:"민원을 넣고 싶어요.",en:"I'd like to make a complaint."}]},
  {id:"can_i_change_028",phrase:"Can I change...?",ko:"~ 바꿀 수 있어요?",level:2,tags:["restaurant","hospital","school","hotel","support","banking","travel","daily"],kid:false,adult:true,activeState:1,examples:[{ko:"주문 바꿀 수 있어요?",en:"Can I change my order?"},{ko:"예약 바꿀 수 있어요?",en:"Can I change my appointment?"},{ko:"날짜 바꿀 수 있어요?",en:"Can I change the date?"},{ko:"방 바꿀 수 있어요?",en:"Can I change rooms?"},{ko:"요금제 바꿀 수 있어요?",en:"Can I change my plan?"}]},
@@ -13791,13 +13830,17 @@ function profSkillStats(){
   return {wordKnown, listenPerfect, speakPerfect, wordLevel, listenLevel, speakLevel, overallLevel, automaticExpressions:led.automaticExpressions||0, activeExpressions:led.activeExpressions||0, needsContext:led.needsContext||0};
 }
 
+// 쉽고 꼭 필요한 표현부터. 한국어 뜻이 여러 갈래라 헷갈리거나(잠깐만요/잠시만요…)
+// 다른 표현으로 대체 가능한 것들은 뒤로 미룬다.
 const DAILY_EXPRESSIONS=[
  "where_can_i_006","how_much_010","help_me_014","can_i_get_002",
- "what_time_016","dont_understand_009","one_moment_025","excuse_me_024",
+ "what_time_016","dont_understand_009","excuse_me_024",
  "id_like_to_001","looking_for_013","what_mean_034","problem_with_036",
- "is_there_012","ill_take_042","recommend_041","not_working_020",
- "pay_by_card_023","how_long_031","what_should_i_044","refund_035",
- "can_i_change_028","how_do_i_015"
+ "is_there_012","ill_take_042","not_working_020",
+ "pay_by_card_023","how_long_031","refund_035",
+ "can_i_change_028","how_do_i_015",
+ // ↓ 뒤로 미룬 것들 (뜻이 여러 갈래이거나, 다른 쉬운 표현으로 충분히 대체됨)
+ "one_moment_025","recommend_041","what_should_i_044"
 ];
 function dailyAllowedLevel(){
   // 🎯 자동 blockRecallLevel 기준 → 허용 블록 레벨(CORE_PHRASES level 1·2·3)
@@ -14949,6 +14992,7 @@ loadNotes();
 loadProgress();
 if(!state.vocabTheme) state.vocabTheme=nextVocabTheme();   // 단어 바로 시작 준비
 try{ ledgerMigrateOnce(); }catch(e){}
+try{ srsFixWordMeaningsOnce(); }catch(e){}   // 🔤 잘못 저장된 단어 뜻 정리
 renderHome();
 syncSetupFields();
 checkForUpdate();   // 폰/PC 자동 최신화
