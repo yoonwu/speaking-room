@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.102";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.103";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-14";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4302,7 +4302,7 @@ function sqRender(){
       <button id="sqPlay" style="flex:none;display:inline-flex;align-items:center;gap:7px;padding:13px 26px;border:none;border-radius:999px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:16px;font-weight:950;cursor:pointer;box-shadow:0 8px 18px -10px rgba(24,158,121,.6)">🔊 듣기</button>
       <button class="lp2-slow" id="sqSlowBtn" style="margin:0">🐢 천천히</button>
     </div>
-    <div style="text-align:center;font-size:16px;font-weight:900;color:#3A2D27;margin:14px 0 10px">${escapeHtml(it.question_ko||"")}</div>
+    <div id="sqQuestion" style="display:none;text-align:center;font-size:16px;font-weight:900;color:#3A2D27;margin:14px 0 10px">${escapeHtml(it.question_ko||"")}</div>
     <div id="sqChoices" style="display:none;flex-direction:column;gap:9px">
       ${it.choices.map((c,i)=>`<button class="sq-choice" data-i="${i}" style="text-align:left;padding:14px 15px;border-radius:14px;background:#fff;border:1.5px solid var(--line);font-size:15px;color:var(--text);cursor:pointer;line-height:1.45">${escapeHtml(c)}</button>`).join("")}
     </div>
@@ -4313,6 +4313,7 @@ function sqRender(){
   // 보기는 첫 재생이 끝난 뒤에 — 듣기 전에 선택지부터 훑고 역추론하는 걸 막는다
   const sqRenderSeq=sqCount;
   const sqShowChoices=()=>{ if(sqCount!==sqRenderSeq) return;
+    const q=$("#sqQuestion"); if(q) q.style.display="";               // 질문도 다 듣고 나서
     const c=$("#sqChoices"); if(c) c.style.display="flex";
     const d=$("#sqDunno"); if(d && !sqAnswered) d.style.display="";   // '잘 모르겠어요'도 보기와 함께
   };
@@ -4342,7 +4343,8 @@ function sqAnswer(picked){
   const firstTry = correct && sqReplay===0 && !sqSlow;
   try{ autoLvlRecord("listen", correct?(firstTry?"perfect":"ok"):"miss"); }catch(e){}
   if(!correct){ sqTypes.push(it.question_type); }   // 틀린 유형을 다음에 다시
-  // 선택지 마킹 (첫 재생 전에 '잘 모르겠어요'로 넘어온 경우 보기가 숨어 있으므로 먼저 노출)
+  // 선택지 마킹 (첫 재생 전에 채점된 경우 질문·보기가 숨어 있으므로 먼저 노출)
+  const sqQBox=$("#sqQuestion"); if(sqQBox) sqQBox.style.display="";
   const sqChBox=$("#sqChoices"); if(sqChBox) sqChBox.style.display="flex";
   document.querySelectorAll(".sq-choice").forEach(b=>{
     const i=parseInt(b.dataset.i,10); b.style.pointerEvents="none";
@@ -8488,6 +8490,36 @@ function bleLearnedUnique(){
     });
   }catch(e){}
   return [...byLabel.values()];
+}
+// ⚡ 자동화 블록 타일 → 지금까지 배운 블록 목록
+function openLearnedBlocksSheet(){
+  const blocks=bleLearnedUnique().map(b=>{
+    const st=b.state||{};
+    return { en:b.block||"", ko:b.meaningKo||"",
+             auto: st.stage==="ready_for_real" || (st.fastCount||0)>=3,
+             succ: st.successCount||0 };
+  }).filter(b=>b.en);
+  blocks.sort((a,b)=>(b.auto-a.auto)||(b.succ-a.succ)||a.en.localeCompare(b.en));
+  const autoN=blocks.filter(b=>b.auto).length;
+  const rows = blocks.length ? blocks.map(b=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;background:#fff;border:1px solid ${b.auto?"#BFE6D4":"var(--line)"};margin-bottom:8px">
+      <span style="flex:none;font-size:15px">${b.auto?"⚡":"🌱"}</span>
+      <span style="flex:1;min-width:0">
+        <b style="display:block;font-size:15px;color:#3A2D27;line-height:1.35">${escapeHtml(b.en)}</b>
+        <span style="font-size:12.5px;color:#8A6F62">${escapeHtml(b.ko)}</span>
+      </span>
+      <span style="flex:none;font-size:11px;font-weight:800;color:${b.auto?"#189E79":"#A28A7F"}">${b.auto?"자동화":"연습 중"}</span>
+    </div>`).join("") : `<div style="text-align:center;padding:26px 10px;color:#8A6F62;font-size:13.5px;line-height:1.6">아직 배운 블록이 없어요.<br>블록 영어를 한 번 해보면 여기에 쌓여요.</div>`;
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="learnedBlkOv";
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet" style="background:#EAE3DD">
+     <div class="hub-grab"></div>
+     <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">⚡ 내가 배운 블록</div>
+     <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">전부 ${blocks.length}개 · 자동화 ${autoN}개</div>
+     <div style="max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch">${rows}</div>
+   </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector(".hub-bg").onclick=()=>ov.remove();
+  requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function getWeakBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].failCount>=2&&s[b.id].failCount>s[b.id].successCount).map(b=>({...b,state:s[b.id]})); }
 function getDueReviewBlocks(){ const s=bleGetState(); const now=bleNow(); return BLE_BLOCKS.filter(b=>s[b.id]&&s[b.id].nextReviewAt&&s[b.id].nextReviewAt<=now).map(b=>({...b,state:s[b.id]})); }
@@ -14791,10 +14823,8 @@ function renderProfile(){
   const pct=Math.round(li.inLevel/li.need*100);
   const nr=nextReward(li.level);
   const bp=bestPronToday(); const stars=phStars(); const txp=todayXP();
-  const {goals,meta}=questDefs(); const q=questGet();
-  const qLine=Object.keys(goals).map(k=>`${meta[k].emo}${Math.min(goals[k],q.c[k]||0)}/${goals[k]}`).join("  ");
   const skill=profSkillStats();
-  const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["⚡",skill.automaticExpressions,"자동화 블록"],["💎",skill.wordKnown,"완벽 단어"]];
+  const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["⚡",skill.automaticExpressions,"자동화 블록","statAutoBlocks"],["💎",skill.wordKnown,"완벽 단어"]];
   let rwHtml="", nextSet=false;
   REWARDS.forEach(r=>{
     const done=li.level>=r.lv; const isNext=!done&&!nextSet; if(isNext) nextSet=true;
@@ -14823,11 +14853,7 @@ function renderProfile(){
       </div>
       <div style="font-size:11.5px;color:var(--muted);margin-top:7px">실력 레벨은 XP가 아니라 실제로 완전히 맞힌/들은/꺼낸 항목 수로만 올라가요.</div>
     </div>
-    <div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 14px;margin:0 0 14px;text-align:center">
-      <div style="font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px">🎯 오늘의 퀘스트</div>
-      <div style="font-size:13px;color:var(--text);font-weight:700;letter-spacing:.02em">${qLine}</div>
-    </div>
-    <div class="stat-grid">${stats.map(s=>`<div class="stat"><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}</div></div></div>`).join("")}</div>
+    <div class="stat-grid">${stats.map(s=>`<div class="stat"${s[3]?` id="${s[3]}" style="cursor:pointer"`:""}><div class="se">${s[0]}</div><div><div class="sv">${s[1]}</div><div class="sl">${s[2]}${s[3]?" ›":""}</div></div></div>`).join("")}</div>
     <button id="profRankBtn" style="width:100%;margin-bottom:14px;padding:13px;border:0;border-radius:13px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:14.5px;font-weight:800;cursor:pointer">🏆 랭킹 보기</button>
     <div class="prof-h">☁️ 계정 · 기기 연동</div>
     <div style="background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:14px">
@@ -14859,6 +14885,7 @@ function renderProfile(){
   { const rb=$("#resetData"); if(rb) rb.onclick=resetLearningData; }
   { const sb=$("#syncSwitchBtn"); if(sb) sb.onclick=()=>{ closeProfile(); syncOpenGate(!!syncNick()); }; }
   { const rb2=$("#profRankBtn"); if(rb2) rb2.onclick=()=>{ closeProfile(); rankOpen(); }; }
+  { const ab=$("#statAutoBlocks"); if(ab) ab.onclick=openLearnedBlocksSheet; }
   { const db=$("#syncDiagBtn"); if(db) db.onclick=async()=>{
       const out=$("#syncDiagOut");
       db.disabled=true; db.textContent="확인 중…";
