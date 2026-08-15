@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.111";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.112";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7478,6 +7478,41 @@ async function pronouncePractice(ref, blob, am){
   let d=null; try{ d=JSON.parse(txt); }catch(e){}
   const ex=pronExtract(d||{}); return {heard:ex.heard, score:ex.pron?ex.pron.score:null, acc:ex.pron?ex.pron.acc:null, words:ex.words};
 }
+/* 🔴 약하게 나온 단어만 따로 연습 — 채점 결과의 빨간 단어를 누르면 그 단어만 듣고·말하고·채점.
+   문장 전체를 다시 말하게 하면 잘한 부분까지 다시 하느라 정작 안 되는 소리를 못 고친다. */
+function pronAttachWordDrill(box){
+  if(!box) return;
+  box.querySelectorAll("[data-pw]").forEach(el=>{
+    const go=()=>pronWordDrill(el.getAttribute("data-pw"), box);
+    el.onclick=go;
+    el.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } };
+  });
+}
+function pronWordDrill(word, host){
+  word=String(word||"").trim();
+  if(!word||!host) return;
+  let panel=host.querySelector("#pwDrill");
+  if(!panel){ panel=document.createElement("div"); panel.id="pwDrill"; host.appendChild(panel); }
+  panel.style.cssText="margin-top:11px;padding:12px 13px;border-radius:14px;background:var(--card2,#f6f1ec);border:1.5px solid #F0D3CC;text-align:center";
+  const bs="padding:9px 13px;border:0;border-radius:11px;font-size:13.5px;font-weight:800;cursor:pointer";
+  panel.innerHTML=`
+    <div style="font-size:11.5px;color:var(--muted,#8a7f78);margin-bottom:3px">이 단어만 연습</div>
+    <div style="font-size:24px;font-weight:900;color:var(--text,#1c1410);margin-bottom:9px">${escapeHtml(word)}</div>
+    <div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap">
+      <button id="pwSay" style="${bs};background:var(--card,#fff);color:#189E79;border:1.5px solid #B8E2D0">🔊 듣기</button>
+      <button id="pwMic" style="${bs};background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff">🎤 말하기</button>
+      <button id="pwClose" style="${bs};background:transparent;color:var(--muted,#8a7f78)">✕ 닫기</button>
+    </div>
+    <div id="pwOut" style="margin-top:9px"></div>`;
+  const say=panel.querySelector("#pwSay");
+  if(say) say.onclick=()=>{ try{ speakEn(word); }catch(e){} };
+  const mic=panel.querySelector("#pwMic");
+  if(mic) mic.onclick=()=>startPronPractice(word, mic, panel.querySelector("#pwOut"));
+  const cl=panel.querySelector("#pwClose");
+  if(cl) cl.onclick=()=>{ try{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }catch(e){} panel.remove(); };
+  try{ speakEn(word); }catch(e){}                                   // 누르면 먼저 원어민 발음부터 들려준다
+  try{ panel.scrollIntoView({block:"nearest", behavior:"smooth"}); }catch(e){}
+}
 // 단어/문장 발음 연습 녹음 — 결과를 box에 표시(점수·인식·에러). 어디서든 재사용
 let wpPronMR=null, wpPronRec=false;
 function startPronPractice(ref, btn, box){
@@ -7513,10 +7548,25 @@ function startPronPractice(ref, btn, box){
         }
         const col=r.score>=80?'#19a06b':r.score>=60?'#E0A300':'#e0533f';
         // 단어별 색칠: 초록=좋음 / 노랑=보통 / 빨강=약함(or 빠뜨림)
+        let weakN=0;
         const wHtml=(r.words&&r.words.length)
-          ? r.words.map(w=>{ const a=w.acc; const wc=(w.err&&w.err!=="None"&&w.err!=="")?'#e0533f':(a==null?'#e0533f':a>=80?'#19a06b':a>=60?'#E0A300':'#e0533f'); const ul=(a!=null&&a<60)||(w.err&&w.err!=="None"&&w.err!=="")?';text-decoration:underline;text-underline-offset:2px':''; return `<span style="color:${wc};font-weight:800${ul}">${escapeHtml(w.w)}</span>`; }).join(" ")
+          ? r.words.map(w=>{
+              const a=w.acc;
+              const bad=(w.err&&w.err!=="None"&&w.err!=="");
+              const wc=bad?'#e0533f':(a==null?'#e0533f':a>=80?'#19a06b':a>=60?'#E0A300':'#e0533f');
+              // 약한 단어(빨강)는 눌러서 그 단어만 따로 연습할 수 있게 한다
+              const weak=(a!=null&&a<60)||bad;
+              if(weak) weakN++;
+              const ul=weak?';text-decoration:underline;text-underline-offset:2px;cursor:pointer':'';
+              const tap=weak?` data-pw="${escapeHtml(w.w)}" role="button" tabindex="0" title="눌러서 이 단어만 연습"`:'';
+              return `<span${tap} style="color:${wc};font-weight:800${ul}">${escapeHtml(w.w)}</span>`;
+            }).join(" ")
           : (r.heard?`<span style="color:var(--muted)">${escapeHtml(r.heard)}</span>`:"");
-        box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${wHtml?`<div style="margin-top:5px;font-size:16px;line-height:1.5">${wHtml}</div><div style="font-size:10.5px;color:var(--muted);margin-top:3px">빨강=발음 약함 · 노랑=보통 · 초록=좋음</div>`:""}`;
+        const legend = weakN
+          ? `빨강=발음 약함 · 노랑=보통 · 초록=좋음<br><b style="color:#e0533f">빨간 단어를 누르면 그 단어만 연습할 수 있어요 👆</b>`
+          : `빨강=발음 약함 · 노랑=보통 · 초록=좋음`;
+        box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${wHtml?`<div style="margin-top:5px;font-size:16px;line-height:1.5">${wHtml}</div><div style="font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.6">${legend}</div>`:""}`;
+        pronAttachWordDrill(box);
       }catch(e){ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
     };
     try{ micBeep&&micBeep(); }catch(e){} wpPronMR.start(250);
