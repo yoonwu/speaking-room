@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.118";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.119";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4404,9 +4404,9 @@ function sqRender(){
 }
 function sqAnswer(picked){
   if(sqAnswered || !sqItem) return; sqAnswered=true;
-  try{ rtBump("listen"); }catch(e){}   // 📋 오늘 루틴: 상황 듣기
   const it=sqItem;
   const correct = picked===it.answer_index;
+  if(correct){ try{ rtBump("listen"); }catch(e){} }   // 📋 오늘 루틴: 상황 듣기 (맞힌 것만)
   const firstTry = correct && sqReplay===0 && !sqSlow;
   try{ autoLvlRecord("listen", correct?(firstTry?"perfect":"ok"):"miss"); }catch(e){}
   if(!correct){ sqTypes.push(it.question_type); }   // 틀린 유형을 다음에 다시
@@ -4509,8 +4509,8 @@ function lsAllCorrect(){
 }
 // 채점 게이트: 다 맞으면 분석 건너뛰고 선택지, 틀리면 AI 분석
 function lsCheckAnswer(){
-  try{ rtBump("dict"); }catch(e){}   // 📋 오늘 루틴: 받아쓰기
   if(lsAllCorrect()){
+    try{ rtBump("dict"); }catch(e){}   // 📋 오늘 루틴: 받아쓰기 (맞힌 것만)
     if(!lsAwarded){ lsAwarded=true; awardXP("listen",10,"받아쓰기 정답 ✅","ls:"+lsCount); bumpCount("listen"); questBump("listen"); }
     // 🎧 들은 블록/표현을 SRS 강화 + 세션 추적 (학습 루프 연결)
     try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
@@ -8709,7 +8709,15 @@ function bleStars(id){
   return "★".repeat(lv)+"☆".repeat(7-lv);
 }
 // ===== 헬퍼 함수 (다른 모드용 데이터 훅) =====
-function getLearnedBlocks(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>s[b.id]).map(b=>({...b, state:s[b.id]})); }
+/* '배운 블록' 판정.
+   예전엔 상태 항목이 있기만 하면 배운 걸로 쳤는데, bleBlockState()는 블록을 화면에
+   띄우기만 해도 빈 상태를 만든다. 그래서 '이해하기'만 보고 뒤로 가도 배운 블록으로
+   잡혔고, 랭킹의 배운 블록 수까지 부풀려졌다.
+   → 소개 + 최소 1회 시도(bleIntroDone)를 끝낸 블록만 배운 것으로 센다. */
+function getLearnedBlocks(){
+  const s=bleGetState();
+  return BLE_BLOCKS.filter(b=>s[b.id] && bleIntroDone(b.id)).map(b=>({...b, state:s[b.id]}));
+}
 // 소개(introducedAt)된 블록 수 — 실전 진입 최소치(5개) 판정용
 function bleIntroducedCount(){ const s=bleGetState(); return BLE_BLOCKS.filter(b=>{ const st=s[b.id]; return st && st.introducedAt; }).length; }
 // 배운 블록 — 같은 라벨 중복(cp_ 브릿지 vs BLE 원본)은 숙련도 높은 쪽 하나만
@@ -10385,7 +10393,7 @@ async function bleFinishRetrieveDeep(it, heard){
     if(named.length && stat){ stat.innerHTML+=`<div style="font-size:12px;color:#C08763;margin-top:6px">📝 모르는 단어로 저장: ${named.map(w=>escapeHtml(w.ko)+"="+escapeHtml(w.en)).join(", ")} — 단어 학습에 나와요</div>`; }
   }
   speakEn(j.naturalAnswer||ex.en);
-  try{ if(bleDeep&&bleDeep.outputMode) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기)
+  try{ if(bleDeep&&bleDeep.outputMode && j.targetBlockSuccess) rtBump("speak"); }catch(e){}   // 📋 오늘 루틴: 스피킹(꺼내기, 성공한 것만)
   try{
     const blockKind=!j.targetBlockSuccess?"miss":((it._hintUsed||it._requeued)?"ok":"perfect");
     autoLvlRecord("block", blockKind);   // 블록은 "꺼냈는가"만 평가; 속도는 speedLevel이 따로 평가
@@ -14107,7 +14115,7 @@ async function wrSubmit(heard, meta){
       startDelayMs: (meta&&meta.speechStartAt&&wrRun.t0)?Math.max(0, meta.speechStartAt-wrRun.t0):null
     });
   }catch(e){}
-  try{ rtBump("write"); }catch(e){}   // 📋 오늘 루틴: 문장 만들기 (문항 단위로 진행)
+  if(g.ok){ try{ rtBump("write"); }catch(e){} }   // 📋 오늘 루틴: 문장 만들기 (맞힌 것만)
   wrShowResult(it, heard, g);
 }
 function wrShowResult(it, heard, g){
@@ -14400,7 +14408,7 @@ function autoDrillFinish(heard, meta){
   const initSec=initMs/1000;
   const g=adGrade(it.block, it.ex, heard);
   const fast=initSec<=it.limit;
-  try{ rtBump("drill"); }catch(e){}   // 📋 오늘 루틴: 블록 랜덤 반복
+  if(g.ok){ try{ rtBump("drill"); }catch(e){} }   // 📋 오늘 루틴: 블록 반복 (맞힌 것만)
   const perfect=g.ok && fast && !it._hintUsed;   // 💡 힌트(단어 보기) 사용 시 자동화 성공 아님
   if(g.altBlock){ try{ bleShowHintToast('👍 <b>'+escapeHtml(g.altBlock.block)+'</b> 도 맞아요 · 오늘 목표는 <b>'+escapeHtml(it.block.block)+'</b>'); }catch(e){} }
   const result=g.ok ? "PERFECT" : "MISS";
