@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.106";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.107";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2227,6 +2227,9 @@ function ttTick(){
   // 말하는 중·듣는 중이면 손을 안 대도 훈련 중으로 인정
   try{ if(typeof qzRecording!=="undefined" && qzRecording) ttLastAct=now; }catch(e){}
   try{ if(TTS && TTS.speaking) ttLastAct=now; }catch(e){}
+  // 이 앱은 대부분 서버 원어민 음성(Azure)을 <audio>로 재생한다. TTS.speaking 만 보면
+  // 듣기 훈련 내내 '가만히 있는 것'으로 취급돼 훈련 시간이 안 쌓였다.
+  try{ if(_svAudio && !_svAudio.paused && !_svAudio.ended) ttLastAct=now; }catch(e){}
   if(document.visibilityState!=="visible") return;   // 화면 꺼짐·다른 앱 → 측정 안 함
   if(now-ttLastAct>TT_IDLE_MS) return;               // 켜두기만 한 상태 → 측정 안 함
   ttCarry+=TT_TICK_MS/1000;
@@ -4131,6 +4134,9 @@ function renderListenPlay(){
 let ttsWarmed=false;
 function lsSpeak(slow, onEnd){
   if(!lsItem) return;
+  // 녹음 중에 '다시 듣기'를 누르면 스피커 소리가 그대로 마이크에 들어가 내 목소리를
+  // 덮어쓴다(=못 알아들음). 들려주기 전에 녹음부터 끝낸다.
+  try{ if(qzRecording && qzMR && qzMR.state!=="inactive") qzMR.stop(); }catch(e){}
   const _lr=withLvl(getAutoLevels().listenLevel, ()=>levelRate(slow));
   // 1) 서버 원어민 음성(Azure Neural) 우선 — 첫 자음 잘림 원천 차단
   svSpeak(lsItem.en||"", _lr, onEnd).then(ok=>{
@@ -7271,7 +7277,9 @@ function attachVAD(stream, onStop, opts){
       if(voicedMs>=expectWords*430) return true;                // 나눠 말했어도 총량이 충분
       return false;
     }
-    function fin(){ if(done)return; done=true; try{ac.close();}catch(e){} onStop(); }
+    // rAF는 탭이 뒤로 가거나 화면이 꺼지면 멈춘다 → 벽시계 백스톱으로 반드시 끝나게
+    let guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000);
+    function fin(){ if(done)return; done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){} onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
@@ -7298,11 +7306,40 @@ function attachVAD(stream, onStop, opts){
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
-    return ()=>{ if(!done){ done=true; try{ac.close();}catch(e){} } };
+    return ()=>{ if(!done){ done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){} } };
   }catch(e){
     const id=setTimeout(onStop, maxMs);
     return ()=>clearTimeout(id);
   }
+}
+/* 🎤 이전 녹음의 VAD가 살아남아 '다음' 녹음을 즉시 끊어버리던 문제.
+   attachVAD가 돌려주는 취소 함수를 아무도 안 받아서, 버튼을 눌러 일찍 끝낸 녹음의
+   감시 루프가 계속 돌다가 다음 녹음을 stop() 시켰다. → 소리가 거의 안 담긴 채로
+   끝나서(blob<1000) 인식 결과가 빈 문자열, 화면엔 '못 알아들었어요 0/4'.
+   ① 새 녹음 전에 이전 VAD를 반드시 취소하고
+   ② 세대(generation) 토큰으로 옛 VAD의 종료 요청은 무시한다.
+   화면마다 녹음 주체가 달라서(받아쓰기·발음·드릴·파닉스·실전회화) 키별로 따로 관리한다. */
+const _vadReg=Object.create(null), _vadGen=Object.create(null);
+function vadCancel(key){
+  key=key||"mic";
+  const c=_vadReg[key];
+  if(c){ try{ c(); }catch(e){} delete _vadReg[key]; }
+}
+// 같은 키의 이전 VAD를 끄고, 이번 녹음에만 유효한 종료 콜백을 붙인다
+function vadArmAs(key, stream, onStop, opts){
+  vadCancel(key);
+  const gen=(_vadGen[key]=(_vadGen[key]||0)+1);
+  _vadReg[key]=attachVAD(stream, ()=>{
+    if(_vadGen[key]!==gen) return;   // 옛 녹음의 VAD가 뒤늦게 깨어난 것 → 무시
+    onStop();
+  }, opts);
+  return gen;
+}
+// 공용 녹음기(qzMR)를 쓰는 받아쓰기·말하기용
+function vadArm(stream, opts){
+  return vadArmAs("mic", stream, ()=>{
+    if(qzRecording && qzMR && qzMR.state!=="inactive") qzMR.stop();
+  }, opts);
 }
 // 🎤 마이크 스트림 재사용 — 누를 때마다 권한/장치를 새로 여느라 0.5초쯤 늦게 시작되던 문제 해결.
 //    쓰지 않으면 90초 뒤 자동으로 반납해 마이크를 계속 붙잡고 있지 않는다.
@@ -7340,6 +7377,7 @@ async function micFillCb(rawCb, refText){
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
       micBeepEnd();
+      vadCancel();       // 이 녹음의 감시 루프 종료 — 다음 녹음까지 살아남지 않게
       meta.stopAt=Date.now();
       micStreamIdle();   // 스트림은 살려두고(다음 탭 즉시 시작) 90초 미사용 시 반납
       // 자동 종료와 버튼 탭이 겹치는 구간 보호: 종료 후 0.5초 동안은 다시 시작되지 않음
@@ -7367,7 +7405,7 @@ async function micFillCb(rawCb, refText){
          maxSilenceMs: 1400,                          // 덜 말했어도 1.4초 조용하면 종료
          maxMs: 25000, noSpeechMs: 7000}
       : {...VAD_OPTS, silenceMs: 400, maxSilenceMs: 900, noSpeechMs: 6000};
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
+    vadArm(stream, {..._vad, onSpeechStart:(t)=>{ meta.speechStartAt=t; }});
   }catch(e){ notifyMicError(e); cb("", {startAt:Date.now(), speechStartAt:null, stopAt:null, sttDoneAt:null, pron:null}); }
 }
 // /pronounce로 음성 인식 (DisplayText) + 발음 점수 추출 — /stt 대체·폴백용
@@ -7438,7 +7476,7 @@ function startPronPractice(ref, btn, box){
       }catch(e){ if(box) box.innerHTML=`<div style="color:#189E79;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
     };
     try{ micBeep&&micBeep(); }catch(e){} wpPronMR.start(250);
-    try{ attachVAD&&attachVAD(stream, ()=>{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }, VAD_OPTS); }catch(e){}
+    try{ vadArmAs("wpPron", stream, ()=>{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }, VAD_OPTS); }catch(e){}
   }).catch(err=>{
     // 기기 점유(NotReadableError)면 잠깐 뒤 1회 재시도 — 직전 마이크가 늦게 풀리는 윈도우 대응
     if(err&&(err.name==="NotReadableError"||err.name==="AbortError")&&!retry){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">마이크 다시 잡는 중…</div>`; setTimeout(()=>_run(true), 600); return; }
@@ -7461,6 +7499,7 @@ async function micFill(inp, btn, restoreLabel){
     qzMR.ondataavailable=e=>{ if(e.data.size>0) qzChunks.push(e.data); };
     qzMR.onstop=async()=>{
       micBeepEnd();
+      vadCancel();       // 이 녹음의 감시 루프 종료 — 다음 녹음까지 살아남지 않게
       stream.getTracks().forEach(t=>t.stop());
       // 자동 종료와 버튼 탭이 겹치는 구간 보호: 종료 후 0.5초 동안은 다시 시작되지 않음
       // (qzRecording을 유지하므로 이 사이의 탭은 각 버튼의 '녹음 중' 분기에서 그냥 무시된다)
@@ -7483,7 +7522,7 @@ async function micFill(inp, btn, restoreLabel){
       btn.textContent=lbl;
     };
     micBeep(); qzMR.start(250); qzRecording=true; btn.textContent="⏹";
-    attachVAD(stream, ()=>{ if(qzRecording&&qzMR&&qzMR.state!=="inactive") qzMR.stop(); }, {...VAD_OPTS, onSpeechStart:(t)=>{ _meta.speechStartAt=t; }});
+    vadArm(stream, {...VAD_OPTS, onSpeechStart:(t)=>{ _meta.speechStartAt=t; }});
   }catch(e){}
 }
 function quizRecord(inp, btn){ return micFill(inp, btn, "🎤 말하기"); }
@@ -7739,7 +7778,7 @@ async function toggleMic(){
     hint.textContent="🎤 듣는 중… 다 말하면 마이크를 다시 누르세요";
     // 실전회화는 생각하며 말하는 시간이 길다 → 무음으로 끊지 않고, 사용자가 끌 때까지 녹음.
     // (안전장치로 최대 60초까지만)
-    attachVAD(stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:60000, silenceMs:60000, minSpeechMs:280, thresh:0.02});
+    vadArmAs("azureStt", stream, ()=>{ if(listening) stopAzureSTT(); }, {maxMs:60000, silenceMs:60000, minSpeechMs:280, thresh:0.02});
   }catch(e){
     hint.textContent = e.name==="NotAllowedError"?"마이크 권한을 허용해 주세요.":"마이크 오류 — 브라우저에서 열어보세요";
   }
@@ -8005,7 +8044,7 @@ async function toggleDrillMic(){
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
     micBeep(); drillMR.start(250); drillRecording=true;
-    attachVAD(stream, ()=>{ if(drillRecording) stopDrillMic(); }, VAD_OPTS);
+    vadArmAs("drill", stream, ()=>{ if(drillRecording) stopDrillMic(); }, VAD_OPTS);
     const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#189E79"; }
   }catch(e){
     const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">마이크 권한을 허용해 주세요.</div>`;
@@ -8168,7 +8207,7 @@ function phMic(ref, btn, cb){
       }catch(e){ cb(null); }
     };
     micBeep(); phMR.start(250);
-    attachVAD(stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, VAD_OPTS);
+    vadArmAs("phonics", stream, ()=>{ if(phRec&&phMR&&phMR.state!=="inactive") phMR.stop(); }, VAD_OPTS);
   }).catch(e=>{ notifyMicError(e); cb(null); });
 }
 
