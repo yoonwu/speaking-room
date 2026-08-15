@@ -737,9 +737,9 @@ body.survival-immersive .iconbtn{color:rgba(255,255,255,.84)}
 }
 .mic:hover{background:var(--jade-deep)}
 .mic svg{width:29px; height:29px; position:relative; z-index:2}
-.mic.live{background:#189E79; box-shadow:0 5px 16px -5px rgba(24,158,121,.6)}
+.mic.live{background:#e0533f; box-shadow:0 5px 16px -5px rgba(24,158,121,.6)}
 .mic.live::before,.mic.live::after{
-  content:""; position:absolute; inset:0; border-radius:50%; border:2px solid #189E79; z-index:1;
+  content:""; position:absolute; inset:0; border-radius:50%; border:2px solid #e0533f; z-index:1;
   animation:ring 1.5s ease-out infinite;
 }
 .mic.live::after{animation-delay:.5s}
@@ -751,7 +751,7 @@ body.survival-immersive .iconbtn{color:rgba(255,255,255,.84)}
 .send:hover{background:var(--ink-soft)}
 .send:disabled{background:#c5cad4; cursor:not-allowed}
 .send svg{width:20px; height:20px}
-.listening-hint{font-size:12px; color:#189E79; font-weight:600; text-align:center; margin-top:9px; height:14px}
+.listening-hint{font-size:12px; color:#e0533f; font-weight:600; text-align:center; margin-top:9px; height:14px}
 
 /* ---------- Notes drawer ---------- */
 .notes{
@@ -1015,7 +1015,7 @@ body{background:var(--paper); color:var(--text)}
 .mbctrl{margin-top:auto;padding-top:14px}
 .mbmicwrap{display:flex;align-items:center;justify-content:space-between;padding:0 10px}
 .mbmic{width:96px;height:96px;border-radius:50%;background:var(--jade);color:#ffffff;display:grid;place-items:center;border:none;box-shadow:0 8px 30px -6px rgba(43,189,148,.5);position:relative}
-.mbmic.live{background:#189E79;color:#fff}
+.mbmic.live{background:#e0533f;color:#fff}
 .mbmic svg{width:38px;height:38px}
 .mbside{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;width:78px}
 .mbside .ic{width:42px;height:42px;border-radius:50%;background:var(--card2);display:grid;place-items:center;font-size:19px}
@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.107";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.108";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4416,7 +4416,7 @@ function sqAnswer(picked){
   document.querySelectorAll(".sq-choice").forEach(b=>{
     const i=parseInt(b.dataset.i,10); b.style.pointerEvents="none";
     if(i===it.answer_index){ b.style.borderColor="#19a06b"; b.style.background="rgba(25,160,107,.08)"; }
-    else if(i===picked){ b.style.borderColor="#189E79"; b.style.background="rgba(24,158,121,.07)"; }
+    else if(i===picked){ b.style.borderColor="#e0533f"; b.style.background="rgba(24,158,121,.07)"; }
     else b.style.opacity=".55";
   });
   const dn=$("#sqDunno"); if(dn) dn.style.display="none";
@@ -4438,7 +4438,7 @@ function sqAnswer(picked){
   const rb=$("#sqResult");
   if(rb){
     rb.innerHTML=`<div style="margin-top:14px;background:#fff;border:1px solid ${correct?"#BFE6D4":"#C7E8DA"};border-radius:16px;padding:14px 16px;text-align:center">
-      <div style="font-size:13px;font-weight:950;color:${correct?"#19a06b":"#189E79"};margin-bottom:8px">${correct?(firstTry?"⚡ 한 번에 정답!":"✅ 정답!"):(picked==null?"💡 정답 확인":"❌ 아쉬워요")}</div>
+      <div style="font-size:13px;font-weight:950;color:${correct?"#19a06b":"#e0533f"};margin-bottom:8px">${correct?(firstTry?"⚡ 한 번에 정답!":"✅ 정답!"):(picked==null?"💡 정답 확인":"❌ 아쉬워요")}</div>
       <div style="font-family:var(--serif);font-size:20px;color:var(--text);line-height:1.45" data-no-pronko>${tappableEn(it.audio_en)}</div>
       <div style="font-size:13.5px;color:var(--muted);margin-top:5px">${escapeHtml(it.audio_ko||"")}</div>
       ${it.explanation_ko?`<div style="font-size:13px;color:#7A6055;line-height:1.55;margin-top:9px;border-top:1px dashed var(--line);padding-top:8px">${escapeHtml(it.explanation_ko)}</div>`:""}
@@ -4696,7 +4696,7 @@ function diffHighlight(correct, answer){
     const clean=normAns(tok);
     const word=(tok.match(/[A-Za-z][A-Za-z']*/)||[""])[0];
     const tap=word?` onclick="dictShow(this,'${word}')"`:"";
-    if(clean && !ans.has(clean)) return `<span class="tapw"${tap} style="color:#189E79;font-weight:700;border-bottom:2px solid #189E79">${escapeHtml(tok)}</span>`;
+    if(clean && !ans.has(clean)) return `<span class="tapw"${tap} style="color:#e0533f;font-weight:700;border-bottom:2px solid #e0533f">${escapeHtml(tok)}</span>`;
     return `<span class="tapw"${tap}>${escapeHtml(tok)}</span>`;
   }).join("");
 }
@@ -4707,7 +4707,7 @@ function renderListenAnalysis(){
   const mistakes=(a.mistakes||[]).filter(Boolean);
   $("#listenScroll").innerHTML=`<div class="lcard">
     <div class="lmeta" style="text-align:center">🔍 오답 분석</div>
-    <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">정답 문장 <span style="color:#189E79">(빨강 = 놓친 부분)</span> · 👆 단어를 누르면 뜻·발음</div>
+    <div style="font-size:12px;color:var(--muted);margin:8px 0 4px">정답 문장 <span style="color:#e0533f">(빨강 = 놓친 부분)</span> · 👆 단어를 누르면 뜻·발음</div>
     <div style="font-family:var(--serif);font-size:21px;line-height:1.5;color:var(--text);margin-bottom:6px">${diffHighlight(correct, lsAnswer)}</div>
     ${lsAnswer?`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">내 답: "${escapeHtml(lsAnswer)}"</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:14px">(답을 건너뛰었어요)</div>`}
     ${missed.length?`<div class="lkey show" style="margin-bottom:10px"><div class="ki"><span><span class="ken">놓친 단어</span><span class="kko">${missed.map(escapeHtml).join(" · ")}</span></span></div></div>`:""}
@@ -6647,7 +6647,7 @@ function wpAsk(q){
         liveRecog.start();
       }catch(e){ liveRecog=null; }
     }
-    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t,true); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } });
+    micFillCb((t)=>{ b.classList.remove("live"); if(liveRecog){ try{liveRecog.abort();}catch(e){} } if(t){ status.textContent='"'+t+'"'; wpSubmit(q,t,true); } else { status.textContent="잘 안 들렸어요 — 다시 말해보세요"; } }, (q&&q.blank&&q.blank.answer)||"");
   };
   $("#wpKbd").onclick=()=>{
     // 입력 모드: 마이크/액션 숨기고, 입력칸+돌아가기를 위로 (키보드에 안 가림)
@@ -7199,7 +7199,7 @@ function renderVocabQuiz(w){
       status.innerHTML=`💡 힌트: <b>${escapeHtml(answer[0].toUpperCase())}</b>${"·".repeat(Math.max(1,answer.replace(/\s/g,"").length-1))} — 다시!`;
       status.style.color="#e6ad4a";
     }else{                      // 1~2번째 틀림 → 정답 숨기고 재시도
-      status.textContent=`아냐, 다시 한 번! (${attempts}/3)`; status.style.color="#189E79";
+      status.textContent=`아냐, 다시 한 번! (${attempts}/3)`; status.style.color="#e0533f";
     }
   };
   // 마이크 (큰 버튼) — 녹음 → STT → 자동 채점
@@ -7207,7 +7207,7 @@ function renderVocabQuiz(w){
     if(done) return;
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
     micB.classList.add("live"); status.textContent="듣고 있어요…";
-    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } });
+    micFillCb((t)=>{ micB.classList.remove("live"); if(t){ status.textContent='"'+t+'"'; finish(t); } else { status.textContent="다시 말해 보세요."; } }, answer||"");
   };
   // 힌트 (수동) — 첫 글자만, 정답은 안 알려줌
   $("#mbHint").onclick=()=>{ if(done) return; status.innerHTML=`💡 첫 글자: <b>${escapeHtml(answer[0].toUpperCase())}</b>`; status.style.color="#e6ad4a"; };
@@ -7454,7 +7454,7 @@ function startPronPractice(ref, btn, box){
   navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
     let chunks=[]; const mime=getBestMime();
     try{ wpPronMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); }
-    catch(err){ stream.getTracks().forEach(t=>t.stop()); if(box) box.innerHTML=`<div style="color:#189E79;font-size:12.5px">이 브라우저는 녹음을 지원하지 않아요. Chrome·Safari 최신 버전으로 열어보세요.</div>`; return; }
+    catch(err){ stream.getTracks().forEach(t=>t.stop()); if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">이 브라우저는 녹음을 지원하지 않아요. Chrome·Safari 최신 버전으로 열어보세요.</div>`; return; }
     const am=wpPronMR.mimeType||mime; wpPronRec=true; if(btn) btn.textContent="⏹ 멈추기 (말하는 중…)";
     wpPronMR.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
     wpPronMR.onstop=async()=>{
@@ -7467,20 +7467,27 @@ function startPronPractice(ref, btn, box){
         const r=await pronouncePractice(ref, raw, am);
         if(!box) return;
         if(r.score==null){ box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">인식이 안 됐어요${r.heard?` — 들린 말: "${escapeHtml(r.heard)}"`:""}. 다시 또렷하게.</div>`; return; }
-        const col=r.score>=80?'#19a06b':r.score>=60?'#E0A300':'#189E79';
+        // 단어별 점수가 하나도 없는데 0점 = 발음이 나쁜 게 아니라 채점 자체가 실패한 것.
+        // 그대로 '0점'이라고 보여주면 잘 말해도 틀렸다고 하는 것처럼 보인다.
+        const _scored=(r.words||[]).filter(w=>w.acc!=null).length;
+        if(!r.score && !_scored){
+          box.innerHTML=`<div style="color:var(--muted);font-size:12.5px;line-height:1.6">채점이 안 됐어요 — 조금 더 크게, 문장을 끝까지 말해보세요.${r.heard?`<br>들린 말: "${escapeHtml(r.heard)}"`:""}</div>`;
+          return;
+        }
+        const col=r.score>=80?'#19a06b':r.score>=60?'#E0A300':'#e0533f';
         // 단어별 색칠: 초록=좋음 / 노랑=보통 / 빨강=약함(or 빠뜨림)
         const wHtml=(r.words&&r.words.length)
-          ? r.words.map(w=>{ const a=w.acc; const wc=(w.err&&w.err!=="None"&&w.err!=="")?'#189E79':(a==null?'#189E79':a>=80?'#19a06b':a>=60?'#E0A300':'#189E79'); const ul=(a!=null&&a<60)||(w.err&&w.err!=="None"&&w.err!=="")?';text-decoration:underline;text-underline-offset:2px':''; return `<span style="color:${wc};font-weight:800${ul}">${escapeHtml(w.w)}</span>`; }).join(" ")
+          ? r.words.map(w=>{ const a=w.acc; const wc=(w.err&&w.err!=="None"&&w.err!=="")?'#e0533f':(a==null?'#189E79':a>=80?'#19a06b':a>=60?'#E0A300':'#e0533f'); const ul=(a!=null&&a<60)||(w.err&&w.err!=="None"&&w.err!=="")?';text-decoration:underline;text-underline-offset:2px':''; return `<span style="color:${wc};font-weight:800${ul}">${escapeHtml(w.w)}</span>`; }).join(" ")
           : (r.heard?`<span style="color:var(--muted)">${escapeHtml(r.heard)}</span>`:"");
         box.innerHTML=`<div style="font-size:17px;font-weight:900;color:${col}">🔊 발음 ${r.score}점${r.acc!=null?` <span style="font-size:12px;color:var(--muted)">정확도 ${r.acc}</span>`:""}</div>${wHtml?`<div style="margin-top:5px;font-size:16px;line-height:1.5">${wHtml}</div><div style="font-size:10.5px;color:var(--muted);margin-top:3px">빨강=발음 약함 · 노랑=보통 · 초록=좋음</div>`:""}`;
-      }catch(e){ if(box) box.innerHTML=`<div style="color:#189E79;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
+      }catch(e){ if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px">채점 실패: ${escapeHtml(String((e&&e.message)||e).slice(0,50))} — 인터넷 확인 후 다시.</div>`; }
     };
     try{ micBeep&&micBeep(); }catch(e){} wpPronMR.start(250);
     try{ vadArmAs("wpPron", stream, ()=>{ if(wpPronRec&&wpPronMR&&wpPronMR.state!=="inactive") wpPronMR.stop(); }, VAD_OPTS); }catch(e){}
   }).catch(err=>{
     // 기기 점유(NotReadableError)면 잠깐 뒤 1회 재시도 — 직전 마이크가 늦게 풀리는 윈도우 대응
     if(err&&(err.name==="NotReadableError"||err.name==="AbortError")&&!retry){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">마이크 다시 잡는 중…</div>`; setTimeout(()=>_run(true), 600); return; }
-    if(box) box.innerHTML=`<div style="color:#189E79;font-size:12.5px;line-height:1.5">${micErrMsg(err)}</div>`;
+    if(box) box.innerHTML=`<div style="color:#e0533f;font-size:12.5px;line-height:1.5">${micErrMsg(err)}</div>`;
   });
   };
   _run(false);
@@ -8036,16 +8043,16 @@ async function toggleDrillMic(){
         const txt=await res.text();
         window._lastPronounceRaw=txt;
         let data; try{ data=JSON.parse(txt); }catch(e){ data=null; }
-        if(!res.ok){ const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#189E79;text-align:center;font-size:12.5px">채점 오류 ${res.status}: ${escapeHtml(txt.slice(0,80))}</div>`; }
+        if(!res.ok){ const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#e0533f;text-align:center;font-size:12.5px">채점 오류 ${res.status}: ${escapeHtml(txt.slice(0,80))}</div>`; }
         else renderDrillResult(data);
       }catch(e){
-        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#189E79;text-align:center;font-size:12.5px">오류: ${escapeHtml(String(e).slice(0,80))}</div>`;
+        const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:#e0533f;text-align:center;font-size:12.5px">오류: ${escapeHtml(String(e).slice(0,80))}</div>`;
       }
       if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; }
     };
     micBeep(); drillMR.start(250); drillRecording=true;
     vadArmAs("drill", stream, ()=>{ if(drillRecording) stopDrillMic(); }, VAD_OPTS);
-    const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#189E79"; }
+    const btn=$("#drillSpeak"); if(btn){ btn.textContent="⏹ 멈추기"; btn.style.background="#e0533f"; }
   }catch(e){
     const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center">마이크 권한을 허용해 주세요.</div>`;
   }
@@ -8078,13 +8085,13 @@ function renderDrillResult(data){
   const comp=Math.round(pa.CompletenessScore||0);
   // Azure가 PronScore(종합)를 주면 그걸 우선 사용
   const overall=Math.round(pa.PronScore!=null ? pa.PronScore : (acc*0.5+flu*0.3+comp*0.2));
-  const color=overall>=80?"#2BBD94":overall>=60?"#e6ad4a":"#189E79";
+  const color=overall>=80?"#2BBD94":overall>=60?"#e6ad4a":"#e0533f";
   const emoji=overall>=80?"😊":overall>=60?"🙂":"😅";
   // 단어별 색상 (점수는 단어 객체 바로 위 또는 중첩 둘 다 대응)
   const words=(n?.Words||[]);
   const wordHtml=words.map(w=>{
     const ws=Math.round((w.PronunciationAssessment&&w.PronunciationAssessment.AccuracyScore!=null?w.PronunciationAssessment.AccuracyScore:w.AccuracyScore)||0);
-    const wc=ws>=80?"#2BBD94":ws>=60?"#e6ad4a":"#189E79";
+    const wc=ws>=80?"#2BBD94":ws>=60?"#e6ad4a":"#e0533f";
     return `<span style="color:${wc};font-family:var(--serif);font-size:17px;margin:0 3px" title="${ws}점">${escapeHtml(w.Word)}</span>`;
   }).join(" ");
   const heardText=(data?.DisplayText||n?.Display||n?.Lexical||words.map(w=>w.Word).join(" ")).replace(/[.?!,]$/,"").trim();
@@ -8099,15 +8106,15 @@ function renderDrillResult(data){
     </div>
     <div style="display:flex;gap:8px;justify-content:center;margin-bottom:14px">
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${acc>=80?"#2BBD94":acc>=60?"#e6ad4a":"#189E79"}">${acc}</div>
+        <div style="font-size:18px;font-weight:800;color:${acc>=80?"#2BBD94":acc>=60?"#e6ad4a":"#e0533f"}">${acc}</div>
         <div style="font-size:11px;color:var(--muted)">정확도</div>
       </div>
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${flu>=80?"#2BBD94":flu>=60?"#e6ad4a":"#189E79"}">${flu}</div>
+        <div style="font-size:18px;font-weight:800;color:${flu>=80?"#2BBD94":flu>=60?"#e6ad4a":"#e0533f"}">${flu}</div>
         <div style="font-size:11px;color:var(--muted)">유창성</div>
       </div>
       <div style="flex:1;background:var(--mist);border-radius:12px;padding:10px;text-align:center">
-        <div style="font-size:18px;font-weight:800;color:${comp>=80?"#2BBD94":comp>=60?"#e6ad4a":"#189E79"}">${comp}</div>
+        <div style="font-size:18px;font-weight:800;color:${comp>=80?"#2BBD94":comp>=60?"#e6ad4a":"#e0533f"}">${comp}</div>
         <div style="font-size:11px;color:var(--muted)">완성도</div>
       </div>
     </div>
@@ -9718,7 +9725,7 @@ function bleWireFill(it){
     const ok = v===bleNorm(answer) || bleNorm(answer).indexOf(v)>=0 && v.length>=bleNorm(answer).length-2;
     const fb=$("#bleFb");
     if(ok){ fb.innerHTML='<span style="color:#19a06b">✓ 정답!</span>'; speakEn(ex.en); }
-    else { fb.innerHTML=`<span style="color:#189E79">정답: ${escapeHtml(answer)}</span>`; speakEn(ex.en); }
+    else { fb.innerHTML=`<span style="color:#e0533f">정답: ${escapeHtml(answer)}</span>`; speakEn(ex.en); }
     inp.disabled=true; $("#bleSubmit").textContent="다음 →"; $("#bleSubmit").onclick=()=>{ bleSession.idx++; bleRender(); };
   };
   $("#bleSubmit").onclick=submit;
@@ -9772,7 +9779,7 @@ function bleWireDiscriminate(it){
       const rightB=BLE_BY_ID[ans];
       // 영어 답(예문) 표시
       const ansLine=`<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:8px">${escapeHtml(ex.en)}</div>`;
-      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#189E79">${escapeHtml(rightB.block)} 가 맞아요</span>`)+ansLine;
+      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(rightB.block)} 가 맞아요</span>`)+ansLine;
       speakEn(ex.en);
       bleRecord(ans, {result:ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, fast, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), ms, mixed:true, source:"block_discrimination", suggestedAnswer:ex.en, confusedWith: ok?null:picked});
       bleSession.results.push({id:ans, type:"discriminate", result:ok?"PERFECT":"MISS", ok, comm:ok, target:ok, fast, ms, situation:bleContextLabel(ex), contextKey:bleContextKey(ex), confusedWith: ok?null:picked});
@@ -9976,7 +9983,7 @@ function bleSummary(){
       ${(function(){try{return xpSummaryHtml()}catch(e){return""}})()}
       <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
         ${blocks.map(b=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span style="font-family:var(--serif);color:var(--text);font-size:15px">${escapeHtml(b.block)}</span><span style="font-size:12px;color:#8A6F62">${escapeHtml(b.meaningKo)}</span></div>`).join("")}
-        ${weakBlocks.length?`<div style="font-size:12.5px;color:#189E79;margin-top:9px">약했던 블록: ${weakBlocks.map(escapeHtml).join(", ")} — 본격 학습에서 더 자주 나와요</div>`:""}
+        ${weakBlocks.length?`<div style="font-size:12.5px;color:#e0533f;margin-top:9px">약했던 블록: ${weakBlocks.map(escapeHtml).join(", ")} — 본격 학습에서 더 자주 나와요</div>`:""}
       </div>
       <div style="background:linear-gradient(135deg,#ECF7F2,#DDF2E9);border:1px solid #C9EBDD;border-radius:14px;padding:13px 16px;margin-bottom:12px;text-align:left">
         <div style="font-size:14px;font-weight:900;color:#1F3B33">🔥 입에 붙이기</div>
@@ -10052,7 +10059,7 @@ function bleSummary(){
       ${row("오늘 배운 블록", newB?escapeHtml(newB.block):"—", "var(--jade)")}
       ${row("복습한 블록", reviewed.map(escapeHtml).join(", ")||"—")}
       ${row("잘한 블록", good.map(escapeHtml).join(", ")||"—", "#19a06b")}
-      ${row("약한 블록", weak.map(escapeHtml).join(", ")||"—", "#189E79")}
+      ${row("약한 블록", weak.map(escapeHtml).join(", ")||"—", "#e0533f")}
       ${nextList.length?`<div style="padding-top:10px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">다음 복습 예정</div>${nextList.map(n=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0"><span style="font-family:var(--serif);color:var(--text)">${escapeHtml(n.block)}</span><span style="color:var(--jade);font-weight:700">${n.when}</span></div>`).join("")}</div>`:""}
     </div>
     <div style="background:linear-gradient(135deg,#ECF7F2,#DDF2E9);border:1px solid #C9EBDD;border-radius:16px;padding:14px 16px;margin-bottom:12px;text-align:left">
@@ -10152,7 +10159,7 @@ function bleDeepNextItem(){
   const ex=bleFreshContextEx2(b); return {type:"situation", block:b, ex, deep:true, reason};
 }
 const BLE_REASON_KO={due_review:"복습 예정",weak_block:"약한 블록",confusion:"헷갈린 블록",slow_block:"느린 블록",context_gap:"새로운 상황",mixed_test:"혼합 테스트",maintenance:"유지 복습"};
-const BLE_REASON_COLOR={due_review:"#189E79",weak_block:"#189E79",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
+const BLE_REASON_COLOR={due_review:"#E2674A",weak_block:"#e0533f",confusion:"#C06CC0",slow_block:"#E0A300",context_gap:"#19a06b",mixed_test:"#5B8DEF",maintenance:"#8A6F62"};
 function bleDeepGateReady(set){
   // 실전(꺼내기) 진입 = 소개된 블록이 총 5개 이상. 온보딩 기본 3개 + 추가 2개면 첫날에도 가능.
   const s=bleGetState();
@@ -10307,7 +10314,7 @@ function bleWireDiscriminateDeep(it){
       // 영어 답 + 대조 피드백
       let contrast=`<div style="font-family:var(--serif);color:#3A2D27;font-size:18px;margin-top:8px">${escapeHtml(it.ex.en)}</div>`;
       if(!ok && wrong){ contrast+=`<div style="font-size:12.5px;color:#8A6F62;margin-top:6px;line-height:1.5"><b style="color:#189E79">${escapeHtml(right.block)}</b> = ${escapeHtml(right.meaningKo)}<br><b>${escapeHtml(wrong.block)}</b> = ${escapeHtml(wrong.meaningKo)}</div>`; }
-      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#189E79">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
+      fb.innerHTML= (ok? '<span style="color:#19a06b">✓ 맞아요!</span>' : `<span style="color:#e0533f">${escapeHtml(right.block)} 가 맞아요</span>`)+contrast;
       speakEn(it.ex.en);
       bleRecord(ans, {result: ok?"PERFECT":"MISS", fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms, mixed:true, deep:true, source:"block_discrimination", suggestedAnswer:it.ex.en, confusedWith: ok?null:picked});
       try{ reuseAdd(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", "ble-discriminate", bleContextKey(it.ex)||bleContextLabel(it.ex)); reuseRecord(it.ex.en, it.ex.ko||(right&&right.meaningKo)||"", bleContextKey(it.ex)||bleContextLabel(it.ex), ok); }catch(e){}
@@ -10425,7 +10432,7 @@ function bleDeepSummary(){
   }).sort((a,b)=>a.t-b.t).slice(0,4);
   // 추천 액션
   let rec="";
-  if(weak.length) rec=`<b style="color:#189E79">${escapeHtml(weak[0])}</b> 발음 연습 추천`;
+  if(weak.length) rec=`<b style="color:#e0533f">${escapeHtml(weak[0])}</b> 발음 연습 추천`;
   else if(confusedPairs.length) rec=`${escapeHtml(confusedPairs[0])} 구별 연습 추천`;
   else if(slow.length) rec=`<b style="color:#E0A300">${escapeHtml(slow[0])}</b> 속도 훈련 추천`;
   else if(commLines.length) rec="다음엔 다른 표현 말고 타겟 블록으로 말해보기";
@@ -10440,7 +10447,7 @@ function bleDeepSummary(){
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("오늘 꺼낸 블록", [...new Set(practiced)].map(escapeHtml).join(", ")||"—", "var(--jade)")}
       ${commLines.length?row("의미는 통했지만 블록 못 씀", commLines.slice(0,3).map(escapeHtml).join("<br>"), "#189E79"):""}
-      ${row("약한 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#189E79")}
+      ${row("약한 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#e0533f")}
       ${confusedPairs.length?row("헷갈린 블록", [...new Set(confusedPairs)].slice(0,3).map(escapeHtml).join("<br>"), "#C06CC0"):""}
       ${row("느렸던 블록", [...new Set(slow)].map(escapeHtml).join(", ")||"—", "#E0A300")}
       ${row("새 상황 성공", newCtxLines.slice(0,4).map(escapeHtml).join(", ")||"—", "#19a06b")}
@@ -10482,7 +10489,7 @@ function bleOutputSummary(res){
   // 추천 다음 훈련
   let recBlock = weak[0] || (confused.length?null:slow[0]) || null;
   let rec;
-  if(weak.length) rec=`스피드런에서 <b style="color:#189E79">${escapeHtml(weak[0])}</b> 연습`;
+  if(weak.length) rec=`스피드런에서 <b style="color:#e0533f">${escapeHtml(weak[0])}</b> 연습`;
   else if(confused.length) rec=`<b style="color:#C06CC0">${escapeHtml([...new Set(confused)][0])}</b> 구별 연습`;
   else if(slow.length) rec=`스피드런에서 <b style="color:#E0A300">${escapeHtml(slow[0])}</b> 빠르게 말하기`;
   else rec="잘했어요! 스피드런으로 속도를 올려봐요";
@@ -10500,7 +10507,7 @@ function bleOutputSummary(res){
     <div style="text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:12px 0">
       ${row("잘 꺼낸 블록", [...new Set(wellDone)].map(escapeHtml).join(", ")||"—", "var(--jade)")}
       ${confused.length?row("헷갈린 블록", [...new Set(confused)].slice(0,3).map(escapeHtml).join("<br>"), "#C06CC0"):""}
-      ${row("다시 연습할 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#189E79")}
+      ${row("다시 연습할 블록", [...new Set(weak)].map(escapeHtml).join(", ")||"—", "#e0533f")}
       ${row("느렸던 블록", [...new Set(slow)].map(escapeHtml).join(", ")||"—", "#E0A300")}
     </div>
     <div style="background:linear-gradient(135deg,#ECF7F2,#DDF2E9);border:1px solid #C9EBDD;border-radius:14px;padding:12px 15px;margin-bottom:12px;text-align:left">
@@ -10525,7 +10532,7 @@ function bleOpenProficiency(){
   const statusOf=(st)=>{
     if(!st||!st.introducedAt) return {t:"소개 전", c:"#7FA396"};
     if(st.stage==="ready_for_real") return {t:"실전 준비 완료", c:"#19a06b"};
-    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함 — 더 연습", c:"#189E79"};
+    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함 — 더 연습", c:"#e0533f"};
     if((st.successCount||0)>0) return {t:"연습 중", c:"#189E79"};
     return {t:"소개 완료", c:"#C08763"};
   };
@@ -10586,7 +10593,7 @@ function bleOpenHub(){
   const statusOf=(b)=>{ const st=s[b.id];
     if(!st||!st.introducedAt) return {t:"소개 전", c:"#7FA396"};
     if(st.stage==="ready_for_real") return {t:"실전 준비", c:"#19a06b"};
-    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함", c:"#189E79"};
+    if((st.failCount||0)>=2&&(st.failCount||0)>=(st.successCount||0)) return {t:"약함", c:"#e0533f"};
     if((st.successCount||0)>0) return {t:"연습 중", c:"#189E79"};
     return {t:"소개 완료", c:"#C08763"};
   };
@@ -12001,7 +12008,7 @@ function ctScore(it, heard, meta){
              : grade==="hit"?`<span style="color:#2BBD94;font-weight:900">⚔️ 통과</span>`
              : `<span style="color:#f87171;font-weight:900">💥 다시</span>`;
     const pron=meta&&meta.pron;
-    const pronLine = pron ? `<br><span style="font-size:11.5px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#189E79'};font-weight:800">🔊 발음 ${pron.score}점 (정확도 ${pron.acc})</span>` : "";
+    const pronLine = pron ? `<br><span style="font-size:11.5px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점 (정확도 ${pron.acc})</span>` : "";
     stat.innerHTML=`${lbl} <span style="font-family:var(--serif);font-size:17px">${ctColorAnswer(it.en, heard)}</span><br><span style="font-size:11.5px;color:var(--muted)">${heard?`🎙️ 내가 말한 발음: "${escapeHtml(heard)}"`:"안 들렸어요"}</span>${pronLine}`;
   }
   const mic=$("#ctMic"); if(mic){ mic.disabled=true; mic.style.display="none"; }
@@ -12949,7 +12956,13 @@ function adPromptKo(it){
   const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
   const ko=String(ex.ko||"").trim();
   const hasSlot=!!String(ex.object||"").trim();
-  if(hasSlot || !b.meaningKo) return ko;
+  // ⚠️ 채점(adSlotWords)은 예문 영어에서 '블록에 없는 내용어'를 슬롯으로 요구한다.
+  //    그런데 여기서 한국어를 블록 일반 뜻으로 바꿔치면, 예를 들어 "물 얼마예요?"가
+  //    "얼마예요?"로 표시되면서 water 를 말해야 정답이 되는 불공정 문제가 된다.
+  //    → 슬롯 단어가 하나라도 필요하면 반드시 예문 자신의 한국어를 보여준다.
+  let needsSlot=true;
+  try{ needsSlot=adSlotWords(ex, b).length>0; }catch(e){}
+  if(hasSlot || needsSlot || !b.meaningKo) return ko;
   const mean=String(b.meaningKo).replace(/\s*[(（][^)）]*[)）]\s*/g," ").replace(/\s*\/\s*.*$/,"").trim();
   return mean || ko;
 }
@@ -13241,7 +13254,7 @@ function firstRunRender(){
       mic.classList.remove("live");
       clearTimeout(hintTimer);
       firstRunJudge(it, heard||"");
-    });
+    }, (it&&it.answer)||"");
   };
   const typeBtn=$("#frType");
   if(typeBtn) typeBtn.onclick=()=>{
@@ -13273,7 +13286,7 @@ function firstRunJudge(it, heard){
     try{ bleShowHintToast('💡 <b>'+escapeHtml(it.answer)+'</b>'); speakEn(it.answer); }catch(e){}
     if(mic){ mic.textContent="🎤 다시 말하기"; mic.classList.remove("live");
       mic.onclick=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; firstRun.t0=Date.now();
-        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }); }; }
+        micFillCb((hd)=>{ mic.classList.remove("live"); firstRunJudge(it, hd||""); }, (it&&it.answer)||""); }; }
   }
 }
 function firstRunDone(){
@@ -13426,7 +13439,7 @@ function dailyRoomJudge(it, heard, meta){
   const pass = keyHit || blockHit || dailyRoom.tries>=2 || h.length>=3;
   const stat=$("#drStat"); const mic=$("#drMic"); const staff=$("#drStaff");
   const pron=meta&&meta.pron;
-  const pronLine = pron ? `<br><span style="font-size:12px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#189E79'};font-weight:800">🔊 발음 ${pron.score}점</span>${heard?` <span style="color:#8A6F62;font-size:11.5px">· 내 발음: "${escapeHtml(heard)}"</span>`:""}` : "";
+  const pronLine = pron ? `<br><span style="font-size:12px;color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점</span>${heard?` <span style="color:#8A6F62;font-size:11.5px">· 내 발음: "${escapeHtml(heard)}"</span>`:""}` : "";
   // 발음 다시 하기 — 점수만 갱신, 진행은 그대로
   const reSay=()=>{ if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(mic){ mic.classList.add("live"); mic.textContent="🎙️ 듣는 중..."; } micFillCb((hd,m)=>{ if(mic) mic.classList.remove("live"); dailyRoom.tries--; dailyRoomJudge(it, hd||"", m); }, it.answer); };
   if(pass){
@@ -13673,9 +13686,9 @@ function autoDrillRenderDiscriminate(it){
       if(it._discAnswered) return; it._discAnswered=true;
       const ok=btn.getAttribute("data-id")===ansId;
       document.querySelectorAll(".auto-disc-opt").forEach(b=>{ b.style.pointerEvents="none"; if(b.getAttribute("data-id")===ansId) b.style.borderColor="#19a06b"; });
-      if(!ok) btn.style.borderColor="#189E79";
+      if(!ok) btn.style.borderColor="#e0533f";
       const stat=$("#autoStat");
-      if(stat) stat.innerHTML = ok ? `<b style="color:#19a06b">맞아요! 이제 빠르게 말해볼게요</b>` : `<b style="color:#189E79">아쉬워요</b> — 정답: <b>${escapeHtml(it.block.block)}</b>`;
+      if(stat) stat.innerHTML = ok ? `<b style="color:#19a06b">맞아요! 이제 빠르게 말해볼게요</b>` : `<b style="color:#e0533f">아쉬워요</b> — 정답: <b>${escapeHtml(it.block.block)}</b>`;
       try{ bleRecord(it.block.id, {result: ok?"PERFECT":"MISS", communicationSuccess:ok, targetBlockSuccess:ok, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), source:"auto_discriminate"}); }catch(e){}
       setTimeout(()=>{ it._discDone=true; it._discAnswered=false; autoDrillRender(false); }, ok?700:1500);
     };
@@ -13804,13 +13817,13 @@ function autoDrillFinish(heard, meta){
     autoDrillShowResult(it, true, false);
   }else{
     const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
-    if(stat) stat.innerHTML=`<b style="color:#189E79">아직 자동화 전</b><br>${why}`;
+    if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}`;
     autoDrillShowResult(it, true, false);
   }
   // 내가 말한 발음(인식 결과) + 발음 점수 표시
   const st2=$("#autoStat"); if(st2){
     const pron=meta&&meta.pron;
-    const pl=pron?` · <span style="color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#189E79'};font-weight:800">🔊 발음 ${pron.score}점</span>`:"";
+    const pl=pron?` · <span style="color:${pron.score>=80?'#19a06b':pron.score>=60?'#E0A300':'#e0533f'};font-weight:800">🔊 발음 ${pron.score}점</span>`:"";
     st2.innerHTML+=`<br><span style="font-size:11.5px;color:#8A6F62">${heard?`🎙️ 내가 말한 발음: "${escapeHtml(heard)}"`:"안 들렸어요"}${pl}</span>`;
   }
 }
@@ -15266,9 +15279,9 @@ async function endAndEvaluate(){
       questBump("survival");
       try{ rtBump("real"); }catch(e){}   // 📋 오늘 루틴: 실전회화
       goToSetup();
-      const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#2BBD94':v>=45?'#e6ad4a':'#189E79'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
+      const bar=(label,v)=>`<div style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="width:74px;font-size:12px;color:var(--muted)">${label}</span><span style="flex:1;height:8px;border-radius:99px;background:var(--mist);overflow:hidden"><span style="display:block;height:100%;width:${v}%;background:${v>=70?'#2BBD94':v>=45?'#e6ad4a':'#e0533f'}"></span></span><span style="width:30px;text-align:right;font-size:12px;font-weight:800;color:var(--text)">${v}</span></div>`;
       const plist=(Array.isArray(r.phrases)?r.phrases:[]).filter(p=>p&&p.en).map(p=>`• ${p.en}${p.ko?" — "+p.ko:""}`).join("\n");
-      const html=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${r.solved?"🟢 문제 해결 성공":"🔴 아직 미해결 — 다시 도전!"}</div><div style="font-size:40px;font-weight:900;color:${overall>=70?'#2BBD94':overall>=45?'#e6ad4a':'#189E79'}">${overall}</div><div style="font-size:11px;color:var(--muted)">실전 종합 점수</div></div>
+      const html=`<div style="text-align:center;margin-bottom:6px"><div style="font-size:13px;color:var(--muted)">${r.solved?"🟢 문제 해결 성공":"🔴 아직 미해결 — 다시 도전!"}</div><div style="font-size:40px;font-weight:900;color:${overall>=70?'#2BBD94':overall>=45?'#e6ad4a':'#e0533f'}">${overall}</div><div style="font-size:11px;color:var(--muted)">실전 종합 점수</div></div>
       ${bar("소통",com)}${bar("문제해결",ps)}${bar("자신감",conf)}${bar("회복력",rec)}
       ${r.ko?`<div style="font-size:13px;color:var(--text);margin-top:10px;line-height:1.6">${escapeHtml(r.ko)}</div>`:""}
       ${convoReportExtraHtml(nextRec)}
