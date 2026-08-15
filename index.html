@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.109";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.110";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7404,12 +7404,26 @@ async function micFillCb(rawCb, refText){
       if(raw.size<1000){ meta.noSound=true; cb("", meta); return; }
       // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수). WAV 실패시 원본 폴백 내장
       if(refText){
-        try{ const r=await pronouncePractice(refText, raw, am); meta.sttDoneAt=Date.now(); if(r.score!=null) meta.pron={score:r.score, acc:r.acc}; if(r.heard){ cb(r.heard, meta); return; } }catch(e){}
+        try{
+          const r=await pronouncePractice(refText, raw, am); meta.sttDoneAt=Date.now();
+          if(r.score!=null) meta.pron={score:r.score, acc:r.acc};
+          // ⚠️ 정답 문장을 참조로 주고 채점하면 Azure 가 그 문장을 그대로 인식 결과로 돌려주는 일이 있다.
+          //    한국어로 말해도 heard 에 정답이 담겨 전부 정답 처리되던 원인.
+          //    → 단어별 채점으로 '실제로 그 문장을 말했는지' 확인된 경우에만 인정한다.
+          if(r.heard && pronReallySaid(r)){ cb(r.heard, meta); return; }
+        }catch(e){}
       }
       // 2) 기존 /stt
       try{ const res=await sttRecognize(raw, am); const data=await res.json(); meta.sttDoneAt=Date.now(); const t=data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):""; if(t){ cb(t, meta); return; } }catch(e){}
       // 3) /stt 실패 → /pronounce 더미 참조로 텍스트라도 복구 (디코드 실패 기기도 원본 폴백)
-      try{ const r=await pronouncePractice(refText||"hello world", raw, am); meta.sttDoneAt=Date.now(); if(r.score!=null&&!meta.pron) meta.pron={score:r.score, acc:r.acc}; cb(r.heard||"", meta); return; }catch(e){}
+      // ⚠️ 여기서 refText 를 참조로 쓰면 또 정답이 그대로 돌아와 오답이 정답이 된다.
+      //    정답과 무관한 더미 문장으로만 텍스트를 복구하고, 더미가 메아리로 돌아오면 버린다.
+      try{
+        const dummy="hello world";
+        const r=await pronouncePractice(dummy, raw, am); meta.sttDoneAt=Date.now();
+        const h=String(r.heard||"").trim();
+        cb(pronSameText(h, dummy) ? "" : h, meta); return;
+      }catch(e){}
       cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
@@ -7440,6 +7454,24 @@ function pronExtract(data){
   // 단어별 발음 점수 (Azure Words) → 색칠용
   const words=(n&&Array.isArray(n.Words))?n.Words.map(w=>{ const wpa=w.PronunciationAssessment||w; return {w:String(w.Word||""), acc:(wpa&&wpa.AccuracyScore!=null)?Math.round(wpa.AccuracyScore):null, err:(wpa&&wpa.ErrorType)||""}; }):[];
   return {heard, pron, words};
+}
+function pronSameText(a,b){
+  const n=s=>String(s||"").toLowerCase().replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
+  return !!n(a) && n(a)===n(b);
+}
+/* 🔒 '참조 문장 메아리' 판별.
+   ReferenceText 를 주면 Azure 는 그 문장에 맞춰 정렬한 결과를 돌려주기 때문에,
+   엉뚱한 말(한국어 등)을 해도 heard 에 정답이 그대로 담겨 나올 수 있다.
+   실제로 말한 단어에는 점수가 잡히고, 안 말한 단어는 Omission 으로 표시되므로
+   그걸로 '정말 그 문장을 말했는지'를 검증한다. 근거가 없으면 자유형 인식으로 넘긴다. */
+function pronReallySaid(r){
+  const ws=(r&&r.words||[]).filter(w=>w&&w.w);
+  if(!ws.length) return false;                       // 단어별 근거 없음 → 믿지 않는다
+  const omitted=ws.filter(w=>/omission/i.test(w.err||"")).length;
+  if(omitted*2>=ws.length) return false;             // 절반 이상을 아예 말하지 않음
+  const voiced=ws.filter(w=>w.acc!=null && w.acc>=20).length;
+  if(voiced*2<ws.length) return false;               // 절반 이상이 사실상 발화되지 않음
+  return true;
 }
 // 마이크 실패 원인을 사람이 알아볼 메시지로 (기기별 진단)
 function micErrMsg(err){
