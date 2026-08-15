@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.110";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.111";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7402,25 +7402,24 @@ async function micFillCb(rawCb, refText){
       qzRecording=false; micStartCooldown();
       const raw=new Blob(qzChunks,{type:am});
       if(raw.size<1000){ meta.noSound=true; cb("", meta); return; }
-      // 1) 참조 텍스트 있으면 검증된 /pronounce 경로 (입력 + 발음 점수). WAV 실패시 원본 폴백 내장
-      if(refText){
-        try{
-          const r=await pronouncePractice(refText, raw, am); meta.sttDoneAt=Date.now();
-          if(r.score!=null) meta.pron={score:r.score, acc:r.acc};
-          // ⚠️ 정답 문장을 참조로 주고 채점하면 Azure 가 그 문장을 그대로 인식 결과로 돌려주는 일이 있다.
-          //    한국어로 말해도 heard 에 정답이 담겨 전부 정답 처리되던 원인.
-          //    → 단어별 채점으로 '실제로 그 문장을 말했는지' 확인된 경우에만 인정한다.
-          if(r.heard && pronReallySaid(r)){ cb(r.heard, meta); return; }
-        }catch(e){}
-      }
-      // 2) 기존 /stt
-      try{ const res=await sttRecognize(raw, am); const data=await res.json(); meta.sttDoneAt=Date.now(); const t=data.DisplayText? data.DisplayText.replace(/[.?!]$/,""):""; if(t){ cb(t, meta); return; } }catch(e){}
-      // 3) /stt 실패 → /pronounce 더미 참조로 텍스트라도 복구 (디코드 실패 기기도 원본 폴백)
-      // ⚠️ 여기서 refText 를 참조로 쓰면 또 정답이 그대로 돌아와 오답이 정답이 된다.
-      //    정답과 무관한 더미 문장으로만 텍스트를 복구하고, 더미가 메아리로 돌아오면 버린다.
+      /* 🔒 역할 분리 — 이걸 섞은 게 '아무 말이나 해도 정답' 사고의 원인이었다.
+         · 무엇을 말했는가(채점용 텍스트) → 반드시 자유형 /stt. 정답을 미리 알려주지 않는다.
+         · 얼마나 잘 발음했는가(점수)     → 정답을 참조로 준 /pronounce.
+         발음평가는 참조 문장에 맞춰 정렬한 결과를 돌려주므로, apple 자리에 bear 를 말해도
+         "apple"로 정렬돼 나온다. 그래서 그 텍스트는 채점에 절대 쓰면 안 된다.
+         두 요청은 동시에 보내 지연이 늘지 않게 한다. */
+      const sttP = sttRecognize(raw, am).then(r=>r.json()).catch(()=>null);
+      const pronP = refText ? pronouncePractice(refText, raw, am).catch(()=>null) : Promise.resolve(null);
+      const [sttData, pr] = await Promise.all([sttP, pronP]);
+      meta.sttDoneAt=Date.now();
+      if(pr && pr.score!=null) meta.pron={score:pr.score, acc:pr.acc, words:pr.words||[]};
+      let heard = (sttData && sttData.DisplayText) ? String(sttData.DisplayText).replace(/[.?!]+$/,"").trim() : "";
+      if(heard){ cb(heard, meta); return; }
+      // /stt 가 아무것도 못 돌려준 경우에만, 정답과 무관한 더미 참조로 텍스트를 복구한다.
+      // 더미는 정답과 상관없으므로 메아리가 나도 오답이 정답이 되지 않는다(메아리면 버린다).
       try{
         const dummy="hello world";
-        const r=await pronouncePractice(dummy, raw, am); meta.sttDoneAt=Date.now();
+        const r=await pronouncePractice(dummy, raw, am);
         const h=String(r.heard||"").trim();
         cb(pronSameText(h, dummy) ? "" : h, meta); return;
       }catch(e){}
@@ -7458,20 +7457,6 @@ function pronExtract(data){
 function pronSameText(a,b){
   const n=s=>String(s||"").toLowerCase().replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
   return !!n(a) && n(a)===n(b);
-}
-/* 🔒 '참조 문장 메아리' 판별.
-   ReferenceText 를 주면 Azure 는 그 문장에 맞춰 정렬한 결과를 돌려주기 때문에,
-   엉뚱한 말(한국어 등)을 해도 heard 에 정답이 그대로 담겨 나올 수 있다.
-   실제로 말한 단어에는 점수가 잡히고, 안 말한 단어는 Omission 으로 표시되므로
-   그걸로 '정말 그 문장을 말했는지'를 검증한다. 근거가 없으면 자유형 인식으로 넘긴다. */
-function pronReallySaid(r){
-  const ws=(r&&r.words||[]).filter(w=>w&&w.w);
-  if(!ws.length) return false;                       // 단어별 근거 없음 → 믿지 않는다
-  const omitted=ws.filter(w=>/omission/i.test(w.err||"")).length;
-  if(omitted*2>=ws.length) return false;             // 절반 이상을 아예 말하지 않음
-  const voiced=ws.filter(w=>w.acc!=null && w.acc>=20).length;
-  if(voiced*2<ws.length) return false;               // 절반 이상이 사실상 발화되지 않음
-  return true;
 }
 // 마이크 실패 원인을 사람이 알아볼 메시지로 (기기별 진단)
 function micErrMsg(err){
