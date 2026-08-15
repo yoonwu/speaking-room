@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.113";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.114";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13678,21 +13678,22 @@ function startAutoDrillRun(blocks, count){ try{ ttStart("drill"); }catch(e){}
    "I take / I'm taking / I took / I'll take" 차이를 몸으로 익히게 한다.
    마이크·STT·TTS·XP·훈련시간·적응난이도는 전부 기존 것을 그대로 쓴다. */
 const WRITE_SETS=[
+  /* ── 낮은 단계: 3~6단어. 같은 동사를 시제만 바꿔 연속으로 ── */
   {lv:1, items:[
     {ko:"나는 커피를 마셔.", en:"I drink coffee."},
     {ko:"나 지금 커피 마시고 있어.", en:"I'm drinking coffee."},
-    {ko:"나는 어제 커피 마셨어.", en:"I drank coffee yesterday."},
+    {ko:"나 어제 커피 마셨어.", en:"I drank coffee yesterday."},
   ]},
   {lv:1, items:[
     {ko:"나는 매일 아침 샤워해.", en:"I take a shower every morning.", alts:["I shower every morning."]},
     {ko:"나 지금 샤워하고 있어.", en:"I'm taking a shower.", alts:["I'm showering."]},
-    {ko:"나는 어제 샤워했어.", en:"I took a shower yesterday.", alts:["I showered yesterday."]},
-    {ko:"샤워할게.", en:"I'll take a shower.", alts:["I'm going to take a shower."]},
+    {ko:"나 어제 샤워했어.", en:"I took a shower yesterday.", alts:["I showered yesterday."]},
+    {ko:"나 샤워할게.", en:"I'll take a shower.", alts:["I'm going to take a shower."]},
   ]},
   {lv:1, items:[
     {ko:"그거 효과 있어?", en:"Does it help?"},
     {ko:"그거 효과 있었어?", en:"Did it help?"},
-    {ko:"도움이 될 거야.", en:"It'll help."},
+    {ko:"도움이 될 거야.", en:"It'll help.", alts:["It will help."]},
   ]},
   {lv:1, items:[
     {ko:"나는 매일 운동해.", en:"I exercise every day."},
@@ -13701,9 +13702,114 @@ const WRITE_SETS=[
   ]},
   {lv:1, items:[
     {ko:"나 집에 가고 있어.", en:"I'm going home."},
-    {ko:"나 집에 갈게.", en:"I'll go home.", alts:["I'm going to go home."]},
+    {ko:"나 집에 갈게.", en:"I'll go home."},
     {ko:"나 집에 갔어.", en:"I went home."},
   ]},
+  {lv:1, items:[
+    {ko:"나 아침 먹어.", en:"I eat breakfast."},
+    {ko:"나 지금 아침 먹고 있어.", en:"I'm eating breakfast."},
+    {ko:"나 아침 먹었어.", en:"I ate breakfast."},
+  ]},
+  {lv:1, items:[
+    {ko:"나는 영어 공부해.", en:"I study English."},
+    {ko:"나 지금 영어 공부하고 있어.", en:"I'm studying English."},
+    {ko:"나 어제 영어 공부했어.", en:"I studied English yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 지금 일하고 있어.", en:"I'm working now.", alts:["I'm working."]},
+    {ko:"나 어제 일했어.", en:"I worked yesterday."},
+    {ko:"나 내일 일할 거야.", en:"I'll work tomorrow.", alts:["I'm going to work tomorrow."]},
+  ]},
+  {lv:1, items:[
+    {ko:"나 지금 음악 듣고 있어.", en:"I'm listening to music."},
+    {ko:"나는 매일 음악 들어.", en:"I listen to music every day."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 지금 책 읽고 있어.", en:"I'm reading a book."},
+    {ko:"나 어제 책 읽었어.", en:"I read a book yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 지금 TV 보고 있어.", en:"I'm watching TV."},
+    {ko:"나 어제 TV 봤어.", en:"I watched TV yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 저녁 요리하고 있어.", en:"I'm cooking dinner."},
+    {ko:"내가 저녁 요리할게.", en:"I'll cook dinner.", alts:["I'm going to cook dinner."]},
+  ]},
+  {lv:1, items:[
+    {ko:"나 지금 버스 기다리고 있어.", en:"I'm waiting for the bus."},
+    {ko:"나 버스 기다렸어.", en:"I waited for the bus."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 학교에 걸어가.", en:"I walk to school."},
+    {ko:"나 지금 학교에 걸어가고 있어.", en:"I'm walking to school."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 손 씻을게.", en:"I'll wash my hands."},
+    {ko:"나 손 씻었어.", en:"I washed my hands."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 방 청소했어.", en:"I cleaned my room."},
+    {ko:"나 방 청소할게.", en:"I'll clean my room.", alts:["I'm going to clean my room."]},
+  ]},
+  {lv:1, items:[
+    {ko:"나중에 전화할게.", en:"I'll call you later.", alts:["I'm going to call you later."]},
+    {ko:"나 어제 너한테 전화했어.", en:"I called you yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 새 신발 샀어.", en:"I bought new shoes."},
+    {ko:"나 새 신발 살 거야.", en:"I'll buy new shoes.", alts:["I'm going to buy new shoes."]},
+  ]},
+  {lv:1, items:[
+    {ko:"나 이거 좋아해.", en:"I like this."},
+    {ko:"나 이거 안 좋아해.", en:"I don't like this."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 그거 알아.", en:"I know that."},
+    {ko:"나 몰라.", en:"I don't know."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 물 마시고 싶어.", en:"I want some water.", alts:["I want water."]},
+    {ko:"나 물 마시고 싶지 않아.", en:"I don't want any water.", alts:["I don't want water."]},
+  ]},
+  {lv:1, items:[
+    {ko:"나 시간 있어.", en:"I have time."},
+    {ko:"나 시간 없어.", en:"I don't have time."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 그거 할 수 있어.", en:"I can do that."},
+    {ko:"나 그거 못 해.", en:"I can't do that."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 배고파.", en:"I'm hungry."},
+    {ko:"나 배 안 고파.", en:"I'm not hungry."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 피곤해.", en:"I'm tired."},
+    {ko:"나 피곤하지 않아.", en:"I'm not tired."},
+  ]},
+  {lv:1, items:[
+    {ko:"화장실이 어디예요?", en:"Where is the bathroom?", alts:["Where's the bathroom?"]},
+    {ko:"역이 어디예요?", en:"Where is the station?", alts:["Where's the station?"]},
+  ]},
+  {lv:1, items:[
+    {ko:"이거 얼마예요?", en:"How much is this?"},
+    {ko:"저건 얼마예요?", en:"How much is that?"},
+  ]},
+  {lv:1, items:[
+    {ko:"도와주실 수 있어요?", en:"Can you help me?"},
+    {ko:"제가 도와드릴까요?", en:"Can I help you?"},
+  ]},
+  {lv:1, items:[
+    {ko:"물 좀 주세요.", en:"Can I have some water?", alts:["Can I get some water?"]},
+    {ko:"메뉴판 좀 주세요.", en:"Can I have the menu?", alts:["Can I get the menu?"]},
+  ]},
+  {lv:1, items:[
+    {ko:"저 커피로 할게요.", en:"I'll have a coffee.", alts:["I'd like a coffee."]},
+    {ko:"저 차로 할게요.", en:"I'll have a tea.", alts:["I'd like a tea."]},
+  ]},
+
+  /* ── 중간 단계: 6~10단어 ── */
   {lv:2, items:[
     {ko:"나는 보통 자기 전에 샤워해.", en:"I usually take a shower before bed."},
     {ko:"나는 자기 전에 샤워했어.", en:"I took a shower before bed."},
@@ -13717,16 +13823,74 @@ const WRITE_SETS=[
     {ko:"총액은 23달러 50센트예요.", en:"The total comes to twenty-three dollars and fifty cents.", alts:["The total is twenty-three dollars and fifty cents."]},
   ]},
   {lv:2, items:[
-    {ko:"이거 얼마예요?", en:"How much is this?"},
-    {ko:"전부 얼마예요?", en:"How much is it all?", alts:["How much is everything?"]},
+    {ko:"나 지금 나가야 해.", en:"I have to go now.", alts:["I need to go now."]},
+    {ko:"나 지금 안 나가도 돼.", en:"I don't have to go now."},
   ]},
+  {lv:2, items:[
+    {ko:"나 영어를 더 연습하고 싶어.", en:"I want to practice English more."},
+    {ko:"나 영어를 더 연습해야 해.", en:"I have to practice English more.", alts:["I need to practice English more."]},
+  ]},
+  {lv:2, items:[
+    {ko:"나 내일 친구 만날 거야.", en:"I'm going to meet my friend tomorrow.", alts:["I'll meet my friend tomorrow."]},
+    {ko:"나 어제 친구 만났어.", en:"I met my friend yesterday."},
+  ]},
+  {lv:2, items:[
+    {ko:"창문 좀 열어 주시겠어요?", en:"Could you open the window?", alts:["Can you open the window?"]},
+    {ko:"천천히 말해 주시겠어요?", en:"Could you speak slowly?", alts:["Can you speak slowly?"]},
+  ]},
+  {lv:2, items:[
+    {ko:"뭐 마실래?", en:"What would you like to drink?", alts:["What do you want to drink?"]},
+    {ko:"뭐 먹을래?", en:"What would you like to eat?", alts:["What do you want to eat?"]},
+  ]},
+  {lv:2, items:[
+    {ko:"나는 그게 좋은 생각이라고 생각해.", en:"I think that's a good idea."},
+    {ko:"나는 그게 좋은 생각이 아니라고 생각해.", en:"I don't think that's a good idea."},
+  ]},
+  {lv:2, items:[
+    {ko:"나 피곤해서 일찍 잤어.", en:"I went to bed early because I was tired."},
+    {ko:"나 바빠서 못 갔어.", en:"I couldn't go because I was busy."},
+  ]},
+  {lv:2, items:[
+    {ko:"이 근처에 카페 있어요?", en:"Is there a cafe near here?"},
+    {ko:"이 근처에 약국 있어요?", en:"Is there a pharmacy near here?"},
+  ]},
+  {lv:2, items:[
+    {ko:"공항까지 얼마나 걸려요?", en:"How long does it take to the airport?"},
+    {ko:"거기까지 얼마나 걸렸어요?", en:"How long did it take to get there?"},
+  ]},
+  {lv:2, items:[
+    {ko:"이거 다른 색으로 있어요?", en:"Do you have this in another color?"},
+    {ko:"이거 더 큰 사이즈로 있어요?", en:"Do you have this in a bigger size?"},
+  ]},
+  {lv:2, items:[
+    {ko:"나 지금 가는 중이야, 곧 도착해.", en:"I'm on my way, I'll be there soon."},
+    {ko:"나 조금 늦을 것 같아.", en:"I think I'll be a little late."},
+  ]},
+
+  /* ── 높은 단계: if / have p.p. / should have ── */
   {lv:3, items:[
     {ko:"비 오면 집에 있을게.", en:"If it rains, I'll stay home.", alts:["I'll stay home if it rains."]},
     {ko:"시간 있으면 도와줄게.", en:"If I have time, I'll help you.", alts:["I'll help you if I have time."]},
   ]},
   {lv:3, items:[
     {ko:"나 그거 전에 해본 적 있어.", en:"I've done that before.", alts:["I have done that before."]},
+    {ko:"나 그거 해본 적 없어.", en:"I've never done that.", alts:["I have never done that."]},
+  ]},
+  {lv:3, items:[
     {ko:"나 아직 안 먹었어.", en:"I haven't eaten yet.", alts:["I have not eaten yet."]},
+    {ko:"나 벌써 먹었어.", en:"I've already eaten.", alts:["I have already eaten."]},
+  ]},
+  {lv:3, items:[
+    {ko:"내가 더 일찍 물어봤어야 했는데.", en:"I should have asked earlier."},
+    {ko:"내가 너한테 말했어야 했는데.", en:"I should have told you."},
+  ]},
+  {lv:3, items:[
+    {ko:"어렸을 때 나는 부산에 살았어.", en:"When I was young, I lived in Busan.", alts:["I lived in Busan when I was young."]},
+    {ko:"학생이었을 때 나는 매일 걸어 다녔어.", en:"When I was a student, I walked every day.", alts:["I walked every day when I was a student."]},
+  ]},
+  {lv:3, items:[
+    {ko:"준비되면 알려줘.", en:"Let me know when you're ready."},
+    {ko:"도착하면 알려줘.", en:"Let me know when you get there."},
   ]},
 ];
 let wrRun=null;
@@ -13758,6 +13922,9 @@ function wrNorm(s){
 }
 // 관사·부사처럼 있으나 없으나 뜻이 같은 말은 빼고 핵심어만 비교
 const WR_SKIP=new Set(["a","an","the","now","just","really","very","then","please"]);
+// 부정어는 뜻을 뒤집으므로 절대 무시하지 않는다
+const WR_NEG=/^(not|never|no|none|nothing|nobody|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|can't|cannot|won't|shouldn't|wouldn't|couldn't|haven't|hasn't|hadn't)$/;
+function wrNegN(ws){ return (ws||[]).filter(w=>WR_NEG.test(w)).length; }
 function wrKey(s){ return wrNorm(s).split(" ").filter(w=>w&&!WR_SKIP.has(w)); }
 /* 채점: 완전일치만 정답으로 치지 않는다.
    어순이 달라도(Every morning I take a shower) 핵심어가 같으면 정답. */
@@ -13766,9 +13933,13 @@ function wrGrade(item, heard){
   if(!h) return {ok:false, near:false};
   const cands=[item.en].concat(item.alts||[]);
   for(const c of cands){ if(wrNorm(c)===h) return {ok:true, near:false}; }
+  const gotAll=wrKey(h);
   for(const c of cands){
-    const want=wrKey(c), got=wrKey(h);
+    const want=wrKey(c), got=gotAll;
     if(!want.length) continue;
+    // 부정이 붙고 안 붙고는 뜻이 정반대다. "I like this" 와 "I don't like this" 를
+    // 같은 답으로 통과시키면 안 된다(핵심어만 보면 둘 다 통과해 버린다).
+    if(wrNegN(want)!==wrNegN(got)) continue;
     const gset=new Set(got);
     const hit=want.filter(w=>gset.has(w)).length;
     // 핵심어를 전부 말했고 군더더기가 과하지 않으면 정답 (어순 무관)
@@ -13795,6 +13966,9 @@ function wrTip(en, heard){
   if(/\bi will\b|\bi'll\b/.test(e) && !/\bi'll\b|\bwill\b|\bgoing to\b/.test(h)) return "앞으로 할 일 → I'll + 동사원형";
   if(/\byesterday\b/.test(e) && !/(ed|took|went|drank|ate|did|was|were)\b/.test(h)) return "어제 한 일 → 과거형으로";
   if(/\bif\b/.test(e) && /\bwill\b/.test(h.split(/\bif\b/)[1]||"")) return "if 뒤에는 현재형 (If it rains, I'll ...)";
+  const wantN=wrNegN(wrKey(en)), gotN=wrNegN(wrKey(h));
+  if(wantN>gotN) return "부정문이에요 — not / don't 를 넣어야 해요";
+  if(gotN>wantN) return "여기선 부정이 아니에요 — not / don't 를 빼세요";
   const want=wrKey(en), got=new Set(wrKey(h));
   const miss=want.filter(w=>!got.has(w));
   if(miss.length===1) return `빠진 말: ${miss[0]}`;
