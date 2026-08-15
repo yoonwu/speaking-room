@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.112";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.113";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -11613,6 +11613,11 @@ function openSpeakHub(){
        <span class="hub-tx"><b>영어로 꺼내기</b><i>상황을 보고 배운 블록으로 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
+     <button class="hub-opt" data-go="write">
+       <span class="hub-emo">✍️</span>
+       <span class="hub-tx"><b>문장 만들기</b><i>한국어를 보고 3초 안에 영어로 말해보세요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="sprint">
        <span class="hub-emo">⚡</span>
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
@@ -11622,7 +11627,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -13667,6 +13672,309 @@ function startAutoDrillRun(blocks, count){ try{ ttStart("drill"); }catch(e){}
   $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
   autoDrillRender();
 }
+/* ===== ✍️ 문장 만들기 — 한국어를 보고 3초 안에 영어로 =====
+   문법 문제가 아니다. 뜻을 보고 아는 영어를 바로 꺼내게 하는 훈련.
+   한 세트는 같은 구조를 시간·상황만 바꿔 연속으로 내서(대비 문제)
+   "I take / I'm taking / I took / I'll take" 차이를 몸으로 익히게 한다.
+   마이크·STT·TTS·XP·훈련시간·적응난이도는 전부 기존 것을 그대로 쓴다. */
+const WRITE_SETS=[
+  {lv:1, items:[
+    {ko:"나는 커피를 마셔.", en:"I drink coffee."},
+    {ko:"나 지금 커피 마시고 있어.", en:"I'm drinking coffee."},
+    {ko:"나는 어제 커피 마셨어.", en:"I drank coffee yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나는 매일 아침 샤워해.", en:"I take a shower every morning.", alts:["I shower every morning."]},
+    {ko:"나 지금 샤워하고 있어.", en:"I'm taking a shower.", alts:["I'm showering."]},
+    {ko:"나는 어제 샤워했어.", en:"I took a shower yesterday.", alts:["I showered yesterday."]},
+    {ko:"샤워할게.", en:"I'll take a shower.", alts:["I'm going to take a shower."]},
+  ]},
+  {lv:1, items:[
+    {ko:"그거 효과 있어?", en:"Does it help?"},
+    {ko:"그거 효과 있었어?", en:"Did it help?"},
+    {ko:"도움이 될 거야.", en:"It'll help."},
+  ]},
+  {lv:1, items:[
+    {ko:"나는 매일 운동해.", en:"I exercise every day."},
+    {ko:"나 지금 운동하고 있어.", en:"I'm exercising now.", alts:["I'm exercising."]},
+    {ko:"나 어제 운동했어.", en:"I exercised yesterday."},
+  ]},
+  {lv:1, items:[
+    {ko:"나 집에 가고 있어.", en:"I'm going home."},
+    {ko:"나 집에 갈게.", en:"I'll go home.", alts:["I'm going to go home."]},
+    {ko:"나 집에 갔어.", en:"I went home."},
+  ]},
+  {lv:2, items:[
+    {ko:"나는 보통 자기 전에 샤워해.", en:"I usually take a shower before bed."},
+    {ko:"나는 자기 전에 샤워했어.", en:"I took a shower before bed."},
+  ]},
+  {lv:2, items:[
+    {ko:"그럼 운전하지 않는 게 좋겠어.", en:"Then you'd better not drive.", alts:["You'd better not drive then.","You had better not drive then."]},
+    {ko:"택시 타는 게 좋겠어.", en:"You'd better take a taxi.", alts:["You had better take a taxi."]},
+  ]},
+  {lv:2, items:[
+    {ko:"총액은 30달러예요.", en:"The total comes to thirty dollars.", alts:["The total is thirty dollars."]},
+    {ko:"총액은 23달러 50센트예요.", en:"The total comes to twenty-three dollars and fifty cents.", alts:["The total is twenty-three dollars and fifty cents."]},
+  ]},
+  {lv:2, items:[
+    {ko:"이거 얼마예요?", en:"How much is this?"},
+    {ko:"전부 얼마예요?", en:"How much is it all?", alts:["How much is everything?"]},
+  ]},
+  {lv:3, items:[
+    {ko:"비 오면 집에 있을게.", en:"If it rains, I'll stay home.", alts:["I'll stay home if it rains."]},
+    {ko:"시간 있으면 도와줄게.", en:"If I have time, I'll help you.", alts:["I'll help you if I have time."]},
+  ]},
+  {lv:3, items:[
+    {ko:"나 그거 전에 해본 적 있어.", en:"I've done that before.", alts:["I have done that before."]},
+    {ko:"나 아직 안 먹었어.", en:"I haven't eaten yet.", alts:["I have not eaten yet."]},
+  ]},
+];
+let wrRun=null;
+// 난이도: 계속 틀리는데 길이를 늘리지 않는다 — 기존 speakLevel 을 그대로 쓴다
+function wrBand(){
+  let lv=1; try{ lv=getAutoLevels().speakLevel||1; }catch(e){}
+  return lv>=30 ? 3 : lv>=14 ? 2 : 1;
+}
+// 대비 세트를 통째로 뽑아 순서를 유지한다 (같은 구조를 연속으로 내는 게 핵심)
+function wrBuildItems(count){
+  const band=wrBand();
+  const pool=WRITE_SETS.filter(s=>s.lv<=band);
+  const use=(pool.length?pool:WRITE_SETS).slice();
+  for(let i=use.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=use[i]; use[i]=use[j]; use[j]=t; }
+  const out=[];
+  for(const s of use){
+    for(const it of s.items){ out.push({...it, alts:it.alts||[]}); if(out.length>=count) break; }
+    if(out.length>=count) break;
+  }
+  return out.slice(0, count);
+}
+function wrNorm(s){
+  return String(s||"").toLowerCase()
+    .replace(/[’']/g,"'")
+    .replace(/\bi am\b/g,"i'm").replace(/\bwill not\b/g,"won't").replace(/\bcannot\b/g,"can't")
+    .replace(/\b(\w+) not\b/g,(m,a)=>({"do":"don't","does":"doesn't","did":"didn't","is":"isn't","are":"aren't","had":"hadn't","have":"haven't","should":"shouldn't","would":"wouldn't","could":"couldn't"}[a]||m))
+    .replace(/\bi will\b/g,"i'll").replace(/\byou had\b/g,"you'd").replace(/\bi have\b/g,"i've")
+    .replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
+}
+// 관사·부사처럼 있으나 없으나 뜻이 같은 말은 빼고 핵심어만 비교
+const WR_SKIP=new Set(["a","an","the","now","just","really","very","then","please"]);
+function wrKey(s){ return wrNorm(s).split(" ").filter(w=>w&&!WR_SKIP.has(w)); }
+/* 채점: 완전일치만 정답으로 치지 않는다.
+   어순이 달라도(Every morning I take a shower) 핵심어가 같으면 정답. */
+function wrGrade(item, heard){
+  const h=wrNorm(heard);
+  if(!h) return {ok:false, near:false};
+  const cands=[item.en].concat(item.alts||[]);
+  for(const c of cands){ if(wrNorm(c)===h) return {ok:true, near:false}; }
+  for(const c of cands){
+    const want=wrKey(c), got=wrKey(h);
+    if(!want.length) continue;
+    const gset=new Set(got);
+    const hit=want.filter(w=>gset.has(w)).length;
+    // 핵심어를 전부 말했고 군더더기가 과하지 않으면 정답 (어순 무관)
+    if(hit===want.length && got.length<=want.length+3) return {ok:true, near:false};
+    // 절반 이상 맞으면 'AI에게 물어볼 만한' 후보
+    if(hit*2>=want.length) return {ok:false, near:true};
+  }
+  return {ok:false, near:false};
+}
+/* 한 줄 피드백 — 문법 강의 금지. 틀린 부분 → 올바른 형태 → 이유 한 줄까지만. */
+function wrTip(en, heard){
+  const h=wrNorm(heard), e=wrNorm(en);
+  if(!h) return "";
+  if(/\bi (taking|going|doing|making|eating|drinking|exercising|showering)\b/.test(h) && /\bi'm\b/.test(e))
+    return "지금 ~하는 중 → am/is/are + -ing";
+  // does/do/did 뒤에 3인칭 s 를 붙인 경우 — 모범답안의 원형과 대조해서만 판단(오탐 방지)
+  if(/\b(does|do|did)\b/.test(h)){
+    const wantW=wrKey(en), gotW=wrKey(h);
+    const base=wantW.find(w=>gotW.indexOf(w)<0 && (gotW.indexOf(w+"s")>=0 || gotW.indexOf(w+"es")>=0));
+    if(base) return "does/do/did 뒤의 동사는 원형 → "+base;
+  }
+  if(/\btake shower\b|\bhave shower\b/.test(h) && /\ba shower\b/.test(e)) return "take a shower처럼 shower 앞에 a가 필요해요";
+  if(/\byou better\b/.test(h) && /\byou'd better\b/.test(e)) return "~하는 게 좋겠다 → you'd better";
+  if(/\bi will\b|\bi'll\b/.test(e) && !/\bi'll\b|\bwill\b|\bgoing to\b/.test(h)) return "앞으로 할 일 → I'll + 동사원형";
+  if(/\byesterday\b/.test(e) && !/(ed|took|went|drank|ate|did|was|were)\b/.test(h)) return "어제 한 일 → 과거형으로";
+  if(/\bif\b/.test(e) && /\bwill\b/.test(h.split(/\bif\b/)[1]||"")) return "if 뒤에는 현재형 (If it rains, I'll ...)";
+  const want=wrKey(en), got=new Set(wrKey(h));
+  const miss=want.filter(w=>!got.has(w));
+  if(miss.length===1) return `빠진 말: ${miss[0]}`;
+  return "";
+}
+// AI 확인은 '맞을 수도 있는' 답에만. 매 문제 호출하면 느려진다.
+async function wrAiCheck(item, heard){
+  try{
+    const sys='You judge if a Korean learner\'s English sentence means the same as the model and is natural, correct English. Return ONLY JSON: {"ok":true|false,"tip":"한국어로 한 줄 이유(20자 이내), ok면 빈 문자열"}';
+    const msg=`Korean meaning: ${item.ko}\nModel: ${item.en}\nLearner said: ${heard}`;
+    const d=await callClaude(sys,[{role:"user",content:msg}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(o && typeof o.ok==="boolean") return o;
+  }catch(e){}
+  return null;
+}
+function startWriting(){
+  try{ ttStart("speak"); }catch(e){}
+  wrRun={items:wrBuildItems(5), idx:0, results:[], t0:0, phase:"ask"};
+  try{ xpSessionStart(); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint");
+  try{ updateLevelBadges(); }catch(e){}
+  $("#ctxBar").style.display="none";
+  wrRender();
+}
+function wrRender(){
+  if(!wrRun) return;
+  const it=wrRun.items[wrRun.idx];
+  if(!it) return wrDone();
+  wrRun.phase="ask"; wrRun.t0=Date.now();
+  const prog=Math.round(wrRun.idx/wrRun.items.length*100);
+  const ss=$("#sprintScroll"); ss.style.background="#EAE3DD";
+  ss.innerHTML=`<div class="auto-card">
+    <div class="auto-top">
+      <button class="auto-exit" id="wrExit">‹ 끝내기</button>
+      <div class="auto-prog"><i style="width:${prog}%"></i></div>
+      <div class="auto-count">${wrRun.idx+1}/${wrRun.items.length}</div>
+    </div>
+    <div class="auto-kicker">SENTENCE BUILDER</div>
+    <div class="auto-block">✍️ 영어로 말해보세요</div>
+    <div class="auto-ko">${escapeHtml(it.ko)}</div>
+    <div class="auto-stat" id="wrStat">3초 안에 떠오르는 대로 — 짧아도 돼요.</div>
+    <div class="auto-actions">
+      <div class="auto-row">
+        <button class="auto-mic" id="wrMic">🎤 터치해서 말하기</button>
+        <button class="auto-sub" id="wrType">⌨️ 입력</button>
+      </div>
+    </div>
+    <input id="wrInput" class="auto-input" autocomplete="off" placeholder="영어로 입력 후 Enter">
+  </div>`;
+  ss.scrollTop=0;
+  $("#wrExit").onclick=()=>wrDone();
+  $("#wrMic").onclick=function(){
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+    this.classList.add("live"); $("#wrStat").textContent="듣고 있어요…";
+    micFillCb((t,meta)=>{ this.classList.remove("live"); wrSubmit(t||"", meta||{}); }, it.en);
+  };
+  $("#wrType").onclick=()=>{ const i=$("#wrInput"); i.style.display="block"; i.focus(); };
+  $("#wrInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){ e.preventDefault(); const v=e.target.value.trim(); if(v){ e.target.disabled=true; wrSubmit(v,{typed:true}); } }
+  });
+}
+async function wrSubmit(heard, meta){
+  if(!wrRun || wrRun.phase!=="ask") return;
+  wrRun.phase="grade";
+  const it=wrRun.items[wrRun.idx];
+  const stat=$("#wrStat"); if(stat) stat.textContent="확인 중…";
+  let g=wrGrade(it, heard);
+  // 다른 표현이지만 맞을 수 있는 경우에만 AI 확인 (속도 보호)
+  if(!g.ok && g.near && heard){
+    const ai=await wrAiCheck(it, heard);
+    if(ai && ai.ok) g={ok:true, near:false, ai:true};
+    else if(ai && ai.tip) g.aiTip=ai.tip;
+  }
+  wrRun.results.push({ko:it.ko, en:it.en, heard, ok:g.ok});
+  try{ autoLvlRecord("speak", g.ok?"ok":"miss"); }catch(e){}
+  if(g.ok){
+    try{ awardXP("output", 12, "문장 만들기 ✅", "wr:"+wrRun.idx+":"+DAYN()); }catch(e){}
+    try{ bumpCount("talk"); }catch(e){}
+  }
+  // 맞든 틀리든 기존 학습 원장에 기록 → 복습 큐·약점 목록이 그대로 이 훈련을 반영한다
+  try{
+    ledgerRecordExpressionEvent({
+      label: it.en, source:"output_training", context:"문장 만들기",
+      communicationSuccess: !!g.ok, fail: !g.ok,
+      userAnswer: heard||"", suggestedAnswer: it.en,
+      startDelayMs: (meta&&meta.speechStartAt&&wrRun.t0)?Math.max(0, meta.speechStartAt-wrRun.t0):null
+    });
+  }catch(e){}
+  wrShowResult(it, heard, g);
+}
+function wrShowResult(it, heard, g){
+  const ss=$("#sprintScroll"); if(!ss) return;
+  const tip = g.ok ? "" : (g.aiTip || wrTip(it.en, heard));
+  const heardLine = heard
+    ? `<div style="font-size:12.5px;color:#8A6F62;margin-top:6px">🎙️ 내가 말한 것: "${escapeHtml(heard)}"</div>`
+    : `<div style="font-size:12.5px;color:#8A6F62;margin-top:6px">🔇 안 들렸어요</div>`;
+  const card=ss.querySelector(".auto-card"); if(!card) return;
+  const acts=card.querySelector(".auto-actions"); if(acts) acts.style.display="none";
+  const inp=card.querySelector("#wrInput"); if(inp) inp.style.display="none";
+  const stat=card.querySelector("#wrStat");
+  if(stat){
+    stat.innerHTML = g.ok
+      ? `<b style="color:#19a06b">좋아요! 바로 나왔어요 ✅</b>${g.ai?` <span style="font-size:11.5px;color:#8A6F62">(다른 표현도 정답)</span>`:""}${heardLine}`
+      : `<b style="color:#e0533f">다시 한 번</b>${tip?`<br><span style="font-size:12.5px;color:#8A6F62">${escapeHtml(tip)}</span>`:""}${heardLine}`;
+  }
+  let ans=card.querySelector("#wrAnswer");
+  if(!ans){ ans=document.createElement("div"); ans.id="wrAnswer"; card.appendChild(ans); }
+  ans.style.cssText="margin-top:12px;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:14px";
+  ans.innerHTML=`<div style="font-size:11px;color:#7FA396;font-weight:900;margin-bottom:5px">모범답안</div>
+    <b style="font-size:19px;color:#2F241F;line-height:1.35">${escapeHtml(it.en)}</b>
+    ${studyPanelHtml(it.en, it.ko, "wr")}`;
+  try{ bindStudyPanel(ans.querySelector(".study-panel")); }catch(e){}
+  try{ speakEn(it.en); }catch(e){}   // 모범답안은 항상 한 번 들려준다
+  let foot=card.querySelector("#wrFoot");
+  if(!foot){ foot=document.createElement("div"); foot.id="wrFoot"; card.appendChild(foot); }
+  foot.style.cssText="margin-top:12px";
+  const last=(wrRun.idx>=wrRun.items.length-1);
+  if(g.ok){
+    // 맞았으면 바로 다음 (정답을 본 것으로 끝내도 되는 유일한 경우)
+    foot.innerHTML=`<button class="auto-mic" id="wrNext" style="width:100%">${last?"결과 보기 →":"다음 →"}</button>`;
+    card.querySelector("#wrNext").onclick=()=>wrNext();
+  } else {
+    // 틀렸으면 정답을 '한 번 말하고' 넘어간다 — 보고 끝내지 않는다
+    foot.innerHTML=`<button class="auto-mic" id="wrEcho" style="width:100%">🎤 한 번 말하고 넘어가기</button>
+      <div id="wrEchoStat" style="text-align:center;font-size:12px;color:#8A6F62;margin-top:7px">모범답안을 소리 내어 말해보세요</div>
+      <button class="auto-sub" id="wrSkip" style="width:100%;margin-top:8px">건너뛰기</button>`;
+    card.querySelector("#wrSkip").onclick=()=>wrNext();
+    card.querySelector("#wrEcho").onclick=function(){
+      if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+      this.classList.add("live");
+      const es=card.querySelector("#wrEchoStat"); if(es) es.textContent="듣고 있어요…";
+      micFillCb((t)=>{
+        this.classList.remove("live");
+        // 완벽한 발음까지 요구하지 않는다 — 대충 그 문장을 말했으면 통과
+        const said=wrGrade(it, t||"");
+        const okEcho = said.ok || said.near;
+        if(es) es.textContent = okEcho ? "좋아요! 넘어갈게요 👍" : "조금 달라요 — 그래도 넘어갈게요";
+        setTimeout(()=>wrNext(), okEcho?450:900);
+      }, it.en);
+    };
+  }
+}
+function wrNext(){
+  if(!wrRun) return;
+  wrRun.idx++;
+  if(wrRun.idx>=wrRun.items.length) return wrDone();
+  wrRender();
+}
+function wrDone(){
+  if(!wrRun){ goToSetup(); return; }
+  try{ rtBump("speak"); }catch(e){}
+  const res=wrRun.results, total=wrRun.items.length;
+  const ok=res.filter(r=>r.ok).length;
+  const miss=res.filter(r=>!r.ok);
+  if(ok>=total && total>0){ try{ awardXP("output", 20, "문장 만들기 완주 🏆", "wrset:"+DAYN()); }catch(e){} }
+  const ss=$("#sprintScroll"); ss.style.background="";
+  ss.innerHTML=`<div class="auto-done">
+    <div class="auto-kicker">SENTENCE BUILDER</div>
+    <div style="font-size:22px;font-weight:950;color:#2F241F;text-align:center;margin:10px 0 4px">문장 만들기 완료</div>
+    <div style="font-size:40px;font-weight:950;color:#189E79;text-align:center;line-height:1.1">${ok} / ${total}</div>
+    <div style="font-size:13.5px;color:#8A6F62;text-align:center;line-height:1.8;margin-top:12px">
+      바로 나온 문장 <b style="color:#19a06b">${ok}</b><br>
+      다시 연습할 문장 <b style="color:${miss.length?"#e0533f":"#8A6F62"}">${miss.length}</b>
+    </div>
+    ${miss.length?`<div style="margin-top:14px;background:#fff;border:1px solid #C7E8DA;border-radius:14px;padding:12px 13px">
+      ${miss.map(m=>`<div style="margin-bottom:7px"><div style="font-size:12px;color:#8A6F62">${escapeHtml(m.ko)}</div><b style="font-size:14.5px;color:#2F241F">${escapeHtml(m.en)}</b></div>`).join("")}
+    </div>`:""}
+    <button class="auto-mic" id="wrAgain" style="width:100%;margin-top:16px">🔁 한 세트 더</button>
+    <button class="auto-sub" id="wrHome" style="width:100%;margin-top:9px">홈으로</button>
+  </div>`;
+  try{ xpSessionFlush(); }catch(e){}
+  wrRun=null;
+  $("#wrAgain").onclick=()=>startWriting();
+  $("#wrHome").onclick=()=>goToSetup();
+}
+
 // ===== 📚 답 화면 공용 학습 패널 — 단어 클릭(뜻+단어장) · 강세·발음 · AI 질문 =====
 function studyPanelHtml(en, ko, id){
   id=id||"sp";
