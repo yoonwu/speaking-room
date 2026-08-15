@@ -2130,14 +2130,15 @@ function syncSummary(){
     let blocks=0; try{ blocks=getLearnedBlocks().length; }catch(e){}
     let lvl=1; try{ lvl=profSkillStats().overallLevel; }catch(e){}
     let week=0; try{ week=xpWeek(); }catch(e){}
-    let mins=0, cats={}, allMins=0;
+    let mins=0, cats={}, allMins=0, allCats={};
     try{
       try{ ttFlush(); }catch(e2){}
       const w=ttSum(7); mins=ttMin(ttTotalOf(w));
       Object.keys(w).forEach(c=>{ const m=ttMin(w[c]); if(m>0) cats[c]=m; });
-      allMins=ttMin(ttTotalOf(ttSum(0)));
+      const a=ttSum(0); allMins=ttMin(ttTotalOf(a));
+      Object.keys(a).forEach(c=>{ const m=ttMin(a[c]); if(m>0) allCats[c]=m; });
     }catch(e){}
-    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak, week, blocks, lvl, mins, allMins, cats};
+    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak, week, blocks, lvl, mins, allMins, cats, allCats};
   }catch(e){ return null; }
 }
 // 🔎 연동이 안 될 때 어디서 막혔는지 정확히 알려준다 (워커 버전 → 저장소 → 실제 저장)
@@ -2269,11 +2270,13 @@ function ttFmt(sec){
    여러 판을 두는 이유: 한 판만 있으면 오래 한 사람이 늘 1등이라
    늦게 시작한 아이가 따라잡을 곳이 없어짐. 주간판은 매주 리셋. */
 const RANK_BOARDS=[
-  {k:"week",   emo:"🔥", t:"이번 주",   unit:"XP",  sub:"최근 7일 동안 모은 XP — 매주 새로 시작해요"},
-  {k:"streak", emo:"📅", t:"연속 학습", unit:"일",  sub:"하루도 빠지지 않고 이어온 날"},
-  {k:"blocks", emo:"🧱", t:"배운 블록", unit:"개",  sub:"입에 붙인 영어 블록 개수"},
-  {k:"lvl",    emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"},
-  {k:"mins",   emo:"⏱", t:"훈련 시간", unit:"분",  sub:"이번 주 실제로 훈련한 시간 — 켜두기만 하면 안 쌓여요", detail:true}
+  {k:"week",    emo:"🔥", t:"이번 주",   unit:"XP",  sub:"최근 7일 동안 모은 XP — 매주 새로 시작해요"},
+  {k:"xp",      emo:"💎", t:"누적 XP",   unit:"XP",  sub:"시작한 날부터 지금까지 모은 전체 XP — 줄어들지 않아요"},
+  {k:"mins",    emo:"⏱", t:"훈련 시간", unit:"분",  sub:"이번 주 실제로 훈련한 시간 — 켜두기만 하면 안 쌓여요", detail:true},
+  {k:"allMins", emo:"📚", t:"누적 시간", unit:"분",  sub:"지금까지 훈련한 전체 시간 — 줄어들지 않아요", detail:true, all:true},
+  {k:"streak",  emo:"📅", t:"연속 학습", unit:"일",  sub:"하루도 빠지지 않고 이어온 날"},
+  {k:"blocks",  emo:"🧱", t:"배운 블록", unit:"개",  sub:"입에 붙인 영어 블록 개수"},
+  {k:"lvl",     emo:"⭐", t:"실력 레벨", unit:"",    sub:"완벽하게 맞힌 단어·듣기·말하기로만 오르는 레벨"}
 ];
 let rankTab="week", rankRows=null, rankErr="", rankWorkerVer="", rankNeedNick=false;
 function rankClose(){ const ov=document.getElementById("rankOv"); if(ov) ov.remove(); }
@@ -2320,7 +2323,11 @@ async function rankOpen(){
 function rankDetail(nick){
   const row=(rankRows||[]).find(r=>r.n===nick); if(!row) return;
   const mine=(row.n===syncNick());
-  const cats=(row.cats&&typeof row.cats==="object")?row.cats:{};
+  // 누적 판에서 열면 전체 누적 분야별로, 주간 판에서 열면 이번 주 분야별로
+  const brd=RANK_BOARDS.find(b=>b.k===rankTab)||{};
+  const isAll=!!brd.all;
+  const src=isAll?row.allCats:row.cats;
+  const cats=(src&&typeof src==="object")?src:{};
   const week=Object.keys(cats).reduce((a,k)=>a+(Number(cats[k])||0),0);
   const rows=Object.keys(TT_CATS)
     .map(c=>({c, m:Number(cats[c])||0}))
@@ -2336,7 +2343,7 @@ function rankDetail(nick){
         <div style="height:8px;border-radius:99px;background:var(--mist,#f1ebe5);overflow:hidden;margin-top:5px">
           <i style="display:block;height:100%;width:${Math.max(4,Math.round(x.m/maxM*100))}%;background:linear-gradient(90deg,#2BBD94,#189E79)"></i>
         </div></div>`).join("")
-    : `<div style="text-align:center;padding:22px 8px;color:var(--muted,#8a7f78);font-size:13px;line-height:1.7">이번 주 훈련 기록이 아직 없어요.<br>훈련을 시작하면 분야별로 쌓여요!</div>`;
+    : `<div style="text-align:center;padding:22px 8px;color:var(--muted,#8a7f78);font-size:13px;line-height:1.7">${isAll?"아직 훈련 기록이 없어요.":"이번 주 훈련 기록이 아직 없어요."}<br>훈련을 시작하면 분야별로 쌓여요!</div>`;
   const ov=document.createElement("div"); ov.id="rankDetailOv";
   ov.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(15,43,35,.6);display:flex;align-items:center;justify-content:center;padding:22px";
   ov.innerHTML=`<div style="background:var(--card,#fff);color:var(--text,#1c1410);max-width:380px;width:100%;max-height:82vh;overflow-y:auto;border-radius:20px;padding:20px 18px">
@@ -2344,7 +2351,7 @@ function rankDetail(nick){
         <div style="flex:1;font-size:17px;font-weight:900">⏱ ${escapeHtml(row.name||row.n)}${mine?" (나)":""}</div>
         <button id="rankDetClose" style="width:30px;height:30px;border:0;border-radius:50%;background:var(--card2,#f6f1ec);color:var(--muted,#8a7f78);font-size:14px;font-weight:800;cursor:pointer">✕</button>
       </div>
-      <div style="font-size:12.5px;color:var(--muted,#8a7f78);margin-bottom:15px">이번 주 <b style="color:#189E79">${week}분</b>${row.allMins?` · 전체 누적 ${row.allMins}분`:""}</div>
+      <div style="font-size:12.5px;color:var(--muted,#8a7f78);margin-bottom:15px">${isAll?`전체 누적 <b style="color:#189E79">${week}분</b>`:`이번 주 <b style="color:#189E79">${week}분</b>${row.allMins?` · 전체 누적 ${row.allMins}분`:""}`}</div>
       ${body}
     </div>`;
   ov.addEventListener("click",e=>{ if(e.target.id==="rankDetailOv") ov.remove(); });
@@ -2355,7 +2362,7 @@ function rankRender(){
   const sheet=document.getElementById("rankSheet"); if(!sheet) return;
   const me=syncNick();
   const board=RANK_BOARDS.find(b=>b.k===rankTab)||RANK_BOARDS[0];
-  const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="flex:1;padding:9px 2px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:11px;font-weight:800;cursor:pointer;line-height:1.35">${b.emo}<br>${b.t}</button>`).join("");
+  const tabs=RANK_BOARDS.map(b=>`<button class="rank-tab" data-rk="${b.k}" style="padding:9px 2px;border:0;border-radius:11px;background:${b.k===rankTab?"linear-gradient(135deg,#2BBD94,#189E79)":"var(--card2,#f6f1ec)"};color:${b.k===rankTab?"#fff":"var(--muted,#8a7f78)"};font-size:11px;font-weight:800;cursor:pointer;line-height:1.35">${b.emo}<br>${b.t}</button>`).join("");
   let body="";
   if(rankNeedNick){
     body=`<div style="text-align:center;padding:24px 10px;color:var(--muted,#8a7f78);font-size:13.5px;line-height:1.7">${escapeHtml(rankErr)}<br>
@@ -2391,7 +2398,7 @@ function rankRender(){
       <div style="flex:1;font-size:18px;font-weight:900">🏆 랭킹</div>
       <button id="rankClose" style="width:32px;height:32px;border:0;border-radius:50%;background:var(--card2,#f6f1ec);color:var(--muted,#8a7f78);font-size:15px;font-weight:800;cursor:pointer">✕</button>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:9px">${tabs}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:9px">${tabs}</div>
     <div style="font-size:11.5px;color:var(--muted,#8a7f78);text-align:center;margin-bottom:13px;line-height:1.5">${board.sub}</div>
     ${(rankErr&&!rankNeedNick)?`<div style="background:#FFF6E9;border:1px solid #F0D9B5;border-radius:12px;padding:11px 13px;margin-bottom:12px;font-size:12.5px;color:#8A6220;line-height:1.65">
       ⚠️ ${escapeHtml(rankErr)}<br>
