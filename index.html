@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.114";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.115";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -13893,6 +13893,7 @@ const WRITE_SETS=[
     {ko:"도착하면 알려줘.", en:"Let me know when you get there."},
   ]},
 ];
+const WR_SET_SIZE=10;   // 한 판 문항 수 = 오늘 루틴 '문장 만들기' 목표와 동일
 let wrRun=null;
 // 난이도: 계속 틀리는데 길이를 늘리지 않는다 — 기존 speakLevel 을 그대로 쓴다
 function wrBand(){
@@ -13987,7 +13988,7 @@ async function wrAiCheck(item, heard){
 }
 function startWriting(){
   try{ ttStart("speak"); }catch(e){}
-  wrRun={items:wrBuildItems(5), idx:0, results:[], t0:0, phase:"ask"};
+  wrRun={items:wrBuildItems(WR_SET_SIZE), idx:0, results:[], t0:0, phase:"ask"};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -14061,6 +14062,7 @@ async function wrSubmit(heard, meta){
       startDelayMs: (meta&&meta.speechStartAt&&wrRun.t0)?Math.max(0, meta.speechStartAt-wrRun.t0):null
     });
   }catch(e){}
+  try{ rtBump("write"); }catch(e){}   // 📋 오늘 루틴: 문장 만들기 (문항 단위로 진행)
   wrShowResult(it, heard, g);
 }
 function wrShowResult(it, heard, g){
@@ -14123,7 +14125,6 @@ function wrNext(){
 }
 function wrDone(){
   if(!wrRun){ goToSetup(); return; }
-  try{ rtBump("speak"); }catch(e){}
   const res=wrRun.results, total=wrRun.items.length;
   const ok=res.filter(r=>r.ok).length;
   const miss=res.filter(r=>!r.ok);
@@ -14812,6 +14813,7 @@ const RT_STEPS=[
   {k:"vocab", emo:"💬", t:"단어", sub:"말할 재료 채우기", goal:10, go:()=>startVocabCoach()},
   {k:"newblk",emo:"🧱", t:"새 블록", sub:"오늘 새로 익힐 패턴 1개", goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
   {k:"listen",emo:"👂", t:"상황 듣기", sub:"듣고 뜻·의도 고르기", goal:7,  go:()=>startSituationListening()},
+  {k:"write", emo:"📝", t:"문장 만들기", sub:"한국어를 보고 3초 안에 영어로", goal:10, go:()=>startWriting()},
   {k:"dict",  emo:"✍️", t:"받아쓰기", sub:"정밀 진단 2문제", goal:2,  go:()=>startMainTraining()}
 ];
 function rtCount(k, d){
