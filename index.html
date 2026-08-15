@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.115";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.118";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8535,6 +8535,19 @@ function bleActiveSet(){
 function bleSetBlocks(set){ return (set.blocks||[]).map(id=>BLE_BY_ID[id]).filter(Boolean); }
 // 블록이 소개됐는지 (introducedAt 존재)
 function bleBlockIntroduced(id){ const s=bleGetState()[id]; return !!(s && s.introducedAt); }
+/* 🧱 '새 블록 인트로를 끝냈는가' — 세트 완료 조건(bleCheckSetIntro)과 반드시 같아야 한다.
+   예전엔 다음 블록을 고를 때 introducedAt 만 봤다. 그런데 introducedAt 은 '이해하기' 화면에서
+   바로 세워지고, introAttemptCount 는 그 뒤 퀵체크에서야 오른다. 그래서 이해하기만 보고 나가면
+   그 블록은 다음 후보에서 빠지는데(=다시 안 나옴) 세트 완료 조건은 영영 안 채워졌다.
+   결국 세트가 다음으로 안 넘어가고, 후보가 다 빠지면 blocks[0] 만 계속 반복 출제됐다. */
+function bleIntroDone(id){ const s=bleGetState()[id]; return !!(s && s.introducedAt && (s.introAttemptCount||0)>=1); }
+// 모든 블록을 끝낸 뒤의 복습 대상 — 항상 첫 블록이 아니라 가장 오래 안 본 블록으로
+function bleLeastRecent(blocks){
+  const s=bleGetState();
+  let best=blocks[0], bestT=Infinity;
+  blocks.forEach(b=>{ const st=s[b.id]||{}; const t=Number(st.lastSeenAt||st.introducedAt||0)||0; if(t<bestT){ bestT=t; best=b; } });
+  return best||blocks[0];
+}
 // 세트 인트로 완료 판정: 모든 블록이 1회 이상 소개 + 퀵체크 시도
 function bleCheckSetIntro(set){
   const st=bleSetState(set.id);
@@ -9001,7 +9014,10 @@ function bleAllEx(b){
     list.forEach(e=>{
       if(!e||!e.ko||!e.en) return;
       const clean={situation:String(e.situation||"상황"), ko:String(e.ko), en:String(e.en), object:String(e.object||""), emoji:e.emoji};
-      const key=bleExKey(clean); if(!key||seen.has(key)) return;
+      // 영어만으로 중복 제거하면 '같은 답, 다른 상황' 예문이 통째로 사라진다.
+      // (can_you_help_me 처럼 답이 항상 같은 블록은 상황 3개가 1개로 뭉개져
+      //  드릴 내내 똑같은 한국어 문제만 나왔다) → 상황+영어로 구분한다.
+      const key=bleContextKey(clean); if(!key||seen.has(key)) return;
       seen.add(key); out.push(clean);
     });
   });
@@ -9025,9 +9041,17 @@ function bleFreshContextEx2(b, opts){
   // 난이도 필터(절대 원칙): 유저 단어레벨에 맞는 슬롯만 사용. 어려운 슬롯은 변화를 위해서라도 절대 넣지 않는다.
   // 변화(다양성)는 데이터에 쉬운 슬롯을 충분히 넣어 확보한다(어려운 슬롯 끌어오기 X).
   const allowed=all.filter(e=>bleSlotAllowed(e.object));
-  let base;
-  if(allowed.length){ base=allowed; }
-  else { const sc=all.map(e=>({e,h:bleSlotHardness(e.object)})); const min=Math.min.apply(null,sc.map(s=>s.h)); base=sc.filter(s=>s.h===min).map(s=>s.e); }
+  let base=allowed;
+  // 허용 슬롯이 2개 이하로 남으면 어떤 순서로 뽑아도 같은 문제만 반복된다.
+  // 그럴 때만 '쉬운 순서'로 조금 넓혀 서로 다른 상황 3개를 확보한다.
+  // (넉넉한 블록은 기존 원칙 그대로 — 어려운 슬롯을 끌어오지 않는다)
+  if(new Set(base.map(e=>bleContextKey(e))).size<3 && all.length){
+    const sc=all.slice().sort((x,y)=>bleSlotHardness(x.object)-bleSlotHardness(y.object));
+    const seen=new Set(), out=[];
+    for(const e of sc){ out.push(e); seen.add(bleContextKey(e)); if(seen.size>=3) break; }
+    if(out.length>base.length) base=out;
+  }
+  if(!base.length) base=all;
   // 🧱 슬롯 난이도는 bleSlotAllowed(slotUwl = 단어레벨의 60%)가 이미 확 낮춰줌 — 여기선 새로움만 우선 (같은 슬롯 과반복 방지)
   const fresh=base.filter(e=>used.indexOf(bleContextKey(e))<0 && recent.indexOf(bleExKey(e))<0);
   const notRecent=base.filter(e=>recent.indexOf(bleExKey(e))<0);
@@ -9512,8 +9536,8 @@ function bleBuildSetIntro(set){
   const blocks=bleSetBlocks(set);
   const items=[];
   // 한 번에 1개만 — 하루 3개 철학에 맞춰 젠틀하게 (한꺼번에 5개 X)
-  const todo=blocks.filter(b=>!bleBlockIntroduced(b.id));
-  const introList = todo.length? [todo[0]] : [blocks[0]];   // 다음 1개만 (다 됐으면 첫 블록 복습)
+  const todo=blocks.filter(b=>!bleIntroDone(b.id));
+  const introList = todo.length? [todo[0]] : [bleLeastRecent(blocks)];   // 다음 1개만 (다 됐으면 가장 오래 안 본 블록 복습)
   introList.forEach(b=>{
     items.push({type:"understand", block:b, setIntro:true});
     bleEnsureContexts(b);
@@ -9522,9 +9546,30 @@ function bleBuildSetIntro(set){
   // 🧱 새 블록은 '여러 상황에서 실제로 꺼내보기'가 핵심 — 상황 인출을 충분히 준다.
   //    (선택지 몇 번 고르고 끝나면 입에 안 붙는다)
   introList.forEach(b=>{
-    for(let i=0;i<10;i++){
+    /* 문항 수는 '이 블록이 실제로 낼 수 있는 서로 다른 상황 수'에 맞춘다.
+       예전엔 무조건 10문항이라, 큐레이션 예문이 3개뿐인 블록(전체의 절반 이상)은
+       같은 문제가 계속 반복됐다. 특히 초보 단계는 AI 예문 생성이 꺼져 있어
+       (bleEnsureContexts) 3개로 10문항을 채우느라 거의 매번 같은 문제가 나왔다. */
+    let poolN=3;
+    try{
+      // bleFreshContextEx2 가 실제로 고르는 풀과 똑같이 계산해야 한다.
+      // (허용 슬롯이 하나도 없으면 '가장 쉬운 난이도'만 남기므로 후보가 확 줄어든다)
+      const all=bleAllEx(b)||[];
+      const allowed=all.filter(e=>bleSlotAllowed(e.object));
+      let base=allowed;
+      if(!base.length && all.length){
+        const sc=all.map(e=>({e,h:bleSlotHardness(e.object)}));
+        const mn=Math.min.apply(null, sc.map(x=>x.h));
+        base=sc.filter(x=>x.h===mn).map(x=>x.e);
+      }
+      poolN=Math.max(1, new Set(base.map(e=>bleContextKey(e))).size);
+    }catch(e){}
+    // 같은 상황이 두 번까지는 연습이지만 그 이상은 지겨운 반복이다.
+    const reps=Math.max(2, Math.min(10, poolN*2-1));   // 퀵체크가 상황 1개를 이미 쓴다
+    const mid=Math.floor(reps/2);
+    for(let i=0;i<reps;i++){
       items.push({type:"situation", block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), introHidden:true, setIntro:true});
-      if(i===4) items.push({type:"pattern", block:b, setIntro:true});          // 중간 점검
+      if(i===mid) items.push({type:"pattern", block:b, setIntro:true});          // 중간 점검
     }
     items.push({type:"speed", block:b, ex:bleFreshContextEx2(b,{forceFresh:true}), introHidden:true, setIntro:true, limit:8});
   });
