@@ -1968,8 +1968,8 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.104";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
-const APP_BUILD = "2026-08-14";
+const APP_VERSION = "v3.99.105";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
   if(localStorage.getItem("speakingroom:vocab_reset_v3210")!=="1"){
@@ -2009,14 +2009,63 @@ function syncCollect(){
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(!k||syncSkipKey(k)) continue; d[k]=localStorage.getItem(k); } }catch(e){}
   return d;
 }
+/* 📅 날짜별 기록은 '덮어쓰기'하면 안 되는 키들.
+   전체 스냅샷을 통째로 바꾸는 방식이라, 폰에서 공부한 뒤 PC(옛 기록)가 나중에 올리면
+   최근 며칠치 기록이 통째로 사라진다. 누적 XP·블록·레벨은 양쪽이 거의 같아서 멀쩡해 보이고,
+   '이번 주 XP'와 '훈련 시간'만 0으로 보이던 원인. → 날짜별로 큰 값을 남기며 합친다. */
+const SYNC_MERGE_DAYLOG=["speakingroom:xplog"];            // {날짜:XP}
+const SYNC_MERGE_DAYCAT=["speakingroom:timelog"];          // {날짜:{분야:초}}
+const SYNC_MERGE_CAT=["speakingroom:timetotal"];           // {분야:초}
+function syncMergeKey(k){
+  return SYNC_MERGE_DAYLOG.indexOf(k)>=0 || SYNC_MERGE_DAYCAT.indexOf(k)>=0 || SYNC_MERGE_CAT.indexOf(k)>=0;
+}
+function syncParse(v){ try{ const o=JSON.parse(v); return (o&&typeof o==="object"&&!Array.isArray(o))?o:null; }catch(e){ return null; } }
+// 같은 날짜(또는 분야)는 '더 많이 한 쪽'을 남긴다 — 어느 기기도 남의 기록을 지우지 못하게
+function syncMergeNum(mine, theirs){
+  const out={...(mine||{})};
+  Object.keys(theirs||{}).forEach(k=>{ out[k]=Math.max(Number(out[k])||0, Number(theirs[k])||0); });
+  return out;
+}
+function syncMergeDayCat(mine, theirs){
+  const out={};
+  const days=new Set([...Object.keys(mine||{}), ...Object.keys(theirs||{})]);
+  days.forEach(d=>{
+    const a=(mine&&typeof mine[d]==="object")?mine[d]:{};
+    const b=(theirs&&typeof theirs[d]==="object")?theirs[d]:{};
+    out[d]=syncMergeNum(a,b);
+  });
+  return out;
+}
+// 오래된 날짜 정리 — 병합으로 무한정 불어나지 않게 (xplog 14일 / timelog 30일)
+function syncTrimDays(obj, keep){
+  const days=Object.keys(obj||{}).sort();
+  while(days.length>keep){ delete obj[days.shift()]; }
+  return obj;
+}
 // 서버 상태를 이 기기에 그대로 반영 (서버에 없는 키는 지워서 기기 간 상태를 일치시킴)
 function syncApply(d){
   if(!d||typeof d!=="object") return;
   try{
     const keep=Object.keys(d), drop=[];
-    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&!syncSkipKey(k)&&keep.indexOf(k)<0) drop.push(k); }
+    // 날짜별 기록은 서버 쪽에 없더라도 이 기기 것을 지우지 않는다 (지우면 그 주 기록이 통째로 증발)
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&!syncSkipKey(k)&&!syncMergeKey(k)&&keep.indexOf(k)<0) drop.push(k); }
     drop.forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
-    keep.forEach(k=>{ if(syncSkipKey(k)) return; try{ localStorage.setItem(k, d[k]); }catch(e){} });
+    keep.forEach(k=>{
+      if(syncSkipKey(k)) return;
+      try{
+        if(syncMergeKey(k)){
+          const theirs=syncParse(d[k]); if(!theirs) return;
+          const mine=syncParse(localStorage.getItem(k))||{};
+          let merged;
+          if(SYNC_MERGE_DAYCAT.indexOf(k)>=0) merged=syncTrimDays(syncMergeDayCat(mine,theirs), 30);
+          else if(SYNC_MERGE_DAYLOG.indexOf(k)>=0) merged=syncTrimDays(syncMergeNum(mine,theirs), 14);
+          else merged=syncMergeNum(mine,theirs);
+          localStorage.setItem(k, JSON.stringify(merged));
+          return;
+        }
+        localStorage.setItem(k, d[k]);
+      }catch(e){}
+    });
   }catch(e){}
   // 남의 기기에서 온 단어 뜻이 꼬여 있을 수 있다 — 정리 플래그도 같이 딸려오므로 강제로 한 번
   try{ srsFixWordMeaningsOnce(true); }catch(e){}
@@ -2054,7 +2103,10 @@ async function syncPush(){
 }
 // 앱을 닫는 순간엔 fetch가 취소될 수 있어 sendBeacon으로 확실히 보냄
 function syncBeacon(){
-  const n=syncNick(); if(!n||!syncDirty) return;
+  const n=syncNick(); if(!n) return;
+  // 아직 저장 안 된 훈련 시간(최대 29초)을 먼저 정산 — 이때 dirty 가 켜질 수 있으므로 검사보다 앞에
+  try{ ttFlush(); }catch(e){}
+  if(!syncDirty) return;
   try{
     const t=Date.now();
     const body=new Blob([JSON.stringify({t, d:syncCollect(), sum:syncSummary()})],{type:"application/json"});
@@ -2074,7 +2126,7 @@ function syncSummary(){
   try{
     const p=(typeof getProf==="function")?getProf():{xp:0};
     const li=(typeof levelInfo==="function")?levelInfo(p.xp||0):{level:1};
-    const st=(typeof hGet==="function")?hGet("speakingroom:streak",{n:0}):{n:0};
+    let streak=0; try{ streak=streakCurrent(); }catch(e){}
     let blocks=0; try{ blocks=getLearnedBlocks().length; }catch(e){}
     let lvl=1; try{ lvl=profSkillStats().overallLevel; }catch(e){}
     let week=0; try{ week=xpWeek(); }catch(e){}
@@ -2085,7 +2137,7 @@ function syncSummary(){
       Object.keys(w).forEach(c=>{ const m=ttMin(w[c]); if(m>0) cats[c]=m; });
       allMins=ttMin(ttTotalOf(ttSum(0)));
     }catch(e){}
-    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak:st.n||0, week, blocks, lvl, mins, allMins, cats};
+    return {name:(syncDisplayName()||"친구").slice(0,12), xp:p.xp||0, lv:li.level||1, streak, week, blocks, lvl, mins, allMins, cats};
   }catch(e){ return null; }
 }
 // 🔎 연동이 안 될 때 어디서 막혔는지 정확히 알려준다 (워커 버전 → 저장소 → 실제 저장)
@@ -14281,7 +14333,7 @@ function routineDoneCount(){
 function renderHero(){
   const hz=$("#heroZone"); if(!hz) return;
   const p=getProf(); const li=levelInfo(p.xp); const pct=Math.max(0,Math.min(1, li.inLevel/li.need));
-  const st=hGet("speakingroom:streak",{n:1}); const streak=st.n||1;
+  const streak=streakCurrent();
   const done=routineDoneCount(), auto=autoChunkCount();
   hz.innerHTML=`<div class="home-head">
     <div class="hh-top">
@@ -14332,10 +14384,7 @@ function renderHome(){
   const home=$("#homeCard"), qbox=$("#questBox"), daily=$("#dailyCard");
   if(home){ home.classList.add("learning-home"); }
   if(home&&qbox&&daily){ home.insertBefore(qbox, daily); }
-  // streak (calc first so hero can show it)
-  let st=hGet("speakingroom:streak",{last:0,n:0}); const today=DAYN();
-  if(st.last!==today){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate();
-    st.n = (st.last===yd)?(st.n||0)+1:1; st.last=today; hSet("speakingroom:streak",st); }
+  // streak — 홈을 열었다고 올리지 않는다 (실제 XP를 얻을 때 streakTouch()에서 증가)
   renderHero();
   // 🎁 열지 않은 보물상자 배너
   let chestBanner=$("#chestBanner");
@@ -14614,8 +14663,7 @@ function awardXP(cat, base, label, itemKey){
   if(base<1) base=1;
   d.total=(d.total||0)+base; d.cat[cat]=(d.cat[cat]||0)+base;
   hSet("speakingroom:xpday",d);
-  try{ xpLogBump(base); }catch(e){}   // 🏆 주간 랭킹용 날짜별 기록
-  addXP(base,label);
+  addXP(base,label);   // 🏆 주간 랭킹용 날짜별 기록은 addXP 안에서 (퀘스트·보물상자 XP도 포함되도록)
   return base;
 }
 function todayXP(){ try{ return xpDayGet().total||0; }catch(e){ return 0; } }
@@ -14689,12 +14737,35 @@ function xpSummaryHtml(){
     <div style="font-size:11px;color:#A8897B;margin-top:5px;text-align:right">${li.inLevel} / ${li.need} XP · 다음 레벨까지 ${Math.max(0,li.need-li.inLevel)}</div>
   </div>`;
 }
+/* 📅 연속 학습 — '앱을 켠 날'이 아니라 '실제로 XP를 얻은 날'만 센다.
+   예전엔 renderHome()에서 무조건 올려서, 공부를 하나도 안 해도 연속 일수가 계속 늘었다.
+   그래서 이번 주 XP·훈련 시간만 0이고 연속 학습은 멀쩡해 보이는 모순이 생겼다. */
+function streakYest(){ const y=new Date(); y.setDate(y.getDate()-1); return y.getFullYear()*10000+(y.getMonth()+1)*100+y.getDate(); }
+// 지금 유효한 연속 일수 (어제까지만 이어져 있으면 유지, 그보다 오래됐으면 끊김 → 0)
+function streakCurrent(){
+  const st=hGet("speakingroom:streak",{last:0,n:0})||{};
+  const today=DAYN();
+  if(st.last===today || st.last===streakYest()) return st.n||0;
+  return 0;
+}
+// 오늘 공부했다고 표시 — 하루 한 번만 증가
+function streakTouch(){
+  const st=hGet("speakingroom:streak",{last:0,n:0})||{};
+  const today=DAYN();
+  if(st.last===today) return st.n||0;
+  st.n=(st.last===streakYest())?((st.n||0)+1):1;
+  st.last=today;
+  hSet("speakingroom:streak",st);
+  return st.n;
+}
 // 오늘 최고 발음 점수
 function bestPronToday(score){ let d=hGet("speakingroom:bestpron",{date:0,score:0}); const today=DAYN(); if(d.date!==today) d={date:today,score:0}; if(score!=null && score>d.score){ d.score=score; hSet("speakingroom:bestpron",d); } return d.score; }
 function firstHighPronToday(){ let d=hGet("speakingroom:hipron",{date:0,done:false}); const today=DAYN(); if(d.date!==today) d={date:today,done:false}; if(!d.done){ d.done=true; hSet("speakingroom:hipron",d); return true; } return false; }
 
 function addXP(amount,label){
   amount=Math.round(amount||0); if(amount<=0) return;
+  try{ xpLogBump(amount); }catch(e){}   // 🏆 주간 랭킹용 날짜별 기록 (모든 XP 경로가 여기를 지난다)
+  try{ streakTouch(); }catch(e){}       // 📅 연속 학습 = 실제로 공부한 날에만
   const p=getProf(); const before=levelInfo(p.xp).level;
   p.xp=(p.xp||0)+amount; hSet("speakingroom:prof",p);
   const after=levelInfo(p.xp).level;
@@ -14867,7 +14938,7 @@ function closeProfile(){ $("#profScrim").classList.remove("show"); }
 function renderProfile(){
   const p=getProf(); const li=levelInfo(p.xp);
   const name=(hGet("speakingroom:name","")||syncDisplayName()||"친구");
-  const st=hGet("speakingroom:streak",{n:0});
+  const st={n:streakCurrent()};
   const pct=Math.round(li.inLevel/li.need*100);
   const nr=nextReward(li.level);
   const bp=bestPronToday(); const stars=phStars(); const txp=todayXP();

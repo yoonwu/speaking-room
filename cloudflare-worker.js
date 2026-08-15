@@ -116,7 +116,9 @@ export default {
             week: num(sum.week), blocks: num(sum.blocks), lvl: num(sum.lvl),
             mins: num(sum.mins), allMins: num(sum.allMins), cats, t,
           };
-          try { ctx.waitUntil(env.USERDATA.put("b:" + nick, JSON.stringify(row))); } catch (e) {}
+          // ⚠️ waitUntil 로 미루면 랭킹 화면이 '저장 직후' 부르는 /board 가 예전 요약을 읽는다.
+          //    (본인 행만 옛날 값으로 보이던 원인) — 응답 전에 반드시 저장을 끝낸다.
+          try { await env.USERDATA.put("b:" + nick, JSON.stringify(row)); } catch (e) {}
         }
         return new Response(JSON.stringify({ ok: true, t }), { status: 200, headers: jsonHeaders });
       } catch (e) {
