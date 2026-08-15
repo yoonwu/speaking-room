@@ -39,7 +39,8 @@ export default {
     }
 
     // ── ⓪-B 랭킹 목록 (v6 신규) ─────────────────────────────
-    //  GET /board → [{n:닉네임, name:표시이름, xp, lv, streak, week, blocks, lvl, t}]
+    //  GET /board → [{n:닉네임, name:표시이름, xp, lv, streak, week, blocks, lvl,
+    //                 mins(이번주 분), allMins(누적 분), cats, allCats, t}]
     if (request.method === "GET" && path === "/board") {
       const jsonHeaders = { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" };
       try {
@@ -103,20 +104,27 @@ export default {
           const sum = body.sum;
           const num = (v) => { const x = Number(v); return Number.isFinite(x) ? Math.max(0, Math.round(x)) : 0; };
           // 분야별 훈련 시간(분) — 알려진 분야만, 숫자로 정리
-          const cats = {};
-          if (sum.cats && typeof sum.cats === "object") {
-            ["block", "drill", "listen", "vocab", "speak", "talk", "phonics"].forEach((c) => {
-              const v = num(sum.cats[c]); if (v > 0) cats[c] = v;
-            });
-          }
+          const TT_CATS = ["block", "drill", "listen", "vocab", "speak", "talk", "phonics"];
+          const catsOf = (o) => {
+            const out = {};
+            if (o && typeof o === "object") {
+              TT_CATS.forEach((c) => { const v = num(o[c]); if (v > 0) out[c] = v; });
+            }
+            return out;
+          };
           const row = {
             n: nick,
             name: String(sum.name || nick).slice(0, 12),
             xp: num(sum.xp), lv: num(sum.lv), streak: num(sum.streak),
             week: num(sum.week), blocks: num(sum.blocks), lvl: num(sum.lvl),
-            mins: num(sum.mins), allMins: num(sum.allMins), cats, t,
+            mins: num(sum.mins), allMins: num(sum.allMins),
+            cats: catsOf(sum.cats),         // 이번 주 분야별
+            allCats: catsOf(sum.allCats),   // 누적 분야별 (누적 시간 판 상세용)
+            t,
           };
-          try { ctx.waitUntil(env.USERDATA.put("b:" + nick, JSON.stringify(row))); } catch (e) {}
+          // ⚠️ waitUntil 로 미루면 랭킹 화면이 '저장 직후' 부르는 /board 가 예전 요약을 읽는다.
+          //    (본인 행만 옛날 값으로 보이던 원인) — 응답 전에 반드시 저장을 끝낸다.
+          try { await env.USERDATA.put("b:" + nick, JSON.stringify(row)); } catch (e) {}
         }
         return new Response(JSON.stringify({ ok: true, t }), { status: 200, headers: jsonHeaders });
       } catch (e) {
