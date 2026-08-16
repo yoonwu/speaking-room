@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.119";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.120";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4188,7 +4188,7 @@ function sqSys(){
 grammarRule(),
 sqDiffRule(),
 "question_type for THIS question: \""+qtype+"\" — meaning(전체 뜻)/intent(질문·요청·제안·거절·안내 의도)/info(숫자·시간·장소·메뉴·가격·수량)/action(듣고 사용자가 해야 할 행동)/situation(어디서 벌어진 말인지).",
-"CHOICES RULES: exactly 3 Korean choices. Wrong choices must be semantically CLOSE and realistically confusable (never absurd). Not childish even at low difficulty.",
+"CHOICES RULES: exactly 5 Korean choices. Wrong choices must be semantically CLOSE and realistically confusable (never absurd). Not childish even at low difficulty.",
 matLine,
 "Topic context: everyday survival situations (cafe, store, hotel, airport, hospital, phone, school...). Variety seed "+seed+".",
 (sqRecent.length? "Do NOT reuse or closely paraphrase these recent audio sentences:\n- "+sqRecent.slice(-12).join("\n- ") : ""),
@@ -4196,11 +4196,41 @@ matLine,
   ].join("\n");
   });
 }
-function sqValid(o){ return o && o.audio_en && o.question_ko && Array.isArray(o.choices) && o.choices.length===3 && o.answer_index>=0 && o.answer_index<=2; }
+const SQ_CHOICES=5;   // 👂 보기 개수
+function sqValid(o){ return o && o.audio_en && o.question_ko && Array.isArray(o.choices) && o.choices.length>=3 && o.answer_index>=0 && o.answer_index<o.choices.length; }
 function sqShuffleChoices(o){
-  const idx=[0,1,2]; for(let i=2;i>0;i--){ const j=(Math.random()*(i+1))|0; [idx[i],idx[j]]=[idx[j],idx[i]]; }
+  const n=o.choices.length;
+  const idx=o.choices.map((_,i)=>i);
+  for(let i=n-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [idx[i],idx[j]]=[idx[j],idx[i]]; }
   o.choices=idx.map(i=>o.choices[i]);
   o.answer_index=idx.indexOf(o.answer_index);
+  return o;
+}
+// 뱅크 문제는 보기가 3개다. 다른 문제의 오답 보기를 빌려와 5개로 채운다.
+// (정답과 겹치거나 뜻이 같아 보이는 건 제외 — 오답이 정답이 되면 안 된다)
+function sqNormKo(t){ return String(t||"").replace(/\s+/g,"").replace(/[.,!?~·…"'()]/g,""); }
+function sqPadChoices(o, pool){
+  try{
+    if(!o||!Array.isArray(o.choices)) return o;
+    if(o.choices.length>=SQ_CHOICES) return o;
+    const have=new Set(o.choices.map(sqNormKo));
+    const ans=sqNormKo(o.choices[o.answer_index]);
+    // 같은 질문 유형에서만 빌린다 — 행동 문제에 온도 보기가 섞이면 딱 봐도 오답이라 의미가 없다
+    const src=(pool||[]).filter(it=>it && it.t===o.question_type && it.e!==o.audio_en);
+    const bag=[];
+    (src.length?src:(pool||[])).forEach(it=>{
+      if(!it||!Array.isArray(it.c)||it.e===o.audio_en) return;
+      it.c.forEach((c,i)=>{ if(i===it.a) return; bag.push(c); });   // 남의 '오답'만 빌린다
+    });
+    for(let i=bag.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [bag[i],bag[j]]=[bag[j],bag[i]]; }
+    for(const c of bag){
+      if(o.choices.length>=SQ_CHOICES) break;
+      const k=sqNormKo(c);
+      if(!k || k===ans || have.has(k)) continue;
+      if(k.length>1 && (k.includes(ans)||ans.includes(k))) continue;   // 정답과 사실상 같은 말 제외
+      have.add(k); o.choices.push(c);
+    }
+  }catch(e){}
   return o;
 }
 /* ===== 👂 상황듣기 내장 문제 뱅크 — 앱 시작 시 프리로드, 출제 0초. AI는 뱅크 없을 때 폴백 ===== */
@@ -4220,6 +4250,13 @@ function sqSeenGet(){ try{ const a=JSON.parse(localStorage.getItem(SQ_SEEN_KEY)|
 function sqSeenAdd(en){ try{ const a=sqSeenGet(); a.push(en); localStorage.setItem(SQ_SEEN_KEY, JSON.stringify(a.slice(-600))); }catch(e){} }
 function sqBankBand(){ const d=withLvl(getAutoLevels().listenLevel, diffLevel); return d<=12?1:(d<=30?2:(d<=45?3:4)); }
 function sqAudioWords(en){ return String(en||"").match(/[A-Za-z]+(?:'[A-Za-z]+)?/g)||[]; }
+// 단어 난이도 — 축약형은 원형으로 보고, 모르는 단어는 어려운 쪽으로 치지 않는다
+function sqWordLv(w){
+  const x=String(w||"").toLowerCase().replace(/'(s|ll|re|ve|d|m|t)$/,"");
+  if(!x) return 1;
+  const l=Number(wordLevelOf(x));
+  return (Number.isFinite(l)&&l>0)?l:1;
+}
 function sqBankDifficulty(it){
   const en=String((it&&it.e)||"");
   const words=sqAudioWords(en);
@@ -4241,12 +4278,25 @@ function sqFinePool(pool,band){
   // Band 1 안에서도 D1~D12가 같은 문제 풀이 되지 않게 실제 문장 난이도를 세분화.
   // 극초반은 짧은 문장을 우선하고, 이후에는 길이·어휘·구조 난이도로 정렬한 이동 창을 사용한다.
   if(band===1){
-    const cap=d<=2?5:(d<=4?6:(d<=6?7:99));
+    // 1단계는 더 낮게: 문장 길이 상한을 내리고, 어휘 수준까지 같이 낮춘다.
+    const cap=d<=2?4:(d<=4?5:(d<=6?6:(d<=9?7:99)));
     if(cap<99){
       const short=pool.filter(it=>sqAudioWords(it.e).length<=cap);
-      // 4단어만 강제하면 오히려 passport/expired 같은 어려운 어휘가 섞인다.
-      // 그래서 D1은 "쉬운 어휘의 4~5단어"부터 시작하고 점진적으로 창을 이동한다.
-      if(short.length>=24) pool=short;
+      if(short.length>=16) pool=short;
+    }
+    // 어려운 단어가 든 문장은 1단계 초반에서 뺀다 (folks/swipe/passport 류).
+    // 전부-아니면-전무로 거르면 후보가 7개까지 줄어 필터가 통째로 무시됐다.
+    // → 문장의 '가장 어려운 단어' 기준으로 정렬해서 쉬운 쪽부터 쓴다.
+    const lvCap=d<=4?2:(d<=8?3:0);
+    if(lvCap){
+      const scored=pool.map(it=>{
+        let mx=1;
+        try{ bleContentWords(it.e).forEach(w=>{ const l=sqWordLv(w); if(l>mx) mx=l; }); }catch(e){}
+        return {it, mx};
+      }).sort((a,b)=>a.mx-b.mx);
+      const keep=scored.filter(x=>x.mx<=lvCap);
+      const use=(keep.length>=12) ? keep : scored.slice(0, Math.max(24, Math.ceil(scored.length*0.35)));
+      if(use.length) pool=use.map(x=>x.it);
     }
   }
   const ranges={1:[1,12],2:[13,30],3:[31,45],4:[46,60]};
@@ -4264,11 +4314,77 @@ function sqFinePool(pool,band){
   const start=Math.max(0,Math.min(sorted.length-win,Math.round(pos*(sorted.length-win))));
   return sorted.slice(start,start+win);
 }
+/* ❌ 틀린 문제는 잊기 전에 다시 — 3문제쯤 지난 뒤 되돌려 낸다.
+   (유형만 다시 뽑던 예전 방식은 '그 문제'를 다시 만나게 해주지 못했다) */
+let sqMissQ=[];
+function sqMissPush(it){
+  try{
+    if(!it||!it.audio_en) return;
+    sqMissQ=sqMissQ.filter(m=>m.o.audio_en!==it.audio_en);
+    sqMissQ.push({o:JSON.parse(JSON.stringify(it)), at:sqCount});
+    if(sqMissQ.length>8) sqMissQ.shift();
+  }catch(e){}
+}
+function sqMissTake(){
+  const i=sqMissQ.findIndex(m=>(sqCount-m.at)>=3);
+  if(i<0) return null;
+  const m=sqMissQ.splice(i,1)[0];
+  const o=m.o; o._retry=true;
+  return sqShuffleChoices(o);   // 보기 순서를 바꿔서 위치로 외우지 못하게
+}
+/* 🧱 블록영어에서 배운 문장으로 듣기 문제 만들기.
+   따로 배운 표현이 듣기에서 다시 나와야 '배운 게 들리는' 경험이 된다.
+   보기는 그 블록의 다른 상황 한국어 + 다른 블록의 한국어로 만든다. */
+function sqFromBlocks(){
+  try{
+    const learned=getLearnedBlocks();
+    if(!learned.length) return null;
+    const cands=[];
+    learned.forEach(b=>{ (bleAllEx(b)||[]).forEach(e=>{ if(e&&e.en&&e.ko) cands.push({b,e}); }); });
+    // 1단계에서는 블록 문장도 짧고 쉬운 것만 (뱅크 문제와 기준을 맞춘다)
+    let base=cands;
+    try{
+      if(sqBankBand()===1){
+        const easy=cands.filter(x=>{
+          if(sqAudioWords(x.e.en).length>6) return false;
+          let mx=1; bleContentWords(x.e.en).forEach(w=>{ const l=sqWordLv(w); if(l>mx) mx=l; });
+          return mx<=3;
+        });
+        if(easy.length>=3) base=easy;
+      }
+    }catch(e){}
+    const fresh=base.filter(x=>sqRecent.indexOf(x.e.en)<0);
+    const pickFrom=fresh.length?fresh:base;
+    if(!pickFrom.length) return null;
+    const pick=pickFrom[(Math.random()*pickFrom.length)|0];
+    const ansKo=pick.e.ko;
+    const wrongs=[];
+    cands.forEach(x=>{ if(x.e.ko && x.e.ko!==ansKo) wrongs.push(x.e.ko); });
+    for(let i=wrongs.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [wrongs[i],wrongs[j]]=[wrongs[j],wrongs[i]]; }
+    const choices=[ansKo]; const have=new Set([sqNormKo(ansKo)]);
+    for(const w of wrongs){ if(choices.length>=SQ_CHOICES) break; const k=sqNormKo(w); if(!k||have.has(k)) continue; have.add(k); choices.push(w); }
+    if(choices.length<3) return null;
+    return sqShuffleChoices({
+      scene_ko:"배운 표현이에요. 잘 듣고 무슨 뜻인지 골라보세요.",
+      audio_en:pick.e.en, audio_ko:ansKo, question_type:"meaning",
+      question_ko:"이 말의 뜻으로 가장 알맞은 것은?",
+      choices, answer_index:0, explanation_ko:"", focus:"", _fromBlock:pick.b.id
+    });
+  }catch(e){ return null; }
+}
 function sqBankPick(){
   if(!sqBank||!sqBank.length) return null;
+  const retry=sqMissTake(); if(retry) return retry;
+  // 배운 블록 문장을 3문제에 1번꼴로 섞는다 (1단계에서는 더 자주)
+  try{
+    const band=sqBankBand();
+    const rate=band===1?0.4:0.25;
+    if(sqCount>0 && Math.random()<rate){ const bo=sqFromBlocks(); if(bo) return bo; }
+  }catch(e){}
   const band=sqBankBand();
   let pool=sqBank.filter(it=>it.b===band);
   if(!pool.length) pool=sqBank;
+  const bandPool=pool;
   pool=sqFinePool(pool,band);   // 같은 broad band 안에서도 D값에 따라 실제 문장 난이도 이동
   const seen=new Set(sqSeenGet().concat(sqRecent));
   const qtype=sqNextType();
@@ -4278,7 +4394,9 @@ function sqBankPick(){
   if(!cand.length) cand=pool;
   const it=cand[(Math.random()*cand.length)|0];
   sqSeenAdd(it.e);
-  return sqShuffleChoices({scene_ko:it.s, audio_en:it.e, audio_ko:it.k, question_type:it.t, question_ko:it.q, choices:it.c.slice(), answer_index:it.a, explanation_ko:it.x, focus:it.f});
+  const o={scene_ko:it.s, audio_en:it.e, audio_ko:it.k, question_type:it.t, question_ko:it.q, choices:it.c.slice(), answer_index:it.a, explanation_ko:it.x, focus:it.f};
+  sqPadChoices(o, bandPool);   // 보기 3개 → 5개
+  return sqShuffleChoices(o);
 }
 let sqLastErr="";
 async function sqFetchOne(){
@@ -4311,7 +4429,7 @@ function startSituationListening(){ try{ ttStart("listen"); }catch(e){}
     $("#ctxScn").textContent="상황 듣기";
     $("#ctxLvl").textContent=autoSkillLevelName("listen")+" · 듣기";
     $("#lnext").style.display="none";
-    sqCount=0; sqRecent=[]; sqPrefetch=null; sqPrefetching=false; sqTypes=[];
+    sqCount=0; sqRecent=[]; sqPrefetch=null; sqPrefetching=false; sqTypes=[]; sqMissQ=[];
     try{ xpSessionStart(); }catch(e){}
     sqGenerate();
   });
@@ -4409,7 +4527,7 @@ function sqAnswer(picked){
   if(correct){ try{ rtBump("listen"); }catch(e){} }   // 📋 오늘 루틴: 상황 듣기 (맞힌 것만)
   const firstTry = correct && sqReplay===0 && !sqSlow;
   try{ autoLvlRecord("listen", correct?(firstTry?"perfect":"ok"):"miss"); }catch(e){}
-  if(!correct){ sqTypes.push(it.question_type); }   // 틀린 유형을 다음에 다시
+  if(!correct){ sqTypes.push(it.question_type); sqMissPush(it); }   // 틀린 유형 + 틀린 문제 자체를 다시
   // 선택지 마킹 (첫 재생 전에 채점된 경우 질문·보기가 숨어 있으므로 먼저 노출)
   const sqQBox=$("#sqQuestion"); if(sqQBox) sqQBox.style.display="";
   const sqChBox=$("#sqChoices"); if(sqChBox) sqChBox.style.display="flex";
