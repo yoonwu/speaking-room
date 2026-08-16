@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.123";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.124";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7377,7 +7377,7 @@ const MIN_REC_MS=900;   // 이보다 짧게 끊으면 인식이 거의 안 된�
 function micFailMsg(meta){
   const m=meta||{};
   if(m.micError) return "🎤 마이크를 열지 못했어요 — 권한을 확인해 주세요";
-  if(m.sttErr)   return "⚠️ 인식 서버 문제 — "+m.sttErr;
+  if(m.sttErr)   return (/몰렸/.test(m.sttErr) ? "⏳ " : "⚠️ 인식 서버 문제 — ")+m.sttErr;
   if(m.noSound)  return "🔇 소리가 안 담겼어요"+(m.recMs?` (녹음 ${(m.recMs/1000).toFixed(1)}초)`:"");
   if(!m.spoke)   return "🔇 마이크에 소리가 안 들어왔어요 — 조금 더 크게";
   return "안 들렸어요 — 다시 한 번"+(m.recMs?` (녹음 ${(m.recMs/1000).toFixed(1)}초)`:"");
@@ -7509,7 +7509,11 @@ function micCooldownLeft(){ return Math.max(0, _micCooldownUntil-Date.now()); }
 function micStartCooldown(){ _micCooldownUntil=Date.now()+400; }
 // 훈련 화면에 들어가면 미리 열어둬서 첫 탭도 즉시 녹음되게
 function micWarmUp(){ try{ micStreamGet().then(()=>micStreamIdle()).catch(()=>{}); }catch(e){} }
-async function micFillCb(rawCb, refText){
+/* opts.pron === true 인 화면에서만 발음 점수를 따로 요청한다.
+   예전엔 모든 화면이 /stt 와 /pronounce 를 동시에 호출해 Azure 요청이 두 배였고,
+   정작 점수를 쓰는 화면은 3곳뿐이라 나머지는 전부 버려지는 호출이었다.
+   요청이 두 배면 그만큼 빨리 한도(429)에 걸린다. */
+async function micFillCb(rawCb, refText, opts){
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   const startEpoch=micEpoch;
   // 화면/모드가 바뀐 뒤 도착한 콜백은 옛 화면 상태를 오염시키므로 폐기.
@@ -7548,12 +7552,32 @@ async function micFillCb(rawCb, refText){
       /* ⚠️ 실패 원인을 삼키지 않는다.
          예전엔 catch(()=>null) 로 전부 뭉개서, 서버가 500을 주든 키가 잘못됐든
          화면에는 똑같이 '안 들렸어요'만 떴다. 원인을 meta 에 남겨 화면에 보여준다. */
-      const sttP = sttRecognize(raw, am).then(async r=>{
+      const readStt=async(r)=>{
         const txt=await r.text();
-        if(!r.ok){ meta.sttErr="서버 "+r.status+(txt?" · "+txt.slice(0,80):""); return null; }
-        try{ return JSON.parse(txt); }catch(e){ meta.sttErr="응답 형식 오류"; return null; }
-      }).catch(e=>{ meta.sttErr="연결 실패"+((e&&e.message)?" · "+String(e.message).slice(0,60):""); return null; });
-      const pronP = refText ? pronouncePractice(refText, raw, am).catch(()=>null) : Promise.resolve(null);
+        if(!r.ok) return {err:r.status, body:txt};
+        try{ return {data:JSON.parse(txt)}; }catch(e){ return {err:"parse"}; }
+      };
+      const sttP = (async()=>{
+        try{
+          let res=await readStt(await sttRecognize(raw, am));
+          // 429 = 잠깐 사이에 요청이 몰린 것. 조금 쉬었다 한 번만 다시 시도한다.
+          if(res.err===429){
+            meta.retried429=true;
+            await new Promise(r=>setTimeout(r, 1200));
+            res=await readStt(await sttRecognize(raw, am));
+          }
+          if(res.data) return res.data;
+          if(res.err===429){ meta.sttErr="잠시 요청이 몰렸어요 — 잠깐 뒤 다시 말해보세요"; return null; }
+          if(res.err==="parse"){ meta.sttErr="응답 형식 오류"; return null; }
+          meta.sttErr="서버 "+res.err+(res.body?" · "+String(res.body).slice(0,80):"");
+          return null;
+        }catch(e){
+          meta.sttErr="연결 실패"+((e&&e.message)?" · "+String(e.message).slice(0,60):"");
+          return null;
+        }
+      })();
+      const wantPron = !!(opts && opts.pron) && !!refText;
+      const pronP = wantPron ? pronouncePractice(refText, raw, am).catch(()=>null) : Promise.resolve(null);
       const [sttData, pr] = await Promise.all([sttP, pronP]);
       meta.sttDoneAt=Date.now();
       if(pr && pr.score!=null) meta.pron={score:pr.score, acc:pr.acc, words:pr.words||[]};
@@ -7624,9 +7648,13 @@ async function pronouncePractice(ref, blob, am){
   let body, ctype;
   try{ body=await recordedToWav(blob); ctype="audio/wav"; }
   catch(_){ body=blob; ctype=/webm/.test(am)?"audio/webm; codecs=opus":/ogg/.test(am)?"audio/ogg; codecs=opus":/mp4|aac/.test(am)?"audio/mp4":(am||"audio/webm; codecs=opus"); }
-  const b64=btoa(unescape(encodeURIComponent(ref||"hello world")));
-  const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":ctype,"X-Pronunciation-Text-B64":b64},body});
-  const txt=await res.text(); if(!res.ok) throw new Error("서버 "+res.status);
+  const b64=btoa(unescape(encodeURIComponent(ref)));
+  const send=()=>fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":ctype,"X-Pronunciation-Text-B64":b64},body});
+  let res=await send();
+  // 429 = 요청이 몰린 것. 잠깐 쉬었다 한 번만 다시 (발음 채점도 429가 잦았다)
+  if(res.status===429){ await new Promise(r=>setTimeout(r,1200)); res=await send(); }
+  const txt=await res.text();
+  if(!res.ok) throw new Error(res.status===429 ? "잠시 요청이 몰렸어요 — 잠깐 뒤 다시" : ("서버 "+res.status));
   let d=null; try{ d=JSON.parse(txt); }catch(e){}
   const ex=pronExtract(d||{}); return {heard:ex.heard, score:ex.pron?ex.pron.score:null, acc:ex.pron?ex.pron.acc:null, words:ex.words};
 }
@@ -12254,7 +12282,7 @@ function ctNext(){
   $("#ctExit").onclick=()=>{ goToSetup(); try{ renderWeakHome(); }catch(e){} };
   $("#ctMic").onclick=function(){ const b=this; if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } if(!ctSpoke) ctSpoke=Date.now();
     b.classList.add("live"); $("#ctStat").textContent="시전 중…";
-    micFillCb((t,meta)=>{ b.classList.remove("live"); ctScore(it, t, meta); }, it.en); };
+    micFillCb((t,meta)=>{ b.classList.remove("live"); ctScore(it, t, meta); }, it.en, {pron:true}); };
   $("#ctType").onclick=()=>{
     const wrap=$("#ctTypeWrap"); if(!wrap) return;
     if(document.getElementById("ctTypeIn")){ document.getElementById("ctTypeIn").focus(); return; }
@@ -13701,7 +13729,7 @@ function dailyRoomRender(){
   mic.onclick=()=>{
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; } 
     mic.classList.add("live"); mic.textContent="🎙️ 듣는 중...";
-    micFillCb((heard,meta)=>{ mic.classList.remove("live"); clearHints(); dailyRoomJudge(it, heard||"", meta); }, it.answer);
+    micFillCb((heard,meta)=>{ mic.classList.remove("live"); clearHints(); dailyRoomJudge(it, heard||"", meta); }, it.answer, {pron:true});
   };
   const typeBtn=$("#drType");
   if(typeBtn) typeBtn.onclick=()=>{
@@ -14514,7 +14542,7 @@ function autoDrillRender(recallMode){
   $("#autoMic").onclick=function(){
     if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
     this.classList.add("live"); $("#autoStat").textContent="듣고 있어요…";
-    micFillCb((t,meta)=>{ this.classList.remove("live"); autoDrillFinish(t, meta||{}); }, (it.ex&&it.ex.en)||"");
+    micFillCb((t,meta)=>{ this.classList.remove("live"); autoDrillFinish(t, meta||{}); }, (it.ex&&it.ex.en)||"", {pron:true});
   };
   $("#autoType").onclick=()=>{ const inp=$("#autoInput"); inp.style.display="block"; inp.focus(); };
   const inp=$("#autoInput");
