@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.120";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.121";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7369,6 +7369,7 @@ function micBeepEnd(){
   }catch(e){}
 }
 // 모든 마이크 공통: 말 끝나면(침묵) 자동 종료. 통일 파라미터.
+const MIN_REC_MS=900;   // 이보다 짧게 끊으면 인식이 거의 안 된다
 const VAD_OPTS={maxMs:15000, silenceMs:600, minSpeechMs:200, thresh:0.012};   // 아이 목소리(작음·고음) 감지: thresh↓, 짧은 답: minSpeechMs↓, 긴 문장: maxMs↑
 function attachVAD(stream, onStop, opts){
   opts=opts||{};
@@ -7414,6 +7415,9 @@ function attachVAD(stream, onStop, opts){
       }
       if(spoke && lastLoud){
         const quiet=now-lastLoud;
+        // 녹음이 너무 짧으면 STT 가 아무것도 못 돌려준다("안 들렸어요"의 흔한 원인).
+        // 말이 끝난 것 같아도 최소 길이는 채우고 끊는다.
+        if(now-t0 < MIN_REC_MS) { requestAnimationFrame(tick); return; }
         // 다 말한 것 같으면 곧바로 종료 → 빨리 말한 사람이 기다리지 않음
         if(quiet>silenceMs && looksDone()) return fin();
         // 덜 말한 것 같아도 오래 조용하면 종료 (중간에 멈춘 경우)
@@ -7533,14 +7537,13 @@ async function micFillCb(rawCb, refText){
       if(pr && pr.score!=null) meta.pron={score:pr.score, acc:pr.acc, words:pr.words||[]};
       let heard = (sttData && sttData.DisplayText) ? String(sttData.DisplayText).replace(/[.?!]+$/,"").trim() : "";
       if(heard){ cb(heard, meta); return; }
-      // /stt 가 아무것도 못 돌려준 경우에만, 정답과 무관한 더미 참조로 텍스트를 복구한다.
-      // 더미는 정답과 상관없으므로 메아리가 나도 오답이 정답이 되지 않는다(메아리면 버린다).
-      try{
-        const dummy="hello world";
-        const r=await pronouncePractice(dummy, raw, am);
-        const h=String(r.heard||"").trim();
-        cb(pronSameText(h, dummy) ? "" : h, meta); return;
-      }catch(e){}
+      /* ⚠️ 예전엔 여기서 더미 참조("hello world")로 텍스트를 복구하려 했는데,
+         Azure 가 그 참조를 그대로(또는 "hello word" 처럼 살짝 뭉개서) 돌려주는 바람에
+         말한 적도 없는 "hello world" 가 사용자의 답으로 들어갔다. 일치 검사는
+         철자가 한 글자만 달라도 통과해 버려서 막지 못했다.
+         정답과 무관한 참조로는 애초에 쓸 만한 텍스트가 나오지 않는다 → 폴백을 없앤다.
+         인식이 안 되면 지어내지 말고 '안 들렸다'고 정직하게 알린다. */
+      meta.sttFailed=true;
       cb("", meta);
     };
     micBeep(); qzMR.start(250); qzRecording=true;
@@ -7559,7 +7562,8 @@ async function micFillCb(rawCb, refText){
 }
 // /pronounce로 음성 인식 (DisplayText) + 발음 점수 추출 — /stt 대체·폴백용
 async function pronounceRecognize(wav, refText){
-  const b64=btoa(unescape(encodeURIComponent(refText||"hello world")));
+  if(!String(refText||"").trim()) throw new Error("참조 문장 없음");
+  const b64=btoa(unescape(encodeURIComponent(refText)));
   const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64},body:wav});
   return res.json();
 }
@@ -7587,6 +7591,9 @@ function micErrMsg(err){
 function notifyMicError(err){ try{ bleShowHintToast("🎤 "+micErrMsg(err)); }catch(e){} }
 // 발음 채점용 — WAV 우선, 디코드 실패 기기는 원본 컨테이너로 폴백(호환성↑)
 async function pronouncePractice(ref, blob, am){
+  // 참조 문장이 없으면 채점 자체가 불가능하다. 더미를 넣으면 그 더미가 사용자의
+  // 답처럼 되돌아오므로(=hello world 사고) 아예 호출하지 않는다.
+  if(!String(ref||"").trim()) throw new Error("참조 문장 없음");
   let body, ctype;
   try{ body=await recordedToWav(blob); ctype="audio/wav"; }
   catch(_){ body=blob; ctype=/webm/.test(am)?"audio/webm; codecs=opus":/ogg/.test(am)?"audio/ogg; codecs=opus":/mp4|aac/.test(am)?"audio/mp4":(am||"audio/webm; codecs=opus"); }
