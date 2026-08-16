@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.125";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.126";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2802,13 +2802,18 @@ function autoLvlRecord(skill, kind){
     let delta=0;
     // 잘하면 빨리 올리고(4연속), 막히면 훨씬 빨리 내린다(2연속부터, 계속 막히면 더 크게).
     // 예전엔 3연속 실패마다 -1이라 D23에서 입문까지 60번 실패해야 했음.
-    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; st.run=0; if(st.up>=4){ st.up=0; delta=1; } }
+    /* 예전엔 '맞았지만 완벽은 아님(ok)'이 승급 스트릭을 0으로 리셋했다.
+       그래서 20문제를 연속으로 맞혀도 난이도가 한 칸도 안 올라갔다.
+       (특히 받아쓰기는 정답이어도 항상 ok 로 기록돼서 영원히 안 올랐다)
+       → ok 는 리셋하지 않고 절반(0.5)만 쌓는다. perfect 4번 또는 ok 8번이면 승급. */
+    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; st.run=0; }
     else if(kind==="miss" || kind==="hardmiss"){
       const w = kind==="hardmiss" ? 2 : 1;      // 아예 못 알아들은 경우는 2번으로 침
       st.miss=(st.miss||0)+w; st.up=0; st.run=(st.run||0)+w;
       if(st.miss>=2){ st.miss=0; delta = -(1 + Math.min(3, Math.floor((st.run-2)/2))); }
     }
-    else { st.up=0; st.run=0; }
+    else { st.miss=0; st.run=0; st.up=(st.up||0)+0.5; }
+    if(delta===0 && (st.up||0)>=4){ st.up=0; delta=1; }
     d.st[skill]=st;
     if(delta){
       const nv=Math.max(1,Math.min(60,(d[skill]||1)+delta));
@@ -3887,6 +3892,7 @@ let lsPrevReply="";   // 직전 상대 응답 (대화 연속성)
 let lsAnswer="";      // 받아쓰기 답
 let lsTargets=[], lsFilled=[];   // 단어별 누적 받아쓰기 (들린 단어 고정)
 let lsAnalysis=null;  // 오답 분석
+let lsReplays=0;      // 이번 문제에서 '다시 듣기/천천히'를 누른 횟수 (난이도 판정용)
 let lsConn=null;      // 연음 설명
 let lsCount=0;        // 진행한 문장 수
 let lsAwarded=false;
@@ -4001,7 +4007,7 @@ levelCap(),
   });
 }
 async function lsGenerate(){
-  lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false;
+  lsAnswer=""; lsAnalysis=null; lsConn=null; lsAwarded=false; lsReplays=0;
   // 1) 미리 받아둔 게 있으면 즉시 출제 (대기 0초)
   if(lsPrefetch && !lsIsDup(lsPrefetch.en)){
     lsItem=lsPrefetch; lsPrefetch=null; lsCount++; lsRecord(lsItem.en); lsLedgerMark("heard");
@@ -4113,8 +4119,8 @@ function renderListenPlay(){
   lsRenderSlots();
   // 자동 재생 → 끝나면 마이크 자동 시작 (한 화면에서 슉슉)
   setTimeout(()=>lsSpeak(false, ()=>{ const m=$("#lsDictMic"); if(m && !qzRecording) m.click(); }), 650);
-  $("#lsPlay").onclick=()=>lsSpeak(false);
-  $("#lsSlow").onclick=()=>lsSpeak(true);
+  $("#lsPlay").onclick=()=>{ lsReplays=(lsReplays||0)+1; lsSpeak(false); };
+  $("#lsSlow").onclick=()=>{ lsReplays=(lsReplays||0)+1; lsSpeak(true); };
   $("#lsSkip").onclick=()=>{ lsAnswer=""; lsRunAnalysis(); };
   $("#lsCheck").onclick=()=>{ lsAnswer=lsTargets.filter((w,i)=>lsFilled[i]).join(" "); lsCheckAnswer(); };
   const mic=$("#lsDictMic"); const micLbl=mic.querySelector("span");
@@ -4635,7 +4641,8 @@ function lsCheckAnswer(){
     try{ lsTrackHeard(lsItem.en, lsItem.ko, lsItem.block); }catch(e){}
     try{ profRecordListenPerfect(lsItem.en, lsItem.ko); }catch(e){}
     lsLedgerMark("understood");
-    try{ autoLvlRecord("listen","ok"); }catch(e){}
+    // 다시 듣기/천천히를 안 쓰고 맞히면 perfect — 예전엔 무조건 ok 라 난이도가 안 올랐다
+    try{ autoLvlRecord("listen", (lsReplays||0)<=0 ? "perfect" : "ok"); }catch(e){}
     renderListenCorrect();
   } else {
     lsRunAnalysis();
@@ -14287,7 +14294,7 @@ async function wrSubmit(heard, meta){
     else if(ai && ai.tip) g.aiTip=ai.tip;
   }
   wrRun.results.push({ko:it.ko, en:it.en, heard, ok:g.ok});
-  try{ autoLvlRecord("speak", g.ok?"ok":"miss"); }catch(e){}
+  try{ autoLvlRecord("speak", g.ok ? (g.ai?"ok":"perfect") : "miss"); }catch(e){}
   if(g.ok){
     try{ awardXP("output", 12, "문장 만들기 ✅", "wr:"+wrRun.idx+":"+DAYN()); }catch(e){}
     try{ bumpCount("talk"); }catch(e){}
