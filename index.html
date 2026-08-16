@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.124";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.125";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -4757,10 +4757,12 @@ function renderListenCorrect(){
     <div class="lctrls" style="justify-content:center;margin-bottom:4px">
       <button id="lcAnalyze">🔍 연음 분석 보기</button>
     </div>
+    ${studyPanelHtml(orig, lsItem.ko||"", "lsok")}
     <button class="sh-next" id="lcNext">다음 문제 →</button>
     <button class="rv-stop" id="lcOut" style="margin-top:6px">그만하기</button>
     <div id="learnPanel" class="learn-panel" style="text-align:left"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
   card.appendChild(box);
+  try{ bindStudyPanel(box.querySelector(".study-panel")); }catch(e){}   // 🎤 발음 채점 + 약한 단어만 다시 연습
   $("#lcAnalyze").onclick=()=>lsRunAnalysis();
   $("#lcNext").onclick=()=>{ lsPrevReply=lsItem.en||""; lsGenerate(); };   // 바로 새 듣기 문장
   $("#lcOut").onclick=()=>goToSetup();
@@ -4841,12 +4843,14 @@ function renderListenAnalysis(){
     ${a.pronunciation_tip?`<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px">🗣 ${escapeHtml(a.pronunciation_tip)}</div>`:""}
     ${a.native_pattern?`<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px">🎯 원어민 패턴: ${escapeHtml(a.native_pattern)}</div>`:""}
     <div class="lctrls" style="justify-content:center;margin-top:6px"><button id="lsReplay">🔊 다시 듣기</button><button id="lsSaveNote">＋ 노트 저장</button></div>
+    ${studyPanelHtml((lsItem&&lsItem.en)||"", (lsItem&&lsItem.ko)||"", "lsan")}
     <button class="sh-next" id="lsToShadow">🗣 따라 말하기 →</button>
     <button id="lsAnNext" style="width:100%;margin-top:8px;padding:11px;border-radius:13px;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:13px;cursor:pointer">건너뛰고 다음 문제 →</button>
   </div>
   <div id="learnPanel" class="learn-panel"><div class="lp-loading">🍎 비슷한 표현 가져오는 중…</div></div>`;
   $("#listenScroll").scrollTop=0;
   setTimeout(()=>lsSpeak(false),300);
+  try{ bindStudyPanel(document.querySelector("#listenScroll .study-panel")); }catch(e){}   // 🎤 발음 채점 + 약한 단어만 다시 연습
   $("#lsReplay").onclick=()=>lsSpeak(false);
   $("#lsSaveNote").onclick=function(){ if(addReviewItem(lsItem.en, lsItem.ko, "chunk")){ renderNotes(); saveNotes(); refreshRvBanner(); } this.textContent="저장됨 ✓"; this.disabled=true; };
   $("#lsToShadow").onclick=renderListenShadow;
