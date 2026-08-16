@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.126";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.127";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2802,18 +2802,26 @@ function autoLvlRecord(skill, kind){
     let delta=0;
     // 잘하면 빨리 올리고(4연속), 막히면 훨씬 빨리 내린다(2연속부터, 계속 막히면 더 크게).
     // 예전엔 3연속 실패마다 -1이라 D23에서 입문까지 60번 실패해야 했음.
-    /* 예전엔 '맞았지만 완벽은 아님(ok)'이 승급 스트릭을 0으로 리셋했다.
-       그래서 20문제를 연속으로 맞혀도 난이도가 한 칸도 안 올라갔다.
-       (특히 받아쓰기는 정답이어도 항상 ok 로 기록돼서 영원히 안 올랐다)
-       → ok 는 리셋하지 않고 절반(0.5)만 쌓는다. perfect 4번 또는 ok 8번이면 승급. */
-    if(kind==="perfect"){ st.up=(st.up||0)+1; st.miss=0; st.run=0; }
-    else if(kind==="miss" || kind==="hardmiss"){
+    /* 승급은 '연속'이 아니라 '최근 정답률'로 판단한다.
+       예전엔 완벽 4연속이 필요해서, 중간에 한 번만 삐끗해도 쌓은 게 전부 날아갔다.
+       4문제 중 3개를 맞히면(75%) 실력이 는 것이 맞으므로 그때 올린다.
+       완벽/보통(다시 듣기 사용)을 구분하지 않는다 — 맞혔으면 맞힌 것이다.
+       내려가는 규칙은 그대로 둔다: 어려우면 빨리 쉬워져야 한다. */
+    st.hist = Array.isArray(st.hist) ? st.hist : [];
+    const isMiss = (kind==="miss" || kind==="hardmiss");
+    st.hist.push(isMiss?0:1);
+    if(st.hist.length>6) st.hist.shift();       // 최근 6문제만 본다
+    if(isMiss){
       const w = kind==="hardmiss" ? 2 : 1;      // 아예 못 알아들은 경우는 2번으로 침
       st.miss=(st.miss||0)+w; st.up=0; st.run=(st.run||0)+w;
       if(st.miss>=2){ st.miss=0; delta = -(1 + Math.min(3, Math.floor((st.run-2)/2))); }
+    } else {
+      st.miss=0; st.run=0;
     }
-    else { st.miss=0; st.run=0; st.up=(st.up||0)+0.5; }
-    if(delta===0 && (st.up||0)>=4){ st.up=0; delta=1; }
+    if(delta===0 && st.hist.length>=4){
+      const rate=st.hist.reduce((a,c)=>a+c,0)/st.hist.length;
+      if(rate>=0.75){ delta=1; st.hist=[]; }   // 올렸으면 새 난이도에서 다시 센다
+    }
     d.st[skill]=st;
     if(delta){
       const nv=Math.max(1,Math.min(60,(d[skill]||1)+delta));
