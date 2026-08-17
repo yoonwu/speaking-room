@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.128";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.129";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6398,7 +6398,10 @@ const COMMON_FREQ_WORDS=["you","i","the","to","a","it","and","that","of","is","i
 const COMMON_FREQ_SKIP=new Set("the of and to in a is that for it as was with be by on not he i this are or his from at which but have an had they you were their one all we can her has there been if more when will would who so no out up said what about than into them could only other new some these two may then do first any my now such like our over man me even most made after also did many before must through back years where much your way well down should because each just those people mr how too little state good very make world still own see work long get here between both life being under never day same another know while last might us great old year off come since against go came right used take three she him hers herself himself we me mine your yours yourself yourselves ourselves themselves them theirs it its itself these those who whom whose what which when where why how yes nope yep yeah okay ok oh uh um don ll ve re im ive youre hes shes theyre didn doesn isn wasn weren haven hasn hadn wouldn couldn shouldn won cant gonna wanna gotta ain john mary david michael james robert william thomas george paul mark peter keith patrick johnson ben jane susan linda anna maria jason alex simon bruce kerry laura nancy sean greg larry scott".split(" "));
 function commonFreqWindow(){
   const lvl=diffMacro();
-  const ranges = lvl<=2 ? [0,1200] : lvl<=4 ? [250,2200] : lvl<=6 ? [900,3600] : lvl<=8 ? [1600,5000] : [2400,5000];
+  /* 핵심 2000을 먼저 촘촘히 끝내고 그 뒤를 확장한다.
+     예전엔 3단계부터 이미 2200, 5단계에 3600까지 나가서 정작 핵심 2000 안쪽이
+     듬성듬성 비었다. 80~90% 커버리지는 상위 2000을 채워야 나온다. */
+  const ranges = lvl<=2 ? [0,800] : lvl<=4 ? [300,1500] : lvl<=6 ? [800,2000] : lvl<=8 ? [1200,3200] : [2000,5000];
   const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
   const slice=COMMON_FREQ_WORDS.slice(ranges[0], ranges[1]).filter(w=>!recent.has(w));
   return slice.length>=160 ? slice : COMMON_FREQ_WORDS.filter(w=>!recent.has(w));
@@ -9541,7 +9544,11 @@ function wordLevelOf(w){
   if(SURVIVAL_L1.has(w)) return 1;
   const i=_FREQ_INDEX[w];
   if(i==null) return 6;
-  if(i<150) return 1; if(i<300) return 2; if(i<500) return 3; if(i<800) return 4; if(i<1200) return 5; return 6;
+  /* 일상 대화는 상위 1000개로 약 80%, 2000개로 약 90%가 커버된다.
+     그래서 '핵심 2000'을 학습의 본체로 두고 등급을 그 안에 고르게 펼친다.
+     예전엔 1200까지만 1~5로 나누고 1200~5000을 전부 6으로 뭉뚱그려서,
+     fresh(1200번째)와 lounge(5000번째)가 같은 난이도로 취급됐다. */
+  if(i<200) return 1; if(i<500) return 2; if(i<900) return 3; if(i<1400) return 4; if(i<2000) return 5; return 6;
 }
 // 유저 단어레벨 — SRS에서 충분히 아는(review 이상) 단어 수로 산정. 콜드스타트=1
 function userWordLevel(){
@@ -14959,6 +14966,25 @@ function profLevelByCount(n, maxCount){
   if(n<=0) return 1;
   return Math.max(1, Math.min(60, Math.floor(Math.sqrt(Math.min(n,maxCount)/maxCount)*59)+1));
 }
+/* 📚 핵심 2000 진척도 — 일상 대화는 상위 1000개로 약 80%, 2000개로 약 90%가 커버된다.
+   전체 5000개 중 몇 개가 아니라 '핵심 2000 중 몇 개'가 실제 알아듣는 비율에 가깝다. */
+const CORE_VOCAB_N=2000;
+function coreVocabProgress(){
+  try{
+    const core=new Set(COMMON_FREQ_WORDS.slice(0,CORE_VOCAB_N));
+    const s=srsAll(); let known=0;
+    for(const k in s){
+      const st=s[k]&&s[k].stage;
+      if(st!=="review"&&st!=="strong"&&st!=="mastered") continue;
+      const w=String((s[k]&&s[k].en)||k||"").toLowerCase().trim();
+      if(core.has(w)) known++;
+    }
+    const pct=Math.min(100, Math.round(known/CORE_VOCAB_N*100));
+    // 커버리지 어림값: 1000개 ≈ 80%, 2000개 ≈ 90%
+    const cover = known<=0 ? 0 : (known>=CORE_VOCAB_N ? 90 : Math.round(known<=1000 ? (known/1000*80) : (80 + (known-1000)/1000*10)));
+    return {known, total:CORE_VOCAB_N, pct, cover};
+  }catch(e){ return {known:0, total:CORE_VOCAB_N, pct:0, cover:0}; }
+}
 function profSkillStats(){
   const p=skillProfGet();
   const wordKeys=new Set(Object.keys(p.words||{}));
@@ -15834,6 +15860,7 @@ function renderProfile(){
   const nr=nextReward(li.level);
   const bp=bestPronToday(); const stars=phStars(); const txp=todayXP();
   const skill=profSkillStats();
+  const core=coreVocabProgress();
   const stats=[["📚","Lv."+skill.wordLevel,"단어 레벨"],["🎧","Lv."+skill.listenLevel,"리스닝 레벨"],["🗣️","Lv."+skill.speakLevel,"말하기 레벨"],["⚡",skill.automaticExpressions,"자동화 블록","statAutoBlocks"],["💎",skill.wordKnown,"완벽 단어"]];
   let rwHtml="", nextSet=false;
   REWARDS.forEach(r=>{
@@ -15856,10 +15883,22 @@ function renderProfile(){
       <div class="xpbar-top"><div class="xpbar-lv">실력 레벨 <b>${skill.overallLevel}</b></div><div class="xpbar-n">문제 난이도 ${levelName()}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);line-height:1.5">
         <span>📚 완벽 단어 ${skill.wordKnown}개</span>
+        <span>🎯 핵심 2000 중 ${core.known}개</span>
         <span>🎧 완벽 듣기 ${skill.listenPerfect}개</span>
         <span>🗣️ 능동 말하기 ${skill.speakPerfect}개</span>
         <span>⚡ 자동화 블록 ${skill.automaticExpressions}개</span>
         <span>🔁 다른 상황 필요 ${skill.needsContext}개</span>
+      </div>
+      <div style="margin-top:9px">
+        <div style="display:flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--muted)">
+          <b style="color:var(--text);font-size:12.5px">🎯 핵심 2000</b>
+          <span>${core.known} / ${core.total}</span>
+          <span style="margin-left:auto">일상 대화 약 <b style="color:#189E79">${core.cover}%</b> 알아듣기</span>
+        </div>
+        <div style="height:8px;border-radius:99px;background:var(--mist);overflow:hidden;margin-top:5px">
+          <i style="display:block;height:100%;width:${core.pct}%;background:linear-gradient(90deg,#2BBD94,#189E79)"></i>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">자주 쓰는 순서로 1000개면 약 80%, 2000개면 약 90%를 알아들어요.</div>
       </div>
       <div style="font-size:11.5px;color:var(--muted);margin-top:7px">실력 레벨은 XP가 아니라 실제로 완전히 맞힌/들은/꺼낸 항목 수로만 올라가요.</div>
     </div>
