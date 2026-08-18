@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.135";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.136";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2814,7 +2814,9 @@ function autoLvlRecord(skill, kind){
        내려가는 규칙은 그대로 둔다: 어려우면 빨리 쉬워져야 한다. */
     st.hist = Array.isArray(st.hist) ? st.hist : [];
     const isMiss = (kind==="miss" || kind==="hardmiss");
-    st.hist.push(isMiss?0:1);
+    // 한 번에 맞힌 것(perfect)과 힌트·재시도 끝에 맞힌 것(ok)을 점수로 구분한다.
+    // 둘 다 '맞힘'이지만, 크게 뛰어올리는 건 한 번에 맞혔을 때만.
+    st.hist.push(isMiss ? 0 : (kind==="perfect" ? 1 : 0.85));
     if(st.hist.length>6) st.hist.shift();       // 최근 6문제만 본다
     if(isMiss){
       const w = kind==="hardmiss" ? 2 : 1;      // 아예 못 알아들은 경우는 2번으로 침
@@ -2823,9 +2825,16 @@ function autoLvlRecord(skill, kind){
     } else {
       st.miss=0; st.run=0;
     }
+    /* 올리는 폭은 '얼마나 잘하는지'에 비례한다.
+       예전엔 아무리 잘해도 4문제마다 +1이 최대라, 12문제를 전부 맞혀도 하루 +3.
+       매크로 밴드 하나가 6이라 나흘을 다 맞혀도 단어 수준이 두 밴드밖에 못 움직였다. */
     if(delta===0 && st.hist.length>=4){
       const rate=st.hist.reduce((a,c)=>a+c,0)/st.hist.length;
-      if(rate>=0.75){ delta=1; st.hist=[]; }   // 올렸으면 새 난이도에서 다시 센다
+      if(rate>=0.99)     delta=3;    // 4문제를 전부 한 번에 맞힘 — 지금 난이도가 확실히 쉽다
+      else if(rate>=0.7) delta=2;    // 4문제 중 3개 또는 힌트로 다 맞힘 — 잘 따라오고 있다
+      else if(rate<=0.4) delta=-2;   // 4문제 중 1개 수준 — 너무 어렵다, 빨리 내린다
+      // 절반(2/4)은 지금 난이도가 맞는 구간 — 그대로 둔다
+      if(delta) st.hist=[];          // 바뀐 난이도에서 다시 센다
     }
     d.st[skill]=st;
     if(delta){
@@ -6419,17 +6428,19 @@ function vocabPhase(){
 }
 function vocabPhaseCap(){ const ph=vocabPhase(); return ph===1?1000:(ph===2?2000:COMMON_FREQ_WORDS.length); }
 function commonFreqWindow(){
-  const lvl=diffMacro();
-  /* 핵심 2000을 먼저 촘촘히 끝내고 그 뒤를 확장한다.
-     예전엔 3단계부터 이미 2200, 5단계에 3600까지 나가서 정작 핵심 2000 안쪽이
-     듬성듬성 비었다. 80~90% 커버리지는 상위 2000을 채워야 나온다. */
-  const ranges = lvl<=2 ? [0,800] : lvl<=4 ? [300,1500] : lvl<=6 ? [800,2000] : lvl<=8 ? [1200,3200] : [2000,5000];
-  // 단계 상한을 넘지 않게 자른다. 너무 좁아지면 아래쪽을 넓혀 후보 수를 확보한다.
+  const D=Math.max(1, Math.min(60, diffLevel()));
+  const t=(D-1)/59;
+  /* 구간을 D레벨(1~60)에 따라 매끄럽게 옮긴다.
+     예전엔 매크로 밴드(6레벨 묶음) 5칸으로만 나눠서, D25부터 D60까지가
+     전부 같은 400~1000위 단어였다. 아무리 올라가도 pen·water 수준이 반복된 이유. */
+  const lo=Math.round(Math.pow(t,1.6)*2600);
+  const hi=Math.round(lo + 700 + Math.pow(t,1.4)*1700);
+  /* 단계 상한(핵심 1000 → 2000 → 전체)은 '아래쪽을 촘촘히' 하라는 뜻이지
+     영원히 못 넘어가는 천장이 아니다. 상한으로 자르되 창은 최소 600개는 남긴다. */
   const cap=vocabPhaseCap();
-  let lo=ranges[0], hi=Math.min(ranges[1], cap);
-  if(hi-lo < 400) lo=Math.max(0, hi-600);
+  const top=Math.max(Math.min(hi, cap), lo+600);
   const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
-  const slice=COMMON_FREQ_WORDS.slice(lo, hi).filter(w=>!recent.has(w));
+  const slice=COMMON_FREQ_WORDS.slice(lo, top).filter(w=>!recent.has(w));
   return slice.length>=160 ? slice : COMMON_FREQ_WORDS.filter(w=>!recent.has(w));
 }
 function commonFreqPromptWords(theme){
