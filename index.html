@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.131";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.133";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14104,12 +14104,12 @@ const WRITE_SETS=[
     {ko:"제가 도와드릴까요?", en:"Can I help you?"},
   ]},
   {lv:1, items:[
-    {ko:"물 좀 주세요.", en:"Can I have some water?", alts:["Can I get some water?"]},
-    {ko:"메뉴판 좀 주세요.", en:"Can I have the menu?", alts:["Can I get the menu?"]},
+    {ko:"물 좀 주세요.", en:"Can I have some water?", alts:["Can I get some water?","Could I have some water?","Can I get water please"]},
+    {ko:"메뉴판 좀 주세요.", en:"Can I have the menu?", alts:["Can I get the menu?","Could I have the menu?"]},
   ]},
   {lv:1, items:[
-    {ko:"저 커피로 할게요.", en:"I'll have a coffee.", alts:["I'd like a coffee."]},
-    {ko:"저 차로 할게요.", en:"I'll have a tea.", alts:["I'd like a tea."]},
+    {ko:"저 커피로 할게요.", en:"I'll have a coffee.", alts:["I'd like a coffee.","Can I get a coffee?","Can I have a coffee?"]},
+    {ko:"저 차로 할게요.", en:"I'll have a tea.", alts:["I'd like a tea.","Can I get a tea?","Can I have a tea?"]},
   ]},
 
   /* ── 중간 단계: 6~10단어 ── */
@@ -14196,7 +14196,7 @@ const WRITE_SETS=[
     {ko:"도착하면 알려줘.", en:"Let me know when you get there."},
   ]},
 ];
-const WR_SET_SIZE=10;   // 한 판 문항 수 = 오늘 루틴 '문장 만들기' 목표와 동일
+const WR_SET_SIZE=5;    // 한 판 문항 수 = 오늘 루틴 '문장 만들기' 목표와 동일
 let wrRun=null;
 // 난이도: 계속 틀리는데 길이를 늘리지 않는다 — 기존 speakLevel 을 그대로 쓴다
 function wrBand(){
@@ -14225,7 +14225,10 @@ function wrNorm(s){
     .replace(/[^a-z0-9' ]+/g," ").replace(/\s+/g," ").trim();
 }
 // 관사·부사처럼 있으나 없으나 뜻이 같은 말은 빼고 핵심어만 비교
-const WR_SKIP=new Set(["a","an","the","now","just","really","very","then","please"]);
+// 있든 없든 뜻이 같은 말은 채점에서 뺀다.
+// "Can I get water" 와 "Can I get some water?" 를 다른 답으로 치면
+// 맞는 말을 하고도 틀렸다고 나와서 공부할 맛이 떨어진다.
+const WR_SKIP=new Set(["a","an","the","now","just","really","very","then","please","some","any"]);
 // 부정어는 뜻을 뒤집으므로 절대 무시하지 않는다
 const WR_NEG=/^(not|never|no|none|nothing|nobody|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|can't|cannot|won't|shouldn't|wouldn't|couldn't|haven't|hasn't|hadn't)$/;
 function wrNegN(ws){ return (ws||[]).filter(w=>WR_NEG.test(w)).length; }
@@ -14238,6 +14241,7 @@ function wrGrade(item, heard){
   const cands=[item.en].concat(item.alts||[]);
   for(const c of cands){ if(wrNorm(c)===h) return {ok:true, near:false}; }
   const gotAll=wrKey(h);
+  let near=false;
   for(const c of cands){
     const want=wrKey(c), got=gotAll;
     if(!want.length) continue;
@@ -14248,10 +14252,12 @@ function wrGrade(item, heard){
     const hit=want.filter(w=>gset.has(w)).length;
     // 핵심어를 전부 말했고 군더더기가 과하지 않으면 정답 (어순 무관)
     if(hit===want.length && got.length<=want.length+3) return {ok:true, near:false};
-    // 절반 이상 맞으면 'AI에게 물어볼 만한' 후보
-    if(hit*2>=want.length) return {ok:false, near:true};
+    // 절반 이상 맞으면 'AI에게 물어볼 만한' 후보 — 단, 여기서 끝내면 안 된다.
+    // 예전엔 첫 후보가 '비슷함'이기만 해도 즉시 반환해서 대체답안을 아예 안 봤다.
+    // ("Can I get water" 가 대체답안 "Can I get some water?" 와 같은데도 오답 처리)
+    if(hit*2>=want.length) near=true;
   }
-  return {ok:false, near:false};
+  return {ok:false, near};
 }
 /* 한 줄 피드백 — 문법 강의 금지. 틀린 부분 → 올바른 형태 → 이유 한 줄까지만. */
 function wrTip(en, heard){
@@ -15136,7 +15142,7 @@ const RT_STEPS=[
   {k:"vocab", emo:"💬", t:"단어", sub:"말할 재료 채우기", goal:10, go:()=>startVocabCoach()},
   {k:"newblk",emo:"🧱", t:"새 블록", sub:"오늘 새로 익힐 패턴 1개", goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
   {k:"listen",emo:"👂", t:"상황 듣기", sub:"듣고 뜻·의도 고르기", goal:7,  go:()=>startSituationListening()},
-  {k:"write", emo:"📝", t:"문장 만들기", sub:"한국어를 보고 3초 안에 영어로", goal:10, go:()=>startWriting()},
+  {k:"write", emo:"📝", t:"문장 만들기", sub:"한국어를 보고 3초 안에 영어로", goal:5,  go:()=>startWriting()},
   {k:"dict",  emo:"✍️", t:"받아쓰기", sub:"정밀 진단 2문제", goal:2,  go:()=>startMainTraining()}
 ];
 function rtCount(k, d){
