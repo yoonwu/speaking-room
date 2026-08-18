@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.136";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.137";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2690,8 +2690,8 @@ async function callClaude(system, messages, model){
   const NO_MD="\n\n[FORMAT] Plain conversational text only. Do NOT use markdown: no **, no *, no ##, no ---, no bullet lists, no backticks. Write naturally as if texting.";
   const sys = (typeof system==="string" && system.indexOf("ONLY")===-1 && system.indexOf("JSON")===-1)
     ? system+NO_MD : system;
-  const payload=JSON.stringify({ model: model||MODEL, max_tokens:2000, system:sys, messages });
-  let lastErr=null;
+  let payload=JSON.stringify({ model: model||MODEL, max_tokens:2000, system:sys, messages });
+  let lastErr=null, triedFallback=false;
   // 최대 2회 시도 (사파리 첫 연결 실패 대비)
   for(let attempt=0; attempt<2; attempt++){
     // 타임아웃 (사파리 무한대기 방지)
@@ -2705,11 +2705,20 @@ async function callClaude(system, messages, model){
       if(!res.ok){
         let emsg=""; try{ const eb=await res.json(); emsg=(eb&&eb.error&&eb.error.message)||""; }catch(e){}
         lastErr=new Error("서버 응답 "+res.status+(emsg?" · "+emsg.slice(0,140):""));
-        if(res.status>=500||res.status===429){ continue; } throw lastErr; }
+        if(res.status>=500||res.status===429){ continue; }
+        // 모델 이름이 문제면(모델 교체·오타) 확실히 되는 빠른 모델로 한 번 더 시도한다.
+        // 이게 없으면 AI 기능 전체가 조용히 죽고 로컬 단어만 계속 나온다.
+        if(res.status>=400 && res.status<500 && /model/i.test(emsg) && !triedFallback){
+          triedFallback=true;
+          try{ const o=JSON.parse(payload); o.model=FAST_MODEL; payload=JSON.stringify(o); attempt=-1; continue; }catch(e){}
+        }
+        throw lastErr; }
       return await res.json();
     }catch(e){
       if(timer) clearTimeout(timer);
       if(e && e.name==="AbortError"){ lastErr=new Error("응답 시간 초과"); continue; }
+      // 서버가 이유를 알려준 오류는 그대로 전달한다 ("연결 실패: 서버 응답 401 …"처럼 겹쳐 쓰지 않게)
+      if(e && /^서버 응답 /.test(String(e.message||""))) throw e;
       lastErr=new Error(e&&e.message? ("연결 실패: "+e.message) : "네트워크 연결 실패");
       // 네트워크 오류면 한 번 더 시도
     }
@@ -2818,13 +2827,12 @@ function autoLvlRecord(skill, kind){
     // 둘 다 '맞힘'이지만, 크게 뛰어올리는 건 한 번에 맞혔을 때만.
     st.hist.push(isMiss ? 0 : (kind==="perfect" ? 1 : 0.85));
     if(st.hist.length>6) st.hist.shift();       // 최근 6문제만 본다
-    if(isMiss){
-      const w = kind==="hardmiss" ? 2 : 1;      // 아예 못 알아들은 경우는 2번으로 침
-      st.miss=(st.miss||0)+w; st.up=0; st.run=(st.run||0)+w;
-      if(st.miss>=2){ st.miss=0; delta = -(1 + Math.min(3, Math.floor((st.run-2)/2))); }
-    } else {
-      st.miss=0; st.run=0;
-    }
+    /* 틀렸다고 난이도를 쭉쭉 떨어뜨리지 않는다.
+       예전엔 연속으로 막히면 한 번에 -4까지 떨어져서, 어렵다 싶으면 순식간에
+       hat·sun 수준까지 되돌아갔다. 못 맞히면 '안 올리면' 되는 것이지
+       배운 걸 되돌릴 이유가 없다. 내리는 건 아래 정답률 창에서 최대 -1만. */
+    if(isMiss){ st.miss=(st.miss||0)+1; st.up=0; st.run=(st.run||0)+1; }
+    else { st.miss=0; st.run=0; }
     /* 올리는 폭은 '얼마나 잘하는지'에 비례한다.
        예전엔 아무리 잘해도 4문제마다 +1이 최대라, 12문제를 전부 맞혀도 하루 +3.
        매크로 밴드 하나가 6이라 나흘을 다 맞혀도 단어 수준이 두 밴드밖에 못 움직였다. */
@@ -2832,13 +2840,25 @@ function autoLvlRecord(skill, kind){
       const rate=st.hist.reduce((a,c)=>a+c,0)/st.hist.length;
       if(rate>=0.99)     delta=3;    // 4문제를 전부 한 번에 맞힘 — 지금 난이도가 확실히 쉽다
       else if(rate>=0.7) delta=2;    // 4문제 중 3개 또는 힌트로 다 맞힘 — 잘 따라오고 있다
-      else if(rate<=0.4) delta=-2;   // 4문제 중 1개 수준 — 너무 어렵다, 빨리 내린다
+      else if(rate<=0.4) delta=-1;   // 너무 어려울 때만 한 칸. 되돌리는 게 아니라 숨 고르기
       // 절반(2/4)은 지금 난이도가 맞는 구간 — 그대로 둔다
       if(delta) st.hist=[];          // 바뀐 난이도에서 다시 센다
     }
     d.st[skill]=st;
+    /* 한 번 도달한 수준 아래로는 한 밴드(6) 넘게 내려가지 않는다.
+       하루 못했다고 처음부터 다시 시작하게 만들면 쌓은 게 사라진다. */
+    d.best=d.best||{};
+    if((d[skill]||1) > (d.best[skill]||0)) d.best[skill]=d[skill];
     if(delta){
-      const nv=Math.max(1,Math.min(60,(d[skill]||1)+delta));
+      const cur=d[skill]||1;
+      let nv=cur+delta;
+      if(delta<0){
+        // 바닥은 '더 내려가지 않게' 막는 용도다. 이미 바닥보다 낮으면 그 자리를 지킬 뿐,
+        // 바닥까지 끌어올리지는 않는다.
+        const floor=Math.max(1,(d.best[skill]||1)-6);
+        nv=Math.max(nv, Math.min(floor, cur));
+      }
+      nv=Math.max(1, Math.min(60, nv));
       if(nv!==d[skill]){ d[skill]=nv; try{ bleShowHintToast(AL_TOAST[skill][delta>0?"up":"down"]); }catch(e){} }
     }
     alSave(d);
@@ -5778,6 +5798,7 @@ freqLine,
 "Use the frequency bank as the main source for new vocabulary. Do not keep falling back to the same tiny theme words; the app has 5000 ordered common words available.",
 levelHint(),
 levelCap(),
+"MIX: of the 12, make 9-10 sit AT this difficulty and 2-3 clearly HARDER (about one band above) so there is always something to stretch for. Mark the harder ones with diff 3.",
 "Pick 12 genuinely useful words/expressions AT THIS DIFFICULTY. Every 'word' must be a DIFFERENT answer target. For EACH give 3 example sentences — each a DIFFERENT sentence frame, obeying the level's length limit, and EACH a complete grammatical sentence (real sentence with correct articles/verbs, never a word-pile). Also 2 collocations. Variety seed "+seed+".",
 "CRITICAL: 'word' MUST be the ENGLISH word/phrase, 'ko' MUST be its KOREAN meaning. NEVER swap them. Include a 'blank' field: ONE example as fill-in-the-blank with the target replaced by '____', plus 'answer'. The 'answer' MUST equal the target 'word' (do not test a different word in the blank).",
 'Return ONLY JSON: {"words":[{"word":"refill","ko":"리필","diff":1,"examples":[{"en":"Can I get a refill?","ko":"리필 되나요?"},{"en":"Do you do free refills?","ko":"리필 공짜인가요?"},{"en":"I would love a refill.","ko":"리필 받고 싶어요."}],"blank":{"en":"Can I get a ____?","ko":"리필 되나요?","answer":"refill"},"colloc":["get a refill","free refill"]}]} where diff is 1 (easy) 2 (medium) or 3 (advanced).'
@@ -6485,7 +6506,9 @@ function starterSet(){
   // 🎯 자동 wordLevel 기준 (D1~60 → 매크로 1~10 환산)
   let lvl; try{ lvl=Math.max(1,Math.min(10,Math.ceil(getAutoLevels().wordLevel/6))); }catch(e){ lvl=diffMacro(); }
   const bandKey = lvl<=3 ? "low" : lvl<=6 ? "mid" : "high";
+  const upKey   = bandKey==="low" ? "mid" : "high";     // 한 밴드 위 — 늘 조금 어려운 게 섞이게
   const band = (STARTER_VOCAB[bandKey]||[]).concat(starterExtraWords(bandKey));
+  const upBand = bandKey==="high" ? [] : (STARTER_VOCAB[upKey]||[]).concat(starterExtraWords(upKey));
   const currentThemeSeeds = state.vocabTheme && SEED_VOCAB[state.vocabTheme.id]
     ? SEED_VOCAB[state.vocabTheme.id].flat()
     : [];
@@ -6501,7 +6524,11 @@ function starterSet(){
     hSet(rotKey, offset+VOCAB_SET_SIZE);
     pool=pool.concat(rotated);
   }
-  return shuffleVocab(uniqueVocabWords(pool)).slice(0,VOCAB_SET_SIZE);
+  const base=shuffleVocab(uniqueVocabWords(pool)).slice(0, Math.max(1, VOCAB_SET_SIZE-2));
+  const stretch=shuffleVocab(uniqueVocabWords(upBand).filter(w=>!recent.has(vocabWordKey(w))))
+    .slice(0, VOCAB_SET_SIZE-base.length)
+    .map(w=>Object.assign({}, w, {diff:3}));
+  return shuffleVocab(uniqueVocabWords(base.concat(stretch))).slice(0,VOCAB_SET_SIZE);
 }
 function instantSet(){
   return shuffleVocab(uniqueVocabWords(seedVocabWords().concat(starterExtraWords("low"),starterExtraWords("mid"),starterExtraWords("high")))).slice(0,VOCAB_SET_SIZE);
@@ -6729,6 +6756,51 @@ function wpResume(){ try{ ttStart("vocab"); }catch(e){}
   wpQueue.slice(0,wpPos).forEach(q=>{ if(q.word&&q.word.word) wpSeenWord[q.word.word]=true; });
   wpNext();
 }
+/* 📇 본 단어 카드 보관 — 예문까지 같이 저장해야 복습 때 제대로 된 문제로 다시 낼 수 있다.
+   SRS에는 단어와 뜻만 있어서, 이게 없으면 복습 문제가 빈 껍데기가 된다. */
+const WP_CARDS_KEY="speakingroom:vcards";
+function wpCardsAll(){ try{ return hGet(WP_CARDS_KEY,{})||{}; }catch(e){ return {}; } }
+function wpCardsSave(words){
+  try{
+    const o=wpCardsAll();
+    (words||[]).forEach(w=>{
+      const k=srsKey(w&&w.word); if(!k) return;
+      o[k]={word:w.word, ko:w.ko||"", diff:w.diff||2, examples:(w.examples||[]).slice(0,3), blank:w.blank||null, t:Date.now()};
+    });
+    const keys=Object.keys(o);
+    if(keys.length>400){ keys.sort((a,b)=>(o[a].t||0)-(o[b].t||0)).slice(0, keys.length-400).forEach(k=>delete o[k]); }
+    hSet(WP_CARDS_KEY,o);
+  }catch(e){}
+}
+/* 오늘 다시 볼 단어 — 틀린 적 있는 것 먼저. 맞힐 때까지 계속 돌아오게 하는 게 핵심이다. */
+function wpReviewCards(n){
+  try{
+    const cards=wpCardsAll(); const out=[]; const seen=new Set();
+    srsDue(60).forEach(it=>{
+      if(out.length>=n) return;
+      const k=srsKey(it.en); if(!k||seen.has(k)) return;
+      const c=cards[k]; if(!c||!c.word) return;
+      seen.add(k); out.push({word:c.word, ko:c.ko||it.ko||"", diff:c.diff||2, examples:c.examples||[], blank:c.blank||null, _review:true});
+    });
+    return out;
+  }catch(e){ return []; }
+}
+/* 한 세트 구성 — 아는 것(복습) 2~3 / 새것 대부분 / 어려운 것 1~2.
+   전부 새 단어면 계속 틀리고, 전부 아는 거면 안 는다. */
+function wpComposeSet(fresh){
+  const N=VOCAB_SET_SIZE;
+  const nReview=Math.max(2, Math.round(N*0.22));            // 12개 기준 3개
+  const have=new Set((fresh||[]).map(w=>srsKey(w&&w.word)));
+  const review=wpReviewCards(nReview).filter(w=>!have.has(srsKey(w.word)));
+  if(!review.length) return (fresh||[]).slice(0,N);
+  // 어려운 것(diff 3)은 1~2개만 남기고, 나머지 자리를 복습으로 바꾼다
+  const rest=(fresh||[]).slice();
+  const hard=rest.filter(w=>Number(w&&w.diff)>=3);
+  const easy=rest.filter(w=>Number(w&&w.diff)<3);
+  const keepHard=hard.slice(0, Math.max(1, Math.round(N*0.15)));  // 12개 기준 2개
+  const keepNew=easy.concat(hard.slice(keepHard.length)).slice(0, Math.max(0, N-review.length-keepHard.length));
+  return shuffleVocab(uniqueVocabWords(review.concat(keepNew, keepHard))).slice(0,N);
+}
 function wpStart(words){
   try{ xpSessionStart(); }catch(e){}
   // 🎯 이미 탄탄/마스터인 단어는 새 학습에서 제외 (최근 실패 없고 14일 안 지난 것) — 14일 지나면 유지보수로 허용
@@ -6736,7 +6808,8 @@ function wpStart(words){
   let _in=uniqueVocabWords(words||[]).filter(w=>w&&w.word);
   const _filtered=_in.filter(_fresh);
   if(_filtered.length>=5) _in=_filtered;   // 다 걸러지면(대부분 마스터) 원본 유지 — 빈 세트 방지
-  const ws=_in.slice(0,VOCAB_SET_SIZE);
+  try{ wpCardsSave(_in); }catch(e){}       // 예문까지 보관 — 나중에 복습 문제로 다시 낸다
+  const ws=wpComposeSet(_in);
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
   // 한 세트 안에서는 한 단어를 맞히면 다시 내지 않는다. 예문 확장은 결과 카드에서만 보여준다.
   const usedAnswers=new Set();
@@ -6761,6 +6834,7 @@ function wpAsk(q){
   const ctxLabel = q._ctx? (ctxMap[q._ctx]||"🌎 "+q._ctx) : "";
   const firstTime = !wpSeenWord[q.word.word];
   const tabTxt = q._retryNow ? "🔁 다시 — 이번엔 맞혀봐요!"
+    : (firstTime && q.word && q.word._review) ? "📌 복습 — 전에 봤어요"
     : firstTime ? "🆕 새 표현"
     : ctxLabel ? ctxLabel+" — 또 나왔어요!"
     : "🔁 또 나왔어요 — 기억나요?";
@@ -11422,7 +11496,12 @@ levelHint()
     const d=await callClaude(sys,[{role:"user",content:q}], FAST_MODEL);
     const txt=extractText(d)||"답을 못 했어요. 다시 물어봐 주세요.";
     a.innerHTML=""; a.textContent=txt;
-  }catch(e){ a.textContent="앗, 연결이 안 됐어요. 다시 시도해 주세요."; }
+  }catch(e){
+    // 예전엔 무슨 일이 있어도 "연결이 안 됐어요"만 떠서 원인을 알 수가 없었다.
+    const why=(e&&e.message)?String(e.message).slice(0,160):"";
+    a.innerHTML=""; a.textContent="앗, 답을 못 받았어요. 다시 시도해 주세요."+(why?("\n("+why+")"):"");
+    a.style.whiteSpace="pre-line";
+  }
   log.scrollTop=log.scrollHeight;
 }
 // 영어 문장을 탭 가능한 단어들로 감싸기
