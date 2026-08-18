@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.134";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.135";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14271,11 +14271,10 @@ function wrGrade(item, heard){
     const gset=new Set(got);
     const hit=want.filter(w=>gset.has(w)).length;
     // 핵심어를 전부 말했고 군더더기가 과하지 않으면 정답 (어순 무관)
-    if(hit===want.length && got.length<=want.length+3) return {ok:true, near:false};
-    // 절반 이상 맞으면 'AI에게 물어볼 만한' 후보 — 단, 여기서 끝내면 안 된다.
-    // 예전엔 첫 후보가 '비슷함'이기만 해도 즉시 반환해서 대체답안을 아예 안 봤다.
-    // ("Can I get water" 가 대체답안 "Can I get some water?" 와 같은데도 오답 처리)
-    if(hit*2>=want.length) near=true;
+    if(hit===want.length && got.length<=want.length+5) return {ok:true, near:false};
+    // '얼추 그 문장' — 모범답안 따라 말하기 단계에서 통과 기준으로 쓴다.
+    // (첫 후보가 비슷하다고 여기서 끝내면 대체답안을 못 보므로 반환하지 않는다)
+    if(hit*3>=want.length) near=true;
   }
   return {ok:false, near};
 }
@@ -14304,10 +14303,23 @@ function wrTip(en, heard){
   if(miss.length===1) return `빠진 말: ${miss[0]}`;
   return "";
 }
-// AI 확인은 '맞을 수도 있는' 답에만. 매 문제 호출하면 느려진다.
+/* AI 확인을 부를 만한 답인지 — 영어로 한마디라도 했으면 부른다.
+   마이크가 못 알아들은 빈 답·한글 답·문장 길이가 터무니없는 답만 걸러서
+   쓸데없는 호출과 대기시간을 막는다. */
+function wrWorthAi(item, heard){
+  const h=String(heard||"").trim();
+  if(!h) return false;
+  if(!/[a-z]{2}/i.test(h)) return false;                 // 영어가 아예 없음(한글만 등)
+  const wn=wrKey(h).length;
+  if(!wn) return false;
+  const want=wrKey(item.en).length||1;
+  if(wn>want+8) return false;                            // 정답과 상관없이 길게 늘어놓은 말
+  return true;
+}
+// 뜻이 통하면 정답. 단 시제·부정은 뜻이 바뀌므로 그대로여야 한다.
 async function wrAiCheck(item, heard){
   try{
-    const sys='You judge if a Korean learner\'s English sentence means the same as the model and is natural, correct English. Return ONLY JSON: {"ok":true|false,"tip":"한국어로 한 줄 이유(20자 이내), ok면 빈 문자열"}';
+    const sys='You grade a Korean learner speaking English. Be generous: if the learner\'s sentence conveys the same meaning as the model and is understandable, correct English, mark it correct even if the wording, word order, or politeness differs from the model. Different but valid phrasings are correct.\nMark it WRONG only if: the meaning differs, the time reference/tense differs (past vs now vs future vs habit), positive/negative is flipped, the subject or object changed, or the English is broken enough to confuse a listener.\nReturn ONLY JSON: {"ok":true|false,"tip":"한국어로 한 줄 이유(20자 이내), ok면 빈 문자열"}';
     const msg=`Korean meaning: ${item.ko}\nModel: ${item.en}\nLearner said: ${heard}`;
     const d=await callClaude(sys,[{role:"user",content:msg}], FAST_MODEL);
     const o=parseJSON(extractText(d));
@@ -14372,11 +14384,17 @@ async function wrSubmit(heard, meta){
   const it=wrRun.items[wrRun.idx];
   const stat=$("#wrStat"); if(stat) stat.textContent="확인 중…";
   let g=wrGrade(it, heard);
-  // 다른 표현이지만 맞을 수 있는 경우에만 AI 확인 (속도 보호)
-  if(!g.ok && g.near && heard){
+  // 모범답안과 글자가 달라도 뜻이 통하면 정답으로 넘긴다.
+  // 예전엔 핵심어가 절반 이상 겹칠 때만 AI에게 물어봐서,
+  // 아예 다른 말로 옳게 말한 답("Where is the restroom?" ↔ "Can you tell me where the restroom is?")은
+  // 물어보지도 못하고 오답이 됐다.
+  if(!g.ok && heard && wrWorthAi(it, heard)){
     const ai=await wrAiCheck(it, heard);
     if(ai && ai.ok) g={ok:true, near:false, ai:true};
     else if(ai && ai.tip) g.aiTip=ai.tip;
+    // 낱말이 얼마나 겹치는지로 '거의 맞음'을 정답 처리하지는 않는다.
+    // "Can you help me?" 와 "Can I help you?" 처럼 낱말은 거의 같은데 뜻이 뒤집히는 문장까지
+    // 통과해 버린다. 다르게 말한 정답은 AI가 뜻으로 판단한다.
   }
   wrRun.results.push({ko:it.ko, en:it.en, heard, ok:g.ok});
   try{ autoLvlRecord("speak", g.ok ? (g.ai?"ok":"perfect") : "miss"); }catch(e){}
