@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.133";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.134";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7463,7 +7463,10 @@ function attachVAD(stream, onStop, opts){
     }
     // rAF는 탭이 뒤로 가거나 화면이 꺼지면 멈춘다 → 벽시계 백스톱으로 반드시 끝나게
     let guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000);
-    function fin(){ if(done)return; done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){} onStop(); }
+    // 말이 끝났다고 판단한 순간 바로 끊으면 마지막 자음(-t, -k, -s)이 잘려 인식이 나빠진다.
+    const tailMs = (opts.tailMs!=null) ? opts.tailMs : 250;
+    function fin(){ if(done)return; done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){}
+      if(tailMs>0) setTimeout(onStop, tailMs); else onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
@@ -7530,6 +7533,13 @@ function vadArm(stream, opts){
 }
 // 🎤 마이크 스트림 재사용 — 누를 때마다 권한/장치를 새로 여느라 0.5초쯤 늦게 시작되던 문제 해결.
 //    쓰지 않으면 90초 뒤 자동으로 반납해 마이크를 계속 붙잡고 있지 않는다.
+/* 🎤 녹음 품질 설정 — 기본값(audio:true)은 브라우저마다 제각각이라
+   목소리가 작으면 그대로 작게 담긴다. 자동 게인·잡음 억제를 명시로 켜고
+   Azure 가 쓰는 16kHz 모노를 요청한다. (지원 안 하면 브라우저가 무시)  */
+const MIC_CONSTRAINTS={audio:{
+  echoCancellation:true, noiseSuppression:true, autoGainControl:true,
+  channelCount:1, sampleRate:16000
+}};
 let _micStream=null, _micIdleTimer=null;
 function micStreamRelease(){
   if(_micIdleTimer){ clearTimeout(_micIdleTimer); _micIdleTimer=null; }
@@ -7549,7 +7559,7 @@ async function micStreamGet(){
     return _micStream;
   }
   micStreamRelease();
-  _micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  _micStream=await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
   return _micStream;
 }
 /* 🎤 녹음 종료 직후 짧은 보호구간.
@@ -7819,7 +7829,7 @@ async function micFill(inp, btn, restoreLabel){
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   try{
     const _meta={ promptAt:Date.now(), speechStartAt:null };
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream=await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
     qzChunks=[]; const mime=getBestMime();
     qzMR= mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
     const am=qzMR.mimeType||mime;
@@ -8045,7 +8055,17 @@ async function recordedToWav(blob){
   const off=new OfflineAudioContext(1, Math.max(1,Math.ceil(decoded.duration*rate)), rate);
   const src=off.createBufferSource(); src.buffer=decoded; src.connect(off.destination); src.start(0);
   const rendered=await off.startRendering();
-  return new Blob([encodeWAV(rendered.getChannelData(0), rate)], {type:"audio/wav"});
+  const ch=rendered.getChannelData(0);
+  /* 작게 녹음되면 Azure 가 그냥 '인식 결과 없음'을 준다.
+     최대 진폭을 보고 살짝 키운다. 거의 무음(잡음)까지 키우면 오인식이 늘어나므로
+     하한(0.02)과 배율 상한(6배)을 둔다. 이미 충분히 큰 소리는 건드리지 않는다. */
+  let peak=0;
+  for(let i=0;i<ch.length;i++){ const v=ch[i]<0?-ch[i]:ch[i]; if(v>peak) peak=v; }
+  if(peak>0.02 && peak<0.5){
+    const gain=Math.min(6, 0.7/peak);
+    for(let i=0;i<ch.length;i++) ch[i]*=gain;
+  }
+  return new Blob([encodeWAV(ch, rate)], {type:"audio/wav"});
 }
 // WAV 변환 시도 → 실패하면 원본(webm/opus 등) 그대로 STT. Azure는 webm-opus도 받음.
 async function sttRecognize(raw, actualMime){
@@ -8065,7 +8085,7 @@ async function toggleMic(){
   if(listening){ stopAzureSTT(); return; }
   TTS && TTS.cancel();
   try{
-    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
     audioChunks=[];
     const mimeType = getBestMime();
     mediaRec = mimeType ? new MediaRecorder(stream, {mimeType}) : new MediaRecorder(stream);
@@ -8330,7 +8350,7 @@ function openDrill(text, koText){
 async function toggleDrillMic(){
   if(drillRecording){ stopDrillMic(); return; }
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const stream=await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
     drillChunks=[];
     const mimeType=getBestMime();
     drillMR= mimeType ? new MediaRecorder(stream,{mimeType}) : new MediaRecorder(stream);
@@ -8513,7 +8533,7 @@ function speakChain(parts){ if(!TTS||!SSU)return; TTS.cancel(); let i=0; (functi
 let phMR=null, phRec=false;
 function phMic(ref, btn, cb){
   if(phRec){ if(phMR&&phMR.state!=="inactive") phMR.stop(); return; }
-  navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+  navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS).then(stream=>{
     let chunks=[]; const mime=getBestMime();
     phMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
     const am=phMR.mimeType||mime; phRec=true; if(btn) btn.classList.add("rec");
