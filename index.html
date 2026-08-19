@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.139";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.140";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7188,6 +7188,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
       <div style="display:flex;gap:8px;justify-content:center;margin-top:11px">
         <button class="wp-spd" id="wpSay" style="flex:1">🔊 듣기</button>
         <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
+        ${micLastBtnHtml("wp-spd","flex:1;")}
       </div>
       <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
       ${q._synonym?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">🤝 "${escapeHtml(q._synonym)}" 도 맞는 말이에요. 이 문제에서 익힐 단어는 <b style="color:var(--jade)">${escapeHtml(a)}</b> — 뒤에서 한 번 더 나와요.</div>`:""}
@@ -7236,6 +7237,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
       <div style="display:flex;gap:8px;justify-content:center;margin-top:13px">
         <button class="wp-spd" id="wpSay" style="flex:1">🔊 듣기</button>
         <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
+        ${micLastBtnHtml("wp-spd","flex:1;")}
       </div>
       <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
       ${q._synonym?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">🤝 "${escapeHtml(q._synonym)}" 도 맞는 말이에요. 이 문제에서 익힐 단어는 <b style="color:var(--jade)">${escapeHtml(a)}</b> — 뒤에서 한 번 더 나와요.</div>`:""}
@@ -7748,6 +7750,35 @@ function micWarmUp(){ try{ micStreamGet().then(()=>micStreamIdle()).catch(()=>{}
    예전엔 모든 화면이 /stt 와 /pronounce 를 동시에 호출해 Azure 요청이 두 배였고,
    정작 점수를 쓰는 화면은 3곳뿐이라 나머지는 전부 버려지는 호출이었다.
    요청이 두 배면 그만큼 빨리 한도(429)에 걸린다. */
+/* 🗣 마지막 녹음 보관 — 내가 실제로 어떻게 말했는지 바로 들어볼 수 있게.
+   채점 점수만 보면 뭘 고쳐야 할지 모른다. 자기 소리를 듣는 게 제일 빠른 교정이다. */
+let _micLast=null, _micLastAudio=null;
+function micKeepLast(blob, type){
+  try{
+    if(!blob || blob.size<400) return;
+    if(_micLast && _micLast.url){ try{ URL.revokeObjectURL(_micLast.url); }catch(e){} }
+    _micLast={url:URL.createObjectURL(blob), type:type||blob.type||"", at:Date.now(), bytes:blob.size};
+    document.querySelectorAll(".mic-last").forEach(b=>{ b.disabled=false; b.style.opacity=""; });
+  }catch(e){}
+}
+function micHasLast(){ return !!(_micLast && _micLast.url); }
+function micPlayLast(btn){
+  if(!micHasLast()){ if(btn) btn.textContent="🗣 아직 녹음이 없어요"; return; }
+  try{ if(_micLastAudio){ _micLastAudio.pause(); } }catch(e){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+  const a=new Audio(_micLast.url); _micLastAudio=a;
+  const t0=btn?btn.textContent:null;
+  if(btn) btn.textContent="▶️ 재생 중…";
+  const done=()=>{ if(btn&&t0) btn.textContent=t0; if(_micLastAudio===a) _micLastAudio=null; };
+  a.onended=done; a.onerror=done;
+  a.play().catch(done);
+}
+// 버튼 HTML — 녹음이 없으면 눌러도 안 되게 흐리게
+function micLastBtnHtml(cls, extraStyle){
+  const off=micHasLast()?"":" disabled";
+  const st=(extraStyle||"")+(micHasLast()?"":"opacity:.45;");
+  return `<button class="${cls||"wp-spd"} mic-last"${off} style="${st}" onclick="micPlayLast(this)">🗣 내 목소리</button>`;
+}
 async function micFillCb(rawCb, refText, opts){
   if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
   const startEpoch=micEpoch;
@@ -7773,7 +7804,7 @@ async function micFillCb(rawCb, refText, opts){
       if(!meta.spoke) micStreamRelease(); else micStreamIdle();
       // 곧바로 다시 시작하는 것만 짧게 막는다. 이 사이의 탭은 버리지 않고 micFillCb가 기다렸다 시작.
       qzRecording=false; micStartCooldown();
-      const raw=new Blob(qzChunks,{type:am});
+      const raw=new Blob(qzChunks,{type:am}); micKeepLast(raw, am);
       meta.bytes=raw.size; meta.recMs=meta.stopAt-meta.startAt;
       // 예전 기준(1000바이트)은 짧게 말한 답을 서버에 보내보지도 않고 버렸다.
       // 정말 아무것도 안 담긴 경우만 걸러내고, 나머지는 일단 인식을 시도한다.
@@ -7947,7 +7978,7 @@ function startPronPractice(ref, btn, box){
     wpPronMR.onstop=async()=>{
       try{ micBeepEnd&&micBeepEnd(); }catch(e){}
       micStreamIdle(); wpPronRec=false; if(btn) btn.textContent="🎤 다시 말해보기";
-      const raw=new Blob(chunks,{type:am});
+      const raw=new Blob(chunks,{type:am}); micKeepLast(raw, am);
       if(raw.size<1000){ if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">🔇 소리가 안 잡혔어요. 마이크에 가까이서 또렷하게.</div>`; return; }
       if(box) box.innerHTML=`<div style="color:var(--muted);font-size:12.5px">채점 중…</div>`;
       try{
@@ -8012,7 +8043,7 @@ async function micFill(inp, btn, restoreLabel){
       stream.getTracks().forEach(t=>t.stop());
       // 곧바로 재시작만 짧게 막는다 (탭은 버리지 않음 — micFillCb 쪽과 동일 정책)
       qzRecording=false; micStartCooldown(); btn.textContent=lbl;
-      const raw=new Blob(qzChunks,{type:am}); if(raw.size<1000) return;
+      const raw=new Blob(qzChunks,{type:am}); micKeepLast(raw, am); if(raw.size<1000) return;
       btn.textContent="🔄";
       try{
         const res=await sttRecognize(raw, am);
@@ -8266,7 +8297,7 @@ async function toggleMic(){
     mediaRec.onstop = async ()=>{
       stream.getTracks().forEach(t=>t.stop());
       listening=false; micBtn.classList.remove("live");
-      const raw = new Blob(audioChunks, {type: actualMime});
+      const raw = new Blob(audioChunks, {type: actualMime}); micKeepLast(raw, actualMime);
       if(raw.size < 1000){
         hint.textContent="🔇 소리가 안 잡혔어요. 마이크 가까이서 다시.";
         setTimeout(()=>hint.textContent="",3000); return;
@@ -8533,7 +8564,7 @@ async function toggleDrillMic(){
       stream.getTracks().forEach(t=>t.stop());
       drillRecording=false;
       const btn=$("#drillSpeak"); if(btn){ btn.textContent="🔄 채점 중…"; btn.disabled=true; }
-      const raw=new Blob(drillChunks,{type:actualMime});
+      const raw=new Blob(drillChunks,{type:actualMime}); micKeepLast(raw, actualMime);
       if(raw.size<1000){
         const r=$("#drillResult"); if(r) r.innerHTML=`<div style="color:var(--muted);text-align:center;font-size:13px">🔇 소리가 안 잡혔어요. 마이크 가까이서 다시.</div>`;
         if(btn){ btn.textContent="🎤 다시 말하기"; btn.disabled=false; } return;
@@ -8713,7 +8744,7 @@ function phMic(ref, btn, cb){
     phMR.onstop=async()=>{
       micBeepEnd();
       stream.getTracks().forEach(t=>t.stop()); phRec=false; if(btn) btn.classList.remove("rec");
-      const raw=new Blob(chunks,{type:am}); if(raw.size<1000){ cb(null); return; }
+      const raw=new Blob(chunks,{type:am}); micKeepLast(raw, am); if(raw.size<1000){ cb(null); return; }
       try{ const wav=await recordedToWav(raw);
         const b64=btoa(unescape(encodeURIComponent(ref)));
         const res=await fetch(PROXY_URL+"/pronounce",{method:"POST",headers:{"Content-Type":"audio/wav","X-Pronunciation-Text-B64":b64},body:wav});
@@ -14688,6 +14719,7 @@ function studyPanelHtml(en, ko, id){
       <button class="study-act" data-act="listen">🔊 다시 듣기</button>
       <button class="study-act" data-act="rec">🎤 발음 채점</button>
       <button class="study-act" data-act="pron">📊 강세 보기</button>
+      <button class="study-act mic-last" data-act="mine">🗣 내 목소리</button>
       <button class="study-act" data-act="ai">🤖 AI 질문</button>
       <button class="study-act" data-act="vocab">📒 단어장</button>
     </div>
@@ -14713,6 +14745,7 @@ function bindStudyPanel(panel){
     else if(act==="pron"){ if(extra){ const showing=extra.querySelector(".pron-study-card"); extra.innerHTML = showing ? "" : pronStudyCardHtml(en,"강세·발음"); } }
     else if(act==="ai"){ studyAskAI(en, ko); }
     else if(act==="vocab"){ studySendToVocab(en, ko); }
+    else if(act==="mine"){ micPlayLast(b); }
   }; });
 }
 async function studyWordExplain(w, info){
