@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.141";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.142";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2069,6 +2069,7 @@ function syncApply(d){
   }catch(e){}
   // 남의 기기에서 온 단어 뜻이 꼬여 있을 수 있다 — 정리 플래그도 같이 딸려오므로 강제로 한 번
   try{ srsFixWordMeaningsOnce(true); }catch(e){}
+  try{ alApplyOneTimeFix(); }catch(e){}
 }
 function syncSetMeta(k,v){ syncApplying=true; try{ localStorage.setItem(k,v); } finally{ syncApplying=false; } }
 async function syncPull(){
@@ -2886,6 +2887,27 @@ function getAutoLevels(){
            overallLevel:Math.max(1,Math.min(60,Math.round(word*0.25+listen*0.25+block*0.3+speed*0.2))) };
 }
 // 사용자 슬라이더 = 재보정: 4개 능력 레벨을 그 값으로 리셋
+/* 🔧 일회성 보정 — 요청받은 계정의 단어 레벨을 지정값으로 맞춘다.
+   한 번만 적용되고(플래그), 그 뒤로는 평소대로 오르내린다.
+   레벨 데이터는 닉네임 동기화 대상이라 기기가 바뀌어도 따라오도록
+   시작할 때와 동기화 직후 둘 다에서 확인한다. */
+const AL_ONE_TIME_FIX=[{nick:"아빠는빠덜", skill:"word", lvl:20, key:"speakingroom:lvlfix:word20"}];
+function alApplyOneTimeFix(){
+  try{
+    const nick=syncNormalize(syncNick());
+    AL_ONE_TIME_FIX.forEach(f=>{
+      if(nick!==syncNormalize(f.nick)) return;
+      if(hGet(f.key,0)) return;                       // 이미 적용함
+      const d=alGet();
+      d[f.skill]=f.lvl;
+      d.best=d.best||{}; if((d.best[f.skill]||0)<f.lvl) d.best[f.skill]=f.lvl;
+      d.placed=d.placed||{}; d.placed[f.skill]=true;  // 측정 중이면 끝내서 지정값이 바로 적용되게
+      d.st=d.st||{}; d.st[f.skill]={up:0,miss:0,run:0,hist:[]};
+      alSave(d); hSet(f.key,1);
+      try{ updateLevelBadges(); }catch(e){}
+    });
+  }catch(e){}
+}
 function alRebase(n){ const base=Math.max(1,Math.min(60,Math.round(n)||1)); const d=alGet(); AL_SKILLS.forEach(k=>d[k]=base); d.st={}; alSave(d); }
 // (구) 단어 전용 적응형 — 자동 레벨로 위임
 function wpAdaptRecord(kind){ autoLvlRecord("word", kind); }
@@ -16510,6 +16532,7 @@ loadProgress();
 if(!state.vocabTheme) state.vocabTheme=nextVocabTheme();   // 단어 바로 시작 준비
 try{ ledgerMigrateOnce(); }catch(e){}
 try{ srsFixWordMeaningsOnce(); }catch(e){}   // 🔤 잘못 저장된 단어 뜻 정리
+try{ alApplyOneTimeFix(); }catch(e){}       // 🔧 요청받은 계정 레벨 보정 (한 번만)
 renderHome();
 syncSetupFields();
 checkForUpdate();   // 폰/PC 자동 최신화
