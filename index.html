@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.138";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.139";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7032,6 +7032,31 @@ function wpCloseEnough(ansNorm, targetNorm){
   const hit=t.filter(tw=>a.some(aw=>wpWordEq(aw,tw))).length;
   return hit/t.length >= 0.5;
 }
+/* 🤝 다른 낱말이지만 문장이 똑같은 뜻이 되는 답 — 예: "I need to ___ the time." 에
+   check 대신 confirm. 맞는 영어인데 오답 처리하면 공부할 맛이 떨어진다.
+   정답으로 넘기되, 목표 단어는 알려주고 뒤에서 한 번 더 낸다(그 단어를 배우는 게 목적이니까). */
+let _wpSynCache={};
+function wpSynWorth(q, answer){
+  const a=String(answer||"").trim();
+  if(!a) return false;
+  if(!/[a-z]{2}/i.test(a)) return false;                       // 영어가 아님(한글 등)
+  const t=String((q&&q.blank&&q.blank.answer)||"").trim();
+  if(!t) return false;
+  const n=a.split(/\s+/).length, tn=t.split(/\s+/).length;
+  return n<=tn+3;                                              // 빈칸에 넣을 만한 길이일 때만
+}
+async function wpAiSynonym(q, answer){
+  const key=normAns(q.blank.en)+"|"+normAns(q.blank.answer)+"|"+normAns(answer);
+  if(key in _wpSynCache) return _wpSynCache[key];
+  try{
+    const sys='A Korean learner filled a blank in an English sentence. Decide if THEIR word makes the sentence mean the same thing as the model sentence AND is natural, correct English in that slot. A different but equally valid word is acceptable — be generous about synonyms and equally natural alternatives.\nAnswer false if the sentence changes meaning, becomes unnatural or ungrammatical, or if their word is only loosely related.\nReturn ONLY JSON: {"ok":true|false}';
+    const msg=`Sentence: ${q.blank.en}\nKorean meaning: ${q.blank.ko||""}\nModel answer: ${q.blank.answer}\nLearner answered: ${answer}`;
+    const d=await callClaude(sys,[{role:"user",content:msg}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    if(o && typeof o.ok==="boolean"){ _wpSynCache[key]=o.ok; return o.ok; }
+  }catch(e){}
+  return null;   // 확인 못 함 — 오답으로 단정하지 않고 호출부가 판단
+}
 function wpKeepTrying(q, answer){
   const status=$("#wpStatus"), inp=$("#wpInput"), panel=$("#wpHintPanel");
   const tries=q._wrongCount||1;
@@ -7050,7 +7075,7 @@ function wpKeepTrying(q, answer){
     setTimeout(()=>inp.focus(),60);
   }
 }
-function wpSubmit(q, answer, viaMic){
+async function wpSubmit(q, answer, viaMic){
   const elapsed=Math.max(0.1,(Date.now()-wpT0)/1000);
   const ans=normAns(answer), target=normAns(q.blank.answer);
   // 축약형 동치 포함 채점 — "I'll"·"I will", "gonna"·"going to" 모두 정답
@@ -7063,7 +7088,13 @@ function wpSubmit(q, answer, viaMic){
   // 🎤 발음이 맞아도 음성인식이 딴 단어로 받아쓰면 영영 못 넘어간다.
   //    세 번째 시도부터는 충분히 가까우면 인정하되, 힌트 본 것과 같은 '복습 대상'으로 남긴다.
   if(!strict && answer && viaMic && (q._wrongCount||0)>=2 && wpCloseEnough(ans, target)) q._micClose=true;
-  const correct = strict || !!q._micClose;
+  // 틀렸다고 하기 전에 '다른 낱말인데 뜻이 같은 답'인지 한 번 확인한다
+  if(!strict && !q._micClose && answer && wpSynWorth(q, answer)){
+    const st=$("#wpStatus"); if(st){ st.style.color="#189E79"; st.textContent="확인 중…"; }
+    const ok=await wpAiSynonym(q, answer);
+    if(ok===true) q._synonym=answer;
+  }
+  const correct = strict || !!q._micClose || !!q._synonym;
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
   // 오답은 정답지로 넘기지 않는다. 같은 문제에서 최대한 다시 생각하게 둔다.
   if(answer && !correct){
@@ -7094,11 +7125,12 @@ function wpSubmit(q, answer, viaMic){
   if(correct){
     flashResult(true);
     // 💡 힌트를 봤으면 '모르는 단어' 취급 — SRS 실패 기록 + 뒤에서 재출제 + 레벨 하강 신호
-    if(q._hintUsed || q._micClose){
+    if(q._hintUsed || q._micClose || q._synonym){
       if(!q._missLogged){ srsFail(q.word.word, q.word.ko, ctxTag); q._missLogged=true; }
       if(!isRetry) wpRescheduleFail(q);
-      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }
-      awardXP("vocab", 3, q._micClose?"단어 연습(비슷하게)":"단어 연습(힌트)", "wp:"+q.word.word+":"+q.idxInWord+":h");
+      // 동의어는 '맞는 영어'를 말한 것 — 실력 레벨까지 깎지는 않는다(목표 단어만 다시 낸다)
+      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord(q._synonym?"ok":"miss"); }
+      awardXP("vocab", q._synonym?6:3, q._synonym?"단어 연습(다른 표현)":(q._micClose?"단어 연습(비슷하게)":"단어 연습(힌트)"), "wp:"+q.word.word+":"+q.idxInWord+":h");
     } else {
       srsPass(q.word.word, q.word.ko, ctxTag);
       try{ rtBump("vocab"); }catch(e){}   // 📋 오늘 루틴: 단어 (힌트 없이 맞힌 것만)
@@ -7158,6 +7190,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
         <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
       </div>
       <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
+      ${q._synonym?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">🤝 "${escapeHtml(q._synonym)}" 도 맞는 말이에요. 이 문제에서 익힐 단어는 <b style="color:var(--jade)">${escapeHtml(a)}</b> — 뒤에서 한 번 더 나와요.</div>`:""}
       ${(!correct)?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
     <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>
@@ -7205,6 +7238,7 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
         <button class="wp-spd" id="wpPron" style="flex:1">🎤 발음 채점</button>
       </div>
       <div id="wpPronResult" style="margin-top:8px;text-align:center"></div>
+      ${q._synonym?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">🤝 "${escapeHtml(q._synonym)}" 도 맞는 말이에요. 이 문제에서 익힐 단어는 <b style="color:var(--jade)">${escapeHtml(a)}</b> — 뒤에서 한 번 더 나와요.</div>`:""}
       ${(!correct)?`<div style="font-size:12.5px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:9px">💡 이 표현은 새 단어들을 더 본 뒤 다시 나와요 — 그때 꼭 맞혀보세요!</div>`:""}
     </div>
     <button class="sh-next" id="wpNextBtn" style="margin-top:10px">${wpPos>=wpQueue.length-1?"완료 →":"다음 →"}</button>
