@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.137";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.138";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6623,11 +6623,63 @@ function wpBlanksFor(w){
   };
   // answer가 "out", "door"처럼 목표 표현의 조각이면 같은 단어 반복처럼 느껴져서 제외
   if(w.blank && w.blank.en && normAns(w.blank.answer||word)===normAns(word)){
-    out.push({en:w.blank.en.replace(/_{2,}/,"[ ___ ]"), ko:w.blank.ko||w.ko||"", answer:w.blank.answer||word});
+    // 빈칸 표시가 없는 문장이 오면(생성이 어긋난 경우) 정답이 그대로 보인다 — 직접 빈칸을 판다.
+    const be = /_{2,}/.test(w.blank.en) ? w.blank.en.replace(/_{2,}/,"[ ___ ]")
+             : (mkBlank(w.blank.en, w.blank.ko)||{}).en;
+    if(be) out.push({en:be, ko:w.blank.ko||w.ko||"", answer:w.blank.answer||word});
   }
   (w.examples||[]).forEach(e=>{ const b=mkBlank(e.en, e.ko); if(b && !out.some(x=>x.en===b.en)) out.push(b); });
   if(!out.length && word){ out.push({en:"[ ___ ]", ko:w.ko||"", answer:word}); }
-  return out.slice(0,1);
+  return out;   // 쓸 수 있는 문장을 전부 준다 — 고르는 건 wpPickBlank
+}
+/* 🔁 같은 단어를 늘 같은 문장으로 내면 그 문장을 외운 것이지 단어를 아는 게 아니다.
+   말해보카와 다른 핵심이 이거라서, 이미 쓴 문장 틀은 기억해 두고 다음엔 다른 걸 낸다.
+   예전엔 wpBlanksFor가 항상 첫 번째 문장만 돌려줘서 "I need ___"만 5번 반복됐다. */
+const WP_FRAME_KEY="speakingroom:vframes";
+function wpFramesAll(){ try{ return hGet(WP_FRAME_KEY,{})||{}; }catch(e){ return {}; } }
+function wpFrameKey(b){ return String((b&&b.en)||"").toLowerCase().replace(/\s+/g," ").trim(); }
+function wpPickBlank(w){
+  const all=wpBlanksFor(w);
+  if(!all.length) return null;
+  if(all.length===1) return all[0];
+  const key=srsKey(w&&w.word); if(!key) return all[0];
+  const store=wpFramesAll();
+  const used=new Set(store[key]||[]);
+  let cand=all.filter(b=>!used.has(wpFrameKey(b)));
+  if(!cand.length){ store[key]=[]; cand=all; }        // 한 바퀴 다 돌면 처음부터
+  const pick=cand[(Math.random()*cand.length)|0];
+  store[key]=(store[key]||[]).concat(wpFrameKey(pick)).slice(-8);
+  try{
+    const keys=Object.keys(store);
+    if(keys.length>500) keys.slice(0, keys.length-500).forEach(k=>delete store[k]);
+    hSet(WP_FRAME_KEY, store);
+  }catch(e){}
+  return pick;
+}
+/* 문장 틀이 부족한 단어는 AI로 상황별 문장을 더 받아 카드에 붙여 둔다.
+   wpExpandWord는 만들어만 놓고 아무 데서도 부르지 않아 계속 죽어 있었다. */
+async function wpEnrichContexts(words){
+  try{
+    const cards=wpCardsAll();
+    const need=(words||[]).filter(w=>{
+      if(!w||!w.word) return false;
+      const k=srsKey(w.word); const si=srsGet(w.word);
+      const frames=wpBlanksFor(w).length;
+      return frames<3 && (w._review || (si&&(si.miss||0)>0));   // 복습·틀린 적 있는 단어 우선
+    }).slice(0,2);
+    for(const w of need){
+      const items=await wpExpandWord(w);
+      if(!items||!items.length) continue;
+      const k=srsKey(w.word); const c=cards[k]; if(!c) continue;
+      const have=new Set((c.examples||[]).map(e=>String(e.en||"").toLowerCase()));
+      const add=items.map(x=>({en:String(x.en||"").replace(/\[ ___ \]/g, w.word), ko:x.ko||"", ctx:x.ctx||""}))
+                     .filter(e=>e.en && !have.has(e.en.toLowerCase()));
+      if(!add.length) continue;
+      c.examples=(c.examples||[]).concat(add).slice(0,8);
+      cards[k]=c;
+    }
+    hSet(WP_CARDS_KEY, cards);
+  }catch(e){}
 }
 // 🌎 AI 멀티컨텍스트 빈칸 생성 — 같은 단어를 친구/가족/식당/병원 등 다양한 상황으로
 let wpCtxCache={};   // word -> [{en,ko,answer,ctx}]
@@ -6813,7 +6865,8 @@ function wpStart(words){
   if(!ws.length){ $("#vbBody").innerHTML=`<div class="lloading">단어를 불러오지 못했어요.</div>`; return; }
   // 한 세트 안에서는 한 단어를 맞히면 다시 내지 않는다. 예문 확장은 결과 카드에서만 보여준다.
   const usedAnswers=new Set();
-  let all=[]; ws.forEach(w=>{ const b=wpBlanksFor(w)[0]; const ak=b?normAns(b.answer):""; if(b && ak && !usedAnswers.has(ak)){ usedAnswers.add(ak); all.push({word:w, blank:b, idxInWord:0, totalInWord:1}); } });
+  let all=[]; ws.forEach(w=>{ const b=wpPickBlank(w); const ak=b?normAns(b.answer):""; if(b && ak && !usedAnswers.has(ak)){ usedAnswers.add(ak); all.push({word:w, blank:b, idxInWord:0, totalInWord:1, _ctx:b.ctx||null}); } });
+  try{ wpEnrichContexts(ws); }catch(e){}   // 다음 판을 위해 상황별 문장을 미리 채워 둔다
   wpQueue=shuffleVocab(all);
   wpSeenWord={};   // 단어별 첫 등장 여부 (새 표현 vs 다른 상황 라벨용)
   wpPos=0; wpStats={correct:0,total:0};
