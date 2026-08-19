@@ -1968,7 +1968,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.140";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.141";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2870,7 +2870,8 @@ function renderAutoLvlStatus(){
   const el=$("#autoLvlLine"); if(!el) return;
   try{
     const a=getAutoLevels(); const d=alGet();
-    el.textContent="단어 D"+a.wordLevel+" · 듣기 D"+a.listenLevel+" · 블록 D"+a.blockRecallLevel+" · 속도 D"+a.speedLevel;
+    const lv=k=>(d[k]||1);   // 홈 표시도 탐색값이 아니라 파악된 수준으로
+    el.textContent="단어 D"+lv("word")+" · 듣기 D"+lv("listen")+" · 블록 D"+lv("block")+" · 속도 D"+lv("speed");
     const sub=$("#autoLvlSub");
     const placing=AL_SKILLS.some(k=>!(d.placed&&d.placed[k]));
     if(sub) sub.textContent=placing?"처음 몇 문제로 시작 난이도를 맞추고 있어요 — 문제를 풀수록 더 정확해져요":"문제를 풀수록 더 정확해져요";
@@ -2902,13 +2903,19 @@ function autoSkillLevelName(skill){
 function updateLevelBadges(){
   try{ renderAutoLvlStatus(); }catch(e){}
   try{
-    const a=getAutoLevels();
+    /* 수준 측정(배치) 중에는 getAutoLevels가 '탐색용 사다리 값'(3→12→24→6→36)을 준다.
+       그걸 그대로 배지에 찍으면 다 맞히고 있는데도 D24 → D6 처럼 널뛰어서
+       "레벨이 계속 떨어진다"로 보인다. 배지엔 지금까지 파악된 내 수준을 쓰고
+       측정 중이라는 것만 표시한다. 문제 난이도는 그대로 사다리를 따른다. */
+    const d=alGet();
+    const shown=k=>(d[k]||1);
+    const tail=k=>((d.placed&&d.placed[k]) ? "" : "·측정중");
     const put=(id,txt)=>{ const el=document.getElementById(id); if(el) el.textContent=txt; };
-    put("vbLvl","단어 D"+a.wordLevel);
-    put("blkLvl","블록 D"+a.blockRecallLevel);
-    put("rvLvl","블록 D"+a.blockRecallLevel);
-    put("lsLvl","듣기 D"+a.listenLevel);
-    put("spLvl","블록 D"+a.blockRecallLevel+" · 속도 D"+a.speedLevel);
+    put("vbLvl","단어 D"+shown("word")+tail("word"));
+    put("blkLvl","블록 D"+shown("block")+tail("block"));
+    put("rvLvl","블록 D"+shown("block")+tail("block"));
+    put("lsLvl","듣기 D"+shown("listen")+tail("listen"));
+    put("spLvl","블록 D"+shown("block")+" · 속도 D"+shown("speed")+tail("speed"));
   }catch(e){}
 }
 function levelRate(slow){ const v=diffLevel(); const base=0.70 + (v-1)*(0.34/59); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
@@ -7116,6 +7123,8 @@ async function wpSubmit(q, answer, viaMic){
       q._missLogged=true;
     }
     if(!q._retryNow) wpRescheduleFail(q);
+    // 정답을 전부 본 건 '모르겠어요'와 같은데, 예전엔 여기서 난이도 기록이 아예 빠져 있었다
+    if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("miss"); }
     wpResult(q, answer, false, Math.max(0.1,(Date.now()-wpT0)/1000), true);   // 정답 공개 화면(포기 취급)
     return;
   }
@@ -7128,8 +7137,12 @@ async function wpSubmit(q, answer, viaMic){
     if(q._hintUsed || q._micClose || q._synonym){
       if(!q._missLogged){ srsFail(q.word.word, q.word.ko, ctxTag); q._missLogged=true; }
       if(!isRetry) wpRescheduleFail(q);
-      // 동의어는 '맞는 영어'를 말한 것 — 실력 레벨까지 깎지는 않는다(목표 단어만 다시 낸다)
-      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord(q._synonym?"ok":"miss"); }
+      /* 힌트를 보고라도 스스로 맞힌 건 '틀린 것'이 아니다.
+         예전엔 miss로 기록해서, 12문제를 전부 맞혀도 힌트를 몇 번 쓰면 레벨이 떨어졌다.
+         (측정: 전부 정답인데 두 문제에 한 번 힌트 → D30 → D29)
+         블록 훈련은 이미 ok로 치고 있었는데 단어만 miss였다.
+         그 단어를 다시 내는 건 SRS·재출제가 맡고, 난이도는 깎지 않는다. */
+      if(!q._adaptLogged){ q._adaptLogged=true; wpAdaptRecord("ok"); }
       awardXP("vocab", q._synonym?6:3, q._synonym?"단어 연습(다른 표현)":(q._micClose?"단어 연습(비슷하게)":"단어 연습(힌트)"), "wp:"+q.word.word+":"+q.idxInWord+":h");
     } else {
       srsPass(q.word.word, q.word.ko, ctxTag);
