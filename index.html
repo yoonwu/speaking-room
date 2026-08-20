@@ -1973,7 +1973,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.145";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.146";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -2756,12 +2756,13 @@ function withLvl(v, fn){ const prev=_lvlOverride; _lvlOverride=v; try{ return fn
    word(단어 이해) / listen(듣고 이해) / block(블록 인출) / speed(3초 시작) — 서로 독립적으로 오르내림.
    perfect 4연속 → +1, miss 2누적부터 하락(연속 막힘은 낙폭 확대), ok = 상승 게이지만 리셋. 사용자 슬라이더는 재보정용. */
 const AL_KEY="speakingroom:autolvl";
-const AL_SKILLS=["word","listen","block","speed"];
+const AL_SKILLS=["word","listen","block","speed","speak"];
 const AL_TOAST={
   word:{up:"📈 단어가 좋아져서 조금 더 어려워져요",down:"🌱 단어를 살짝 쉽게 갈게요"},
   listen:{up:"👂 귀가 트여서 듣기가 조금 어려워져요",down:"🌱 듣기를 살짝 쉽게 갈게요"},
   block:{up:"🧱 블록이 안정돼서 조금 더 어려워져요",down:"🌱 블록 연습을 살짝 쉽게 갈게요"},
-  speed:{up:"⚡ 빨라져서 제한이 살짝 빡빡해져요",down:"🌱 시간 여유를 조금 더 줄게요"}
+  speed:{up:"⚡ 빨라져서 제한이 살짝 빡빡해져요",down:"🌱 시간 여유를 조금 더 줄게요"},
+  speak:{up:"🗣 말이 늘어서 문장이 조금 길어져요",down:"🌱 문장을 살짝 짧게 갈게요"}
 };
 function alGet(){
   let d=null; try{ d=hGet(AL_KEY,null); }catch(e){}
@@ -2771,6 +2772,14 @@ function alGet(){
     try{ hSet(AL_KEY,d); }catch(e){}
   }
   if(!d.st) d.st={};
+  /* 🗣 speak 는 나중에 추가된 능력이다. 없던 사람은 블록 실력에서 이어받는다.
+     (안 그러면 그동안 해온 사람이 D1부터 다시 시작하게 된다) */
+  if(d.speak==null){
+    d.speak=Math.max(1,Math.min(60, d.block||d.word||1));
+    d.placed=d.placed||{}; if(d.placed.block) d.placed.speak=true;
+    d.base=d.base||{}; if(d.base.speak==null) d.base.speak=d.speak;
+    try{ hSet(AL_KEY,d); }catch(e){}
+  }
   // 🚀 빠른 시작 배치 필드 — 없으면 배치 모드 시작(신규/기존 모두 첫 문제들로 초기 레벨을 빠르게 잡음)
   if(!d.n){ d.n={}; d.placed=d.placed||{}; d.base={word:d.word,listen:d.listen,block:d.block,speed:d.speed}; try{ hSet(AL_KEY,d); }catch(e){} }
   return d;
@@ -2877,7 +2886,7 @@ function renderAutoLvlStatus(){
   try{
     const a=getAutoLevels(); const d=alGet();
     const lv=k=>(d[k]||1);   // 홈 표시도 탐색값이 아니라 파악된 수준으로
-    el.textContent="단어 D"+lv("word")+" · 듣기 D"+lv("listen")+" · 블록 D"+lv("block")+" · 속도 D"+lv("speed");
+    el.textContent="단어 D"+lv("word")+" · 듣기 D"+lv("listen")+" · 블록 D"+lv("block")+" · 말하기 D"+lv("speak")+" · 속도 D"+lv("speed");
     const sub=$("#autoLvlSub");
     const placing=AL_SKILLS.some(k=>!(d.placed&&d.placed[k]));
     if(sub) sub.textContent=placing?"처음 몇 문제로 시작 난이도를 맞추고 있어요 — 문제를 풀수록 더 정확해져요":"문제를 풀수록 더 정확해져요";
@@ -2887,8 +2896,8 @@ function renderAutoLvlStatus(){
 function getAutoLevels(){
   const d=alGet();
   const lv=k=>{ if(d.placed&&d.placed[k]) return d[k]||1; try{ return alProbeLevel(k); }catch(e){ return d[k]||1; } };
-  const word=lv("word"), listen=lv("listen"), block=lv("block"), speed=lv("speed");
-  return { wordLevel:word, listenLevel:listen, blockRecallLevel:block, speedLevel:speed,
+  const word=lv("word"), listen=lv("listen"), block=lv("block"), speed=lv("speed"), speak=lv("speak");
+  return { wordLevel:word, listenLevel:listen, blockRecallLevel:block, speedLevel:speed, speakLevel:speak,
            overallLevel:Math.max(1,Math.min(60,Math.round(word*0.25+listen*0.25+block*0.3+speed*0.2))) };
 }
 // 사용자 슬라이더 = 재보정: 4개 능력 레벨을 그 값으로 리셋
@@ -2922,7 +2931,7 @@ function levelName(){ return "Lv."+diffLevel()+" · "+(DIFF_BAND_NAMES[diffMacro
 function autoSkillLevelName(skill){
   try{
     const a=getAutoLevels();
-    const m={word:a.wordLevel,listen:a.listenLevel,block:a.blockRecallLevel,speed:a.speedLevel};
+    const m={word:a.wordLevel,listen:a.listenLevel,block:a.blockRecallLevel,speed:a.speedLevel,speak:a.speakLevel};
     return withLvl(m[skill]||a.overallLevel, levelName);
   }catch(e){ return levelName(); }
 }
@@ -2942,7 +2951,7 @@ function updateLevelBadges(){
     put("blkLvl","블록 D"+shown("block")+tail("block"));
     put("rvLvl","블록 D"+shown("block")+tail("block"));
     put("lsLvl","듣기 D"+shown("listen")+tail("listen"));
-    put("spLvl","블록 D"+shown("block")+" · 속도 D"+shown("speed")+tail("speed"));
+    put("spLvl","말하기 D"+shown("speak")+" · 속도 D"+shown("speed")+tail("speak"));
   }catch(e){}
 }
 function levelRate(slow){ const v=diffLevel(); const base=0.70 + (v-1)*(0.34/59); return slow? Math.max(0.45, base*0.6) : base; } // 천천히 = 정상의 60% (확실히 느리게)
@@ -14482,8 +14491,20 @@ function wrBuildItems(count){
   const pool=WRITE_SETS.filter(s=>s.lv<=band);
   const use=(pool.length?pool:WRITE_SETS).slice();
   for(let i=use.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=use[i]; use[i]=use[j]; use[j]=t; }
+  /* 지금 밴드의 세트를 앞쪽에 둔다. lv1 세트가 109문장 중 69개라, 그냥 섞으면
+     밴드가 올라가도 계속 쉬운 것만 나와서 실력이 오른 티가 안 난다. */
+  const cur=use.filter(x=>x.lv===band);
+  const rest=use.filter(x=>x.lv!==band);
+  // 현재 밴드 둘에 아래 밴드 하나꼴로 섞는다. 밴드만 쓰면 lv3 는 12문장뿐이라 금방 반복된다.
+  const ordered=[]; let ci=0, ri=0;
+  while(ci<cur.length || ri<rest.length){
+    if(ci<cur.length) ordered.push(cur[ci++]);
+    if(ci<cur.length) ordered.push(cur[ci++]);
+    if(ri<rest.length) ordered.push(rest[ri++]);
+  }
+  if(!ordered.length) ordered.push.apply(ordered, use);
   const out=[];
-  for(const s of use){
+  for(const s of ordered){
     for(const it of s.items){ out.push({...it, alts:it.alts||[]}); if(out.length>=count) break; }
     if(out.length>=count) break;
   }
