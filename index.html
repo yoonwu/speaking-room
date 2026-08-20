@@ -1680,6 +1680,11 @@ body{background:var(--paper)!important;color:var(--text)}
 /* ===== 개발자 스킵 버튼 ===== */
 #devSkip{display:none!important;position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:99998;background:rgba(30,20,15,.72);color:#ffeede;font-size:11px;font-weight:900;border:none;border-radius:99px;padding:7px 13px;cursor:pointer;backdrop-filter:blur(6px);letter-spacing:.02em;pointer-events:auto;box-shadow:0 4px 16px -6px rgba(0,0,0,.6)}
 #devSkip:active{opacity:.6}
+/* 기본동사 설명 패널 */
+.verb-explain{margin-top:10px;padding:12px;border-radius:12px;font-size:14px;line-height:1.65;background:#F1F8F4;color:#2F241F;border:1px solid #D8EBE1}
+.verb-explain-head{font-weight:800;margin-bottom:6px;opacity:.72;font-size:12.5px}
+.verb-explain-core{margin:0}
+.verb-explain-note{margin:8px 0 0;padding-top:8px;border-top:1px solid rgba(47,36,31,.15)}
 </style>
 </head>
 <body>
@@ -1968,7 +1973,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.142";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.143";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12184,6 +12189,11 @@ function openSpeakHub(){
        <span class="hub-tx"><b>문장 만들기</b><i>한국어를 보고 3초 안에 영어로 말해보세요</i></span>
        <span class="hub-ar">›</span>
      </button>
+     <button class="hub-opt" data-go="verb">
+       <span class="hub-emo">🧱</span>
+       <span class="hub-tx"><b>기본동사</b><i>get·have·take… 동사 하나로 말이 확 늘어요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="sprint">
        <span class="hub-emo">⚡</span>
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
@@ -12193,7 +12203,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -14570,6 +14580,1603 @@ async function wrAiCheck(item, heard){
   }catch(e){}
   return null;
 }
+const BASIC_VERBS = [
+  { verb: 'get', sense: '획득', ko: '표 어디서 사요?',            en: 'Where can I get a ticket?' },
+  { verb: 'get', sense: '획득', ko: '문자 받았어',                en: 'I got a text' },
+  { verb: 'get', sense: '획득', ko: '커피 사올게',                en: "I'll get a coffee" },
+  { verb: 'get', sense: '획득', ko: '물 좀 갖다줄래?',            en: 'Can you get me some water?' },
+  { verb: 'get', sense: '획득', ko: '(전화·초인종) 내가 받을게',  en: "I'll get it" },
+  { verb: 'get', sense: '획득', ko: '이건 내가 계산할게',         en: "I'll get this" },
+  { verb: 'get', sense: '획득', ko: '그거 어디서 났어?',          en: 'Where did you get that?' },
+  { verb: 'get', sense: '획득', ko: '방 하나 잡았어',             en: 'I got a room' },
+
+  { verb: 'get', sense: '이동', ko: '공항 어떻게 가요?',          en: 'How do I get to the airport?' },
+  { verb: 'get', sense: '이동', ko: '몇 시에 집에 와?',           en: 'What time do you get home?' },
+  { verb: 'get', sense: '이동', ko: '차 타',                      en: 'Get in the car' },
+  { verb: 'get', sense: '이동', ko: '여기 어제 도착했어',         en: 'I got here yesterday' },
+  { verb: 'get', sense: '이동', ko: '지하철 타',                  en: 'Get on the subway' },
+  { verb: 'get', sense: '이동', ko: '여기서 내려요',              en: 'Get off here' },
+  { verb: 'get', sense: '이동', ko: '나가',                       en: 'Get out' },
+  { verb: 'get', sense: '이동', ko: '몇 시에 일어나?',            en: 'What time do you get up?' },
+  { verb: 'get', sense: '이동', ko: '언제 돌아와?',               en: 'When do you get back?' },
+
+  { verb: 'get', sense: '변화', ko: '피곤해지네',                 en: "I'm getting tired" },
+  { verb: 'get', sense: '변화', ko: '어두워지고 있어',            en: "It's getting dark" },
+  { verb: 'get', sense: '변화', ko: '길 잃었어',                  en: 'I got lost' },
+  { verb: 'get', sense: '변화', ko: '걔네 작년에 결혼했어',       en: 'They got married last year' },
+  { verb: 'get', sense: '변화', ko: '감기 걸렸어',                en: 'I got a cold' },
+  { verb: 'get', sense: '변화', ko: '점점 나아지고 있어',         en: "It's getting better" },
+  { verb: 'get', sense: '변화', ko: '배고파지네',                 en: "I'm getting hungry" },
+  { verb: 'get', sense: '변화', ko: '나 취했어',                  en: 'I got drunk' },
+  { verb: 'get', sense: '변화', ko: '늦었네',                     en: "It's getting late" },
+  { verb: 'get', sense: '변화', ko: '적응되고 있어',              en: "I'm getting used to it" },
+  { verb: 'get', sense: '변화', ko: '나 잘렸어',                  en: 'I got fired' },
+
+  { verb: 'get', sense: '사역', ko: '이거 고쳐줄 수 있어?',       en: 'Can you get this fixed?' },
+  { verb: 'get', sense: '사역', ko: '걔한테 전화하라고 할게',     en: "I'll get him to call you" },
+  { verb: 'get', sense: '사역', ko: '애들 준비시켜',              en: 'Get the kids ready' },
+  { verb: 'get', sense: '사역', ko: '나 머리 잘랐어',             en: 'I got my hair cut' },
+  { verb: 'get', sense: '사역', ko: '도와줄 사람 구해볼게',       en: "I'll get someone to help" },
+  { verb: 'get', sense: '사역', ko: '그거 다 끝냈어',             en: 'I got it done' },
+
+  { verb: 'get', sense: '이해', ko: '무슨 말인지 모르겠어',       en: "I don't get it" },
+  { verb: 'get', sense: '이해', ko: '알아들었어?',                en: 'Did you get that?' },
+  { verb: 'get', sense: '이해', ko: '이해했어',                   en: 'I got it' },
+  { verb: 'get', sense: '이해', ko: '무슨 말인지 알겠어',         en: 'I get what you mean' },
+  { verb: 'get', sense: '이해', ko: '아 이제 알겠다',             en: 'Now I get it' },
+
+  { verb: 'get', sense: '관용', ko: '이거 좀 버려줘',             en: 'Get rid of this' },
+  { verb: 'get', sense: '관용', ko: '걔랑 잘 지내?',              en: 'Do you get along with him?' },
+  { verb: 'get', sense: '관용', ko: '자, 슬슬 가자',              en: "Let's get going" },
+
+  { verb: 'have', sense: '소유', ko: '시간 있어?',                en: 'Do you have time?' },
+  { verb: 'have', sense: '소유', ko: '방 있어요?',                en: 'Do you have a room?' },
+  { verb: 'have', sense: '소유', ko: '자리 있어요?',              en: 'Do you have a table?' },
+  { verb: 'have', sense: '소유', ko: '더 작은 거 있어요?',        en: 'Do you have a smaller size?' },
+  { verb: 'have', sense: '소유', ko: '차 있어?',                  en: 'Do you have a car?' },
+  { verb: 'have', sense: '소유', ko: '애들 있어요?',              en: 'Do you have kids?' },
+  { verb: 'have', sense: '소유', ko: '현금이 없어',               en: "I don't have cash" },
+  { verb: 'have', sense: '소유', ko: '예약했어요',                en: 'I have a reservation' },
+  { verb: 'have', sense: '소유', ko: '질문 있어요',               en: 'I have a question' },
+  { verb: 'have', sense: '소유', ko: '감기 걸렸어',               en: 'I have a cold' },
+  { verb: 'have', sense: '소유', ko: '머리 아파',                 en: 'I have a headache' },
+  { verb: 'have', sense: '소유', ko: '열이 나요',                 en: 'I have a fever' },
+
+  { verb: 'have', sense: '경험', ko: '아침 먹었어?',              en: 'Did you have breakfast?' },
+  { verb: 'have', sense: '경험', ko: '점심 뭐 먹지?',             en: 'What should we have for lunch?' },
+  { verb: 'have', sense: '경험', ko: '저녁 같이 먹을래?',         en: 'Do you want to have dinner?' },
+  { verb: 'have', sense: '경험', ko: '커피 한잔 하자',            en: "Let's have a coffee" },
+  { verb: 'have', sense: '경험', ko: '한잔 할래?',                en: 'Do you want to have a drink?' },
+  { verb: 'have', sense: '경험', ko: '좀 봐도 될까요?',           en: 'Can I have a look?' },
+  { verb: 'have', sense: '경험', ko: '재밌게 놀아',               en: 'Have a good time' },
+  { verb: 'have', sense: '경험', ko: '좋은 하루 보내세요',        en: 'Have a nice day' },
+  { verb: 'have', sense: '경험', ko: '조심히 가세요',             en: 'Have a safe trip' },
+  { verb: 'have', sense: '경험', ko: '우리 재밌었어',             en: 'We had fun' },
+  { verb: 'have', sense: '경험', ko: '우리 파티 할 거야',         en: "We're having a party" },
+  { verb: 'have', sense: '경험', ko: '오늘 힘들었어',             en: 'I had a long day' },
+
+  { verb: 'have', sense: '의무', ko: '나 가야 돼',                en: 'I have to go' },
+  { verb: 'have', sense: '의무', ko: '꼭 가야 돼?',               en: 'Do you have to go?' },
+  { verb: 'have', sense: '의무', ko: '안 가도 돼',                en: "You don't have to go" },
+  { verb: 'have', sense: '의무', ko: '기다려야 돼요?',            en: 'Do I have to wait?' },
+  { verb: 'have', sense: '의무', ko: '갈아타야 돼요?',            en: 'Do I have to transfer?' },
+  { verb: 'have', sense: '의무', ko: '예약해야 돼요?',            en: 'Do I have to book?' },
+  { verb: 'have', sense: '의무', ko: '일찍 일어나야 돼',          en: 'I have to get up early' },
+  { verb: 'have', sense: '의무', ko: '미안하다고 안 해도 돼',     en: "You don't have to say sorry" },
+
+  { verb: 'have', sense: '사역', ko: '나 머리 잘랐어',            en: 'I had my hair cut' },
+  { verb: 'have', sense: '사역', ko: '차 고쳤어',                 en: 'I had my car fixed' },
+  { verb: 'have', sense: '사역', ko: '이거 배달돼요?',            en: 'Can I have this delivered?' },
+  { verb: 'have', sense: '사역', ko: '방 청소해 주세요',          en: 'Can I have my room cleaned?' },
+  { verb: 'have', sense: '사역', ko: '이거 세탁 맡길게요',        en: 'Can I have this washed?' },
+  { verb: 'have', sense: '사역', ko: '걔한테 전화하라고 할게',    en: "I'll have him call you" },
+
+  { verb: 'have', sense: '관용', ko: '전혀 모르겠어',             en: 'I have no idea' },
+  { verb: 'have', sense: '관용', ko: '잠깐 얘기 좀 해',           en: 'Can I have a word?' },
+  { verb: 'have', sense: '관용', ko: '마음대로 해',               en: 'Have it your way' },
+  { verb: 'have', sense: '관용', ko: '나 요즘 정신없어',          en: 'I have a lot going on' },
+
+  { verb: 'take', sense: '획득', ko: '이걸로 할게요',              en: "I'll take this one" },
+  { verb: 'take', sense: '획득', ko: '카드 돼요?',                 en: 'Do you take card?' },
+  { verb: 'take', sense: '획득', ko: '앉으세요',                   en: 'Take a seat' },
+  { verb: 'take', sense: '획득', ko: '하나 가져가세요',            en: 'Take one' },
+  { verb: 'take', sense: '획득', ko: '이거 가져가도 돼요?',        en: 'Can I take this?' },
+  { verb: 'take', sense: '획득', ko: '약 먹었어',                  en: 'I took the medicine' },
+  { verb: 'take', sense: '획득', ko: '창가 자리로 주세요',         en: "I'll take the window seat" },
+  { verb: 'take', sense: '획득', ko: '둘 다 살게요',               en: "I'll take both" },
+
+  { verb: 'take', sense: '이동', ko: '버스 타',                    en: 'Take the bus' },
+  { verb: 'take', sense: '이동', ko: '택시 타자',                  en: "Let's take a taxi" },
+  { verb: 'take', sense: '이동', ko: '여기로 가주세요',            en: 'Take me here' },
+  { verb: 'take', sense: '이동', ko: '우산 챙겨',                  en: 'Take an umbrella' },
+  { verb: 'take', sense: '이동', ko: '이거 방으로 갖다주세요',     en: 'Take this to my room' },
+  { verb: 'take', sense: '이동', ko: '나 좀 데려다줄래?',          en: 'Can you take me?' },
+  { verb: 'take', sense: '이동', ko: '신발 벗어',                  en: 'Take off your shoes' },
+  { verb: 'take', sense: '이동', ko: '이거 좀 치워주세요',         en: 'Can you take this away?' },
+  { verb: 'take', sense: '이동', ko: '개 산책시킬게',              en: "I'll take the dog out" },
+  { verb: 'take', sense: '이동', ko: '비행기 몇 시야?',            en: 'What flight are you taking?' },
+
+  { verb: 'take', sense: '소요', ko: '얼마나 걸려요?',             en: 'How long does it take?' },
+  { verb: 'take', sense: '소요', ko: '오래 안 걸려',               en: "It doesn't take long" },
+  { verb: 'take', sense: '소요', ko: '한 시간쯤 걸려',             en: 'It takes about an hour' },
+  { verb: 'take', sense: '소요', ko: '시간 좀 걸릴 거야',          en: "It'll take some time" },
+  { verb: 'take', sense: '소요', ko: '얼마나 걸렸어?',             en: 'How long did it take you?' },
+  { verb: 'take', sense: '소요', ko: '천천히 해',                  en: 'Take your time' },
+
+  { verb: 'take', sense: '행위', ko: '샤워할게',                   en: "I'll take a shower" },
+  { verb: 'take', sense: '행위', ko: '좀 쉬자',                    en: "Let's take a break" },
+  { verb: 'take', sense: '행위', ko: '한번 볼게요',                en: 'Let me take a look' },
+  { verb: 'take', sense: '행위', ko: '사진 찍어도 돼요?',          en: 'Can I take a picture?' },
+  { verb: 'take', sense: '행위', ko: '사진 좀 찍어주세요',         en: 'Can you take a photo of us?' },
+  { verb: 'take', sense: '행위', ko: '산책하자',                   en: "Let's take a walk" },
+  { verb: 'take', sense: '행위', ko: '낮잠 잘래',                  en: "I'm going to take a nap" },
+  { verb: 'take', sense: '행위', ko: '메모 좀 할게',               en: 'Let me take a note' },
+  { verb: 'take', sense: '행위', ko: '한번 해볼게',                en: "I'll take a chance" },
+  { verb: 'take', sense: '행위', ko: '깊게 숨 쉬어',               en: 'Take a deep breath' },
+  { verb: 'take', sense: '행위', ko: '수업 들어',                  en: 'I take a class' },
+  { verb: 'take', sense: '행위', ko: '시험 봐야 돼',               en: 'I have to take a test' },
+  { verb: 'take', sense: '행위', ko: '내가 맡을게',                en: "I'll take care of it" },
+  { verb: 'take', sense: '행위', ko: '자리 맡아줘',                en: 'Take my seat for me' },
+
+  { verb: 'take', sense: '관용', ko: '조심히 가',                  en: 'Take care' },
+  { verb: 'take', sense: '관용', ko: '진정해',                     en: 'Take it easy' },
+  { verb: 'take', sense: '관용', ko: '기분 나쁘게 듣지 마',        en: "Don't take it personally" },
+  { verb: 'take', sense: '관용', ko: '벗어',                       en: 'Take it off' },
+
+  { verb: 'go', sense: '이동', ko: '산책 좀 갔다 올게',            en: "I'm going for a walk" },
+  { verb: 'go', sense: '이동', ko: '어디 가?',                     en: 'Where are you going?' },
+  { verb: 'go', sense: '이동', ko: '나 집에 가',                   en: "I'm going home" },
+  { verb: 'go', sense: '이동', ko: '나 먼저 갈게',                 en: 'I should go' },
+  { verb: 'go', sense: '이동', ko: '같이 가도 돼?',                en: 'Can I go with you?' },
+  { verb: 'go', sense: '이동', ko: '병원 가야 돼',                 en: 'I need to go to the hospital' },
+  { verb: 'go', sense: '이동', ko: '먼저 가세요',                  en: 'You go first' },
+  { verb: 'go', sense: '이동', ko: '이 버스 공항 가요?',           en: 'Does this bus go to the airport?' },
+  { verb: 'go', sense: '이동', ko: '쭉 가세요',                    en: 'Go straight' },
+  { verb: 'go', sense: '이동', ko: '들어가',                       en: 'Go in' },
+  { verb: 'go', sense: '이동', ko: '나 어제 거기 갔어',            en: 'I went there yesterday' },
+  { verb: 'go', sense: '이동', ko: '수영하러 가자',                en: "Let's go swimming" },
+  { verb: 'go', sense: '이동', ko: '장 보러 갈래?',                en: 'Want to go shopping?' },
+  { verb: 'go', sense: '이동', ko: '자러 갈게',                    en: "I'm going to bed" },
+
+  { verb: 'go', sense: '예정', ko: '나 걔한테 전화할 거야',        en: "I'm going to call him" },
+  { verb: 'go', sense: '예정', ko: '뭐 할 거야?',                  en: 'What are you going to do?' },
+  { verb: 'go', sense: '예정', ko: '비 올 것 같아',                en: "It's going to rain" },
+  { verb: 'go', sense: '예정', ko: '늦을 것 같아',                 en: "I'm going to be late" },
+  { verb: 'go', sense: '예정', ko: '어떻게 할 거야?',              en: 'How are you going to do it?' },
+  { verb: 'go', sense: '예정', ko: '괜찮을 거야',                  en: "It's going to be okay" },
+  { verb: 'go', sense: '예정', ko: '안 할 거야',                   en: "I'm not going to do it" },
+  { verb: 'go', sense: '예정', ko: '재밌을 거야',                  en: "It's going to be fun" },
+
+  { verb: 'go', sense: '진행', ko: '요즘 어때?',                   en: "How's it going?" },
+  { verb: 'go', sense: '진행', ko: '잘 됐어',                      en: 'It went well' },
+  { verb: 'go', sense: '진행', ko: '잘 되고 있어',                 en: "It's going well" },
+  { verb: 'go', sense: '진행', ko: '계속 해',                      en: 'Go on' },
+  { verb: 'go', sense: '진행', ko: '어떻게 됐어?',                 en: 'How did it go?' },
+  { verb: 'go', sense: '진행', ko: '일이 꼬였어',                  en: 'It went wrong' },
+  { verb: 'go', sense: '진행', ko: '시간 참 빠르다',               en: 'Time goes fast' },
+  { verb: 'go', sense: '진행', ko: '값이 올랐어',                  en: 'The price went up' },
+
+  { verb: 'go', sense: '변화', ko: '이거 상했어',                  en: 'This went bad' },
+  { verb: 'go', sense: '변화', ko: '폰이 꺼졌어',                  en: 'My phone went dead' },
+  { verb: 'go', sense: '변화', ko: '불이 나갔어',                  en: 'The lights went out' },
+  { verb: 'go', sense: '변화', ko: '걔 화났어',                    en: 'He went crazy' },
+  { verb: 'go', sense: '변화', ko: '조용해졌어',                   en: 'It went quiet' },
+  { verb: 'go', sense: '변화', ko: '다 없어졌어',                  en: "It's all gone" },
+  { verb: 'go', sense: '변화', ko: '배터리 다 됐어',               en: 'My battery is going' },
+
+  { verb: 'go', sense: '관용', ko: '먼저 하세요',                  en: 'Go ahead' },
+  { verb: 'go', sense: '관용', ko: '한번 해봐',                    en: 'Go for it' },
+  { verb: 'go', sense: '관용', ko: '자, 간다',                     en: 'Here we go' },
+  { verb: 'go', sense: '관용', ko: '포장해 주세요',                en: 'To go, please' },
+  { verb: 'go', sense: '관용', ko: '각자 내자',                    en: "We'll go Dutch" },
+
+  { verb: 'come', sense: '이동', ko: '이리 와',                     en: 'Come here' },
+  { verb: 'come', sense: '이동', ko: '지금 가',                     en: "I'm coming" },
+  { verb: 'come', sense: '이동', ko: '들어오세요',                  en: 'Come in' },
+  { verb: 'come', sense: '이동', ko: '같이 갈래?',                  en: 'Do you want to come?' },
+  { verb: 'come', sense: '이동', ko: '나랑 같이 가자',              en: 'Come with me' },
+  { verb: 'come', sense: '이동', ko: '언제 와?',                    en: 'When are you coming?' },
+  { verb: 'come', sense: '이동', ko: '버스 온다',                   en: 'The bus is coming' },
+  { verb: 'come', sense: '이동', ko: '내일 다시 올게요',            en: "I'll come back tomorrow" },
+  { verb: 'come', sense: '이동', ko: '우리 집에 놀러 와',           en: 'Come over to my place' },
+  { verb: 'come', sense: '이동', ko: '누가 왔어',                   en: 'Someone came' },
+  { verb: 'come', sense: '이동', ko: '나가자',                      en: 'Come out' },
+  { verb: 'come', sense: '이동', ko: '따라와',                      en: 'Come along' },
+  { verb: 'come', sense: '이동', ko: '나 방금 왔어',                en: 'I just came' },
+  { verb: 'come', sense: '이동', ko: '가까이 와',                   en: 'Come closer' },
+  { verb: 'come', sense: '이동', ko: '내려와',                      en: 'Come down' },
+  { verb: 'come', sense: '이동', ko: '올라와',                      en: 'Come up' },
+  { verb: 'come', sense: '이동', ko: '우리 저녁 먹으러 갈게',       en: "We'll come for dinner" },
+  { verb: 'come', sense: '이동', ko: '몇 시에 올 수 있어?',         en: 'What time can you come?' },
+
+  { verb: 'come', sense: '출처', ko: '어디서 오셨어요?',            en: 'Where do you come from?' },
+  { verb: 'come', sense: '출처', ko: '저 한국에서 왔어요',          en: 'I come from Korea' },
+  { verb: 'come', sense: '출처', ko: '밥도 같이 나와요?',           en: 'Does it come with rice?' },
+  { verb: 'come', sense: '출처', ko: '색깔별로 있어요',             en: 'It comes in many colors' },
+  { verb: 'come', sense: '출처', ko: '사이즈 더 있어요?',           en: 'Does it come in a bigger size?' },
+  { verb: 'come', sense: '출처', ko: '이거 어디서 났어?',           en: 'Where did this come from?' },
+  { verb: 'come', sense: '출처', ko: '음료도 포함이에요',           en: 'It comes with a drink' },
+  { verb: 'come', sense: '출처', ko: '이 냄새 어디서 나?',          en: 'Where is that smell coming from?' },
+
+  { verb: 'come', sense: '변화', ko: '꿈이 이뤄졌어',               en: 'My dream came true' },
+  { verb: 'come', sense: '변화', ko: '단추가 떨어졌어',             en: 'The button came off' },
+  { verb: 'come', sense: '변화', ko: '머리 풀렸어',                 en: 'My hair came loose' },
+  { verb: 'come', sense: '변화', ko: '사진 잘 나왔어',              en: 'The photo came out well' },
+  { verb: 'come', sense: '변화', ko: '다 얼마예요?',                en: 'How much does it come to?' },
+  { verb: 'come', sense: '변화', ko: '얼룩이 안 지워져',            en: "The stain won't come out" },
+  { verb: 'come', sense: '변화', ko: '이제 알겠다',                 en: "It's coming back to me" },
+  { verb: 'come', sense: '변화', ko: '곧 겨울이야',                 en: 'Winter is coming' },
+  { verb: 'come', sense: '변화', ko: '잘 풀렸어',                   en: 'It came out fine' },
+  { verb: 'come', sense: '변화', ko: '뚜껑이 안 열려',              en: "The lid won't come off" },
+  { verb: 'come', sense: '변화', ko: '아직 안 나왔어',              en: "It hasn't come out yet" },
+
+  { verb: 'come', sense: '관용', ko: '왜 그래 좀',                  en: 'Come on' },
+  { verb: 'come', sense: '관용', ko: '어쩌다 그렇게 됐어?',         en: 'How come?' },
+  { verb: 'come', sense: '관용', ko: '생각해보니까',                en: 'Come to think of it' },
+  { verb: 'come', sense: '관용', ko: '어서 오세요',                 en: 'Come on in' },
+  { verb: 'come', sense: '관용', ko: '금방 나옵니다',               en: 'Coming right up' },
+
+  { verb: 'make', sense: '제작', ko: '저녁 내가 할게',              en: "I'll make dinner" },
+  { verb: 'make', sense: '제작', ko: '커피 타줄까?',                en: 'Want me to make coffee?' },
+  { verb: 'make', sense: '제작', ko: '이거 직접 만들었어',          en: 'I made this myself' },
+  { verb: 'make', sense: '제작', ko: '뭐로 만든 거예요?',           en: "What's it made of?" },
+  { verb: 'make', sense: '제작', ko: '한 부 복사해 주세요',         en: 'Can you make a copy?' },
+  { verb: 'make', sense: '제작', ko: '자리 좀 만들어줘',            en: 'Make some room' },
+  { verb: 'make', sense: '제작', ko: '침대 좀 정리해',              en: 'Make your bed' },
+  { verb: 'make', sense: '제작', ko: '중국산이에요',                en: "It's made in China" },
+
+  { verb: 'make', sense: '실행', ko: '전화 한 통 할게요',           en: 'I need to make a call' },
+  { verb: 'make', sense: '실행', ko: '내가 실수했어',               en: 'I made a mistake' },
+  { verb: 'make', sense: '실행', ko: '예약하고 싶어요',             en: "I'd like to make a reservation" },
+  { verb: 'make', sense: '실행', ko: '결정했어?',                   en: 'Did you make a decision?' },
+  { verb: 'make', sense: '실행', ko: '계획 세우자',                 en: "Let's make a plan" },
+  { verb: 'make', sense: '실행', ko: '돈 많이 벌어?',               en: 'Do you make good money?' },
+  { verb: 'make', sense: '실행', ko: '시끄럽게 하지 마',            en: "Don't make noise" },
+  { verb: 'make', sense: '실행', ko: '친구 많이 사귀었어',          en: 'I made a lot of friends' },
+  { verb: 'make', sense: '실행', ko: '약속 하나 잡았어',            en: 'I made an appointment' },
+  { verb: 'make', sense: '실행', ko: '노력 좀 해봐',                en: 'Make an effort' },
+  { verb: 'make', sense: '실행', ko: '소원 빌어',                   en: 'Make a wish' },
+  { verb: 'make', sense: '실행', ko: '엉망으로 만들지 마',          en: "Don't make a mess" },
+
+  { verb: 'make', sense: '사역', ko: '너 때문에 웃겨',              en: 'You make me laugh' },
+  { verb: 'make', sense: '사역', ko: '기분 좋아지네',               en: 'It makes me happy' },
+  { verb: 'make', sense: '사역', ko: '나 기다리게 했어',            en: 'He made me wait' },
+  { verb: 'make', sense: '사역', ko: '이거 먹으면 졸려',            en: 'It makes me sleepy' },
+  { verb: 'make', sense: '사역', ko: '엄마가 억지로 시켰어',        en: 'My mom made me do it' },
+  { verb: 'make', sense: '사역', ko: '나 울렸잖아',                 en: 'You made me cry' },
+  { verb: 'make', sense: '사역', ko: '따뜻하게 해주세요',           en: 'Make it warm' },
+  { verb: 'make', sense: '사역', ko: '조금만 더 크게 해줘',         en: 'Make it louder' },
+  { verb: 'make', sense: '사역', ko: '덜 맵게 해주세요',            en: 'Make it less spicy' },
+  { verb: 'make', sense: '사역', ko: '쉽게 좀 해줘',                en: 'Make it easy' },
+
+  { verb: 'make', sense: '도달', ko: '해냈다!',                     en: 'I made it' },
+  { verb: 'make', sense: '도달', ko: '오늘 올 수 있어?',            en: 'Can you make it tonight?' },
+  { verb: 'make', sense: '도달', ko: '못 갈 것 같아',               en: "I can't make it" },
+  { verb: 'make', sense: '도달', ko: '기차 놓치겠다',               en: "We won't make the train" },
+  { verb: 'make', sense: '도달', ko: '제시간에 왔어',               en: 'I made it on time' },
+  { verb: 'make', sense: '도달', ko: '겨우 도착했어',               en: 'I barely made it' },
+  { verb: 'make', sense: '도달', ko: '7시까지 갈 수 있어',          en: 'I can make it by seven' },
+
+  { verb: 'make', sense: '관용', ko: '꼭 확인해',                   en: 'Make sure' },
+  { verb: 'make', sense: '관용', ko: '말이 되네',                   en: 'That makes sense' },
+  { verb: 'make', sense: '관용', ko: '무슨 말인지 모르겠어',        en: "It doesn't make sense" },
+  { verb: 'make', sense: '관용', ko: '빨리 정해',                   en: 'Make up your mind' },
+  { verb: 'make', sense: '관용', ko: '내가 지어낸 얘기 아냐',       en: "I didn't make it up" },
+
+  { verb: 'give', sense: '전달', ko: '메뉴판 주세요',               en: 'Can you give me the menu?' },
+  { verb: 'give', sense: '전달', ko: '이것 좀 줄래?',               en: 'Can you give me this?' },
+  { verb: 'give', sense: '전달', ko: '깎아주세요',                  en: 'Can you give me a discount?' },
+  { verb: 'give', sense: '전달', ko: '번호 알려줬어',               en: 'I gave him my number' },
+  { verb: 'give', sense: '전달', ko: '이거 걔한테 줘',              en: 'Give this to him' },
+  { verb: 'give', sense: '전달', ko: '영수증 주세요',               en: 'Give me a receipt, please' },
+  { verb: 'give', sense: '전달', ko: '잔돈 주세요',                 en: 'Give me the change' },
+  { verb: 'give', sense: '전달', ko: '나한테 줘',                   en: 'Give it to me' },
+  { verb: 'give', sense: '전달', ko: '하나만 주세요',               en: 'Give me one, please' },
+  { verb: 'give', sense: '전달', ko: '내 자리 양보했어',            en: 'I gave him my seat' },
+  { verb: 'give', sense: '전달', ko: '돌려줘',                      en: 'Give it back' },
+  { verb: 'give', sense: '전달', ko: '선물 하나 줬어',              en: 'I gave her a gift' },
+  { verb: 'give', sense: '전달', ko: '주소 좀 알려주세요',          en: 'Can you give me the address?' },
+  { verb: 'give', sense: '전달', ko: '물 좀 주세요',                en: 'Give me some water' },
+  { verb: 'give', sense: '전달', ko: '이거 공짜로 줬어',            en: 'They gave it to me free' },
+  { verb: 'give', sense: '전달', ko: '팁 좀 줬어',                  en: 'I gave him a tip' },
+
+  { verb: 'give', sense: '행위', ko: '전화 줘',                     en: 'Give me a call' },
+  { verb: 'give', sense: '행위', ko: '좀 도와줄래?',                en: 'Can you give me a hand?' },
+  { verb: 'give', sense: '행위', ko: '잠깐만',                      en: 'Give me a minute' },
+  { verb: 'give', sense: '행위', ko: '한번 해볼게',                 en: "I'll give it a try" },
+  { verb: 'give', sense: '행위', ko: '태워줄까?',                   en: 'Want me to give you a ride?' },
+  { verb: 'give', sense: '행위', ko: '한번 봐줄래?',                en: 'Can you give it a look?' },
+  { verb: 'give', sense: '행위', ko: '이따 연락할게',               en: "I'll give you a shout" },
+  { verb: 'give', sense: '행위', ko: '한번 해봐',                   en: 'Give it a shot' },
+  { verb: 'give', sense: '행위', ko: '박수 쳐주세요',               en: 'Give them a hand' },
+  { verb: 'give', sense: '행위', ko: '안아줘',                      en: 'Give me a hug' },
+  { verb: 'give', sense: '행위', ko: '시간 좀 줘',                  en: 'Give me some time' },
+  { verb: 'give', sense: '행위', ko: '한 입만',                     en: 'Give me a bite' },
+
+  { verb: 'give', sense: '반응', ko: '머리 아파',                   en: 'It gives me a headache' },
+  { verb: 'give', sense: '반응', ko: '소름 돋아',                   en: 'It gives me chills' },
+  { verb: 'give', sense: '반응', ko: '깜짝 놀랐잖아',               en: 'You gave me a scare' },
+  { verb: 'give', sense: '반응', ko: '좋은 생각이 났어',            en: 'That gives me an idea' },
+  { verb: 'give', sense: '반응', ko: '그거 먹으면 배 아파',         en: 'It gives me a stomachache' },
+  { verb: 'give', sense: '반응', ko: '힘이 나네',                   en: 'It gives me energy' },
+  { verb: 'give', sense: '반응', ko: '괜히 기대하게 하지 마',       en: "Don't give me hope" },
+  { verb: 'give', sense: '반응', ko: '한번 믿어볼게',               en: "I'll give you a chance" },
+  { verb: 'give', sense: '반응', ko: '잔소리 좀 그만해',            en: 'Stop giving me a hard time' },
+
+  { verb: 'give', sense: '관용', ko: '포기했어',                    en: 'I gave up' },
+  { verb: 'give', sense: '관용', ko: '봐줘 좀',                     en: 'Give me a break' },
+  { verb: 'give', sense: '관용', ko: '포기하지 마',                 en: "Don't give up" },
+  { verb: 'give', sense: '관용', ko: '나눠주다',                    en: 'Give it away' },
+  { verb: 'give', sense: '관용', ko: '여기 있습니다',               en: 'Here you go' },
+
+  { verb: 'put', sense: '위치', ko: '여기 놔줘',                    en: 'Put it here' },
+  { verb: 'put', sense: '위치', ko: '테이블에 올려놔',              en: 'Put it on the table' },
+  { verb: 'put', sense: '위치', ko: '가방에 넣어',                  en: 'Put it in your bag' },
+  { verb: 'put', sense: '위치', ko: '치워',                         en: 'Put it away' },
+  { verb: 'put', sense: '위치', ko: '제자리에 놔',                  en: 'Put it back' },
+  { verb: 'put', sense: '위치', ko: '내려놔',                       en: 'Put it down' },
+  { verb: 'put', sense: '위치', ko: '어디 뒀어?',                   en: 'Where did you put it?' },
+  { verb: 'put', sense: '위치', ko: '냉장고에 넣어줘',              en: 'Put it in the fridge' },
+  { verb: 'put', sense: '위치', ko: '설탕 넣지 마세요',             en: "Don't put sugar in it" },
+  { verb: 'put', sense: '위치', ko: '소금 좀 넣어',                 en: 'Put some salt in' },
+  { verb: 'put', sense: '위치', ko: '폰 좀 내려놔',                 en: 'Put your phone down' },
+  { verb: 'put', sense: '위치', ko: '가방 여기 둬도 돼요?',         en: 'Can I put my bag here?' },
+  { verb: 'put', sense: '위치', ko: '위에 올려주세요',              en: 'Put it on top' },
+  { verb: 'put', sense: '위치', ko: '따로 담아주세요',              en: 'Put them in separate bags' },
+  { verb: 'put', sense: '위치', ko: '얼음 넣어주세요',              en: 'Put ice in it, please' },
+  { verb: 'put', sense: '위치', ko: '트렁크에 실어주세요',          en: 'Put it in the trunk' },
+  { verb: 'put', sense: '위치', ko: '불 좀 켜줘',                   en: 'Put the light on' },
+  { verb: 'put', sense: '위치', ko: '나 좀 바꿔줘',                 en: 'Put him on the phone' },
+
+  { verb: 'put', sense: '착용', ko: '신발 신어',                    en: 'Put on your shoes' },
+  { verb: 'put', sense: '착용', ko: '겉옷 입어',                    en: 'Put on your jacket' },
+  { verb: 'put', sense: '착용', ko: '선크림 발라',                  en: 'Put on sunscreen' },
+  { verb: 'put', sense: '착용', ko: '마스크 써',                    en: 'Put on a mask' },
+  { verb: 'put', sense: '착용', ko: '이거 입어봐도 돼요?',          en: 'Can I put this on?' },
+  { verb: 'put', sense: '착용', ko: '양말 신어',                    en: 'Put your socks on' },
+  { verb: 'put', sense: '착용', ko: '약 좀 발라',                   en: 'Put some cream on it' },
+  { verb: 'put', sense: '착용', ko: '살 좀 쪘어',                   en: 'I put on weight' },
+  { verb: 'put', sense: '착용', ko: '안경 써',                      en: 'Put your glasses on' },
+
+  { verb: 'put', sense: '기입', ko: '여기에 이름 쓰세요',           en: 'Put your name here' },
+  { verb: 'put', sense: '기입', ko: '카드로 계산해 주세요',         en: 'Put it on my card' },
+  { verb: 'put', sense: '기입', ko: '방으로 달아주세요',            en: 'Put it on my room' },
+  { verb: 'put', sense: '기입', ko: '여기 사인해 주세요',           en: 'Put your signature here' },
+  { verb: 'put', sense: '기입', ko: '번호 좀 적어줘',               en: 'Put your number down' },
+  { verb: 'put', sense: '기입', ko: '이거 목록에 넣어줘',           en: 'Put it on the list' },
+  { verb: 'put', sense: '기입', ko: '다 같이 계산해 주세요',        en: 'Put it all together' },
+  { verb: 'put', sense: '기입', ko: '내 이름으로 해주세요',         en: 'Put it under my name' },
+
+  { verb: 'put', sense: '관용', ko: '좀 미루자',                    en: "Let's put it off" },
+  { verb: 'put', sense: '표현', ko: '어떻게 말해야 하지',           en: 'How do I put it?' },
+  { verb: 'put', sense: '관용', ko: '난 못 참아',                   en: "I can't put up with it" },
+  { verb: 'put', sense: '관용', ko: '이거 어떻게 조립해?',          en: 'How do I put it together?' },
+  { verb: 'put', sense: '관용', ko: '불 좀 꺼줘',                   en: 'Put out the fire' },
+  { verb: 'put', sense: '표현', ko: '쉽게 말하면',                  en: 'To put it simply' },
+  { verb: 'put', sense: '표현', ko: '이렇게 말해볼게',              en: 'Let me put it this way' },
+
+  { verb: 'keep', sense: '유지', ko: '따뜻하게 유지해',             en: 'Keep it warm' },
+  { verb: 'keep', sense: '유지', ko: '잔돈은 됐어요',               en: 'Keep the change' },
+  { verb: 'keep', sense: '유지', ko: '깨끗하게 써주세요',           en: 'Keep it clean' },
+  { verb: 'keep', sense: '유지', ko: '조용히 해',                   en: 'Keep quiet' },
+  { verb: 'keep', sense: '유지', ko: '문 열어놔',                   en: 'Keep the door open' },
+  { verb: 'keep', sense: '유지', ko: '비밀로 해줘',                 en: 'Keep it a secret' },
+  { verb: 'keep', sense: '유지', ko: '연락하고 지내자',             en: "Let's keep in touch" },
+  { verb: 'keep', sense: '유지', ko: '차갑게 해주세요',             en: 'Keep it cold' },
+  { verb: 'keep', sense: '유지', ko: '눈 감아',                     en: 'Keep your eyes closed' },
+  { verb: 'keep', sense: '유지', ko: '가만히 있어',                 en: 'Keep still' },
+  { verb: 'keep', sense: '유지', ko: '건강 잘 챙겨',                en: 'Keep healthy' },
+  { verb: 'keep', sense: '유지', ko: '이거 가져도 돼?',             en: 'Can I keep this?' },
+
+  { verb: 'keep', sense: '지속', ko: '계속 가',                     en: 'Keep going' },
+  { verb: 'keep', sense: '지속', ko: '계속 해봐',                   en: 'Keep trying' },
+  { verb: 'keep', sense: '지속', ko: '자꾸 까먹어',                 en: 'I keep forgetting' },
+  { verb: 'keep', sense: '지속', ko: '비가 계속 와',                en: 'It keeps raining' },
+  { verb: 'keep', sense: '지속', ko: '계속 말해봐',                 en: 'Keep talking' },
+  { verb: 'keep', sense: '지속', ko: '자꾸 딴생각이 나',            en: 'My mind keeps wandering' },
+  { verb: 'keep', sense: '지속', ko: '왜 자꾸 그래?',               en: 'Why do you keep doing that?' },
+  { verb: 'keep', sense: '지속', ko: '계속 웃음이 나',              en: 'I keep laughing' },
+  { verb: 'keep', sense: '지속', ko: '계속 기다렸어',               en: 'I kept waiting' },
+  { verb: 'keep', sense: '지속', ko: '계속 찾아봐',                 en: 'Keep looking' },
+  { verb: 'keep', sense: '지속', ko: '자꾸 배가 아파',              en: 'My stomach keeps hurting' },
+  { verb: 'keep', sense: '지속', ko: '계속 그렇게 해',              en: 'Keep it up' },
+
+  { verb: 'keep', sense: '보관', ko: '냉장고에 넣어둬',             en: 'Keep it in the fridge' },
+  { verb: 'keep', sense: '보관', ko: '이것 좀 맡아줘',              en: 'Can you keep this for me?' },
+  { verb: 'keep', sense: '보관', ko: '가방 맡아주시나요?',          en: 'Do you keep bags here?' },
+  { verb: 'keep', sense: '보관', ko: '영수증 잘 보관하세요',        en: 'Keep your receipt' },
+  { verb: 'keep', sense: '보관', ko: '여권 잘 챙겨',                en: 'Keep your passport safe' },
+  { verb: 'keep', sense: '보관', ko: '이거 어디에 둬?',             en: 'Where do you keep it?' },
+  { verb: 'keep', sense: '보관', ko: '나 아직 갖고 있어',           en: 'I still keep it' },
+  { verb: 'keep', sense: '보관', ko: '남은 거 싸주세요',            en: 'Can I keep the rest?' },
+  { verb: 'keep', sense: '보관', ko: '일기 써',                     en: 'I keep a diary' },
+
+  { verb: 'keep', sense: '방지', ko: '들어오지 마세요',             en: 'Keep out' },
+  { verb: 'keep', sense: '방지', ko: '가까이 오지 마',              en: 'Keep away' },
+  { verb: 'keep', sense: '방지', ko: '거리 좀 둬',                  en: 'Keep your distance' },
+  { verb: 'keep', sense: '방지', ko: '손 대지 마',                  en: 'Keep your hands off' },
+
+  { verb: 'keep', sense: '관용', ko: '좀 봐줘',                     en: 'Keep an eye on it' },
+  { verb: 'keep', sense: '관용', ko: '기억해둬',                    en: 'Keep it in mind' },
+  { verb: 'keep', sense: '관용', ko: '침착해',                      en: 'Keep calm' },
+  { verb: 'keep', sense: '관용', ko: '기다리게 해서 미안',          en: 'Sorry to keep you waiting' },
+  { verb: 'keep', sense: '관용', ko: '약속 지켰어',                 en: 'I kept my promise' },
+
+  { verb: 'work', sense: '노동', ko: '어디서 일해?',                en: 'Where do you work?' },
+  { verb: 'work', sense: '노동', ko: '나 은행에서 일해',            en: 'I work at a bank' },
+  { verb: 'work', sense: '노동', ko: '오늘 일해?',                  en: 'Do you work today?' },
+  { verb: 'work', sense: '노동', ko: '나 지금 일하는 중이야',       en: "I'm working now" },
+  { verb: 'work', sense: '노동', ko: '주말에도 일해',               en: 'I work on weekends' },
+  { verb: 'work', sense: '노동', ko: '몇 시까지 일해?',             en: 'What time do you work until?' },
+  { verb: 'work', sense: '노동', ko: '집에서 일해',                 en: 'I work from home' },
+  { verb: 'work', sense: '노동', ko: '오늘 늦게까지 해',            en: 'I have to work late' },
+  { verb: 'work', sense: '노동', ko: '같이 일하자',                 en: "Let's work together" },
+  { verb: 'work', sense: '노동', ko: '나 그만뒀어',                 en: "I don't work there anymore" },
+  { verb: 'work', sense: '노동', ko: '누구랑 일해?',                en: 'Who do you work with?' },
+  { verb: 'work', sense: '노동', ko: '열심히 일했어',               en: 'I worked hard' },
+
+  { verb: 'work', sense: '작동', ko: '이거 안 돼요',                en: "It doesn't work" },
+  { verb: 'work', sense: '작동', ko: '여기 와이파이 돼요?',         en: 'Does the wifi work here?' },
+  { verb: 'work', sense: '작동', ko: '이제 되네',                   en: "It's working now" },
+  { verb: 'work', sense: '작동', ko: '에어컨이 안 돼요',            en: "The air conditioner doesn't work" },
+  { verb: 'work', sense: '작동', ko: '이거 어떻게 써요?',           en: 'How does this work?' },
+  { verb: 'work', sense: '작동', ko: '폰이 다시 되네',              en: 'My phone works again' },
+  { verb: 'work', sense: '작동', ko: '이 카드 여기서 돼요?',        en: 'Does this card work here?' },
+  { verb: 'work', sense: '작동', ko: '엘리베이터 고장이에요',       en: "The elevator isn't working" },
+  { verb: 'work', sense: '작동', ko: '물이 안 나와요',              en: 'The shower is not working' },
+  { verb: 'work', sense: '작동', ko: '리모컨 돼?',                  en: 'Does the remote work?' },
+  { verb: 'work', sense: '작동', ko: '갑자기 안 되네',              en: 'It stopped working' },
+  { verb: 'work', sense: '작동', ko: '고장났었는데 고쳤어',         en: 'It works fine now' },
+
+  { verb: 'work', sense: '효과', ko: '그거 효과 있어',              en: 'It works' },
+  { verb: 'work', sense: '효과', ko: '그건 안 통했어',              en: "That didn't work" },
+  { verb: 'work', sense: '효과', ko: '이 약 잘 들어',               en: 'This medicine works well' },
+  { verb: 'work', sense: '효과', ko: '괜찮으세요?',                 en: 'Does that work for you?' },
+  { verb: 'work', sense: '효과', ko: '나는 괜찮아',                 en: 'That works for me' },
+  { verb: 'work', sense: '효과', ko: '내일 어때?',                  en: 'Does tomorrow work?' },
+  { verb: 'work', sense: '효과', ko: '한번 해보자',                 en: "Let's see if it works" },
+  { verb: 'work', sense: '효과', ko: '나한텐 안 맞아',              en: "It doesn't work for me" },
+  { verb: 'work', sense: '효과', ko: '결국 잘 됐어',                en: 'It all worked out' },
+
+  { verb: 'work', sense: '해결', ko: '내가 알아서 할게',            en: "I'll work it out" },
+  { verb: 'work', sense: '해결', ko: '나 그거 하는 중이야',         en: "I'm working on it" },
+  { verb: 'work', sense: '해결', ko: '어떻게든 될 거야',            en: "We'll work something out" },
+  { verb: 'work', sense: '해결', ko: '같이 방법 찾아보자',          en: "Let's work it out together" },
+
+  { verb: 'work', sense: '관용', ko: '나 운동해',                   en: 'I work out' },
+  { verb: 'work', sense: '관용', ko: '운동하러 가',                 en: "I'm going to work out" },
+  { verb: 'work', sense: '관용', ko: '너무 무리하지 마',            en: "Don't work too hard" },
+  { verb: 'work', sense: '관용', ko: '일 잘 되고 있어?',            en: 'How is work going?' },
+  { verb: 'work', sense: '관용', ko: '오늘 일 쉬는 날이야',         en: "I'm off work today" },
+
+  { verb: 'let', sense: '제안', ko: '가자',                         en: "Let's go" },
+  { verb: 'let', sense: '제안', ko: '먹자',                         en: "Let's eat" },
+  { verb: 'let', sense: '제안', ko: '한번 보자',                    en: "Let's see" },
+  { verb: 'let', sense: '제안', ko: '나중에 얘기하자',              en: "Let's talk later" },
+  { verb: 'let', sense: '제안', ko: '뭐 좀 먹자',                   en: "Let's grab something to eat" },
+  { verb: 'let', sense: '제안', ko: '그러지 말자',                  en: "Let's not do that" },
+  { verb: 'let', sense: '제안', ko: '시작하자',                     en: "Let's get started" },
+  { verb: 'let', sense: '제안', ko: '나중에 만나자',                en: "Let's meet later" },
+  { verb: 'let', sense: '제안', ko: '반씩 내자',                    en: "Let's split it" },
+  { verb: 'let', sense: '제안', ko: '여기서 내리자',                en: "Let's get off here" },
+  { verb: 'let', sense: '제안', ko: '집에 가자',                    en: "Let's go home" },
+  { verb: 'let', sense: '제안', ko: '내일 하자',                    en: "Let's do it tomorrow" },
+  { verb: 'let', sense: '제안', ko: '좀 쉬자',                      en: "Let's rest a bit" },
+  { verb: 'let', sense: '제안', ko: '기다려보자',                   en: "Let's wait and see" },
+
+  { verb: 'let', sense: '허락', ko: '내가 볼게',                    en: 'Let me see' },
+  { verb: 'let', sense: '허락', ko: '알려줘',                       en: 'Let me know' },
+  { verb: 'let', sense: '허락', ko: '내가 해볼게',                  en: 'Let me try' },
+  { verb: 'let', sense: '허락', ko: '내가 도와줄게',                en: 'Let me help you' },
+  { verb: 'let', sense: '허락', ko: '내가 낼게',                    en: 'Let me pay' },
+  { verb: 'let', sense: '허락', ko: '잠깐만 생각해볼게',            en: 'Let me think' },
+  { verb: 'let', sense: '허락', ko: '설명할게',                     en: 'Let me explain' },
+  { verb: 'let', sense: '허락', ko: '확인해볼게요',                 en: 'Let me check' },
+  { verb: 'let', sense: '허락', ko: '나 좀 들어가게 해줘',          en: 'Let me in' },
+  { verb: 'let', sense: '허락', ko: '엄마가 안 된대',               en: "My mom won't let me" },
+  { verb: 'let', sense: '허락', ko: '가게 해줘',                    en: 'Let me go' },
+  { verb: 'let', sense: '허락', ko: '한번만 봐주세요',              en: 'Let it slide' },
+  { verb: 'let', sense: '허락', ko: '얘기 좀 하게 해줘',            en: 'Let me talk' },
+  { verb: 'let', sense: '허락', ko: '걔 들여보내줘',                en: 'Let him in' },
+  { verb: 'let', sense: '허락', ko: '내가 물어볼게',                en: 'Let me ask' },
+  { verb: 'let', sense: '허락', ko: '먼저 하세요',                  en: 'Let me let you go first' },
+
+  { verb: 'let', sense: '방출', ko: '놔',                           en: 'Let go' },
+  { verb: 'let', sense: '방출', ko: '내 팔 놔',                     en: 'Let go of my arm' },
+  { verb: 'let', sense: '방출', ko: '여기서 내려주세요',            en: 'Let me off here' },
+  { verb: 'let', sense: '방출', ko: '나 좀 나가게 해줘',            en: 'Let me out' },
+  { verb: 'let', sense: '방출', ko: '개 좀 내보내줘',               en: 'Let the dog out' },
+  { verb: 'let', sense: '방출', ko: '바람 좀 통하게 해',            en: 'Let some air in' },
+  { verb: 'let', sense: '방출', ko: '물 좀 빼',                     en: 'Let the water out' },
+
+  { verb: 'let', sense: '관용', ko: '그만 신경 써',                 en: 'Let it go' },
+  { verb: 'let', sense: '관용', ko: '그냥 둬',                      en: 'Let it be' },
+  { verb: 'let', sense: '관용', ko: '실망시키지 않을게',            en: "I won't let you down" },
+  { verb: 'let', sense: '관용', ko: '솔직히 말하자',                en: "Let's face it" },
+  { verb: 'let', sense: '관용', ko: '그건 그렇다 치고',             en: "Let's say that's true" },
+];
+
+
+/* ---------- 2. 갈래별 코어 이미지 ----------
+ * SENSE_INFO[verb][sense] 2단 구조. 같은 갈래 이름이라도 동사마다 코어 이미지가 다르다.
+ */
+
+const SENSE_INFO = {
+ 'get': {
+  '획득': {
+    title: '없던 게 내 쪽으로 넘어옴',
+    core: '물건이든 정보든 자리든, 내 손에 없던 것이 들어오는 것. buy / receive / bring 자리를 get이 다 먹는다.',
+  },
+  '이동': {
+    title: '내가 그 위치로 넘어감',
+    core: 'go는 출발에, get은 도착에 초점이 있다. 뒤에 붙는 부사가 방향만 지정한다 — up 위로, off 떨어져서, on 올라타서, in 안으로, out 밖으로, back 돌아와서. 이 부사들은 take / put / go 에도 똑같은 방향으로 붙으니 여기서 익혀두면 뒤가 편하다.',
+  },
+  '변화': {
+    title: '상태가 그쪽으로 넘어감',
+    core: 'be는 그 상태에 있는 것, get은 그 상태로 넘어가는 순간. I am tired(지금 피곤하다) / I am getting tired(피곤해지는 중이다). 한국어의 "-해지다"가 거의 전부 여기로 온다.',
+  },
+  '사역': {
+    title: '대상을 그 상태로 넘김',
+    core: 'get + 대상 + 뒤에 붙는 것. 뒤에 to+동사면 시키다, 과거분사면 남 시켜서 되게 하다, 형용사면 그 상태로 만들다. 내가 직접 한 게 아니라는 뜻이 깔린다.',
+  },
+  '이해': {
+    title: '뜻이 내 머리로 넘어옴',
+    core: 'understand 자리를 구어에서 get이 대신한다. 뒤에 it / that 같은 단어도 오고 문장이 통째로 오기도 한다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"넘어감"으로 설명이 안 되는 덩어리. 억지로 끼워 맞추지 말고 통째로 외운다. 다른 동사에도 이런 게 3~4개씩 있다.',
+  },
+ },
+
+ 'have': {
+  '소유': {
+    title: '내 영역 안에 있음',
+    core: 'get이 없던 게 넘어오는 순간이라면 have는 이미 내 쪽에 있는 상태다. 물건·시간·가족처럼 가진 것뿐 아니라 감기·두통처럼 몸에 있는 것도 have로 말한다. 한국어의 "있다 / 없다"가 거의 전부 여기로 온다.',
+  },
+  '경험': {
+    title: '그 시간을 통과함',
+    core: '먹고 마시고 겪는 것. eat / drink / spend 자리를 have가 다 먹는다. 손에 쥐는 게 아니라 그 시간을 지나간다는 쪽이라, 이 뜻일 때만 진행형(having)이 된다.',
+  },
+  '의무': {
+    title: '해야 할 일이 내게 있음',
+    core: 'have to + 동사원형. 할 일이 내 쪽에 얹혀 있다는 이미지다. 내가 정한 게 아니라 상황이 그렇게 만든 느낌이 깔린다. 부정하면 "하면 안 된다"가 아니라 "안 해도 된다"가 되는 것이 핵심이다.',
+  },
+  '사역': {
+    title: '남을 시켜서 되게 함',
+    core: 'have + 대상 + 뒤에 붙는 것. 과거분사면 남 시켜서 그렇게 되게 하다, 동사원형이면 그 사람에게 시키다. get과 틀은 같은데 사람에게 시킬 때 to를 붙이지 않는다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"내 영역 안에 있음"으로 설명이 안 되는 덩어리. 뜯어보지 말고 통째로 외운다.',
+  },
+ },
+
+ 'take': {
+  '획득': {
+    title: '여럿 중에 골라서 집음',
+    core: 'get이 그냥 손에 들어오는 것이라면 take는 내가 골라서 집는 쪽이다. 가게에서 물건을 고를 때, 자리를 고를 때, 약을 집어 먹을 때 다 이 뜻이다.',
+  },
+  '이동': {
+    title: '집어서 그쪽으로 옮김',
+    core: '집는 데서 끝나지 않고 같이 움직인다. 물건이면 가져가다, 사람이면 데려가다, 탈것이면 그걸 골라 타다. bring은 이쪽으로 가져오는 것이라 방향이 반대다.',
+  },
+  '소요': {
+    title: '시간·노력을 잡아먹음',
+    core: '일이 시간을 집어간다고 본다. 그래서 주어가 사람이 아니라 it이다. 여행에서 가장 많이 쓰는 갈래니 It takes 틀을 통째로 익힌다.',
+  },
+  '행위': {
+    title: 'take + 명사 = 그 행동을 함',
+    core: 'shower / break / look / picture / walk 앞에 붙어 그 행동을 한 번 한다는 뜻이 된다. 한국어의 "샤워하다·쉬다·보다"가 동사 하나가 아니라 take + 명사로 나온다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"골라 집는다"로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'go': {
+  '이동': {
+    title: '여기서 저기로 떠남',
+    core: 'get to가 도착에 초점이라면 go는 떠나서 멀어지는 쪽이다. 말하는 사람에게서 멀어지면 go, 다가오면 come이다. 그래서 부르는 사람에게 갈 때는 I go가 아니라 I come이 된다.',
+  },
+  '예정': {
+    title: '그쪽으로 가고 있는 중 = 곧 그렇게 됨',
+    core: 'be going to + 동사원형. 마음이 이미 그쪽으로 움직였다는 이미지라 will보다 "이미 정해놨다"는 느낌이 강하다. 구어에서는 gonna로 뭉개서 말한다.',
+  },
+  '진행': {
+    title: '일이 굴러가는 모양',
+    core: '사람이 아니라 일이 주어가 되어 굴러간다. 안부를 묻는 How\'s it going?부터 결과를 말하는 It went well까지 다 여기다.',
+  },
+  '변화': {
+    title: '나쁜 쪽으로 넘어감',
+    core: 'get의 변화와 틀은 같은데 go는 주로 안 좋은 쪽으로 간다. 음식이 상하고 불이 나가고 사람이 돌아버린다. 좋아지는 변화에는 잘 안 쓴다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"떠남"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'come': {
+  '이동': {
+    title: '이쪽으로 다가옴',
+    core: 'go의 반대 방향이다. 기준은 나가 아니라 "말이 오가는 자리"라서, 상대가 부를 때 그쪽으로 가는 것도 come이다. 엄마가 밥 먹으라고 부를 때 I\'m going이라고 하면 틀린다.',
+  },
+  '출처': {
+    title: '그쪽에서 나와서 옴',
+    core: '사람이면 출신, 물건이면 딸려 나오는 구성이다. come from은 어디서 왔는지, come with는 뭐가 같이 나오는지, come in은 어떤 종류로 나오는지를 말한다. 식당·가게에서 매일 쓴다.',
+  },
+  '변화': {
+    title: '그 상태로 다가옴',
+    core: '없던 상태가 이쪽으로 나타난다. 꿈이 이뤄지고 단추가 떨어지고 사진이 나온다. get의 변화가 "그쪽으로 넘어감"이라면 come은 결과가 눈앞에 드러나는 쪽이다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"다가옴"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'make': {
+  '제작': {
+    title: '없던 물건을 만들어냄',
+    core: '재료가 모여 새 물건이 나오는 것. 음식·물건·복사본에 쓴다. do는 이미 있는 일을 처리하는 것이라 방향이 다르다 — 요리는 make, 설거지는 do다.',
+  },
+  '실행': {
+    title: 'make + 명사 = 그 일을 벌임',
+    core: '전화·실수·예약·결정처럼 눈에 안 보이는 것도 "만들어" 낸다. 한국어에서 "하다"로 끝나는 말이 여기서는 make + 명사로 나오는 경우가 많다. take + 명사와 짝을 지어 익히면 갈린다.',
+  },
+  '사역': {
+    title: '상대를 그렇게 만듦',
+    core: 'make + 대상 + 형용사 / 동사원형. get이나 have와 달리 강제성이 세다. 시켜서 억지로 하게 했다는 느낌이 붙고, 사람 뒤에 to를 붙이지 않는다.',
+  },
+  '도달': {
+    title: '어렵게 그 지점까지 감',
+    core: 'make it 통째로 "해내다 / 시간 맞춰 가다"가 된다. 약속에 갈 수 있는지 묻고 답할 때 매일 쓴다. 뒤에 목적어가 없어도 문장이 끝난다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"만들어냄"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'give': {
+  '전달': {
+    title: '내 것을 상대 쪽으로 넘김',
+    core: 'get이 내 쪽으로 들어오는 것이라면 give는 상대 쪽으로 나가는 것이다. give + 사람 + 물건 순서가 기본이고, 사람을 뒤로 빼면 give + 물건 + to + 사람이 된다. 순서만 바뀔 뿐 뜻은 같다.',
+  },
+  '행위': {
+    title: 'give + a + 명사 = 그걸 한 번 해줌',
+    core: 'a call / a hand / a ride / a try 앞에 붙어 그 행동을 한 번 한다는 뜻이 된다. 부탁할 때 가장 많이 쓰는 틀이다. take + 명사가 내가 하는 쪽이라면 이쪽은 상대에게 해주는 쪽이다.',
+  },
+  '반응': {
+    title: '상대에게 그 상태를 안김',
+    core: '물건이 아니라 두통·소름·아이디어처럼 몸과 마음에 생기는 것을 넘긴다. 주어가 사람이 아니라 사물인 경우가 많아서, 한국어 "이거 먹으면 배 아파"가 It gives me로 뒤집힌다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"넘겨줌"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'put': {
+  '위치': {
+    title: '어딘가에 갖다 놓음',
+    core: 'put은 장소가 반드시 따라온다. here / on the table / in the bag 없이 put만 쓰면 문장이 끝나지 않는다. 뒤에 붙는 부사는 get·take에서 익힌 방향 그대로다 — down 내려서, away 치워서, back 제자리로.',
+  },
+  '착용': {
+    title: '몸 위에 얹음',
+    core: 'put on은 입고 신고 바르는 동작 그 자체다. 이미 입고 있는 상태는 wear라 서로 다르다. 옷·신발·안경·선크림·마스크가 다 같은 틀이라 하나만 익히면 나머지가 따라온다.',
+  },
+  '기입': {
+    title: '종이나 계산서 위에 올림',
+    core: '이름을 쓰고 값을 카드에 다는 것도 그 위에 얹는다고 본다. write를 안 써도 되고, 호텔·식당 계산에서 Put it on ~ 하나로 통한다.',
+  },
+  '표현': {
+    title: '생각을 말 위에 얹음',
+    core: '머릿속 생각을 말이라는 자리에 갖다 놓는다고 본다. say와 달리 "어떻게 표현할까"를 고르는 느낌이라, 말을 꺼내기 전에 뜸 들일 때 앞에 붙인다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"갖다 놓음"으로 설명이 안 되는 덩어리. 뒤에 붙는 부사가 뜻을 통째로 바꿔버린다.',
+  },
+ },
+
+ 'keep': {
+  '유지': {
+    title: '그 상태를 계속 잡아둠',
+    core: 'keep + 대상 + 형용사. make가 그 상태로 바꾸는 것이라면 keep은 이미 그런 상태를 놓지 않는 것이다. 따뜻하게, 조용히, 깨끗하게처럼 한국어 "-하게 두다"가 여기로 온다.',
+  },
+  '지속': {
+    title: '멈추지 않고 계속함',
+    core: 'keep + -ing. 초보가 가장 안 나오는 틀인데 쓰임은 아주 잦다. 의지로 계속하는 것("계속 해봐")도 되고, 자꾸 그렇게 되는 것("자꾸 까먹어")도 된다. to부정사를 쓰지 않는다.',
+  },
+  '보관': {
+    title: '내 손에 남겨둠',
+    core: '돌려주지 않고 갖고 있는 것. have가 지금 있는 상태라면 keep은 계속 갖고 있겠다는 쪽이다. 여행에서 짐·영수증·여권 얘기에 그대로 쓴다.',
+  },
+  '방지': {
+    title: '못 오게 막아둠',
+    core: 'out / away / off가 붙어 거리를 벌린다. 표지판에서 자주 보이고 명령문으로만 거의 쓴다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"계속 잡아둠"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+
+ 'work': {
+  '노동': {
+    title: '사람이 일을 함',
+    core: '가장 익숙한 뜻. 장소에는 at 또는 for, 함께하는 사람에는 with, 집에서면 from home이 붙는다. 명사로도 그대로 써서 go to work(출근하다)가 된다.',
+  },
+  '작동': {
+    title: '기계가 제 일을 함',
+    core: '기계·전기·인터넷이 주어가 되어 "돌아간다"는 뜻이 된다. 한국어 "안 돼요 / 고장났어요"가 거의 다 doesn\'t work로 나온다. broken보다 이 말이 훨씬 자주 쓰이고 부드럽다.',
+  },
+  '효과': {
+    title: '방법이 먹힘',
+    core: '약이 듣고 방법이 통하고 일정이 맞는다. work for + 사람 형태로 "나한테는 괜찮다"는 뜻이 되어, 약속 잡을 때 그대로 쓴다.',
+  },
+  '해결': {
+    title: '주물러서 풀어냄',
+    core: 'work out / work on. 문제를 붙잡고 만지작거려 답을 낸다는 이미지다. 아직 진행 중이라는 느낌이 있어서 "하는 중이야"에 딱 맞는다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"일한다"로 설명이 안 되는 덩어리. work out은 운동 쪽 뜻이 따로 있다.',
+  },
+ },
+
+ 'let': {
+  '제안': {
+    title: '우리 같이 그러자',
+    core: "Let's + 동사원형. 원래는 \"우리가 하게 두자\"인데 통째로 굳어져 제안이 됐다. 뒤에는 무조건 동사원형이 오고, 하지 말자고 할 때는 Let's not이 된다.",
+  },
+  '허락': {
+    title: '막지 않고 하게 둠',
+    core: 'let + 사람 + 동사원형. 사람 뒤에 to를 붙이지 않는 것이 핵심이다 — make와 같고 get과 다르다. Let me ~는 허락을 구하는 말이지만 실제로는 "내가 할게"에 가깝게 쓴다.',
+  },
+  '방출': {
+    title: '잡고 있던 걸 놓아줌',
+    core: '손에 쥔 것이든 갇힌 것이든 풀어준다. 뒤에 붙는 부사가 방향을 준다 — out 밖으로, in 안으로, off 떨어져서. get·put에서 익힌 그 방향 그대로다.',
+  },
+  '관용': {
+    title: '코어 이미지로 안 풀림',
+    core: '"놓아둠"으로 설명이 안 되는 덩어리. 통째로 외운다.',
+  },
+ },
+};
+
+
+/* ---------- 3. 개별 주석 ----------
+ * 한국어 직관과 어긋나 실제로 틀리는 지점에만 단다. 42개 전부에 달지 않는다.
+ * 문체: 평서형 종결(~한다), 1~2문장.
+ */
+
+const ITEM_NOTE = {
+  // 획득
+  "I'll get a coffee":
+    'get 하나가 사다 / 가져오다를 다 덮는다. buy를 안 써도 된다.',
+  'Can you get me some water?':
+    'get + 사람 + 물건 = ~에게 갖다주다. give와 형태가 똑같다.',
+  'Where did you get that?':
+    '샀는지 받았는지 주웠는지 안 따진다. "그거 어디서 났어"에 가장 가깝다.',
+  'I got a room':
+    '방을 잡다(예약·확보). 호텔·식당 자리에 그대로 쓴다.',
+  "I'll get it":
+    '전화벨·초인종이면 "내가 받을게", 계산서 앞이면 "내가 낼게". 상황이 뜻을 정한다.',
+
+  // 이동
+  'How do I get to the airport?':
+    '여행에서 가장 많이 쓰는 문장. go to가 아니라 get to — 도착에 초점이 있다.',
+  'What time do you get home?':
+    'home 앞에 to를 붙이지 않는다. home은 여기서 부사다.',
+  'I got here yesterday':
+    'here / there도 마찬가지로 to 없이 바로 붙는다.',
+  'Get in the car':
+    '차·택시는 in. 몸을 굽혀 들어가는 좁은 공간이라서다.',
+  'Get on the subway':
+    '지하철·버스·비행기는 on. 올라타서 서서 다닐 수 있는 공간이라서다. 이 in/on 구분은 그대로 굳어져 있다.',
+  'Get off here':
+    '내리다. on의 반대. 택시에서는 get out을 쓴다(in의 반대).',
+  'When do you get back?':
+    'back이 "돌아와서" 방향을 지정한다. come back과 거의 같게 쓴다.',
+
+  // 변화
+  "I'm getting tired":
+    'I am tired는 이미 피곤한 상태, getting은 피곤해지는 중. 이 차이가 get 변화 갈래의 전부다.',
+  'I got lost':
+    '여행 필수. 길을 잃은 상태로 넘어갔다는 뜻.',
+  'They got married last year':
+    '결혼한 상태로 넘어간 그 시점. are married는 결혼해 있는 상태.',
+  "I'm getting used to it":
+    'used to it은 "익숙한 상태". "used to + 동사원형"(예전엔 ~했다)과 완전히 다른 표현이니 섞이지 않게 주의. 혼동 1순위다.',
+  'I got fired':
+    'get + 과거분사 = 당하다. was fired와 뜻은 같지만 구어에선 get 쪽이 훨씬 많고, 내 의지와 무관하게 그렇게 됐다는 느낌이 붙는다.',
+  'I got drunk':
+    '취한 상태로 넘어감. 지금 취해 있으면 I am drunk.',
+
+  // 사역
+  'I got my hair cut':
+    '내가 자른 게 아니라 미용실에서 자른 것. cut의 과거분사는 cut 그대로다.',
+  "I'll get him to call you":
+    '사람을 시킬 때는 to + 동사원형. make him call과 달리 강제성이 약하다.',
+  'I got it done':
+    '끝내다. it done 순서가 고정이다. 앞의 got my hair cut과 같은 틀.',
+
+  // 이해
+  'I get what you mean':
+    'get 뒤에 단어가 아니라 문장이 통째로 온다. what you mean = 네가 뜻하는 것.',
+
+  // 관용
+  'Get rid of this':
+    '버리다 / 없애다. rid는 이 덩어리 밖에서 거의 안 쓰이니 통째로 외운다.',
+  'Do you get along with him?':
+    '사이좋게 지내다. 사람 관계 전용 표현.',
+  "Let's get going":
+    "슬슬 출발하자. Let's go보다 \"이제 움직이자\"는 느낌이 강하다.",
+
+  // have · 소유
+  'Do you have time?':
+    '"시간 있어?"에 be동사를 쓰지 않는다. 있다 / 없다는 have다.',
+  'Do you have a room?':
+    '호텔에서 빈방이 있냐는 뜻. get a room은 방을 잡는 것, have a room은 방이 있는 것이다.',
+  'Do you have a table?':
+    '식당에서 자리 있냐고 물을 때 seat이 아니라 table을 쓴다.',
+  'Do you have a smaller size?':
+    '가게에서 그대로 쓴다. "있어요?"를 Is there로 옮기면 어색해진다 — 파는 쪽에 물을 땐 have다.',
+  'I have a reservation':
+    '예약"했다"인데 did가 아니라 have다. 예약이 지금 내 앞에 살아 있다는 뜻이라서다.',
+  'I have a cold':
+    '감기를 "걸렸어"라고 하지만 영어는 갖고 있다고 말한다. get a cold는 걸리는 순간, have a cold는 걸려 있는 상태다.',
+  'I have a headache':
+    '아픈 걸 형용사로 말하지 않고 have + 명사로 말한다. 약국에서 이 틀 하나로 거의 다 통한다.',
+
+  // have · 경험
+  'Did you have breakfast?':
+    '식사·음료에는 eat / drink보다 have가 자연스럽다.',
+  'Can I have a look?':
+    '보다에 see를 쓰지 않는다. 잠깐 훑어본다는 느낌이다.',
+  "Let's have a coffee":
+    'a가 붙는다. 커피라는 물질이 아니라 커피 한 잔을 뜻해서다.',
+  'Have a good time':
+    '명령문 모양이지만 시키는 말이 아니라 인사말이다. 헤어질 때 그대로 쓴다.',
+  "We're having a party":
+    'have는 보통 진행형을 안 쓰는데 이 갈래에서는 쓴다. 소유 뜻일 때는 안 된다 — I\'m having a car라고 말하지 않는다.',
+  'We had fun':
+    'fun 앞에 a를 붙이지 않는다. a good time에는 붙는다.',
+
+  // have · 의무
+  'I have to go':
+    'to + 동사원형이 붙으면 가진다는 뜻이 사라지고 의무가 된다.',
+  "You don't have to go":
+    '"가면 안 된다"가 아니라 "안 가도 된다"다. 정반대로 새기기 쉬운 자리다.',
+  'Do I have to wait?':
+    '의문문은 do로 만든다. Have I to wait?라고 하지 않는다.',
+
+  // have · 사역
+  'I had my hair cut':
+    '내가 자른 게 아니라 미용실에서 자른 것. got my hair cut과 뜻은 같고 have 쪽이 조금 차분한 말투다.',
+  'Can I have this delivered?':
+    'this delivered 순서가 고정이다. 앞의 my hair cut과 같은 틀이다.',
+  "I'll have him call you":
+    '사람 뒤에는 to 없이 동사원형이 온다. get him to call you와 다른 점이 이것 하나다.',
+
+  // have · 관용
+  'I have no idea':
+    '전혀 모르겠다는 뜻. I don\'t know보다 세다.',
+  'Can I have a word?':
+    'word가 단어가 아니라 "잠깐 얘기"를 뜻한다. 따로 불러서 말할 때 쓴다.',
+  'Have it your way':
+    '마음대로 하라는 뜻. 살짝 퉁명스러운 말이라 상대를 봐가며 쓴다.',
+  'I have a lot going on':
+    '요즘 벌어진 일이 많아 정신없다는 뜻. busy보다 넓게 쓴다.',
+
+  // take · 획득
+  "I'll take this one":
+    '가게에서 고른 물건을 살 때 쓴다. buy보다 이 말이 훨씬 자주 나온다.',
+  'Do you take card?':
+    '카드를 받느냐는 뜻. 말레이시아 노점에서 가장 먼저 쓸 문장이다.',
+  'Take a seat':
+    '앉으라는 뜻. Sit down보다 부드럽다.',
+  'I took the medicine':
+    '약은 eat이나 drink가 아니라 take로 먹는다.',
+
+  // take · 이동
+  'Take the bus':
+    '탈것을 고를 때 take를 쓴다. ride는 자전거·말처럼 몸으로 올라타는 쪽에 가깝다.',
+  'Take me here':
+    '택시에서 지도를 보여주며 쓴다. 목적지 앞에 to를 붙이지만 here에는 안 붙인다.',
+  'Take this to my room':
+    '물건을 저쪽으로 가져가는 것. 이쪽으로 가져오라면 bring이다.',
+  'Take off your shoes':
+    '몸에서 떼어낸다는 뜻의 off. 신발·옷·모자에 다 쓴다. 비행기가 뜨는 것도 take off다.',
+  'Take an umbrella':
+    '챙겨 가라는 뜻. 집어서 같이 움직이니까 take다.',
+
+  // take · 소요
+  'How long does it take?':
+    '주어가 사람이 아니라 it이다. "내가 얼마나 걸려요"로 옮기면 틀린다.',
+  'It takes about an hour':
+    '시간이 주어가 아니라 it takes + 시간 순서다. 이 틀이 그대로 굳어져 있다.',
+  'Take your time':
+    '천천히 하라는 뜻. 재촉하지 않겠다는 배려의 말이다.',
+
+  // take · 행위
+  "I'll take a shower":
+    '샤워하다에 동사가 따로 없다. take + 명사로 말한다.',
+  'Can I take a picture?':
+    '내가 찍을 때. 남에게 찍어달라고 할 때는 Can you take a photo of us?로 of us를 붙인다.',
+  "Let's take a break":
+    '잠깐 쉬자는 뜻. rest는 좀 더 길게 쉬는 느낌이다.',
+  'Let me take a look':
+    '한번 보겠다는 뜻. see보다 짧게 확인하는 쪽이다.',
+  "I'll take care of it":
+    '내가 처리하겠다는 뜻. 사람에게 쓰면 돌본다는 뜻이 된다.',
+  'I take a class':
+    '수업을 듣다. listen을 쓰지 않는다.',
+
+  // take · 관용
+  'Take care':
+    '헤어질 때 인사. "조심해"라는 경고가 아니다.',
+  'Take it easy':
+    '진정하라는 뜻도 되고 헤어질 때 인사도 된다.',
+  "Don't take it personally":
+    '너 들으라고 한 말 아니라는 뜻. 사과할 때 자주 붙는다.',
+
+  // go · 이동
+  "I'm going home":
+    'home 앞에 to를 붙이지 않는다. get home과 같은 이유다.',
+  'I should go':
+    '자리에서 일어날 때 쓰는 인사에 가깝다. 직역하면 "가야겠다"다.',
+  "Let's go swimming":
+    'go 뒤에 -ing를 붙이면 그거 하러 간다는 뜻이 된다. shopping / fishing / hiking 다 이 틀이다.',
+  'Go straight':
+    '길 안내에서 그대로 쓴다. straight 앞에 전치사를 넣지 않는다.',
+  'Does this bus go to the airport?':
+    '버스·기차가 주어가 된다. 사람만 가는 게 아니다.',
+
+  // go · 예정
+  "I'm going to call him":
+    '가는 게 아니라 "할 거야"다. going to 뒤에 동사원형이 오면 이동 뜻이 사라진다.',
+  "It's going to rain":
+    '날씨·상황에도 그대로 쓴다. 하늘이 어디로 가는 게 아니다.',
+  'What are you going to do?':
+    '구어에서는 gonna로 뭉개진다. 들을 때 대비해 이 형태를 알아둔다.',
+  "I'm not going to do it":
+    '부정은 not이 going 앞에 붙는다. 안 하겠다는 뜻이다.',
+
+  // go · 진행
+  "How's it going?":
+    '안부 인사. 직역하면 어색하지만 "잘 지내?" 자리에 그대로 쓴다.',
+  'How did it go?':
+    '면접·시험 끝난 사람에게 결과를 묻는 말이다.',
+  'It went well':
+    '일이 주어다. I went well이라고 하지 않는다.',
+  'The price went up':
+    '값이 올라간 것. up / down이 방향만 지정한다.',
+
+  // go · 변화
+  'This went bad':
+    '음식이 상했다는 뜻. get bad라고는 잘 안 한다.',
+  'My phone went dead':
+    '배터리가 나갔다는 뜻. dead는 기계에도 쓴다.',
+  'The lights went out':
+    '불이 꺼진 것. out이 "없어지는" 방향을 지정한다.',
+  "It's all gone":
+    '다 떨어졌다는 뜻. 음식·재고에 그대로 쓴다.',
+
+  // go · 관용
+  'Go ahead':
+    '먼저 하라고 양보하는 말. "앞으로 가"가 아니다.',
+  "We'll go Dutch":
+    '각자 계산하자는 뜻. 나라마다 통하는 정도가 달라서 상대를 봐가며 쓴다.',
+  'To go, please':
+    '포장해 달라는 뜻. 매장에서 먹으면 For here다.',
+  'Here we go':
+    '시작할 때 내뱉는 말. Here you go(여기 있어요)와 뜻이 완전히 다르다.',
+
+  // come · 이동
+  'Come here':
+    '가장 기본. 상대를 내 쪽으로 부르는 말이다.',
+  "I'm coming":
+    '부르는 사람 쪽으로 갈 때는 go가 아니라 come이다. 한국어로는 "지금 가"라서 제일 많이 틀리는 자리다.',
+  'Do you want to come?':
+    '같이 가자는 초대. 한국어는 "갈래?"인데 영어는 come이다. 말하는 자리로 합류한다고 보기 때문이다.',
+  'Come over to my place':
+    'over가 "건너서 이쪽으로" 방향을 준다. place는 집을 뜻한다.',
+  "I'll come back tomorrow":
+    '가게에서 다시 오겠다고 할 때 그대로 쓴다.',
+  'Come along':
+    '같이 따라오라는 뜻. along이 "나란히" 방향을 준다.',
+
+  // come · 출처
+  'Where do you come from?':
+    '출신을 묻는 말. 지금 어디서 오는 길이냐가 아니다.',
+  'Does it come with rice?':
+    '메뉴에 같이 나오냐는 뜻. 식당에서 매일 쓴다.',
+  'It comes in many colors':
+    'come in은 "어떤 종류로 나온다"는 뜻이다. 들어온다는 뜻이 아니다.',
+  'Does it come in a bigger size?':
+    '옷·신발 가게 필수 문장. have를 써도 되지만 이쪽이 더 자연스럽다.',
+  'Where did this come from?':
+    '출처를 묻는 말. 사람에게 쓰면 따지는 말이 될 수 있다.',
+
+  // come · 변화
+  'My dream came true':
+    'true가 형용사로 붙어 "사실이 되다"가 된다. become true라고 하지 않는다.',
+  'The button came off':
+    'off가 "떨어져 나가는" 방향이다. get off·take off의 off와 같은 방향이다.',
+  'The photo came out well':
+    'come out은 결과가 나오는 것. 사진·시험·요리에 다 쓴다.',
+  'How much does it come to?':
+    '합계가 얼마냐는 뜻. 계산할 때 쓴다.',
+  "The stain won't come out":
+    "won't가 '안 나온다'는 고집을 나타낸다. 세탁소에서 쓴다.",
+  'Winter is coming':
+    '계절·시기가 다가온다. 사람이 아니어도 주어가 된다.',
+
+  // come · 관용
+  'Come on':
+    '재촉·항의·격려에 다 쓴다. 말투가 뜻을 정한다.',
+  'How come?':
+    '왜냐고 묻는 말. Why와 달리 뒤에 평서문 어순이 온다.',
+  'Come to think of it':
+    '말하다 문득 떠올랐을 때 앞에 붙인다.',
+  'Come on in':
+    '들어오라는 말을 더 반갑게 한 것. Come in보다 따뜻하다.',
+  'Coming right up':
+    '주문받고 "금방 드릴게요"라고 할 때 쓴다. 손님도 알아들으면 편하다.',
+
+  // make · 제작
+  "I'll make dinner":
+    '요리는 make, 설거지는 do다. 새로 만들어내면 make다.',
+  "What's it made of?":
+    '재료를 물을 때 of, 만든 곳을 말할 때 in을 쓴다.',
+  'Make some room':
+    'room이 방이 아니라 "빈자리"를 뜻한다. 좁을 때 그대로 쓴다.',
+  'Make your bed':
+    '침대를 만드는 게 아니라 이불을 정리한다는 뜻이다.',
+
+  // make · 실행
+  'I need to make a call':
+    '전화하다에 call 하나만 써도 되지만 make a call도 그만큼 쓴다.',
+  'I made a mistake':
+    '실수는 do가 아니라 make다. 이 짝은 그냥 굳어져 있다.',
+  "I'd like to make a reservation":
+    '예약을 잡는 행위는 make, 이미 잡혀 있는 상태는 have a reservation이다.',
+  'I made a lot of friends':
+    '친구를 사귀다. make를 쓴다.',
+  "Don't make noise":
+    '소리를 내다. noise 앞에 a를 붙이지 않는다.',
+  'Do you make good money?':
+    '돈을 벌다. earn보다 구어에서 더 자주 쓴다.',
+
+  // make · 사역
+  'You make me laugh':
+    '사람 뒤에 to 없이 동사원형이 온다. have him call과 같고 get him to call과 다르다.',
+  'My mom made me do it':
+    '억지로 시켰다는 뜻이 강하다. 하기 싫었다는 게 깔린다.',
+  'Make it less spicy':
+    '식당에서 그대로 쓴다. make + it + 형용사 틀이다.',
+  'It makes me sleepy':
+    '주어가 사람이 아니어도 된다. 그것 때문에 졸리다는 뜻이다.',
+
+  // make · 도달
+  'I made it':
+    '해냈다는 뜻도 되고 시간 맞춰 도착했다는 뜻도 된다. 뒤에 아무것도 안 붙는다.',
+  'Can you make it tonight?':
+    '올 수 있냐고 약속을 확인하는 말이다. 만들 수 있냐가 아니다.',
+  "I can't make it":
+    '못 간다고 거절하는 가장 흔한 말이다.',
+  'I made it on time':
+    '제시간에 닿았다는 뜻. in time은 여유 있게, on time은 딱 맞춰다.',
+
+  // make · 관용
+  'Make sure':
+    '확실히 해두라는 뜻. 뒤에 문장을 통째로 붙일 수 있다.',
+  'That makes sense':
+    '말이 된다 / 이해된다는 뜻. 대화 중 맞장구로 자주 나온다.',
+  'Make up your mind':
+    '마음을 정하라는 뜻. 재촉하는 말투다.',
+  "I didn't make it up":
+    'make up이 지어낸다는 뜻이다. 앞의 made it과 완전히 다른 표현이다.',
+
+  // give · 전달
+  'Can you give me the menu?':
+    'give + 사람 + 물건 순서다. get me the menu와 형태가 같다.',
+  'Can you give me a discount?':
+    '깎아달라는 말. 말레이시아 시장에서 그대로 쓴다.',
+  'Give this to him':
+    '물건이 먼저 오면 사람 앞에 to가 붙는다. Give him this도 같은 뜻이다.',
+  'Give it back':
+    'back이 "되돌려" 방향을 준다. get back·come back의 back과 같다.',
+  'Give me the change':
+    'change가 거스름돈을 뜻한다. 동전이 아니라 잔돈 전체다.',
+  'I gave him my seat':
+    '자리를 양보했다는 뜻. 버스·지하철에서 쓴다.',
+
+  // give · 행위
+  'Give me a call':
+    '전화해달라는 뜻. call me와 같지만 이쪽이 좀 더 부드럽다.',
+  'Can you give me a hand?':
+    '손을 달라는 게 아니라 도와달라는 뜻이다.',
+  'Give me a minute':
+    '잠깐 기다리라는 뜻. a second도 같이 쓴다.',
+  "I'll give it a try":
+    '한번 해보겠다는 뜻. it이 반드시 들어간다.',
+  'Want me to give you a ride?':
+    '차로 태워주겠다는 제안. a ride가 통째로 굳어 있다.',
+  'Give them a hand':
+    '앞의 give me a hand와 달리 여기서는 박수를 뜻한다. 대상이 뜻을 가른다.',
+
+  // give · 반응
+  'It gives me a headache':
+    '주어가 사물이다. "이거 때문에 머리 아파"를 영어는 그것이 준다고 뒤집어 말한다.',
+  'It gives me chills':
+    '소름·오한 둘 다 된다. chills는 항상 복수로 쓴다.',
+  'You gave me a scare':
+    '놀라게 했다는 뜻. 원망 섞인 말투다.',
+  'That gives me an idea':
+    '그 말 덕에 생각이 났다는 뜻. 대화 중 자주 나온다.',
+  'Stop giving me a hard time':
+    'a hard time을 준다 = 괴롭히다 / 잔소리하다.',
+
+  // give · 관용
+  'I gave up':
+    '포기하다. up이 "손 들었다"는 쪽이라 위 방향 뜻이 없다.',
+  'Give me a break':
+    '봐달라는 뜻도 되고 "말도 안 돼"라는 항의도 된다. take a break(쉬다)와 다르다.',
+  'Give it away':
+    '공짜로 줘버리다. away가 "내 손에서 떠나는" 방향이다.',
+  'Here you go':
+    '물건을 건네며 하는 말. Here we go(자, 간다)와 헷갈리기 쉽다.',
+
+  // put · 위치
+  'Put it here':
+    'put 뒤에는 장소가 꼭 온다. Put it 만으로는 말이 안 끝난다.',
+  'Put it away':
+    '치우다 / 제자리에 넣다. away가 "안 보이는 데로" 방향이다.',
+  'Put it back':
+    '원래 있던 자리로 되돌리는 것. 가게에서 물건 만졌을 때 쓴다.',
+  "Don't put sugar in it":
+    '음료에 뭘 넣고 빼는 걸 다 put in으로 말한다. 카페에서 그대로 쓴다.',
+  'Put them in separate bags':
+    '따로 담아달라는 뜻. 장 볼 때 쓴다.',
+  'Put the light on':
+    '불을 켜다. turn on과 같이 쓰지만 put on도 그만큼 흔하다.',
+  'Put him on the phone':
+    '전화를 바꿔달라는 뜻. 사람을 전화 위에 올린다고 본다.',
+
+  // put · 착용
+  'Put on your shoes':
+    '신는 동작이 put on, 신고 있는 상태는 wear다. 한국어는 둘 다 "신다"라 섞이기 쉽다.',
+  'Put on sunscreen':
+    '바르는 것도 put on이다. 옷만 해당하는 게 아니다.',
+  'Can I put this on?':
+    '입어봐도 되냐는 뜻. 대명사가 오면 put과 on 사이에 들어간다.',
+  'I put on weight':
+    '살이 쪘다는 뜻. 몸에 얹혔다고 본다.',
+
+  // put · 기입
+  'Put your name here':
+    '이름을 쓰라는 뜻. write를 안 써도 된다.',
+  'Put it on my card':
+    '카드로 결제해 달라는 뜻. 계산서를 카드 위에 얹는다고 본다.',
+  'Put it on my room':
+    '호텔에서 방으로 달아달라는 말. 체크아웃 때 한꺼번에 낸다.',
+  'Put it all together':
+    '따로따로 말고 한 번에 계산해 달라는 뜻이다.',
+  'Put it under my name':
+    '예약을 내 이름으로 해달라는 뜻. under를 쓴다.',
+
+  // put · 관용
+  "Let's put it off":
+    '미루다. off가 "떼어서 뒤로" 방향이라 시간이 밀린다.',
+  "I can't put up with it":
+    '참다 / 견디다. 세 단어가 통째로 하나다. 뜯어봐도 뜻이 안 나온다.',
+  'How do I put it?':
+    '말을 어떻게 꺼낼지 고를 때 쓴다. put이 "말하다"가 된다.',
+  'Let me put it this way':
+    '앞말을 바꿔 다시 설명할 때 쓴다. 뒤에 문장을 이어서 말한다.',
+  'Put out the fire':
+    '불을 끄다. 앞의 put the light on과 방향이 반대다.',
+  'How do I put it together?':
+    '조립하다. together가 "부품을 모아서" 방향이다.',
+
+  // keep · 유지
+  'Keep it warm':
+    'keep + it + 형용사 틀. make it warm이 따뜻하게 만드는 것이면 이건 식지 않게 두는 것이다.',
+  'Keep the change':
+    '거스름돈은 됐다는 뜻. 팁 문화권에서 매일 쓴다.',
+  'Keep the door open':
+    '형용사 자리에 open이 온다. 여는 동작이 아니라 열린 상태를 두는 것이다.',
+  "Let's keep in touch":
+    '연락하며 지내자는 인사. touch가 "닿아 있음"을 뜻한다.',
+  'Keep it a secret':
+    '형용사 대신 명사가 오기도 한다. 비밀로 해두라는 뜻이다.',
+
+  // keep · 지속
+  'Keep going':
+    '뒤에 -ing가 온다. to go라고 하지 않는다.',
+  'I keep forgetting':
+    '내 의지가 아니라 자꾸 그렇게 된다는 뜻. 한국어 "자꾸 ~해"가 여기다.',
+  'It keeps raining':
+    '날씨가 주어여도 된다. 비가 계속 온다는 뜻이다.',
+  'Why do you keep doing that?':
+    '그만하라는 뉘앙스가 깔린다. 말투를 봐가며 쓴다.',
+  'Keep it up':
+    '지금처럼 계속하라는 격려. 칭찬으로 쓴다.',
+
+  // keep · 보관
+  'Can you keep this for me?':
+    '잠깐 맡아달라는 뜻. 호텔 프런트에서 그대로 쓴다.',
+  'Keep your receipt':
+    '영수증을 버리지 말라는 뜻. 환불·교환에 필요하다.',
+  'Can I keep the rest?':
+    '남은 음식을 싸가도 되냐는 뜻. 식당에서 쓴다.',
+  'I keep a diary':
+    '일기를 쓰다. write가 아니라 keep을 쓴다.',
+  'Do you keep bags here?':
+    '짐 보관 서비스가 있냐는 뜻. 역·호텔에서 쓴다.',
+
+  // keep · 방지
+  'Keep out':
+    '들어오지 말라는 표지판 문구. 사람에게 직접 말하면 세다.',
+  'Keep your hands off':
+    '손대지 말라는 뜻. off가 "떨어져서" 방향을 준다.',
+  'Keep your distance':
+    '거리를 두라는 뜻. 사람 사이에도 차간 거리에도 쓴다.',
+
+  // keep · 관용
+  'Keep an eye on it':
+    '잠깐 봐달라 / 지켜보라는 뜻. 눈을 그 위에 얹어둔다고 본다.',
+  'Keep it in mind':
+    '기억해두라는 뜻. mind 앞에 in이 붙는다.',
+  'Sorry to keep you waiting':
+    '기다리게 해서 미안하다는 뜻. 늦었을 때 그대로 쓴다.',
+  'I kept my promise':
+    '약속을 지키다. keep의 과거는 kept다.',
+
+  // work · 노동
+  'I work at a bank':
+    '장소에는 at을 쓴다. 회사 이름 앞에는 for를 쓰기도 한다.',
+  'I work from home':
+    '재택근무. at home이 아니라 from home이다.',
+  'Where do you work?':
+    '직업을 묻는 가장 흔한 말. What is your job보다 자연스럽다.',
+  "I don't work there anymore":
+    '그만뒀다는 말을 이렇게 돌려 한다. quit을 안 써도 된다.',
+
+  // work · 작동
+  "It doesn't work":
+    '고장났다는 말을 이렇게 한다. broken보다 훨씬 자주 쓰고 덜 세다.',
+  'Does the wifi work here?':
+    '와이파이가 되냐는 뜻. 카페에서 매일 쓴다.',
+  'How does this work?':
+    '사용법을 묻는 말. 기계·앱·제도에 다 쓴다.',
+  "The elevator isn't working":
+    '지금 안 되고 있다는 뜻. 진행형이면 일시적인 고장 쪽이다.',
+  'The shower is not working':
+    '물이 안 나온다를 이렇게 말한다. 호텔에서 그대로 쓴다.',
+  'Does this card work here?':
+    '카드가 먹히냐는 뜻. 기계가 읽느냐까지 포함한다.',
+
+  // work · 효과
+  'It works':
+    '효과가 있다 / 잘 된다. 주어가 방법·약·요령이다.',
+  'Does that work for you?':
+    '너한테 괜찮냐는 뜻. 약속 시간을 잡을 때 쓴다.',
+  'That works for me':
+    '나는 괜찮다는 동의. for me가 붙어야 이 뜻이 된다.',
+  'Does tomorrow work?':
+    '날짜가 주어가 된다. 내일 괜찮냐는 뜻이다.',
+  'It all worked out':
+    'work out이 "결국 잘 풀리다"가 된다. 운동 뜻과 형태가 같다.',
+
+  // work · 해결
+  "I'm working on it":
+    '아직 하는 중이라는 뜻. 재촉받을 때 쓰는 대답이다.',
+  "I'll work it out":
+    '내가 알아서 풀겠다는 뜻. it이 반드시 들어간다.',
+  "We'll work something out":
+    '어떻게든 방법을 찾자는 뜻. 협상할 때 쓴다.',
+
+  // work · 관용
+  'I work out':
+    '운동하다. 일한다는 뜻이 아니다. 앞의 worked out(잘 풀리다)과 형태가 같아 문맥으로 가른다.',
+  "I'm off work today":
+    '오늘 쉬는 날이라는 뜻. off가 "일에서 떨어져" 방향이다.',
+  'How is work going?':
+    'work가 명사로 쓰였다. 일이 어떻게 굴러가냐는 뜻이다.',
+
+  // let · 제안
+  "Let's grab something to eat":
+    'grab이 "간단히 해치우다"는 느낌을 준다. 격식 없는 사이에서 쓴다.',
+  "Let's eat":
+    "Let's 뒤에는 동사원형만 온다. to eat이라고 하지 않는다.",
+  "Let's not do that":
+    "하지 말자는 말은 Don't let's가 아니라 Let's not이다. 순서가 헷갈리는 자리다.",
+  "Let's see":
+    '고민할 때 뜸 들이는 말로도 쓴다. 꼭 뭘 보자는 뜻이 아니다.',
+  "Let's split it":
+    '반씩 나눠 내자는 뜻. 계산할 때 그대로 쓴다.',
+  "Let's wait and see":
+    '일단 두고 보자는 뜻. 결정을 미룰 때 쓴다.',
+
+  // let · 허락
+  'Let me know':
+    '알려달라는 뜻. tell me보다 부드럽고 훨씬 자주 쓴다.',
+  'Let me see':
+    '내가 보겠다는 뜻도 되고 생각할 때 뜸 들이는 말도 된다.',
+  'Let me pay':
+    '내가 내겠다는 뜻. 직역하면 "내가 내게 해줘"라 양보를 청하는 모양이다.',
+  "My mom won't let me":
+    '엄마가 못 하게 한다는 뜻. 뒤에 동사를 생략하고 여기서 끊기도 한다.',
+  'Let me check':
+    '확인해보겠다는 뜻. 가게·프런트에서 자주 듣는다.',
+  'Let him in':
+    '사람 뒤에 to 없이 부사가 바로 온다. get him to와 다른 점이다.',
+
+  // let · 방출
+  'Let go':
+    '잡은 걸 놓으라는 뜻. 뒤에 목적어를 붙일 땐 of가 필요하다.',
+  'Let go of my arm':
+    'Let go 다음에는 of가 붙는다. Let go my arm이라고 하지 않는다.',
+  'Let me off here':
+    '버스·택시에서 내려달라는 뜻. get off와 방향이 같다.',
+  'Let some air in':
+    '창문 열어 환기하자는 뜻. in이 "안으로" 방향이다.',
+
+  // let · 관용
+  'Let it go':
+    '그만 신경 쓰라는 뜻. 앞의 Let go(손을 놔)와 뜻이 다르다.',
+  'Let it be':
+    '건드리지 말고 그냥 두라는 뜻. Let it go보다 더 가만히 두는 쪽이다.',
+  "I won't let you down":
+    'let down이 실망시키다. 아래로 내려놓는다는 그림에서 왔다.',
+  "Let's face it":
+    '인정할 건 인정하자는 뜻. 껄끄러운 말을 꺼내기 전에 붙인다.',
+};
+
+
+/* ---------- 4. 설명 패널 ---------- */
+
+function getExplainHTML(item) {
+  const s = (SENSE_INFO[item.verb] || {})[item.sense];
+  if (!s) return '';
+  const note = ITEM_NOTE[item.en];
+  return (
+    '<div class="verb-explain">' +
+      '<div class="verb-explain-head">' + item.verb + ' · ' + item.sense + ' — ' + s.title + '</div>' +
+      '<p class="verb-explain-core">' + s.core + '</p>' +
+      (note ? '<p class="verb-explain-note">' + note + '</p>' : '') +
+    '</div>'
+  );
+}
+
+/* answerEl: 정답 문장이 표시된 엘리먼트. 누르면 바로 아래에 설명이 열리고 다시 누르면 닫힘. */
+function attachExplain(answerEl, item) {
+  if (!answerEl || !(SENSE_INFO[item.verb] || {})[item.sense]) return;
+  answerEl.style.cursor = 'pointer';
+  answerEl.addEventListener('click', function () {
+    const next = answerEl.nextElementSibling;
+    if (next && next.classList.contains('verb-explain')) {
+      next.remove();
+      return;
+    }
+    answerEl.insertAdjacentHTML('afterend', getExplainHTML(item));
+  });
+}
+
+/* ============================================================
+   🧱 기본동사 훈련 — 한국어를 보고 영어로 말해내는 산출 훈련
+   덱/설명 데이터는 아래 BASIC_VERBS · SENSE_INFO · ITEM_NOTE 를 그대로 쓴다.
+   기존 화면(#sprint)과 마이크·XP·시간 기록만 재사용하고 채점 로직은 따로 둔다.
+   ============================================================ */
+const VBD_SET_SIZE=12;
+const VBD_KEY="speakingroom:verbdrill";
+let vbdRun=null;
+function vbdVerbs(){ const seen=[]; BASIC_VERBS.forEach(x=>{ if(seen.indexOf(x.verb)<0) seen.push(x.verb); }); return seen; }
+function vbdState(){ try{ return hGet(VBD_KEY,{})||{}; }catch(e){ return {}; } }
+// 안 본 항목부터. 한 바퀴 다 돌면 처음부터 다시 섞는다.
+function vbdBuild(verb){
+  const all=BASIC_VERBS.filter(x=>x.verb===verb);
+  const st=vbdState(); const done=new Set((st[verb]||[]));
+  let pool=all.filter(x=>!done.has(x.en));
+  if(pool.length<VBD_SET_SIZE){ st[verb]=[]; try{ hSet(VBD_KEY,st); }catch(e){} pool=all; }
+  return shuffleVocab(pool).slice(0,VBD_SET_SIZE);
+}
+function vbdMarkDone(items){
+  try{ const st=vbdState(); (items||[]).forEach(it=>{ const a=st[it.verb]=st[it.verb]||[]; if(a.indexOf(it.en)<0) a.push(it.en); }); hSet(VBD_KEY,st); }catch(e){}
+}
+function openVerbPicker(){
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="verbHub";
+  const st=vbdState();
+  const rows=vbdVerbs().map(v=>{
+    const total=BASIC_VERBS.filter(x=>x.verb===v).length;
+    const done=Math.min(total,((st[v]||[]).length));
+    return `<button class="hub-opt" data-v="${escapeAttr(v)}">
+      <span class="hub-emo">🧱</span>
+      <span class="hub-tx"><b>${escapeHtml(v)}</b><i>${done}/${total} 문장</i></span>
+      <span class="hub-ar">›</span></button>`;
+  }).join("");
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet" style="max-height:80vh;overflow-y:auto">
+     <div class="hub-grab"></div>
+     <div class="hub-title">🧱 기본동사</div>
+     <div class="hub-sub">동사 하나로 말이 확 늘어요 — 한국어를 보고 영어로</div>
+     ${rows}
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const v=b.dataset.v; close(); startVerbDrill(v); }; });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function startVerbDrill(verb){
+  const items=vbdBuild(verb);
+  if(!items.length) return;
+  try{ ttStart("speak"); }catch(e){}
+  vbdRun={verb, items, idx:0, results:[], t0:0};
+  try{ xpSessionStart(); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint");
+  $("#ctxBar").style.display="none";
+  vbdRender();
+}
+function vbdRender(){
+  if(!vbdRun) return;
+  const it=vbdRun.items[vbdRun.idx];
+  if(!it) return vbdDone();
+  vbdRun.t0=Date.now();
+  const prog=Math.round(vbdRun.idx/vbdRun.items.length*100);
+  const ss=$("#sprintScroll"); ss.style.background="#EAE3DD";
+  ss.innerHTML=`<div class="auto-card">
+    <div class="auto-top">
+      <button class="auto-exit" id="vbdExit">‹ 끝내기</button>
+      <div class="auto-prog"><i style="width:${prog}%"></i></div>
+      <div class="auto-count">${vbdRun.idx+1}/${vbdRun.items.length}</div>
+    </div>
+    <div class="auto-kicker">BASIC VERB · ${escapeHtml(it.verb).toUpperCase()}</div>
+    <div class="auto-block">🧱 ${escapeHtml(it.verb)} 로 말해보세요</div>
+    <div class="auto-ko">${escapeHtml(it.ko)}</div>
+    <div class="auto-stat" id="vbdStat">떠오르는 대로 — 짧아도 돼요.</div>
+    <div class="auto-actions">
+      <div class="auto-row">
+        <button class="auto-mic" id="vbdMic">🎤 터치해서 말하기</button>
+        <button class="auto-sub" id="vbdType">⌨️ 입력</button>
+      </div>
+    </div>
+    <input id="vbdInput" class="auto-input" autocomplete="off" placeholder="영어로 입력 후 Enter">
+  </div>`;
+  ss.scrollTop=0;
+  $("#vbdExit").onclick=()=>vbdDone();
+  $("#vbdMic").onclick=function(){
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+    this.classList.add("live"); $("#vbdStat").textContent="듣고 있어요…";
+    micFillCb((t,meta)=>{ this.classList.remove("live");
+      if(!t){ $("#vbdStat").textContent=micFailMsg(meta||{}); return; }
+      vbdSubmit(t, meta||{}); }, it.en);
+  };
+  $("#vbdType").onclick=()=>{ const i=$("#vbdInput"); i.style.display="block"; i.focus(); };
+  $("#vbdInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){ e.preventDefault(); const v=e.target.value.trim(); if(v){ e.target.disabled=true; vbdSubmit(v,{typed:true}); } }
+  });
+}
+/* 그 동사를 실제로 썼는지 — 불규칙 과거형까지 봐야 한다.
+   wrNorm 을 거친 문장으로 보면 안 된다. "I have"가 "I've"로 축약돼 have 가 사라지고,
+   went / took / made 같은 과거형은 어간을 잘라도 원형이 안 나온다. */
+const VBD_FORMS={
+  get:['get','gets','got','gotten','getting'],
+  have:['have','has','had','having'],
+  take:['take','takes','took','taken','taking'],
+  go:['go','goes','went','gone','going'],
+  come:['come','comes','came','coming'],
+  make:['make','makes','made','making'],
+  give:['give','gives','gave','given','giving'],
+  put:['put','puts','putting'],
+  keep:['keep','keeps','kept','keeping'],
+  work:['work','works','worked','working'],
+  let:['let','lets',"let's",'letting'],
+};
+function vbdUsedVerb(verb, heard){
+  const t=" "+String(heard||"").toLowerCase().replace(/[\u2019']/g,"'")
+    .replace(/[^a-z' ]+/g," ").replace(/\s+/g," ").trim()+" ";
+  const forms=VBD_FORMS[verb]||[verb];
+  if(forms.some(f=>t.indexOf(" "+f+" ")>=0)) return true;
+  if(verb==="have" && /[a-z]'ve /.test(t)) return true;    // I've = I have
+  if(verb==="go" && t.indexOf(" gonna ")>=0) return true;   // gonna = going to
+  return false;
+}
+/* 채점 — 문장 만들기와 같은 기준(핵심어가 다 나왔고 군더더기가 과하지 않으면 정답).
+   단, 그 동사를 실제로 썼는지는 따로 본다. 동사를 안 쓰면 훈련이 안 되기 때문. */
+function vbdGrade(it, heard){
+  const h=wrNorm(heard); if(!h) return {ok:false, noVerb:false};
+  const want=wrKey(it.en), got=wrKey(h);
+  if(wrNegN(want)!==wrNegN(got)) return {ok:false, noVerb:false};
+  const gset=new Set(got);
+  const hit=want.filter(w=>gset.has(w)).length;
+  const ok=(hit===want.length && got.length<=want.length+5);
+  return {ok, noVerb:!vbdUsedVerb(it.verb, heard)};
+}
+async function vbdSubmit(heard, meta){
+  if(!vbdRun) return;
+  const it=vbdRun.items[vbdRun.idx];
+  const sec=Math.max(0.1,(Date.now()-vbdRun.t0)/1000);
+  const stat=$("#vbdStat"); if(stat) stat.textContent="확인 중…";
+  let g=vbdGrade(it, heard);
+  // 글자가 달라도 뜻이 통하면 정답 — 문장 만들기와 같은 판정기를 쓴다
+  if(!g.ok && heard && wrWorthAi(it, heard)){
+    const ai=await wrAiCheck(it, heard);
+    if(ai && ai.ok) g={ok:true, noVerb:g.noVerb, ai:true};
+    else if(ai && ai.tip) g.aiTip=ai.tip;
+  }
+  vbdRun.results.push({ko:it.ko, en:it.en, heard, ok:g.ok});
+  try{ autoLvlRecord("speak", g.ok ? (g.ai?"ok":"perfect") : "miss"); }catch(e){}
+  if(g.ok){
+    try{ awardXP("speak", g.ai?8:12, "기본동사 "+it.verb, "vbd:"+it.en); }catch(e){}
+    try{ rtBump("speak"); }catch(e){}
+  }
+  vbdResult(it, heard, g, sec);
+}
+function vbdResult(it, heard, g, sec){
+  const card=document.querySelector("#sprintScroll .auto-card"); if(!card) return;
+  const stat=$("#vbdStat");
+  if(stat){
+    stat.style.color = g.ok? "#189E79" : "#e0533f";
+    stat.innerHTML = (g.ok ? (g.ai? "좋아요! 뜻이 통했어요 ✅" : "좋아요! 바로 나왔어요 ✅")
+                          : (g.aiTip? escapeHtml(g.aiTip) : "다시 한 번"))
+      + (heard? `<div style="font-size:12px;color:#8A6F62;margin-top:5px">🎙️ 내가 말한 것: "${escapeHtml(heard)}"</div>`:"")
+      + (g.ok && g.noVerb? `<div style="font-size:12px;color:#B07A3C;margin-top:4px">뜻은 맞아요 — 이번엔 <b>${escapeHtml(it.verb)}</b> 를 써서 다시 말해보세요</div>`:"");
+  }
+  const acts=card.querySelector(".auto-actions"); if(acts) acts.style.display="none";
+  const inp=$("#vbdInput"); if(inp) inp.style.display="none";
+  let ans=card.querySelector("#vbdAnswer");
+  if(!ans){ ans=document.createElement("div"); ans.id="vbdAnswer"; card.appendChild(ans); }
+  ans.style.cssText="margin-top:12px;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:14px";
+  ans.innerHTML=`<div style="font-size:11px;color:#7FA396;font-weight:900;margin-bottom:5px">모범답안 · 눌러서 설명 보기</div>
+    <b id="vbdEn" style="font-size:19px;color:#2F241F;line-height:1.35;display:block">${escapeHtml(it.en)}</b>`;
+  try{ attachExplain(card.querySelector("#vbdEn"), it); }catch(e){}
+  try{ speakEn(it.en); }catch(e){}
+  let foot=card.querySelector("#vbdFoot");
+  if(!foot){ foot=document.createElement("div"); foot.id="vbdFoot"; card.appendChild(foot); }
+  foot.style.cssText="margin-top:12px";
+  const last=(vbdRun.idx>=vbdRun.items.length-1);
+  foot.innerHTML=`<button class="auto-mic" id="vbdNext" style="width:100%">${last?"결과 보기 →":"다음 →"}</button>
+    <button class="auto-sub" id="vbdSay" style="width:100%;margin-top:8px">🔊 다시 듣기</button>
+    ${micLastBtnHtml("auto-sub","width:100%;margin-top:8px;")}`;
+  card.querySelector("#vbdNext").onclick=()=>vbdNext();
+  card.querySelector("#vbdSay").onclick=()=>{ try{ speakEn(it.en); }catch(e){} };
+}
+function vbdNext(){ if(!vbdRun) return; vbdRun.idx++; vbdRender(); }
+function vbdDone(){
+  if(!vbdRun) return;
+  const r=vbdRun.results, ok=r.filter(x=>x.ok).length;
+  vbdMarkDone(vbdRun.items.slice(0, vbdRun.idx));
+  try{ ttStop(); }catch(e){}
+  try{ xpSessionEnd&&xpSessionEnd(); }catch(e){}
+  const miss=r.filter(x=>!x.ok);
+  const ss=$("#sprintScroll");
+  ss.innerHTML=`<div class="auto-card"><div class="auto-done">
+    <div class="auto-kicker">BASIC VERB · ${escapeHtml(vbdRun.verb).toUpperCase()}</div>
+    <h2>기본동사 완료</h2>
+    <div class="auto-score">${ok} / ${r.length}</div>
+    ${miss.length?`<div style="margin-top:14px;text-align:left">
+      <div style="font-size:12px;font-weight:900;color:#7FA396;margin-bottom:7px">다시 연습할 문장</div>
+      ${miss.map(m=>`<div style="padding:9px 0;border-top:1px solid #E4DCD5"><div style="font-size:13px;color:#8A6F62">${escapeHtml(m.ko)}</div><b style="font-size:15px;color:#2F241F">${escapeHtml(m.en)}</b></div>`).join("")}
+    </div>`:""}
+    <button class="auto-mic" id="vbdAgain" style="width:100%;margin-top:16px">🔁 한 세트 더</button>
+    <button class="auto-sub" id="vbdHome" style="width:100%;margin-top:8px">홈으로</button>
+  </div></div>`;
+  const v=vbdRun.verb; vbdRun=null;
+  $("#vbdAgain").onclick=()=>startVerbDrill(v);
+  $("#vbdHome").onclick=()=>{ $("#sprint").style.display="none"; setup.style.display="block"; try{ renderHome(); }catch(e){} };
+}
+
 function startWriting(){
   try{ ttStart("speak"); }catch(e){}
   wrRun={items:wrBuildItems(WR_SET_SIZE), idx:0, results:[], t0:0, phase:"ask"};
