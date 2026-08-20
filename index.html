@@ -1973,7 +1973,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.144";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.145";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15983,61 +15983,61 @@ function attachExplain(answerEl, item) {
    ('택시를 잡다'만 주면 get 도 take 도 맞아서 문제가 성립하지 않는다)
    ============================================================ */
 const VERB_PICK = [
-  // 택시 — 잡다 / 타고 가다
+  // 택시 — 구하다 / 타고 가다 / 이미 잡혀 있다
   { ko:'길에서 손 흔들어서 택시 잡았어', en:'I got a taxi',            a:'get',  opts:['get','take','have'],
-    why:'구해서 손에 넣은 쪽이라 get. take 는 그걸 타고 가는 이용이고, have a taxi 는 원어민이 안 쓴다.' },
+    why:'택시를 구해서 손에 넣은 순간이라 get. take 는 그걸 타고 이동했다는 쪽이고, have 는 이미 잡혀 있는 상태를 말할 때 쓴다.' },
   { ko:'지하철 말고 택시로 가자',         en:"Let's take a taxi",       a:'take', opts:['get','take','have'],
-    why:'교통수단을 골라 이용하는 것은 take. 버스·지하철·비행기도 다 take 다.' },
-  { ko:'기사님이 공항까지 데려다줬어',    en:'He took me to the airport', a:'take', opts:['take','get','give'],
-    why:'사람을 집어서 그쪽으로 옮기는 것이라 take. give a ride 도 되지만 그건 태워준다는 호의 쪽이다.' },
+    why:'교통수단을 골라 타고 가는 것은 take. 버스·지하철·비행기도 같은 틀이다.' },
+  { ko:'택시 밖에 대기시켜 놨어',         en:'We have a taxi waiting outside', a:'have', opts:['have','get','take'],
+    why:'택시가 이미 확보돼 있는 상태라 have. 지금 잡는 순간이면 get, 타고 가는 것이면 take 다.' },
 
   // 사진 — 찍다 / 받다 / 갖고 있다
   { ko:'사진 찍어드릴까요?',              en:'Do you want me to take a photo?', a:'take', opts:['take','get','make'],
-    why:'사진을 찍는 동작은 take 로 굳어져 있다. make a photo 라고 하지 않는다.' },
+    why:'사진을 찍는 동작은 미국 일상에서 take 가 압도적이다. make 는 이 자리에 잘 안 온다.' },
   { ko:'나 그 사진 아직 갖고 있어',       en:'I still have that photo', a:'have', opts:['have','take','get'],
     why:'이미 내 쪽에 있는 상태라 have. take 면 지금 찍는 것이 된다.' },
   { ko:'그 사진 어디서 났어?',            en:'Where did you get that photo?', a:'get', opts:['get','take','have'],
     why:'샀는지 받았는지 안 따지고 손에 들어온 경로를 물을 때 get 이다.' },
 
-  // 커피 — 사오다 / 마시다 / 타다
+  // 커피 — 사오다 / 주문하다 / 타주다
   { ko:'커피 사올게',                     en:"I'll get a coffee",       a:'get',  opts:['get','have','make'],
-    why:'없던 걸 가지러 가는 쪽이라 get. buy 를 안 써도 된다.' },
-  { ko:'우리 커피 한잔 하자',             en:"Let's have a coffee",     a:'have', opts:['have','take','get'],
-    why:'먹고 마시는 것은 have 다. take a coffee 라고 하지 않는다.' },
+    why:'가지러 가서 손에 넣는 쪽이라 get. buy 를 안 써도 된다.' },
+  { ko:'(주문할 때) 저는 커피로 할게요',  en:"I'll have a coffee",      a:'have', opts:['have','get','take'],
+    why:'주문하며 먹을 것을 고를 때는 have 를 쓴다. 사러 가는 상황이면 get 이 자연스럽다.' },
   { ko:'내가 커피 타줄게',                en:"I'll make you a coffee",  a:'make', opts:['make','get','take'],
     why:'재료로 새로 만들어내니까 make. 사오는 것이면 get 이다.' },
 
-  // 시간 — 있다 / 걸리다 / 주다
+  // 시간 — 있다 / 걸리다 / 달라
   { ko:'지금 시간 있어?',                 en:'Do you have time?',       a:'have', opts:['have','take','get'],
-    why:'내 쪽에 있느냐를 묻는 것이라 have. 있다·없다는 거의 다 have 다.' },
+    why:'내 쪽에 있느냐를 묻는 것이라 have. 있다·없다는 대부분 have 로 말한다.' },
   { ko:'거기까지 얼마나 걸려요?',         en:'How long does it take?',  a:'take', opts:['take','have','make'],
     why:'일이 시간을 잡아먹는다고 본다. 주어가 사람이 아니라 it 인 것이 핵심이다.' },
   { ko:'시간 좀 줘',                      en:'Give me some time',       a:'give', opts:['give','take','have'],
-    why:'상대 쪽에서 나에게 넘겨달라는 것이라 give 다.' },
+    why:'상대 쪽에서 나에게 넘겨달라는 부탁이라 give me 다. Take your time 은 반대로 천천히 하라는 말이다.' },
 
-  // 몸 — 걸리는 순간 / 걸려 있는 상태 / 약
+  // 몸 — 걸려 있는 상태 / 걸린 순간 / 약
   { ko:'나 지금 감기야',                  en:'I have a cold',           a:'have', opts:['have','get','take'],
-    why:'지금 걸려 있는 상태는 have. 한국어는 둘 다 "걸렸어"라서 제일 많이 틀린다.' },
+    why:'지금 걸려 있는 상태는 have. 한국어는 둘 다 "걸렸어"라서 제일 많이 갈린다.' },
   { ko:'어제 비 맞고 감기 걸렸어',        en:'I got a cold yesterday',  a:'get',  opts:['get','have','take'],
     why:'걸린 그 순간을 말하면 get. 상태가 아니라 넘어간 시점이다.' },
   { ko:'아까 약 먹었어',                  en:'I took the medicine',     a:'take', opts:['take','have','get'],
-    why:'약은 eat 도 have 도 아니고 take 로 먹는다.' },
+    why:'약을 먹는 것은 take 로 굳어져 있다. eat 은 이 자리에 오지 않는다.' },
 
   // 전화 — 걸다 / 해달라 / 받다
   { ko:'전화 한 통 해야 돼',              en:'I have to make a call',   a:'make', opts:['make','take','put'],
     why:'전화를 거는 행위를 만들어낸다고 본다. take a call 은 걸려온 걸 받는 쪽이다.' },
   { ko:'이따 나한테 전화 줘',             en:'Give me a call later',    a:'give', opts:['give','make','take'],
-    why:'나에게 해달라고 부탁하는 자리라 give me 다.' },
+    why:'나에게 해달라고 부탁하는 자리라 give me 다. 내가 건다고 말할 때는 make a call 을 쓴다.' },
   { ko:'(전화벨) 내가 받을게',            en:"I'll get it",             a:'get',  opts:['get','take','have'],
-    why:'전화벨·초인종 앞에서는 get 하나로 끝난다. 계산서 앞이면 "내가 낼게"가 된다.' },
+    why:'전화벨·초인종 앞에서는 get 이 가장 흔하다. 계산서 앞이면 같은 말이 "내가 낼게"가 된다.' },
 
-  // 자리 — 하나 가져가다 / 있다 / 맡아두다
-  { ko:'하나 가져가세요',                 en:'Take one',                a:'take', opts:['take','get','have'],
-    why:'여럿 중에 골라 집는 것이라 take 다.' },
+  // 고르기·자리 — 골라 집다 / 있다 / 맡아두다
+  { ko:'마음에 드는 걸로 하나 골라 가세요', en:'Take one',              a:'take', opts:['take','get','have'],
+    why:'여럿 중에 골라 집는 것이라 take. Have one 은 음식을 권할 때 쓰는 다른 말이다.' },
   { ko:'지금 자리 있어요?',               en:'Do you have a table?',    a:'have', opts:['have','take','get'],
-    why:'가게 쪽에 자리가 있느냐를 묻는 것이라 have. 식당에서는 seat 이 아니라 table 을 쓴다.' },
-  { ko:'내 자리 좀 맡아줘',               en:'Keep my seat for me',     a:'keep', opts:['keep','take','have'],
-    why:'남이 못 앉게 계속 잡아두는 것이라 keep. take 면 네가 앉는 게 된다.' },
+    why:'가게 쪽에 자리가 있느냐를 묻는 것이라 have. 식당에서는 보통 seat 이 아니라 table 을 쓴다.' },
+  { ko:'가방 좀 맡아주실래요?',           en:'Can you keep my bag?',    a:'keep', opts:['keep','have','take'],
+    why:'돌려줄 때까지 계속 갖고 있어 달라는 것이라 keep. take 면 가져가 버리는 게 된다.' },
 
   // 계산 — 내가 내다 / 잔돈 / 카드
   { ko:'이건 내가 낼게',                  en:"I'll get this",           a:'get',  opts:['get','take','make'],
@@ -16045,43 +16045,43 @@ const VERB_PICK = [
   { ko:'잔돈은 그냥 가지세요',            en:'Keep the change',         a:'keep', opts:['keep','have','take'],
     why:'돌려주지 말고 계속 갖고 있으라는 뜻이라 keep 이다.' },
   { ko:'카드로 계산해 주세요',            en:'Put it on my card',       a:'put',  opts:['put','make','take'],
-    why:'계산서를 카드 위에 얹는다고 본다. 호텔이면 Put it on my room 이 된다.' },
+    why:'계산을 카드 쪽에 얹는다고 본다. 호텔에서 방으로 달아달라면 Put it on my room bill 이나 Charge it to my room 을 쓴다.' },
 
   // 방 — 잡다 / 있다 / 청소시키다
   { ko:'방 하나 잡았어',                  en:'I got a room',            a:'get',  opts:['get','have','keep'],
-    why:'없던 방을 확보한 순간이라 get 이다.' },
+    why:'없던 방을 확보한 순간이라 get. 이미 방이 있는 상태를 말하면 have 다.' },
   { ko:'빈방 있어요?',                    en:'Do you have a room?',     a:'have', opts:['have','get','keep'],
     why:'호텔 쪽에 방이 있느냐를 묻는 것이라 have 다.' },
   { ko:'방 청소 좀 해주세요',             en:'Can I have my room cleaned?', a:'have', opts:['have','put','keep'],
     why:'내가 하는 게 아니라 남을 시켜 되게 하는 것이라 have + 과거분사다.' },
 
-  // 쉬기 — 잠깐 쉬다 / 쉬는 날
+  // 쉬기 — 잠깐 쉬다 / 쉬는 날 / 샤워
   { ko:'우리 잠깐 쉬자',                  en:"Let's take a break",      a:'take', opts:['take','make','give'],
     why:'break·shower·walk 앞에는 take 가 붙어 그 행동을 한 번 한다는 뜻이 된다.' },
   { ko:'나 오늘 쉬는 날이야',             en:'I have a day off',        a:'have', opts:['have','take','get'],
     why:'쉬는 날이 내 쪽에 있는 상태라 have. take a day off 는 하루 빼겠다고 정하는 쪽이다.' },
   { ko:'샤워 좀 하고 올게',               en:"I'll take a shower",      a:'take', opts:['take','get','make'],
-    why:'샤워하다에 해당하는 동사가 따로 없어서 take + 명사로 말한다.' },
+    why:'샤워하다에 해당하는 동사가 따로 없어서 take + 명사로 말한다. 영국에서는 have a shower 도 쓴다.' },
 
-  // 옷 — 입다 / 벗다 / 입어보다
+  // 옷 — 입다 / 벗다 / 입어도 되나
   { ko:'신발 신어',                       en:'Put on your shoes',       a:'put',  opts:['put','take','have'],
     why:'몸 위에 얹는 동작이라 put on. 신고 있는 상태는 wear 다.' },
   { ko:'신발 벗어',                       en:'Take off your shoes',     a:'take', opts:['take','put','get'],
     why:'몸에서 떼어내는 쪽이라 take off. put on 의 반대다.' },
-  { ko:'이거 입어봐도 돼요?',             en:'Can I put this on?',      a:'put',  opts:['put','take','have'],
-    why:'입어보는 동작이라 put on. 대명사가 오면 put 과 on 사이에 들어간다.' },
+  { ko:'이거 입어도 돼요?',               en:'Can I put this on?',      a:'put',  opts:['put','take','have'],
+    why:'입는 동작은 put on, 입고 있는 상태는 wear, 맞는지 보려고 걸쳐보는 것은 try on 이다.' },
 
-  // 이동 — 걸리다 / 내리다 / 버스 노선
+  // 이동 — 걸리다 / 내리다 / 노선
   { ko:'버스로 30분 걸려',                en:'It takes 30 minutes by bus', a:'take', opts:['take','have','go'],
     why:'시간이 걸린다는 뜻이라 take. 주어는 it 이다.' },
   { ko:'저 여기서 내릴게요',              en:'I get off here',          a:'get',  opts:['get','take','put'],
-    why:'버스·지하철에서 내리는 것은 get off 다. 택시는 get out 을 쓴다.' },
+    why:'버스·지하철에서 내리는 것은 get off. 택시처럼 좁은 데서는 get out 을 쓴다.' },
   { ko:'이 버스 공항 가요?',              en:'Does this bus go to the airport?', a:'go', opts:['go','take','come'],
-    why:'버스가 그쪽으로 떠나느냐를 묻는 것이라 go. 내가 타고 가는 쪽이면 take 다.' },
+    why:'버스가 그쪽으로 가느냐를 묻는 것이라 go. 내가 타고 가는 쪽을 말하면 take 다.' },
 
   // 부탁 — 하게 해줘 / 도와줘 / 알려줘
-  { ko:'내가 한번 해볼게',                en:'Let me try',              a:'let',  opts:['let','give','make'],
-    why:'막지 말고 하게 두라는 부탁이라 let me 다. 실제로는 "내가 할게"에 가깝게 쓴다.' },
+  { ko:'나 한번만 해보게 해줘',           en:'Let me try',              a:'let',  opts:['let','give','make'],
+    why:'막지 말고 하게 두라는 부탁이라 let me. 내가 시도하겠다고 말할 때는 give it a try 도 쓴다.' },
   { ko:'좀 도와줄래?',                    en:'Can you give me a hand?', a:'give', opts:['give','make','take'],
     why:'손을 넘겨준다는 그림이다. give me a hand 가 통째로 굳어져 있다.' },
   { ko:'정해지면 알려줘',                 en:'Let me know',             a:'let',  opts:['let','give','take'],
@@ -16091,7 +16091,9 @@ const VERB_PICK = [
 /* 동사 고르기 드릴 — 보기는 그 문항에 정해둔 헷갈리는 동사들만 쓴다 */
 let vpkRun=null;
 const VPK_SET_SIZE=12;
-const VPK_KEY="speakingroom:verbpick";
+/* 예전 키(verbpick)에는 틀린 문제까지 완료로 들어가 있어 다시 안 나왔다.
+   지우지 않고 새 키를 쓴다 — 옛 기록은 그대로 두고 진행만 새로 센다. */
+const VPK_KEY="speakingroom:verbpick2";
 function vpkShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function vpkBuild(){
   let done=[]; try{ done=hGet(VPK_KEY,[])||[]; }catch(e){}
@@ -16103,7 +16105,7 @@ function vpkBuild(){
 function startVerbPick(){
   const items=vpkBuild(); if(!items.length) return;
   try{ ttStart("speak"); }catch(e){}
-  vpkRun={items, idx:0, results:[]};
+  vpkRun={items, idx:0, results:[], done:[]};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -16137,13 +16139,29 @@ function vpkRender(){
   $("#vpkExit").onclick=()=>vpkDone();
   ss.querySelectorAll(".vpk-o").forEach(b=>{ b.onclick=()=>vpkPick(it, b.dataset.v); });
 }
+/* 틀린 문항을 3~5문제 뒤에 한 번만 다시 넣는다. 바로 다음에 내면 답을 외운 채로 찍는다. */
+function vpkQueueRetry(it){
+  const rest=vpkRun.items.length-(vpkRun.idx+1);
+  if(rest<2) return;                                   // 남은 게 없으면 바로 다음이 되어 버린다
+  const gap=3+((Math.random()*3)|0);                   // 3~5
+  const at=Math.min(vpkRun.items.length, vpkRun.idx+gap);
+  vpkRun.items.splice(at, 0, Object.assign({}, it, {_retry:true}));
+}
 function vpkPick(it, chosen){
   if(!vpkRun || vpkRun.answered===vpkRun.idx) return;
   vpkRun.answered=vpkRun.idx;
   const ok=(chosen===it.a);
-  vpkRun.results.push({ko:it.ko, en:it.en, a:it.a, chosen, ok});
-  try{ autoLvlRecord("speak", ok?"perfect":"miss"); }catch(e){}
-  if(ok){ try{ awardXP("speak", 8, "동사 고르기", "vpk:"+it.en); }catch(e){} }
+  /* 객관식은 말하기 능력을 재는 게 아니다 — speak 자동 난이도는 건드리지 않는다.
+     (예전엔 여기서 autoLvlRecord("speak", ...) 를 불러 실제 말하기 레벨이 흔들렸다) */
+  if(it._retry){
+    const r0=vpkRun.results.find(r=>r.en===it.en);
+    if(r0) r0.fixed=ok;                                // 최초 오답 기록은 그대로 두고 복습 결과만 남긴다
+    if(ok){ vpkRun.done.push(it.en); try{ awardXP("speak", 4, "동사 고르기(복습)", "vpk:r:"+it.en); }catch(e){} }
+  } else {
+    vpkRun.results.push({ko:it.ko, en:it.en, a:it.a, chosen, ok});
+    if(ok){ vpkRun.done.push(it.en); try{ awardXP("speak", 8, "동사 고르기", "vpk:"+it.en); }catch(e){} }
+    else vpkQueueRetry(it);                            // 세트당 1회 — 복제본에는 _retry 가 붙어 다시 안 걸린다
+  }
   document.querySelectorAll(".vpk-o").forEach(b=>{
     const v=b.dataset.v; b.disabled=true;
     if(v===it.a){ b.style.background="#189E79"; b.style.color="#fff"; b.style.borderColor="#189E79"; }
@@ -16170,7 +16188,8 @@ function vpkPick(it, chosen){
 function vpkDone(){
   if(!vpkRun) return;
   const r=vpkRun.results, ok=r.filter(x=>x.ok).length;
-  try{ const done=hGet(VPK_KEY,[])||[]; r.forEach(x=>{ if(done.indexOf(x.en)<0) done.push(x.en); }); hSet(VPK_KEY,done); }catch(e){}
+  // 맞힌 문제만 완료로 남긴다. 틀린 건 다음 세트에서 다시 나와야 한다.
+  try{ const done=hGet(VPK_KEY,[])||[]; (vpkRun.done||[]).forEach(en=>{ if(done.indexOf(en)<0) done.push(en); }); hSet(VPK_KEY,done); }catch(e){}
   try{ ttStop(); }catch(e){}
   try{ xpSessionEnd&&xpSessionEnd(); }catch(e){}
   const miss=r.filter(x=>!x.ok);
@@ -16180,7 +16199,7 @@ function vpkDone(){
     <div class="auto-score">${ok} / ${r.length}</div>
     ${miss.length?`<div style="margin-top:14px;text-align:left">
       <div style="font-size:12px;font-weight:900;color:#7FA396;margin-bottom:7px">다시 볼 것</div>
-      ${miss.map(m=>`<div style="padding:9px 0;border-top:1px solid #E4DCD5"><div style="font-size:13px;color:#8A6F62">${escapeHtml(m.ko)}</div><b style="font-size:15px;color:#2F241F">${escapeHtml(m.en)}</b><div style="font-size:12px;color:#e0533f">내 답: ${escapeHtml(m.chosen)} → ${escapeHtml(m.a)}</div></div>`).join("")}
+      ${miss.map(m=>`<div style="padding:9px 0;border-top:1px solid #E4DCD5"><div style="font-size:13px;color:#8A6F62">${escapeHtml(m.ko)}</div><b style="font-size:15px;color:#2F241F">${escapeHtml(m.en)}</b><div style="font-size:12px;color:#e0533f">내 답: ${escapeHtml(m.chosen)} → ${escapeHtml(m.a)}${m.fixed?` <b style="color:#189E79">· 복습 성공 ✓</b>`:""}</div></div>`).join("")}
     </div>`:""}
     <button class="auto-mic" id="vpkAgain" style="width:100%;margin-top:16px">🔁 한 세트 더</button>
     <button class="auto-sub" id="vpkHome" style="width:100%;margin-top:8px">홈으로</button>
