@@ -1973,7 +1973,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.143";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.144";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15975,6 +15975,221 @@ function attachExplain(answerEl, item) {
    덱/설명 데이터는 아래 BASIC_VERBS · SENSE_INFO · ITEM_NOTE 를 그대로 쓴다.
    기존 화면(#sprint)과 마이크·XP·시간 기록만 재사용하고 채점 로직은 따로 둔다.
    ============================================================ */
+
+/* ============================================================
+   🎯 동사 고르기 — 같은 상황을 두고 어떤 동사를 쓰는지 가른다.
+   보기는 헷갈리는 동사들로만 낸다. 엉뚱한 동사를 섞으면 보자마자 답이 보여서 훈련이 안 된다.
+   한국어에 맥락을 붙여 정답이 하나만 되게 만든 것이 이 덱의 전부다.
+   ('택시를 잡다'만 주면 get 도 take 도 맞아서 문제가 성립하지 않는다)
+   ============================================================ */
+const VERB_PICK = [
+  // 택시 — 잡다 / 타고 가다
+  { ko:'길에서 손 흔들어서 택시 잡았어', en:'I got a taxi',            a:'get',  opts:['get','take','have'],
+    why:'구해서 손에 넣은 쪽이라 get. take 는 그걸 타고 가는 이용이고, have a taxi 는 원어민이 안 쓴다.' },
+  { ko:'지하철 말고 택시로 가자',         en:"Let's take a taxi",       a:'take', opts:['get','take','have'],
+    why:'교통수단을 골라 이용하는 것은 take. 버스·지하철·비행기도 다 take 다.' },
+  { ko:'기사님이 공항까지 데려다줬어',    en:'He took me to the airport', a:'take', opts:['take','get','give'],
+    why:'사람을 집어서 그쪽으로 옮기는 것이라 take. give a ride 도 되지만 그건 태워준다는 호의 쪽이다.' },
+
+  // 사진 — 찍다 / 받다 / 갖고 있다
+  { ko:'사진 찍어드릴까요?',              en:'Do you want me to take a photo?', a:'take', opts:['take','get','make'],
+    why:'사진을 찍는 동작은 take 로 굳어져 있다. make a photo 라고 하지 않는다.' },
+  { ko:'나 그 사진 아직 갖고 있어',       en:'I still have that photo', a:'have', opts:['have','take','get'],
+    why:'이미 내 쪽에 있는 상태라 have. take 면 지금 찍는 것이 된다.' },
+  { ko:'그 사진 어디서 났어?',            en:'Where did you get that photo?', a:'get', opts:['get','take','have'],
+    why:'샀는지 받았는지 안 따지고 손에 들어온 경로를 물을 때 get 이다.' },
+
+  // 커피 — 사오다 / 마시다 / 타다
+  { ko:'커피 사올게',                     en:"I'll get a coffee",       a:'get',  opts:['get','have','make'],
+    why:'없던 걸 가지러 가는 쪽이라 get. buy 를 안 써도 된다.' },
+  { ko:'우리 커피 한잔 하자',             en:"Let's have a coffee",     a:'have', opts:['have','take','get'],
+    why:'먹고 마시는 것은 have 다. take a coffee 라고 하지 않는다.' },
+  { ko:'내가 커피 타줄게',                en:"I'll make you a coffee",  a:'make', opts:['make','get','take'],
+    why:'재료로 새로 만들어내니까 make. 사오는 것이면 get 이다.' },
+
+  // 시간 — 있다 / 걸리다 / 주다
+  { ko:'지금 시간 있어?',                 en:'Do you have time?',       a:'have', opts:['have','take','get'],
+    why:'내 쪽에 있느냐를 묻는 것이라 have. 있다·없다는 거의 다 have 다.' },
+  { ko:'거기까지 얼마나 걸려요?',         en:'How long does it take?',  a:'take', opts:['take','have','make'],
+    why:'일이 시간을 잡아먹는다고 본다. 주어가 사람이 아니라 it 인 것이 핵심이다.' },
+  { ko:'시간 좀 줘',                      en:'Give me some time',       a:'give', opts:['give','take','have'],
+    why:'상대 쪽에서 나에게 넘겨달라는 것이라 give 다.' },
+
+  // 몸 — 걸리는 순간 / 걸려 있는 상태 / 약
+  { ko:'나 지금 감기야',                  en:'I have a cold',           a:'have', opts:['have','get','take'],
+    why:'지금 걸려 있는 상태는 have. 한국어는 둘 다 "걸렸어"라서 제일 많이 틀린다.' },
+  { ko:'어제 비 맞고 감기 걸렸어',        en:'I got a cold yesterday',  a:'get',  opts:['get','have','take'],
+    why:'걸린 그 순간을 말하면 get. 상태가 아니라 넘어간 시점이다.' },
+  { ko:'아까 약 먹었어',                  en:'I took the medicine',     a:'take', opts:['take','have','get'],
+    why:'약은 eat 도 have 도 아니고 take 로 먹는다.' },
+
+  // 전화 — 걸다 / 해달라 / 받다
+  { ko:'전화 한 통 해야 돼',              en:'I have to make a call',   a:'make', opts:['make','take','put'],
+    why:'전화를 거는 행위를 만들어낸다고 본다. take a call 은 걸려온 걸 받는 쪽이다.' },
+  { ko:'이따 나한테 전화 줘',             en:'Give me a call later',    a:'give', opts:['give','make','take'],
+    why:'나에게 해달라고 부탁하는 자리라 give me 다.' },
+  { ko:'(전화벨) 내가 받을게',            en:"I'll get it",             a:'get',  opts:['get','take','have'],
+    why:'전화벨·초인종 앞에서는 get 하나로 끝난다. 계산서 앞이면 "내가 낼게"가 된다.' },
+
+  // 자리 — 하나 가져가다 / 있다 / 맡아두다
+  { ko:'하나 가져가세요',                 en:'Take one',                a:'take', opts:['take','get','have'],
+    why:'여럿 중에 골라 집는 것이라 take 다.' },
+  { ko:'지금 자리 있어요?',               en:'Do you have a table?',    a:'have', opts:['have','take','get'],
+    why:'가게 쪽에 자리가 있느냐를 묻는 것이라 have. 식당에서는 seat 이 아니라 table 을 쓴다.' },
+  { ko:'내 자리 좀 맡아줘',               en:'Keep my seat for me',     a:'keep', opts:['keep','take','have'],
+    why:'남이 못 앉게 계속 잡아두는 것이라 keep. take 면 네가 앉는 게 된다.' },
+
+  // 계산 — 내가 내다 / 잔돈 / 카드
+  { ko:'이건 내가 낼게',                  en:"I'll get this",           a:'get',  opts:['get','take','make'],
+    why:'계산서를 내 쪽으로 가져온다는 그림이다. pay 를 안 써도 통한다.' },
+  { ko:'잔돈은 그냥 가지세요',            en:'Keep the change',         a:'keep', opts:['keep','have','take'],
+    why:'돌려주지 말고 계속 갖고 있으라는 뜻이라 keep 이다.' },
+  { ko:'카드로 계산해 주세요',            en:'Put it on my card',       a:'put',  opts:['put','make','take'],
+    why:'계산서를 카드 위에 얹는다고 본다. 호텔이면 Put it on my room 이 된다.' },
+
+  // 방 — 잡다 / 있다 / 청소시키다
+  { ko:'방 하나 잡았어',                  en:'I got a room',            a:'get',  opts:['get','have','keep'],
+    why:'없던 방을 확보한 순간이라 get 이다.' },
+  { ko:'빈방 있어요?',                    en:'Do you have a room?',     a:'have', opts:['have','get','keep'],
+    why:'호텔 쪽에 방이 있느냐를 묻는 것이라 have 다.' },
+  { ko:'방 청소 좀 해주세요',             en:'Can I have my room cleaned?', a:'have', opts:['have','put','keep'],
+    why:'내가 하는 게 아니라 남을 시켜 되게 하는 것이라 have + 과거분사다.' },
+
+  // 쉬기 — 잠깐 쉬다 / 쉬는 날
+  { ko:'우리 잠깐 쉬자',                  en:"Let's take a break",      a:'take', opts:['take','make','give'],
+    why:'break·shower·walk 앞에는 take 가 붙어 그 행동을 한 번 한다는 뜻이 된다.' },
+  { ko:'나 오늘 쉬는 날이야',             en:'I have a day off',        a:'have', opts:['have','take','get'],
+    why:'쉬는 날이 내 쪽에 있는 상태라 have. take a day off 는 하루 빼겠다고 정하는 쪽이다.' },
+  { ko:'샤워 좀 하고 올게',               en:"I'll take a shower",      a:'take', opts:['take','get','make'],
+    why:'샤워하다에 해당하는 동사가 따로 없어서 take + 명사로 말한다.' },
+
+  // 옷 — 입다 / 벗다 / 입어보다
+  { ko:'신발 신어',                       en:'Put on your shoes',       a:'put',  opts:['put','take','have'],
+    why:'몸 위에 얹는 동작이라 put on. 신고 있는 상태는 wear 다.' },
+  { ko:'신발 벗어',                       en:'Take off your shoes',     a:'take', opts:['take','put','get'],
+    why:'몸에서 떼어내는 쪽이라 take off. put on 의 반대다.' },
+  { ko:'이거 입어봐도 돼요?',             en:'Can I put this on?',      a:'put',  opts:['put','take','have'],
+    why:'입어보는 동작이라 put on. 대명사가 오면 put 과 on 사이에 들어간다.' },
+
+  // 이동 — 걸리다 / 내리다 / 버스 노선
+  { ko:'버스로 30분 걸려',                en:'It takes 30 minutes by bus', a:'take', opts:['take','have','go'],
+    why:'시간이 걸린다는 뜻이라 take. 주어는 it 이다.' },
+  { ko:'저 여기서 내릴게요',              en:'I get off here',          a:'get',  opts:['get','take','put'],
+    why:'버스·지하철에서 내리는 것은 get off 다. 택시는 get out 을 쓴다.' },
+  { ko:'이 버스 공항 가요?',              en:'Does this bus go to the airport?', a:'go', opts:['go','take','come'],
+    why:'버스가 그쪽으로 떠나느냐를 묻는 것이라 go. 내가 타고 가는 쪽이면 take 다.' },
+
+  // 부탁 — 하게 해줘 / 도와줘 / 알려줘
+  { ko:'내가 한번 해볼게',                en:'Let me try',              a:'let',  opts:['let','give','make'],
+    why:'막지 말고 하게 두라는 부탁이라 let me 다. 실제로는 "내가 할게"에 가깝게 쓴다.' },
+  { ko:'좀 도와줄래?',                    en:'Can you give me a hand?', a:'give', opts:['give','make','take'],
+    why:'손을 넘겨준다는 그림이다. give me a hand 가 통째로 굳어져 있다.' },
+  { ko:'정해지면 알려줘',                 en:'Let me know',             a:'let',  opts:['let','give','take'],
+    why:'내가 알게 두라는 뜻이라 let me know. tell me 보다 부드럽고 훨씬 자주 쓴다.' },
+];
+
+/* 동사 고르기 드릴 — 보기는 그 문항에 정해둔 헷갈리는 동사들만 쓴다 */
+let vpkRun=null;
+const VPK_SET_SIZE=12;
+const VPK_KEY="speakingroom:verbpick";
+function vpkShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function vpkBuild(){
+  let done=[]; try{ done=hGet(VPK_KEY,[])||[]; }catch(e){}
+  const seen=new Set(done);
+  let pool=VERB_PICK.filter(x=>!seen.has(x.en));
+  if(pool.length<VPK_SET_SIZE){ try{ hSet(VPK_KEY,[]); }catch(e){} pool=VERB_PICK; }
+  return vpkShuffle(pool).slice(0,VPK_SET_SIZE);
+}
+function startVerbPick(){
+  const items=vpkBuild(); if(!items.length) return;
+  try{ ttStart("speak"); }catch(e){}
+  vpkRun={items, idx:0, results:[]};
+  try{ xpSessionStart(); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint");
+  $("#ctxBar").style.display="none";
+  vpkRender();
+}
+function vpkRender(){
+  if(!vpkRun) return;
+  const it=vpkRun.items[vpkRun.idx];
+  if(!it) return vpkDone();
+  const prog=Math.round(vpkRun.idx/vpkRun.items.length*100);
+  const opts=vpkShuffle(it.opts);
+  const ss=$("#sprintScroll"); ss.style.background="#EAE3DD";
+  ss.innerHTML=`<div class="auto-card">
+    <div class="auto-top">
+      <button class="auto-exit" id="vpkExit">‹ 끝내기</button>
+      <div class="auto-prog"><i style="width:${prog}%"></i></div>
+      <div class="auto-count">${vpkRun.idx+1}/${vpkRun.items.length}</div>
+    </div>
+    <div class="auto-kicker">WHICH VERB?</div>
+    <div class="auto-block">🎯 어떤 동사를 쓸까요</div>
+    <div class="auto-ko">${escapeHtml(it.ko)}</div>
+    <div class="auto-stat" id="vpkStat">셋 다 비슷해 보여도 하나만 자연스러워요.</div>
+    <div id="vpkOpts" style="display:flex;flex-direction:column;gap:9px;margin-top:6px">
+      ${opts.map(v=>`<button class="auto-sub vpk-o" data-v="${escapeAttr(v)}" style="width:100%;font-size:17px;font-weight:900;padding:15px">${escapeHtml(v)}</button>`).join("")}
+    </div>
+  </div>`;
+  ss.scrollTop=0;
+  $("#vpkExit").onclick=()=>vpkDone();
+  ss.querySelectorAll(".vpk-o").forEach(b=>{ b.onclick=()=>vpkPick(it, b.dataset.v); });
+}
+function vpkPick(it, chosen){
+  if(!vpkRun || vpkRun.answered===vpkRun.idx) return;
+  vpkRun.answered=vpkRun.idx;
+  const ok=(chosen===it.a);
+  vpkRun.results.push({ko:it.ko, en:it.en, a:it.a, chosen, ok});
+  try{ autoLvlRecord("speak", ok?"perfect":"miss"); }catch(e){}
+  if(ok){ try{ awardXP("speak", 8, "동사 고르기", "vpk:"+it.en); }catch(e){} }
+  document.querySelectorAll(".vpk-o").forEach(b=>{
+    const v=b.dataset.v; b.disabled=true;
+    if(v===it.a){ b.style.background="#189E79"; b.style.color="#fff"; b.style.borderColor="#189E79"; }
+    else if(v===chosen){ b.style.background="#e0533f"; b.style.color="#fff"; b.style.borderColor="#e0533f"; }
+    else b.style.opacity=".45";
+  });
+  const stat=$("#vpkStat");
+  if(stat){ stat.style.color = ok? "#189E79":"#e0533f"; stat.textContent = ok? "맞아요 ✅":"아니에요 — 아래 설명을 보세요"; }
+  const card=document.querySelector("#sprintScroll .auto-card"); if(!card) return;
+  const box=document.createElement("div");
+  box.style.cssText="margin-top:12px;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:14px";
+  box.innerHTML=`<b style="font-size:19px;color:#2F241F;line-height:1.35;display:block">${escapeHtml(it.en)}</b>
+    <div class="verb-explain" style="margin-top:10px"><p class="verb-explain-core">${escapeHtml(it.why)}</p></div>`;
+  card.appendChild(box);
+  try{ speakEn(it.en); }catch(e){}
+  const foot=document.createElement("div"); foot.style.cssText="margin-top:12px";
+  const last=(vpkRun.idx>=vpkRun.items.length-1);
+  foot.innerHTML=`<button class="auto-mic" id="vpkNext" style="width:100%">${last?"결과 보기 →":"다음 →"}</button>
+    <button class="auto-sub" id="vpkSay" style="width:100%;margin-top:8px">🔊 다시 듣기</button>`;
+  card.appendChild(foot);
+  card.querySelector("#vpkNext").onclick=()=>{ vpkRun.idx++; vpkRender(); };
+  card.querySelector("#vpkSay").onclick=()=>{ try{ speakEn(it.en); }catch(e){} };
+}
+function vpkDone(){
+  if(!vpkRun) return;
+  const r=vpkRun.results, ok=r.filter(x=>x.ok).length;
+  try{ const done=hGet(VPK_KEY,[])||[]; r.forEach(x=>{ if(done.indexOf(x.en)<0) done.push(x.en); }); hSet(VPK_KEY,done); }catch(e){}
+  try{ ttStop(); }catch(e){}
+  try{ xpSessionEnd&&xpSessionEnd(); }catch(e){}
+  const miss=r.filter(x=>!x.ok);
+  $("#sprintScroll").innerHTML=`<div class="auto-card"><div class="auto-done">
+    <div class="auto-kicker">WHICH VERB?</div>
+    <h2>동사 고르기 완료</h2>
+    <div class="auto-score">${ok} / ${r.length}</div>
+    ${miss.length?`<div style="margin-top:14px;text-align:left">
+      <div style="font-size:12px;font-weight:900;color:#7FA396;margin-bottom:7px">다시 볼 것</div>
+      ${miss.map(m=>`<div style="padding:9px 0;border-top:1px solid #E4DCD5"><div style="font-size:13px;color:#8A6F62">${escapeHtml(m.ko)}</div><b style="font-size:15px;color:#2F241F">${escapeHtml(m.en)}</b><div style="font-size:12px;color:#e0533f">내 답: ${escapeHtml(m.chosen)} → ${escapeHtml(m.a)}</div></div>`).join("")}
+    </div>`:""}
+    <button class="auto-mic" id="vpkAgain" style="width:100%;margin-top:16px">🔁 한 세트 더</button>
+    <button class="auto-sub" id="vpkHome" style="width:100%;margin-top:8px">홈으로</button>
+  </div></div>`;
+  vpkRun=null;
+  $("#vpkAgain").onclick=()=>startVerbPick();
+  $("#vpkHome").onclick=()=>{ $("#sprint").style.display="none"; setup.style.display="block"; try{ renderHome(); }catch(e){} };
+}
+
 const VBD_SET_SIZE=12;
 const VBD_KEY="speakingroom:verbdrill";
 let vbdRun=null;
@@ -16007,12 +16222,17 @@ function openVerbPicker(){
      <div class="hub-grab"></div>
      <div class="hub-title">🧱 기본동사</div>
      <div class="hub-sub">동사 하나로 말이 확 늘어요 — 한국어를 보고 영어로</div>
+     <button class="hub-opt" data-v="__pick__" style="background:linear-gradient(135deg,#2BBD94,#189E79);border:none">
+       <span class="hub-emo" style="background:rgba(255,255,255,.2)">🎯</span>
+       <span class="hub-tx"><b style="color:#fff">동사 고르기</b><i style="color:rgba(255,255,255,.85)">get·take·have 중 뭘 쓸까 — 헷갈리는 것만 모았어요</i></span>
+       <span class="hub-ar" style="background:#fff;color:#189E79">›</span>
+     </button>
      ${rows}
    </div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const v=b.dataset.v; close(); startVerbDrill(v); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const v=b.dataset.v; close(); if(v==="__pick__") startVerbPick(); else startVerbDrill(v); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function startVerbDrill(verb){
