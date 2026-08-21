@@ -1973,7 +1973,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.146";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.147";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -16057,8 +16057,8 @@ const VERB_PICK = [
     why:'여럿 중에 골라 집는 것이라 take. Have one 은 음식을 권할 때 쓰는 다른 말이다.' },
   { ko:'지금 자리 있어요?',               en:'Do you have a table?',    a:'have', opts:['have','take','get'],
     why:'가게 쪽에 자리가 있느냐를 묻는 것이라 have. 식당에서는 보통 seat 이 아니라 table 을 쓴다.' },
-  { ko:'가방 좀 맡아주실래요?',           en:'Can you keep my bag?',    a:'keep', opts:['keep','have','take'],
-    why:'돌려줄 때까지 계속 갖고 있어 달라는 것이라 keep. take 면 가져가 버리는 게 된다.' },
+  { ko:'이 가방 잘 보관해줘',             en:'Keep my bag safe',        a:'keep', opts:['keep','have','take'],
+    why:'keep 은 어떤 상태를 계속 유지시키는 느낌이다. 여기서는 가방을 안전한 상태로 계속 두라는 뜻이다. have 면 그냥 갖고 있다는 말이고, take 면 가져가 버리는 게 된다.' },
 
   // 계산 — 내가 내다 / 잔돈 / 카드
   { ko:'이건 내가 낼게',                  en:"I'll get this",           a:'get',  opts:['get','take','make'],
@@ -16116,12 +16116,24 @@ const VPK_SET_SIZE=12;
    지우지 않고 새 키를 쓴다 — 옛 기록은 그대로 두고 진행만 새로 센다. */
 const VPK_KEY="speakingroom:verbpick2";
 function vpkShuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* 한 사이클 안에서 39문항을 반드시 다 보게 한다.
+   예전엔 남은 미완료가 12개 미만이면 진행을 통째로 비우고 전체에서 다시 뽑아서,
+   마지막 몇 문항이 영영 안 나오고 넘어갈 수 있었다.
+   이제 미완료를 먼저 다 채우고, 모자란 자리만 이미 맞힌 것으로 메운다. */
 function vpkBuild(){
   let done=[]; try{ done=hGet(VPK_KEY,[])||[]; }catch(e){}
-  const seen=new Set(done);
-  let pool=VERB_PICK.filter(x=>!seen.has(x.en));
-  if(pool.length<VPK_SET_SIZE){ try{ hSet(VPK_KEY,[]); }catch(e){} pool=VERB_PICK; }
-  return vpkShuffle(pool).slice(0,VPK_SET_SIZE);
+  const live=new Set(VERB_PICK.map(x=>x.en));
+  let seen=new Set(done.filter(en=>live.has(en)));      // 덱에서 빠진 옛 문장은 세지 않는다
+  if(seen.size>=VERB_PICK.length){                       // 39개 전부 완료 → 새 사이클
+    seen=new Set(); try{ hSet(VPK_KEY,[]); }catch(e){}
+  }
+  const todo=VERB_PICK.filter(x=>!seen.has(x.en));       // 아직 못 맞힌 것 — 무조건 먼저
+  const rest=VERB_PICK.filter(x=>seen.has(x.en));        // 이미 맞힌 것 — 빈자리 채우기용
+  const pick=vpkShuffle(todo).slice(0, VPK_SET_SIZE);
+  if(pick.length<VPK_SET_SIZE){
+    vpkShuffle(rest).slice(0, VPK_SET_SIZE-pick.length).forEach(x=>pick.push(x));
+  }
+  return vpkShuffle(pick);                               // todo·rest 는 서로 겹치지 않아 중복이 없다
 }
 function startVerbPick(){
   const items=vpkBuild(); if(!items.length) return;
