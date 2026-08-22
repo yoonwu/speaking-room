@@ -14,6 +14,14 @@
 [
 "One coffee, please.",
 "커피 한 잔 주세요."
+],
+[
+"Please don't touch that.",
+"그거 만지지 마세요."
+],
+[
+"Sit down, please.",
+"앉으세요."
 ]
 ]
 },
@@ -32,6 +40,14 @@
 [
 "Are you really okay?",
 "진짜 괜찮아?"
+],
+[
+"I don't really know.",
+"저도 잘은 몰라요."
+],
+[
+"That was really kind of you.",
+"정말 친절하셨어요."
 ]
 ]
 },
@@ -50,6 +66,14 @@
 [
 "I didn't mean that.",
 "그런 뜻은 아니었어."
+],
+[
+"What do you mean?",
+"무슨 뜻이에요?"
+],
+[
+"Does this mean it's free?",
+"이거 공짜라는 뜻이에요?"
 ]
 ]
 },
@@ -68,6 +92,14 @@
 [
 "It's nothing serious.",
 "별거 아니에요."
+],
+[
+"Nothing works today.",
+"오늘은 되는 게 없네요."
+],
+[
+"I ate nothing this morning.",
+"아침에 아무것도 안 먹었어요."
 ]
 ]
 },
@@ -86,6 +118,14 @@
 [
 "Maybe we should go.",
 "우리 가는 게 나을 것 같아."
+],
+[
+"Maybe next week.",
+"아마 다음 주에요."
+],
+[
+"Maybe it's closed.",
+"닫았을지도 몰라요."
 ]
 ]
 },
@@ -104,6 +144,14 @@
 [
 "You'd better hurry.",
 "서두르는 게 좋겠어."
+],
+[
+"The weather got better.",
+"날씨가 좋아졌어요."
+],
+[
+"Better late than never.",
+"늦더라도 안 하는 것보단 나아요."
 ]
 ]
 },
@@ -122,6 +170,14 @@
 [
 "How are things going?",
 "요즘 어때?"
+],
+[
+"Things are getting better.",
+"상황이 나아지고 있어요."
+],
+[
+"I packed my things.",
+"제 짐을 다 쌌어요."
 ]
 ]
 },
@@ -140,6 +196,14 @@
 [
 "I called my father.",
 "아버지한테 전화했어."
+],
+[
+"My father drives me.",
+"아빠가 태워다 주세요."
+],
+[
+"His father owns a shop.",
+"그의 아버지는 가게를 하세요."
 ]
 ]
 },
@@ -158,6 +222,14 @@
 [
 "Her mother is a teacher.",
 "걔 엄마는 선생님이야."
+],
+[
+"My mother lives in Korea.",
+"저희 어머니는 한국에 계세요."
+],
+[
+"The mother waited outside.",
+"어머니가 밖에서 기다렸어요."
 ]
 ]
 },
@@ -176,6 +248,14 @@
 [
 "The guy at the counter helped me.",
 "카운터 직원이 도와줬어."
+],
+[
+"Ask the guy over there.",
+"저기 저 사람한테 물어봐요."
+],
+[
+"That guy fixed my phone.",
+"저 사람이 제 폰을 고쳐 줬어요."
 ]
 ]
 },
@@ -194,6 +274,14 @@
 [
 "I believe you're right.",
 "네 말이 맞는 것 같아."
+],
+[
+"I believe so.",
+"그런 것 같아요."
+],
+[
+"Believe it or not, it's free.",
+"믿기 힘들겠지만 공짜예요."
 ]
 ]
 },
@@ -212,6 +300,14 @@
 [
 "Everything looks fine.",
 "다 괜찮아 보여요."
+],
+[
+"The weather is fine.",
+"날씨가 좋아요."
+],
+[
+"A fine day for the beach.",
+"해변 가기 딱 좋은 날이에요."
 ]
 ]
 },
@@ -230,6 +326,14 @@
 [
 "We rented a house.",
 "집을 빌렸어요."
+],
+[
+"Our house has a garden.",
+"우리 집엔 정원이 있어요."
+],
+[
+"Is anyone at the house?",
+"집에 누구 있어요?"
 ]
 ]
 },
@@ -248,6 +352,14 @@
 [
 "Of course not.",
 "당연히 아니지."
+],
+[
+"The course was hard.",
+"그 강의는 어려웠어요."
+],
+[
+"Of course, take your time.",
+"물론이죠, 천천히 하세요."
 ]
 ]
 },
@@ -266,6 +378,14 @@
 [
 "Is this big enough?",
 "이거 충분히 커요?"
+],
+[
+"Enough for two people.",
+"두 명이면 충분해요."
+],
+[
+"I've had enough.",
+"이제 그만 됐어요."
 ]
 ]
 },
@@ -284,6 +404,14 @@
 [
 "Now I understand.",
 "이제 알겠어요."
+],
+[
+"I understand your point.",
+"무슨 말인지 알겠어요."
+],
+[
+"He doesn't understand English.",
+"그는 영어를 못 알아들어요."
 ]
 ]
 },
@@ -302,6 +430,14 @@
 [
 "Do you remember her?",
 "걔 기억나?"
+],
+[
+"I remember that day.",
+"그날이 기억나요."
+],
+[
+"Remember your passport.",
+"여권 챙기는 거 잊지 마세요."
 ]
 ]
 },
@@ -320,6 +456,14 @@
 [
 "Who takes care of the dog?",
 "개는 누가 봐?"
+],
+[
+"Handle it with care.",
+"조심해서 다루세요."
+],
+[
+"I care about my family.",
+"저는 가족을 소중히 여겨요."
 ]
 ]
 },
@@ -338,6 +482,14 @@
 [
 "Her son goes to school here.",
 "걔 아들이 여기 학교 다녀."
+],
+[
+"Their son is in college.",
+"그 집 아들은 대학생이에요."
+],
+[
+"My son wants a bike.",
+"제 아들이 자전거를 갖고 싶어해요."
 ]
 ]
 },
@@ -356,6 +508,14 @@
 [
 "I picked up my daughter.",
 "딸을 데리러 갔어요."
+],
+[
+"My daughter is five.",
+"제 딸은 다섯 살이에요."
+],
+[
+"His daughter plays piano.",
+"그의 딸은 피아노를 쳐요."
 ]
 ]
 },
@@ -374,6 +534,14 @@
 [
 "I called my wife.",
 "아내한테 전화했어요."
+],
+[
+"My wife works from home.",
+"제 아내는 재택근무해요."
+],
+[
+"He came with his wife.",
+"그는 아내와 함께 왔어요."
 ]
 ]
 },
@@ -392,6 +560,14 @@
 [
 "This is my husband.",
 "제 남편이에요."
+],
+[
+"My husband cooks dinner.",
+"제 남편이 저녁을 해요."
+],
+[
+"Her husband drives a taxi.",
+"그녀 남편은 택시를 몰아요."
 ]
 ]
 },
@@ -410,6 +586,14 @@
 [
 "The child is sleeping.",
 "아이가 자고 있어요."
+],
+[
+"Every child gets a gift.",
+"아이마다 선물을 받아요."
+],
+[
+"A child ran past us.",
+"아이가 우리 옆을 뛰어갔어요."
 ]
 ]
 },
@@ -428,6 +612,14 @@
 [
 "He's a good kid.",
 "착한 아이예요."
+],
+[
+"The kid dropped his toy.",
+"아이가 장난감을 떨어뜨렸어요."
+],
+[
+"I was a kid here.",
+"저는 여기서 어린 시절을 보냈어요."
 ]
 ]
 },
@@ -446,6 +638,14 @@
 [
 "That's not my job.",
 "그건 제 일이 아니에요."
+],
+[
+"She loves her job.",
+"그녀는 자기 일을 좋아해요."
+],
+[
+"The job starts Monday.",
+"그 일은 월요일에 시작해요."
 ]
 ]
 },
@@ -464,6 +664,14 @@
 [
 "We live in Malaysia.",
 "우리는 말레이시아에 살아요."
+],
+[
+"They live upstairs.",
+"그들은 위층에 살아요."
+],
+[
+"I want to live near the sea.",
+"바다 근처에 살고 싶어요."
 ]
 ]
 },
@@ -482,6 +690,14 @@
 [
 "Actually, I already ate.",
 "사실 벌써 먹었어요."
+],
+[
+"Actually, it's free.",
+"사실 그거 공짜예요."
+],
+[
+"That's actually cheaper.",
+"그게 오히려 더 싸요."
 ]
 ]
 },
@@ -500,6 +716,14 @@
 [
 "I guess you're right.",
 "네 말이 맞는 것 같아."
+],
+[
+"Let me guess.",
+"제가 맞혀 볼게요."
+],
+[
+"Your guess is as good as mine.",
+"저도 모르긴 마찬가지예요."
 ]
 ]
 },
@@ -518,6 +742,14 @@
 [
 "That's a different matter.",
 "그건 다른 문제야."
+],
+[
+"It's a money matter.",
+"돈 문제예요."
+],
+[
+"No matter what, I'll come.",
+"무슨 일이 있어도 갈게요."
 ]
 ]
 },
@@ -536,6 +768,14 @@
 [
 "She lives alone.",
 "그분은 혼자 살아요."
+],
+[
+"Are you alone?",
+"혼자 오셨어요?"
+],
+[
+"He ate alone.",
+"그는 혼자 먹었어요."
 ]
 ]
 },
@@ -554,6 +794,14 @@
 [
 "I hurt myself.",
 "제가 다쳤어요."
+],
+[
+"I cooked it myself.",
+"제가 직접 요리했어요."
+],
+[
+"I told myself to relax.",
+"스스로에게 진정하라고 했어요."
 ]
 ]
 },
@@ -566,12 +814,20 @@
 "길 끝에 있어요."
 ],
 [
-"The movie ends at nine.",
-"영화가 9시에 끝나요."
+"We stayed to the end.",
+"우리는 끝까지 있었어요."
 ],
 [
 "Let's finish by the end of today.",
 "오늘 안에 끝내자."
+],
+[
+"I'll call at the end.",
+"끝나면 전화할게요."
+],
+[
+"The end was sad.",
+"결말이 슬펐어요."
 ]
 ]
 },
@@ -590,6 +846,14 @@
 [
 "Are they your friends?",
 "네 친구들이야?"
+],
+[
+"My friends are waiting.",
+"친구들이 기다려요."
+],
+[
+"She has many friends here.",
+"그녀는 여기 친구가 많아요."
 ]
 ]
 },
@@ -608,6 +872,14 @@
 [
 "Anyone can join.",
 "누구나 참여할 수 있어요."
+],
+[
+"Anyone want coffee?",
+"커피 드실 분?"
+],
+[
+"Did anyone call?",
+"누구 전화 왔어요?"
 ]
 ]
 },
@@ -626,6 +898,14 @@
 [
 "Ask somebody else.",
 "다른 사람한테 물어봐."
+],
+[
+"Somebody left a bag.",
+"누가 가방을 두고 갔어요."
+],
+[
+"Somebody needs to tell him.",
+"누군가는 그에게 말해야 해요."
 ]
 ]
 },
@@ -644,6 +924,14 @@
 [
 "Nobody knows.",
 "아무도 몰라."
+],
+[
+"Nobody answered the phone.",
+"아무도 전화를 안 받았어요."
+],
+[
+"Nobody came to help.",
+"아무도 도우러 오지 않았어요."
 ]
 ]
 },
@@ -662,6 +950,14 @@
 [
 "Good morning, everybody.",
 "다들 안녕하세요."
+],
+[
+"Everybody was tired.",
+"다들 피곤했어요."
+],
+[
+"Tell everybody to come.",
+"다들 오라고 하세요."
 ]
 ]
 },
@@ -680,6 +976,14 @@
 [
 "We lost the game.",
 "우리가 졌어요."
+],
+[
+"I lost my way.",
+"길을 잃었어요."
+],
+[
+"She lost her wallet.",
+"그녀는 지갑을 잃어버렸어요."
 ]
 ]
 },
@@ -698,6 +1002,14 @@
 [
 "That's not true.",
 "그건 사실이 아니야."
+],
+[
+"The story is true.",
+"그 이야기는 사실이에요."
+],
+[
+"True or false?",
+"맞아요, 틀려요?"
 ]
 ]
 },
@@ -716,6 +1028,14 @@
 [
 "I want to know the truth.",
 "진실을 알고 싶어요."
+],
+[
+"The truth is simple.",
+"진실은 단순해요."
+],
+[
+"He told me the truth.",
+"그가 사실을 말해 줬어요."
 ]
 ]
 },
@@ -734,6 +1054,14 @@
 [
 "I know it by heart.",
 "외우고 있어요."
+],
+[
+"Her heart is strong.",
+"그녀는 심장이 튼튼해요."
+],
+[
+"It broke my heart.",
+"마음이 아팠어요."
 ]
 ]
 },
@@ -746,12 +1074,20 @@
 "걱정하지 마."
 ],
 [
-"I'm worried about you.",
-"네가 걱정돼."
+"That's my only worry.",
+"그게 제 유일한 걱정이에요."
 ],
 [
 "There's nothing to worry about.",
 "걱정할 거 없어요."
+],
+[
+"Worry never helps.",
+"걱정해 봐야 소용없어요."
+],
+[
+"Don't worry, I'll drive.",
+"걱정 마요, 제가 운전할게요."
 ]
 ]
 },
@@ -770,6 +1106,14 @@
 [
 "Probably not.",
 "아마 아닐걸."
+],
+[
+"She's probably at home.",
+"그녀는 아마 집에 있을 거예요."
+],
+[
+"That's probably enough.",
+"그거면 아마 충분해요."
 ]
 ]
 },
@@ -788,6 +1132,14 @@
 [
 "The beach is beautiful.",
 "바닷가가 아름다워요."
+],
+[
+"It's a beautiful morning.",
+"아름다운 아침이에요."
+],
+[
+"The flowers are beautiful.",
+"꽃이 아름다워요."
 ]
 ]
 },
@@ -806,6 +1158,14 @@
 [
 "When I was young.",
 "제가 어렸을 때요."
+],
+[
+"The young man helped us.",
+"젊은 남자가 우리를 도와줬어요."
+],
+[
+"He is young and fast.",
+"그는 젊고 빨라요."
 ]
 ]
 },
@@ -824,6 +1184,14 @@
 [
 "I'm part of the team.",
 "저도 팀의 일원이에요."
+],
+[
+"Which part hurts?",
+"어느 부분이 아파요?"
+],
+[
+"Part of it is missing.",
+"일부가 없어요."
 ]
 ]
 },
@@ -842,6 +1210,14 @@
 [
 "What's all this stuff?",
 "이게 다 뭐야?"
+],
+[
+"Move your stuff, please.",
+"짐 좀 치워 주세요."
+],
+[
+"The stuff is in the box.",
+"물건은 상자 안에 있어요."
 ]
 ]
 },
@@ -860,6 +1236,14 @@
 [
 "Exactly ten dollars.",
 "정확히 10달러예요."
+],
+[
+"Do exactly as I say.",
+"제가 말한 대로 하세요."
+],
+[
+"It's exactly the same.",
+"완전히 똑같아요."
 ]
 ]
 },
@@ -878,6 +1262,14 @@
 [
 "Are you crazy?",
 "너 제정신이야?"
+],
+[
+"The price is crazy.",
+"가격이 미쳤어요."
+],
+[
+"He drives like a crazy man.",
+"그는 운전을 미친 듯이 해요."
 ]
 ]
 },
@@ -886,16 +1278,24 @@
 "ko": "일어나다",
 "s": [
 [
-"What happened?",
-"무슨 일이야?"
+"Does it happen often?",
+"그런 일이 자주 있어요?"
 ],
 [
-"It happens sometimes.",
-"가끔 그래요."
+"Just let it happen.",
+"그냥 되는 대로 두세요."
 ],
 [
 "That won't happen again.",
 "다시는 그런 일 없을 거예요."
+],
+[
+"Things happen for a reason.",
+"다 이유가 있어서 일어나요."
+],
+[
+"What will happen next?",
+"다음엔 무슨 일이 생길까요?"
 ]
 ]
 },
@@ -914,6 +1314,14 @@
 [
 "How far is the station?",
 "역까지 얼마나 멀어요?"
+],
+[
+"We walked far today.",
+"오늘 많이 걸었어요."
+],
+[
+"The beach is far away.",
+"해변은 멀어요."
 ]
 ]
 },
@@ -932,6 +1340,14 @@
 [
 "Whatever works for you.",
 "편하신 대로요."
+],
+[
+"Whatever, I don't mind.",
+"뭐든요, 저는 상관없어요."
+],
+[
+"Take whatever you need.",
+"필요한 건 뭐든 가져가세요."
 ]
 ]
 },
@@ -950,6 +1366,14 @@
 [
 "She has brown eyes.",
 "눈이 갈색이에요."
+],
+[
+"Open your eyes.",
+"눈을 뜨세요."
+],
+[
+"His eyes look tired.",
+"그는 눈이 피곤해 보여요."
 ]
 ]
 },
@@ -968,6 +1392,14 @@
 [
 "I'll deal with it.",
 "제가 처리할게요."
+],
+[
+"That's a deal breaker.",
+"그건 협상 결렬 사유예요."
+],
+[
+"We made a deal.",
+"우리는 합의했어요."
 ]
 ]
 },
@@ -986,6 +1418,14 @@
 [
 "The body of the car is fine.",
 "차 몸체는 멀쩡해요."
+],
+[
+"Your body needs rest.",
+"몸이 쉬어야 해요."
+],
+[
+"The body of the letter is short.",
+"편지 본문이 짧아요."
 ]
 ]
 },
@@ -1004,6 +1444,14 @@
 [
 "Not quite.",
 "딱 그렇진 않아요."
+],
+[
+"It's quite cheap.",
+"꽤 싸요."
+],
+[
+"She's quite tall.",
+"그녀는 키가 꽤 커요."
 ]
 ]
 },
@@ -1022,6 +1470,14 @@
 [
 "I'll do it anyway.",
 "어쨌든 할게요."
+],
+[
+"Anyway, we should eat.",
+"어쨌든 뭐 좀 먹어야죠."
+],
+[
+"It's late anyway.",
+"어차피 늦었어요."
 ]
 ]
 },
@@ -1040,6 +1496,14 @@
 [
 "It's fun to learn.",
 "배우는 게 재밌어요."
+],
+[
+"The trip was fun.",
+"여행이 재밌었어요."
+],
+[
+"We had fun today.",
+"오늘 즐거웠어요."
 ]
 ]
 },
@@ -1056,8 +1520,16 @@
 "잠깐 얘기 좀 해요."
 ],
 [
-"In other words, it's closed.",
-"그러니까 문을 닫았다는 거죠."
+"Say the word and I'll go.",
+"말씀만 하시면 갈게요."
+],
+[
+"That's a hard word.",
+"그건 어려운 단어예요."
+],
+[
+"Not a word to anyone.",
+"아무한테도 말하지 마세요."
 ]
 ]
 },
@@ -1076,6 +1548,14 @@
 [
 "Family is important to me.",
 "저에게 가족이 중요해요."
+],
+[
+"Nothing is more important.",
+"그보다 중요한 건 없어요."
+],
+[
+"It's an important day.",
+"중요한 날이에요."
 ]
 ]
 },
@@ -1094,6 +1574,14 @@
 [
 "At least try it.",
 "한번이라도 해봐."
+],
+[
+"That's the least I can do.",
+"이 정도는 해드려야죠."
+],
+[
+"At least call me.",
+"전화라도 해 주세요."
 ]
 ]
 },
@@ -1102,8 +1590,8 @@
 "ko": "다치다/아프다",
 "s": [
 [
-"My leg hurts.",
-"다리가 아파요."
+"Does it hurt here?",
+"여기 아파요?"
 ],
 [
 "Did you hurt yourself?",
@@ -1112,6 +1600,14 @@
 [
 "It doesn't hurt much.",
 "많이 안 아파요."
+],
+[
+"My back really hurt yesterday.",
+"어제 허리가 정말 아팠어요."
+],
+[
+"Nobody got hurt.",
+"다친 사람은 없어요."
 ]
 ]
 },
@@ -1130,6 +1626,14 @@
 [
 "I wish you luck.",
 "행운을 빌어요."
+],
+[
+"I wish it were cheaper.",
+"더 쌌으면 좋겠어요."
+],
+[
+"I wish you were here.",
+"네가 여기 있으면 좋겠어."
 ]
 ]
 },
@@ -1148,6 +1652,14 @@
 [
 "She's married to a teacher.",
 "선생님과 결혼했어요."
+],
+[
+"My sister got married.",
+"언니가 결혼했어요."
+],
+[
+"A married couple lives there.",
+"부부가 거기 살아요."
 ]
 ]
 },
@@ -1166,6 +1678,14 @@
 [
 "I need a couple more.",
 "두어 개 더 필요해요."
+],
+[
+"A couple came in.",
+"커플 한 쌍이 들어왔어요."
+],
+[
+"Wait a couple of minutes.",
+"몇 분만 기다리세요."
 ]
 ]
 },
@@ -1184,6 +1704,14 @@
 [
 "Half of them are gone.",
 "절반은 없어졌어요."
+],
+[
+"Half the price, please.",
+"반값에 주세요."
+],
+[
+"It's half past six.",
+"6시 반이에요."
 ]
 ]
 },
@@ -1202,6 +1730,14 @@
 [
 "Cut the price a little.",
 "조금만 깎아주세요."
+],
+[
+"Cut the bread, please.",
+"빵 좀 잘라 주세요."
+],
+[
+"He cut his hair short.",
+"그는 머리를 짧게 잘랐어요."
 ]
 ]
 },
@@ -1220,6 +1756,14 @@
 [
 "She's able to speak English.",
 "영어를 할 줄 알아요."
+],
+[
+"I'm able to walk now.",
+"이제 걸을 수 있어요."
+],
+[
+"Will you be able to come?",
+"오실 수 있어요?"
 ]
 ]
 },
@@ -1238,6 +1782,14 @@
 [
 "A lady called for you.",
 "어떤 분이 찾으셨어요."
+],
+[
+"The old lady smiled.",
+"할머니가 미소 지으셨어요."
+],
+[
+"That lady is my teacher.",
+"저분이 제 선생님이세요."
 ]
 ]
 },
@@ -1256,6 +1808,14 @@
 [
 "For some reason, it's closed.",
 "무슨 이유인지 문을 닫았어요."
+],
+[
+"Give me one reason.",
+"이유 하나만 대보세요."
+],
+[
+"The reason is simple.",
+"이유는 간단해요."
 ]
 ]
 },
@@ -1274,6 +1834,14 @@
 [
 "Sorry for the trouble.",
 "번거롭게 해서 미안해요."
+],
+[
+"That car gives me trouble.",
+"저 차가 저를 애먹여요."
+],
+[
+"He got into trouble.",
+"그는 곤란해졌어요."
 ]
 ]
 },
@@ -1292,6 +1860,14 @@
 [
 "He's out of town.",
 "걔 지금 다른 지역에 있어."
+],
+[
+"The town is quiet.",
+"그 마을은 조용해요."
+],
+[
+"We drove to the next town.",
+"옆 마을까지 운전했어요."
 ]
 ]
 },
@@ -1310,6 +1886,14 @@
 [
 "Trust me on this.",
 "이건 나 믿어."
+],
+[
+"Trust takes time.",
+"신뢰는 시간이 걸려요."
+],
+[
+"I don't trust that price.",
+"그 가격은 못 믿겠어요."
 ]
 ]
 },
@@ -1328,6 +1912,14 @@
 [
 "Keep it cool.",
 "시원하게 보관하세요."
+],
+[
+"It's cool in the morning.",
+"아침엔 선선해요."
+],
+[
+"A cool drink, please.",
+"시원한 음료 주세요."
 ]
 ]
 },
@@ -1346,6 +1938,14 @@
 [
 "Turn off the power.",
 "전원 꺼주세요."
+],
+[
+"The power came back.",
+"전기가 돌아왔어요."
+],
+[
+"She has the power to decide.",
+"그녀에게 결정권이 있어요."
 ]
 ]
 },
@@ -1364,6 +1964,14 @@
 [
 "Can you send it to my room?",
 "방으로 보내주실래요?"
+],
+[
+"Send them my regards.",
+"안부 전해 주세요."
+],
+[
+"I'll send a photo.",
+"사진 보낼게요."
 ]
 ]
 },
@@ -1382,6 +1990,14 @@
 [
 "I saw it on the news.",
 "뉴스에서 봤어요."
+],
+[
+"The news was sad.",
+"그 소식은 슬펐어요."
+],
+[
+"Have you got any news?",
+"무슨 소식 있어요?"
 ]
 ]
 },
@@ -1398,8 +2014,16 @@
 "버스가 꽉 찼어요."
 ],
 [
-"Fill it up, please.",
-"가득 채워 주세요."
+"The glass is only half full.",
+"잔이 반밖에 안 찼어요."
+],
+[
+"My hands are full.",
+"손이 꽉 찼어요."
+],
+[
+"The tank is full.",
+"탱크가 가득 찼어요."
 ]
 ]
 },
@@ -1418,6 +2042,14 @@
 [
 "Shut the window.",
 "창문 닫아."
+],
+[
+"He shut his eyes.",
+"그가 눈을 감았어요."
+],
+[
+"Please shut it quietly.",
+"조용히 닫아 주세요."
 ]
 ]
 },
@@ -1436,6 +2068,14 @@
 [
 "It gets crowded here.",
 "여기 붐벼져요."
+],
+[
+"It gets dark early.",
+"어두워지는 게 빨라요."
+],
+[
+"He gets angry easily.",
+"그는 쉽게 화를 내요."
 ]
 ]
 },
@@ -1454,6 +2094,14 @@
 [
 "Wow, it's beautiful.",
 "와, 아름답네요."
+],
+[
+"Wow, that was fast.",
+"우와, 진짜 빠르네요."
+],
+[
+"Wow, look at the view.",
+"우와, 경치 좀 봐요."
 ]
 ]
 },
@@ -1472,6 +2120,14 @@
 [
 "Honey, look at this.",
 "여보, 이것 좀 봐."
+],
+[
+"Add honey to the tea.",
+"차에 꿀을 넣으세요."
+],
+[
+"Honey, where are the keys?",
+"자기야, 열쇠 어딨어?"
 ]
 ]
 },
@@ -1490,6 +2146,14 @@
 [
 "Men and women both.",
 "남녀 다요."
+],
+[
+"The men are working.",
+"남자들이 일하고 있어요."
+],
+[
+"Three men got off.",
+"남자 세 명이 내렸어요."
 ]
 ]
 },
@@ -1508,6 +2172,14 @@
 [
 "Women and children first.",
 "여성과 아이 먼저요."
+],
+[
+"Two women were waiting.",
+"여자 두 명이 기다리고 있었어요."
+],
+[
+"Women live longer.",
+"여성이 더 오래 살아요."
 ]
 ]
 },
@@ -1526,6 +2198,14 @@
 [
 "Both girls like it.",
 "둘 다 좋아해요."
+],
+[
+"The girls are singing.",
+"여자애들이 노래하고 있어요."
+],
+[
+"Two girls came late.",
+"여자애 둘이 늦게 왔어요."
 ]
 ]
 },
@@ -1544,6 +2224,14 @@
 [
 "Call the boys inside.",
 "애들 들어오라고 해."
+],
+[
+"The boys ran outside.",
+"남자애들이 밖으로 뛰어나갔어요."
+],
+[
+"Where are the boys?",
+"남자애들 어디 갔어요?"
 ]
 ]
 },
@@ -1562,6 +2250,14 @@
 [
 "Who told you that?",
 "누가 그래?"
+],
+[
+"She told a funny story.",
+"그녀가 웃긴 얘길 해줬어요."
+],
+[
+"I told him to wait.",
+"그에게 기다리라고 했어요."
 ]
 ]
 },
@@ -1580,6 +2276,14 @@
 [
 "Thanks, guys.",
 "다들 고마워."
+],
+[
+"You guys go ahead.",
+"너희들 먼저 가."
+],
+[
+"The guys are late.",
+"애들이 늦네요."
 ]
 ]
 },
@@ -1598,6 +2302,14 @@
 [
 "We wanted to leave early.",
 "일찍 나가고 싶었어요."
+],
+[
+"He wanted more time.",
+"그는 시간이 더 필요했어요."
+],
+[
+"They wanted to help.",
+"그들은 돕고 싶어했어요."
 ]
 ]
 },
@@ -1616,6 +2328,14 @@
 [
 "Nothing happened.",
 "아무 일도 없었어."
+],
+[
+"It happened so fast.",
+"순식간에 일어났어요."
+],
+[
+"That never happened before.",
+"그런 적은 없었어요."
 ]
 ]
 },
@@ -1634,6 +2354,14 @@
 [
 "Stop talking, please.",
 "조용히 해 주세요."
+],
+[
+"They are talking outside.",
+"그들이 밖에서 얘기 중이에요."
+],
+[
+"Talking helps a lot.",
+"말하는 게 도움이 많이 돼요."
 ]
 ]
 },
@@ -1650,8 +2378,16 @@
 "좋은 데를 찾았어요."
 ],
 [
-"Where did you find it?",
-"어디서 찾았어?"
+"They found nothing.",
+"그들은 아무것도 못 찾았어요."
+],
+[
+"She found a shortcut.",
+"그녀가 지름길을 찾았어요."
+],
+[
+"I found it under the bed.",
+"침대 밑에서 찾았어요."
 ]
 ]
 },
@@ -1670,6 +2406,14 @@
 [
 "She's looking for a job.",
 "걔 일자리 찾는 중이야."
+],
+[
+"He is looking well.",
+"그는 좋아 보여요."
+],
+[
+"Looking good today!",
+"오늘 멋진데요!"
 ]
 ]
 },
@@ -1686,8 +2430,16 @@
 "일찍 집에 갔어요."
 ],
 [
-"Where did you go?",
-"어디 갔었어?"
+"It went well.",
+"잘 됐어요."
+],
+[
+"She went shopping.",
+"그녀는 쇼핑하러 갔어요."
+],
+[
+"The lights went out.",
+"불이 나갔어요."
 ]
 ]
 },
@@ -1706,6 +2458,14 @@
 [
 "What's the best way there?",
 "거기 가는 제일 좋은 방법이 뭐예요?"
+],
+[
+"She is the best cook.",
+"그녀가 요리를 제일 잘해요."
+],
+[
+"Best of luck.",
+"행운을 빌어요."
 ]
 ]
 },
@@ -1718,12 +2478,20 @@
 "어제 걔 봤어."
 ],
 [
-"Did you see that?",
-"저거 봤어?"
+"She saw us leave.",
+"그녀가 우리 나가는 걸 봤어요."
 ],
 [
 "We saw a movie.",
 "영화 봤어요."
+],
+[
+"I saw the doctor today.",
+"오늘 병원에 다녀왔어요."
+],
+[
+"Nobody saw it happen.",
+"아무도 그걸 못 봤어요."
 ]
 ]
 },
@@ -1742,6 +2510,14 @@
 [
 "For real?",
 "진짜야?"
+],
+[
+"It's a real diamond.",
+"진짜 다이아몬드예요."
+],
+[
+"Tell me the real reason.",
+"진짜 이유를 말해 주세요."
 ]
 ]
 },
@@ -1760,6 +2536,14 @@
 [
 "I haven't seen her today.",
 "오늘 걔 못 봤어."
+],
+[
+"I've seen better.",
+"더 나은 것도 봤어요."
+],
+[
+"He hasn't seen the note.",
+"그는 그 메모를 못 봤어요."
 ]
 ]
 },
@@ -1778,6 +2562,14 @@
 [
 "I heard it's closed.",
 "문 닫았다고 들었어요."
+],
+[
+"Nobody heard the alarm.",
+"아무도 알람을 못 들었어요."
+],
+[
+"I heard about your trip.",
+"여행 얘기 들었어요."
 ]
 ]
 },
@@ -1796,6 +2588,14 @@
 [
 "I never knew that.",
 "전혀 몰랐어요."
+],
+[
+"He knew it was late.",
+"그는 늦은 걸 알고 있었어요."
+],
+[
+"We knew each other before.",
+"우리는 전부터 아는 사이였어요."
 ]
 ]
 },
@@ -1814,6 +2614,14 @@
 [
 "The food is all gone.",
 "음식이 다 없어졌어요."
+],
+[
+"My money is gone.",
+"돈이 다 없어졌어요."
+],
+[
+"Summer is nearly gone.",
+"여름이 거의 끝나가요."
 ]
 ]
 },
@@ -1832,6 +2640,14 @@
 [
 "She kept saying sorry.",
 "걔가 계속 미안하다고 했어."
+],
+[
+"He is saying goodbye.",
+"그가 작별 인사를 하고 있어요."
+],
+[
+"There's a saying about that.",
+"그런 속담이 있어요."
 ]
 ]
 },
@@ -1850,6 +2666,14 @@
 [
 "Nobody wants that.",
 "아무도 그걸 원하지 않아."
+],
+[
+"The baby wants milk.",
+"아기가 우유를 원해요."
+],
+[
+"Who wants dessert?",
+"디저트 드실 분?"
 ]
 ]
 },
@@ -1868,6 +2692,14 @@
 [
 "We're thinking of moving.",
 "이사를 생각 중이에요."
+],
+[
+"Thinking about it helps.",
+"생각해 보는 게 도움돼요."
+],
+[
+"She is thinking hard.",
+"그녀가 골똘히 생각 중이에요."
 ]
 ]
 },
@@ -1886,6 +2718,14 @@
 [
 "Are you still working?",
 "아직 일해?"
+],
+[
+"The aircon is working.",
+"에어컨이 작동해요."
+],
+[
+"He is working late today.",
+"그는 오늘 늦게까지 일해요."
 ]
 ]
 },
@@ -1904,6 +2744,14 @@
 [
 "She knows my name.",
 "그분이 제 이름을 알아요."
+],
+[
+"Everybody knows the rule.",
+"다들 그 규칙을 알아요."
+],
+[
+"She knows how to cook.",
+"그녀는 요리할 줄 알아요."
 ]
 ]
 },
@@ -1922,6 +2770,14 @@
 [
 "Don't hit your brother.",
 "동생 때리지 마."
+],
+[
+"The rain hit hard.",
+"비가 세게 쏟아졌어요."
+],
+[
+"Traffic hit us at six.",
+"6시에 차가 막히기 시작했어요."
 ]
 ]
 },
@@ -1940,6 +2796,14 @@
 [
 "She's taking a shower.",
 "걔 샤워 중이야."
+],
+[
+"He is taking a break.",
+"그는 쉬는 중이에요."
+],
+[
+"Thanks for taking me.",
+"데려다 줘서 고마워요."
 ]
 ]
 },
@@ -1958,6 +2822,14 @@
 [
 "That means we're late.",
 "그럼 우리 늦은 거네."
+],
+[
+"This means we can go.",
+"그럼 가도 된다는 거네요."
+],
+[
+"By all means, sit down.",
+"그럼요, 앉으세요."
 ]
 ]
 },
@@ -1976,6 +2848,14 @@
 [
 "It makes me happy.",
 "그게 절 기쁘게 해요."
+],
+[
+"The noise makes me tired.",
+"소음 때문에 피곤해요."
+],
+[
+"She makes her own bread.",
+"그녀는 빵을 직접 구워요."
 ]
 ]
 },
@@ -1994,6 +2874,14 @@
 [
 "She's making a call.",
 "걔 전화하는 중이야."
+],
+[
+"They are making a mess.",
+"그들이 어지르고 있어요."
+],
+[
+"Making friends takes time.",
+"친구 사귀는 건 시간이 걸려요."
 ]
 ]
 },
@@ -2012,6 +2900,14 @@
 [
 "Oh dear, I forgot.",
 "이런, 깜빡했네."
+],
+[
+"My dear friend called.",
+"제 소중한 친구가 전화했어요."
+],
+[
+"Dear me, what a day.",
+"아이고, 무슨 이런 날이."
 ]
 ]
 },
@@ -2030,6 +2926,14 @@
 [
 "Nice place, though.",
 "그래도 괜찮은 곳이네."
+],
+[
+"He came, though he was tired.",
+"그는 피곤했지만 왔어요."
+],
+[
+"It works, though slowly.",
+"되긴 되는데 느려요."
 ]
 ]
 },
@@ -2048,6 +2952,14 @@
 [
 "He's playing soccer.",
 "걔 축구하고 있어."
+],
+[
+"They are playing cards.",
+"그들이 카드를 하고 있어요."
+],
+[
+"The radio is playing music.",
+"라디오에서 음악이 나와요."
 ]
 ]
 },
@@ -2066,6 +2978,14 @@
 [
 "I met her last year.",
 "작년에 만났어요."
+],
+[
+"I met your mother.",
+"어머니를 뵀어요."
+],
+[
+"We met by chance.",
+"우연히 만났어요."
 ]
 ]
 },
@@ -2084,6 +3004,14 @@
 [
 "Stop telling me what to do.",
 "이래라저래라 하지 마."
+],
+[
+"She is telling a story.",
+"그녀가 이야기를 하고 있어요."
+],
+[
+"There's no telling.",
+"알 수가 없어요."
 ]
 ]
 },
@@ -2102,6 +3030,14 @@
 [
 "We tried to call you.",
 "전화하려고 했어요."
+],
+[
+"I tried my best.",
+"최선을 다했어요."
+],
+[
+"He tried the door.",
+"그가 문을 열어 봤어요."
 ]
 ]
 },
@@ -2120,6 +3056,14 @@
 [
 "Don't say stupid things.",
 "바보 같은 소리 하지 마."
+],
+[
+"I feel stupid now.",
+"지금 좀 바보 같아요."
+],
+[
+"That's a stupid price.",
+"가격이 말이 안 돼요."
 ]
 ]
 },
@@ -2138,6 +3082,14 @@
 [
 "Stop the fight.",
 "그만 싸워."
+],
+[
+"They fight over the remote.",
+"그들은 리모컨 갖고 싸워요."
+],
+[
+"Don't fight it.",
+"괜히 버티지 마세요."
 ]
 ]
 },
@@ -2156,6 +3108,14 @@
 [
 "Call the fire department.",
 "소방서에 전화해요."
+],
+[
+"The fire spread quickly.",
+"불이 빠르게 번졌어요."
+],
+[
+"We sat by the fire.",
+"우리는 불 옆에 앉았어요."
 ]
 ]
 },
@@ -2174,6 +3134,14 @@
 [
 "I went to the police station.",
 "경찰서에 갔어요."
+],
+[
+"The police stopped the car.",
+"경찰이 차를 세웠어요."
+],
+[
+"A police car passed by.",
+"경찰차가 지나갔어요."
 ]
 ]
 },
@@ -2182,16 +3150,24 @@
 "ko": "죽이다/없애다",
 "s": [
 [
-"This spray kills mosquitoes.",
-"이 스프레이가 모기를 잡아요."
+"This spray can kill mosquitoes.",
+"이 스프레이는 모기를 잡아요."
 ],
 [
-"The heat is killing me.",
-"더워 죽겠어요."
+"The heat will kill the plants.",
+"더위에 식물이 죽을 거예요."
 ],
 [
 "We have time to kill.",
 "시간이 남아요."
+],
+[
+"Too much sun can kill grass.",
+"햇볕이 너무 세면 잔디가 죽어요."
+],
+[
+"It won't kill you to try.",
+"한번 해본다고 큰일 안 나요."
 ]
 ]
 },
@@ -2210,6 +3186,14 @@
 [
 "That noise killed the mood.",
 "그 소리가 분위기를 망쳤어요."
+],
+[
+"The storm killed the power.",
+"폭풍에 전기가 끊겼어요."
+],
+[
+"He killed the engine.",
+"그가 시동을 껐어요."
 ]
 ]
 },
@@ -2226,8 +3210,16 @@
 "물 없으면 식물이 죽어요."
 ],
 [
-"The engine died.",
-"시동이 꺼졌어요."
+"We all die someday.",
+"우린 다 언젠가 죽어요."
+],
+[
+"The battery will die soon.",
+"배터리가 곧 나가요."
+],
+[
+"Flowers die quickly here.",
+"여기선 꽃이 금방 시들어요."
 ]
 ]
 },
@@ -2246,6 +3238,14 @@
 [
 "His grandfather died last year.",
 "걔 할아버지가 작년에 돌아가셨어."
+],
+[
+"The music died down.",
+"음악 소리가 잦아들었어요."
+],
+[
+"My old laptop died.",
+"제 옛날 노트북이 맛이 갔어요."
 ]
 ]
 },
@@ -2264,6 +3264,14 @@
 [
 "This street is dead at night.",
 "이 거리는 밤엔 조용해요."
+],
+[
+"The line went dead.",
+"전화가 끊겼어요."
+],
+[
+"The dead leaves piled up.",
+"낙엽이 쌓였어요."
 ]
 ]
 },
@@ -2282,6 +3290,14 @@
 [
 "We were bored to death.",
 "지루해 죽는 줄 알았어요."
+],
+[
+"The film is about life and death.",
+"그 영화는 삶과 죽음 이야기예요."
+],
+[
+"He worked himself to death.",
+"그는 죽도록 일했어요."
 ]
 ]
 },
@@ -2294,12 +3310,20 @@
 "그거 장난감 총이야."
 ],
 [
-"Guns are not allowed here.",
-"여기는 총기 반입 금지예요."
+"He carries no gun.",
+"그는 총을 갖고 있지 않아요."
 ],
 [
 "He has a water gun.",
 "걔 물총 있어."
+],
+[
+"The museum keeps an old gun.",
+"박물관에 오래된 총이 있어요."
+],
+[
+"A starting gun began the race.",
+"출발 신호총으로 경기가 시작됐어요."
 ]
 ]
 },
@@ -2318,6 +3342,14 @@
 [
 "Give it a shot.",
 "한번 해봐."
+],
+[
+"The shot didn't hurt.",
+"주사 안 아팠어요."
+],
+[
+"He took a shot at goal.",
+"그가 골을 노리고 슛했어요."
 ]
 ]
 },
@@ -2336,6 +3368,14 @@
 [
 "It's a war movie.",
 "전쟁 영화예요."
+],
+[
+"My grandfather fought in the war.",
+"할아버지가 전쟁에 참전하셨어요."
+],
+[
+"The war is over.",
+"전쟁은 끝났어요."
 ]
 ]
 },
@@ -2354,6 +3394,14 @@
 [
 "The lease is six months.",
 "계약이 6개월이에요."
+],
+[
+"Three months went by.",
+"석 달이 지났어요."
+],
+[
+"She is eight months pregnant.",
+"그녀는 임신 8개월이에요."
 ]
 ]
 },
@@ -2372,6 +3420,14 @@
 [
 "Sometimes she calls me.",
 "가끔 걔가 전화해."
+],
+[
+"Sometimes it rains at night.",
+"가끔 밤에 비가 와요."
+],
+[
+"He is sometimes late.",
+"그는 가끔 늦어요."
 ]
 ]
 },
@@ -2380,8 +3436,8 @@
 "ko": "~이 되다",
 "s": [
 [
-"It became very hot.",
-"아주 더워졌어요."
+"It will become hot later.",
+"이따 더워질 거예요."
 ],
 [
 "He wants to become a doctor.",
@@ -2390,6 +3446,14 @@
 [
 "It's become a habit.",
 "습관이 됐어요."
+],
+[
+"Prices become higher every year.",
+"해마다 물가가 올라요."
+],
+[
+"She may become a nurse.",
+"그녀는 간호사가 될지도 몰라요."
 ]
 ]
 },
@@ -2408,6 +3472,14 @@
 [
 "Bring your passport along.",
 "여권 챙겨 와."
+],
+[
+"Sing along with us.",
+"같이 따라 부르세요."
+],
+[
+"Move along, please.",
+"좀 비켜 주세요."
 ]
 ]
 },
@@ -2416,16 +3488,24 @@
 "ko": "싫어하다",
 "s": [
 [
-"I hate waiting.",
-"기다리는 거 싫어."
+"I hate this weather.",
+"이 날씨 정말 싫어요."
 ],
 [
-"She hates spicy food.",
-"걔는 매운 거 싫어해."
+"I hate waiting in line.",
+"저는 줄 서는 게 싫어요."
 ],
 [
 "I hate to say it, but no.",
 "이런 말 하기 싫지만, 안 돼."
+],
+[
+"She would hate that.",
+"그녀는 그걸 싫어할 거예요."
+],
+[
+"I hate to bother you.",
+"귀찮게 해서 미안해요."
 ]
 ]
 },
@@ -2444,6 +3524,14 @@
 [
 "We live in this country now.",
 "이제 이 나라에 살아요."
+],
+[
+"The country is peaceful.",
+"그 나라는 평화로워요."
+],
+[
+"He left the country.",
+"그는 출국했어요."
 ]
 ]
 },
@@ -2462,6 +3550,14 @@
 [
 "Please clear the table.",
 "식탁 좀 치워주세요."
+],
+[
+"The sky is clear.",
+"하늘이 맑아요."
+],
+[
+"Let me make it clear.",
+"분명히 말씀드릴게요."
 ]
 ]
 },
@@ -2480,6 +3576,14 @@
 [
 "The fact is, we're late.",
 "사실 우리 늦었어요."
+],
+[
+"The fact remains the same.",
+"사실은 그대로예요."
+],
+[
+"It's a known fact.",
+"다 아는 사실이에요."
 ]
 ]
 },
@@ -2498,6 +3602,14 @@
 [
 "I feel alive today.",
 "오늘 기운이 나요."
+],
+[
+"He came back alive.",
+"그는 살아 돌아왔어요."
+],
+[
+"The market is alive at night.",
+"밤엔 시장이 활기차요."
 ]
 ]
 },
@@ -2516,6 +3628,14 @@
 [
 "I'm not feeling well.",
 "몸이 안 좋아요."
+],
+[
+"The feeling passed quickly.",
+"그 기분은 금방 사라졌어요."
+],
+[
+"I had a bad feeling.",
+"느낌이 안 좋았어요."
 ]
 ]
 },
@@ -2534,6 +3654,14 @@
 [
 "What do you do for a living?",
 "무슨 일 하세요?"
+],
+[
+"They are living abroad.",
+"그들은 외국에 살아요."
+],
+[
+"The cost of living is high.",
+"생활비가 비싸요."
 ]
 ]
 },
@@ -2542,8 +3670,8 @@
 "ko": "원인/일으키다",
 "s": [
 [
-"What caused the delay?",
-"왜 늦어진 거예요?"
+"Rain is the cause of the delay.",
+"비가 지연의 원인이에요."
 ],
 [
 "Rain can cause traffic.",
@@ -2552,6 +3680,14 @@
 [
 "The cause is unknown.",
 "원인을 몰라요."
+],
+[
+"Don't cause trouble.",
+"말썽 부리지 마세요."
+],
+[
+"The cause was a loose wire.",
+"원인은 헐거운 전선이었어요."
 ]
 ]
 },
@@ -2570,6 +3706,14 @@
 [
 "I don't want to lose it.",
 "그거 잃어버리기 싫어요."
+],
+[
+"You could lose weight.",
+"살을 좀 빼셔도 돼요."
+],
+[
+"Don't lose hope.",
+"희망을 잃지 마세요."
 ]
 ]
 },
@@ -2582,12 +3726,20 @@
 "계획이 뭐야?"
 ],
 [
-"I have no plans today.",
-"오늘 약속 없어요."
+"We need a better plan.",
+"더 나은 계획이 필요해요."
 ],
 [
 "Let's make a plan.",
 "계획을 세우자."
+],
+[
+"The plan changed.",
+"계획이 바뀌었어요."
+],
+[
+"Plan ahead for the rain.",
+"비에 미리 대비하세요."
 ]
 ]
 },
@@ -2606,6 +3758,14 @@
 [
 "Let me sort this out.",
 "제가 정리할게요."
+],
+[
+"Sort the papers first.",
+"서류부터 정리하세요."
+],
+[
+"That sort of thing happens.",
+"그런 일도 있죠."
 ]
 ]
 },
@@ -2624,6 +3784,14 @@
 [
 "The bus is leaving.",
 "버스 떠나요."
+],
+[
+"She is leaving tomorrow.",
+"그녀는 내일 떠나요."
+],
+[
+"Thanks for not leaving me.",
+"안 두고 가줘서 고마워요."
 ]
 ]
 },
@@ -2642,6 +3810,14 @@
 [
 "She's the boss here.",
 "여기는 그분이 책임자예요."
+],
+[
+"My boss called twice.",
+"상사가 두 번 전화했어요."
+],
+[
+"He acts like a boss.",
+"그는 상사처럼 굴어요."
 ]
 ]
 },
@@ -2660,6 +3836,14 @@
 [
 "Promise me one thing.",
 "한 가지만 약속해줘."
+],
+[
+"That's a big promise.",
+"그건 큰 약속이에요."
+],
+[
+"He made a promise.",
+"그가 약속을 했어요."
 ]
 ]
 },
@@ -2678,6 +3862,14 @@
 [
 "Keep it in a safe place.",
 "안전한 데 보관하세요."
+],
+[
+"The water is safe to drink.",
+"이 물은 마셔도 안전해요."
+],
+[
+"Drive safe.",
+"조심히 운전하세요."
 ]
 ]
 },
@@ -2696,6 +3888,14 @@
 [
 "I didn't tell anybody.",
 "아무한테도 말 안 했어."
+],
+[
+"Anybody home?",
+"집에 누구 있어요?"
+],
+[
+"Anybody could see that.",
+"누가 봐도 알겠어요."
 ]
 ]
 },
@@ -2714,6 +3914,14 @@
 [
 "Perfect, thank you.",
 "좋아요, 감사합니다."
+],
+[
+"It's a perfect fit.",
+"딱 맞아요."
+],
+[
+"Her English is perfect.",
+"그녀 영어는 완벽해요."
 ]
 ]
 },
@@ -2732,6 +3940,14 @@
 [
 "Perhaps we should ask.",
 "물어보는 게 좋겠어요."
+],
+[
+"Perhaps it's too late.",
+"너무 늦었는지도 몰라요."
+],
+[
+"Perhaps you're right.",
+"당신 말이 맞을지도요."
 ]
 ]
 },
@@ -2750,6 +3966,14 @@
 [
 "Sounds like a plan.",
 "그렇게 하죠."
+],
+[
+"The engine sounds bad.",
+"엔진 소리가 안 좋아요."
+],
+[
+"She sounds happy.",
+"그녀 목소리가 밝아요."
 ]
 ]
 },
@@ -2768,6 +3992,14 @@
 [
 "He looks serious.",
 "걔 표정이 진지해."
+],
+[
+"This is a serious problem.",
+"이건 심각한 문제예요."
+],
+[
+"Be serious for a moment.",
+"잠깐만 진지해져 봐요."
 ]
 ]
 },
@@ -2786,6 +4018,14 @@
 [
 "Thanks for the company.",
 "같이 있어줘서 고마워요."
+],
+[
+"The company pays well.",
+"그 회사는 급여가 좋아요."
+],
+[
+"He started a company.",
+"그는 회사를 차렸어요."
 ]
 ]
 },
@@ -2804,6 +4044,14 @@
 [
 "I visited my uncle.",
 "삼촌을 뵈러 갔어요."
+],
+[
+"My uncle called today.",
+"삼촌이 오늘 전화했어요."
+],
+[
+"Her uncle is a chef.",
+"그녀 삼촌은 요리사예요."
 ]
 ]
 },
@@ -2822,6 +4070,14 @@
 [
 "He grew up poor.",
 "걔는 어렵게 자랐어."
+],
+[
+"The poor man lost his job.",
+"그 딱한 사람이 실직했어요."
+],
+[
+"The service was poor.",
+"서비스가 별로였어요."
 ]
 ]
 },
@@ -2840,6 +4096,14 @@
 [
 "It fell to the earth.",
 "땅에 떨어졌어요."
+],
+[
+"Earth has one moon.",
+"지구엔 달이 하나예요."
+],
+[
+"Nothing on earth is free.",
+"세상에 공짜는 없어요."
 ]
 ]
 },
@@ -2858,6 +4122,14 @@
 [
 "The sound is too loud.",
 "소리가 너무 커요."
+],
+[
+"The sound stopped.",
+"소리가 멈췄어요."
+],
+[
+"It doesn't sound right.",
+"뭔가 이상한데요."
 ]
 ]
 },
@@ -2876,6 +4148,14 @@
 [
 "He kept asking why.",
 "걔가 계속 왜냐고 물었어."
+],
+[
+"Thanks for asking.",
+"물어봐 줘서 고마워요."
+],
+[
+"She is asking too much.",
+"그녀는 너무 많이 요구해요."
 ]
 ]
 },
@@ -2888,12 +4168,20 @@
 "우리 이길 수 있어."
 ],
 [
-"Who won?",
-"누가 이겼어?"
+"I hope they win.",
+"그들이 이겼으면 좋겠어요."
 ],
 [
 "I never win.",
 "난 한 번도 못 이겨."
+],
+[
+"They win every year.",
+"그들은 매년 우승해요."
+],
+[
+"The win was close.",
+"아슬아슬한 승리였어요."
 ]
 ]
 },
@@ -2912,6 +4200,14 @@
 [
 "Keep it under control.",
 "잘 관리하세요."
+],
+[
+"He lost control of the car.",
+"그는 차를 제어하지 못했어요."
+],
+[
+"Control your temper.",
+"화 좀 참으세요."
 ]
 ]
 },
@@ -2930,6 +4226,14 @@
 [
 "Dry your hair.",
 "머리 말려."
+],
+[
+"My hair is wet.",
+"머리가 젖었어요."
+],
+[
+"He has short hair.",
+"그는 머리가 짧아요."
 ]
 ]
 },
@@ -2948,6 +4252,14 @@
 [
 "With any luck, we'll make it.",
 "운이 좋으면 갈 수 있어요."
+],
+[
+"Luck was on our side.",
+"운이 우리 편이었어요."
+],
+[
+"Wish me luck.",
+"행운을 빌어 줘요."
 ]
 ]
 },
@@ -2966,6 +4278,14 @@
 [
 "Open the window for air.",
 "환기 좀 시켜."
+],
+[
+"The air is dry today.",
+"오늘 공기가 건조해요."
+],
+[
+"Let some air in.",
+"환기 좀 시켜요."
 ]
 ]
 },
@@ -2984,6 +4304,14 @@
 [
 "Daddy, look at this.",
 "아빠, 이거 봐."
+],
+[
+"Daddy is at work.",
+"아빠는 일하러 갔어."
+],
+[
+"My daddy made this.",
+"우리 아빠가 만들었어요."
 ]
 ]
 },
@@ -3002,6 +4330,14 @@
 [
 "He finally answered.",
 "걔가 드디어 답했어."
+],
+[
+"Finally, some good news.",
+"드디어 좋은 소식이네요."
+],
+[
+"She finally arrived.",
+"그녀가 드디어 도착했어요."
 ]
 ]
 },
@@ -3014,12 +4350,20 @@
 "피곤해 보여요."
 ],
 [
-"It seems closed.",
-"닫은 것 같아요."
+"They seem busy.",
+"그들은 바빠 보여요."
 ],
 [
 "They seem nice.",
 "좋은 분들 같아요."
+],
+[
+"It doesn't seem right.",
+"뭔가 아닌 것 같아요."
+],
+[
+"You don't seem sure.",
+"확신이 없어 보이세요."
 ]
 ]
 },
@@ -3038,6 +4382,14 @@
 [
 "Words are not enough.",
 "말로는 부족해요."
+],
+[
+"Choose your words carefully.",
+"말을 조심해서 하세요."
+],
+[
+"A few words, please.",
+"한 말씀 부탁드려요."
 ]
 ]
 },
@@ -3056,6 +4408,14 @@
 [
 "Let's hang out later.",
 "이따 같이 놀자."
+],
+[
+"Hang the picture higher.",
+"그림을 더 높이 거세요."
+],
+[
+"Don't hang up yet.",
+"아직 끊지 마세요."
 ]
 ]
 },
@@ -3074,6 +4434,14 @@
 [
 "Till tomorrow, then.",
 "그럼 내일 봐요."
+],
+[
+"It's closed till Monday.",
+"월요일까지 닫아요."
+],
+[
+"Count till ten.",
+"열까지 세세요."
 ]
 ]
 },
@@ -3092,6 +4460,14 @@
 [
 "Ask the others too.",
 "다른 분들께도 물어보세요."
+],
+[
+"Some left, others stayed.",
+"몇몇은 가고 몇몇은 남았어요."
+],
+[
+"Help the others first.",
+"다른 분들 먼저 도와주세요."
 ]
 ]
 },
@@ -3110,6 +4486,14 @@
 [
 "I didn't catch that.",
 "못 알아들었어요."
+],
+[
+"Catch you later.",
+"나중에 봐요."
+],
+[
+"Did you catch a cold?",
+"감기 걸렸어요?"
 ]
 ]
 },
@@ -3128,6 +4512,14 @@
 [
 "He has a good sense of humor.",
 "걔는 유머 감각이 좋아."
+],
+[
+"Use your common sense.",
+"상식적으로 생각하세요."
+],
+[
+"I sense a problem.",
+"뭔가 문제가 있는 것 같아요."
 ]
 ]
 },
@@ -3146,6 +4538,14 @@
 [
 "Lie down and rest.",
 "누워서 쉬어."
+],
+[
+"He told a lie.",
+"그는 거짓말을 했어요."
+],
+[
+"Let the dog lie there.",
+"개는 거기 눕게 두세요."
 ]
 ]
 },
@@ -3162,8 +4562,16 @@
 "제 꿈의 직업이에요."
 ],
 [
-"Sweet dreams.",
-"잘 자."
+"It was just a dream.",
+"그냥 꿈이었어요."
+],
+[
+"Follow your dream.",
+"꿈을 좇으세요."
+],
+[
+"In my dream, I could fly.",
+"꿈에서 저는 날 수 있었어요."
 ]
 ]
 },
@@ -3182,6 +4590,14 @@
 [
 "I'd rather not.",
 "안 하는 게 좋겠어요."
+],
+[
+"I'd rather walk.",
+"차라리 걸을래요."
+],
+[
+"It's rather late now.",
+"지금 좀 늦었어요."
 ]
 ]
 },
@@ -3200,6 +4616,14 @@
 [
 "She felt better after lunch.",
 "점심 먹고 나아졌어."
+],
+[
+"It felt like home.",
+"집처럼 편했어요."
+],
+[
+"He felt the rain.",
+"그는 빗방울을 느꼈어요."
 ]
 ]
 },
@@ -3218,6 +4642,14 @@
 [
 "I'm not lucky today.",
 "오늘은 운이 없네."
+],
+[
+"This is my lucky day.",
+"오늘 운수 대통이에요."
+],
+[
+"Lucky you!",
+"좋겠다!"
 ]
 ]
 },
@@ -3236,6 +4668,14 @@
 [
 "Somewhere near here.",
 "이 근처 어딘가요."
+],
+[
+"Put it somewhere safe.",
+"안전한 데 두세요."
+],
+[
+"It must be somewhere here.",
+"여기 어딘가 있을 거예요."
 ]
 ]
 },
@@ -3254,6 +4694,14 @@
 [
 "I bet you're tired.",
 "피곤하시겠어요."
+],
+[
+"That's a safe bet.",
+"그건 확실해요."
+],
+[
+"I bet he forgot.",
+"분명 잊었을 거예요."
 ]
 ]
 },
@@ -3272,6 +4720,14 @@
 [
 "Stay a little longer.",
 "조금만 더 있다 가."
+],
+[
+"The days are longer now.",
+"요즘 해가 길어요."
+],
+[
+"Nobody waits longer than me.",
+"저보다 오래 기다리는 사람 없어요."
 ]
 ]
 },
@@ -3288,8 +4744,16 @@
 "어제 늦게까지 일했어요."
 ],
 [
-"That didn't work.",
-"그건 안 통했어."
+"The plan worked well.",
+"계획이 잘 통했어요."
+],
+[
+"She worked all weekend.",
+"그녀는 주말 내내 일했어요."
+],
+[
+"Nothing worked.",
+"아무것도 안 됐어요."
 ]
 ]
 },
@@ -3308,6 +4772,14 @@
 [
 "It looked expensive.",
 "비싸 보였어요."
+],
+[
+"He looked at the map.",
+"그가 지도를 봤어요."
+],
+[
+"The room looked clean.",
+"방이 깨끗해 보였어요."
 ]
 ]
 },
@@ -3326,6 +4798,14 @@
 [
 "Can you keep a secret?",
 "비밀 지킬 수 있어?"
+],
+[
+"It's our little secret.",
+"우리끼리 비밀이에요."
+],
+[
+"The secret is the sauce.",
+"비결은 소스예요."
 ]
 ]
 },
@@ -3342,8 +4822,16 @@
 "가격이 내려갈 거예요."
 ],
 [
-"I fell on the stairs.",
-"계단에서 넘어졌어요."
+"Don't fall asleep here.",
+"여기서 잠들지 마세요."
+],
+[
+"Leaves fall in autumn.",
+"가을엔 잎이 떨어져요."
+],
+[
+"Prices always fall later.",
+"가격은 나중에 늘 떨어져요."
 ]
 ]
 },
@@ -3362,6 +4850,14 @@
 [
 "Whose fault is it?",
 "누구 잘못이야?"
+],
+[
+"The fault is mine.",
+"제 잘못이에요."
+],
+[
+"It's nobody's fault.",
+"누구 잘못도 아니에요."
 ]
 ]
 },
@@ -3380,6 +4876,14 @@
 [
 "The future looks good.",
 "앞날이 밝아 보여요."
+],
+[
+"Save for the future.",
+"미래를 위해 저축하세요."
+],
+[
+"The future is bright.",
+"앞날이 밝아요."
 ]
 ]
 },
@@ -3398,6 +4902,14 @@
 [
 "The sea is calm today.",
 "오늘 바다가 잔잔해요."
+],
+[
+"He stayed calm.",
+"그는 침착했어요."
+],
+[
+"Calm down, please.",
+"진정하세요."
 ]
 ]
 },
@@ -3416,6 +4928,14 @@
 [
 "What a wonderful place.",
 "정말 멋진 곳이네요."
+],
+[
+"You did a wonderful job.",
+"정말 잘하셨어요."
+],
+[
+"It's a wonderful idea.",
+"멋진 생각이에요."
 ]
 ]
 },
@@ -3434,6 +4954,14 @@
 [
 "He was mad about the delay.",
 "걔가 지연 때문에 화났어."
+],
+[
+"She looked mad.",
+"그녀는 화나 보였어요."
+],
+[
+"It's a mad rush.",
+"정신없이 바빠요."
 ]
 ]
 },
@@ -3452,6 +4980,14 @@
 [
 "Good evening, ladies.",
 "안녕하세요, 여러분."
+],
+[
+"The ladies are waiting.",
+"여자분들이 기다리세요."
+],
+[
+"Two ladies came in.",
+"여자분 두 분이 들어왔어요."
 ]
 ]
 },
@@ -3470,6 +5006,14 @@
 [
 "Learn from your mistakes.",
 "실수에서 배워."
+],
+[
+"Learn a new word daily.",
+"매일 단어 하나씩 배우세요."
+],
+[
+"It takes time to learn.",
+"배우는 데 시간이 걸려요."
 ]
 ]
 },
@@ -3488,6 +5032,14 @@
 [
 "It's hard to explain.",
 "설명하기 어려워요."
+],
+[
+"Please explain the bill.",
+"계산서 좀 설명해 주세요."
+],
+[
+"He tried to explain.",
+"그가 설명하려고 했어요."
 ]
 ]
 },
@@ -3504,8 +5056,16 @@
 "종이 한 장이요."
 ],
 [
-"It came in three pieces.",
-"세 조각으로 왔어요."
+"Give me one piece.",
+"한 조각만 주세요."
+],
+[
+"Take a piece of fruit.",
+"과일 하나 드세요."
+],
+[
+"This piece doesn't fit.",
+"이 조각이 안 맞아요."
 ]
 ]
 },
@@ -3518,12 +5078,20 @@
 "비행기가 곧 착륙해요."
 ],
 [
-"We landed on time.",
-"제시간에 도착했어요."
+"The land is dry here.",
+"여긴 땅이 메말라요."
 ],
 [
 "They bought land here.",
 "여기 땅을 샀어요."
+],
+[
+"We flew over green land.",
+"우리는 푸른 땅 위를 날았어요."
+],
+[
+"The land belongs to him.",
+"그 땅은 그의 것이에요."
 ]
 ]
 },
@@ -3542,6 +5110,14 @@
 [
 "No wonder you're tired.",
 "그러니 피곤하지."
+],
+[
+"It's a natural wonder.",
+"자연의 신비예요."
+],
+[
+"I wonder why.",
+"왜 그런지 모르겠어요."
 ]
 ]
 },
@@ -3560,6 +5136,14 @@
 [
 "Good questions.",
 "좋은 질문이에요."
+],
+[
+"The questions were easy.",
+"문제가 쉬웠어요."
+],
+[
+"Ask your questions now.",
+"지금 질문하세요."
 ]
 ]
 },
@@ -3578,6 +5162,14 @@
 [
 "Not worth the wait.",
 "기다릴 만하진 않아요."
+],
+[
+"The trip was worth every ringgit.",
+"여행은 돈값을 했어요."
+],
+[
+"His time is worth a lot.",
+"그의 시간은 값져요."
 ]
 ]
 },
@@ -3594,8 +5186,16 @@
 "제가 알아볼게요."
 ],
 [
-"We figured out the problem.",
-"문제를 알아냈어요."
+"She has a slim figure.",
+"그녀는 몸매가 날씬해요."
+],
+[
+"Check the figure again.",
+"숫자를 다시 확인하세요."
+],
+[
+"He is a public figure.",
+"그는 공인이에요."
 ]
 ]
 },
@@ -3614,6 +5214,14 @@
 [
 "None of my business.",
 "제 알 바 아니에요."
+],
+[
+"None of us knew.",
+"우리 중 아무도 몰랐어요."
+],
+[
+"There were none left.",
+"하나도 안 남았어요."
 ]
 ]
 },
@@ -3632,6 +5240,14 @@
 [
 "He works at a bank.",
 "걔는 은행에서 일해."
+],
+[
+"The plan works fine.",
+"그 방법 잘 돼요."
+],
+[
+"She works from home.",
+"그녀는 재택근무해요."
 ]
 ]
 },
@@ -3644,12 +5260,20 @@
 "자연스럽게 행동해."
 ],
 [
-"He acted fast.",
-"걔가 빨리 대처했어."
+"It's time to act.",
+"이제 행동할 때예요."
 ],
 [
 "Don't act like that.",
 "그렇게 굴지 마."
+],
+[
+"That was a kind act.",
+"친절한 행동이었어요."
+],
+[
+"He put on an act.",
+"그는 연기를 했어요."
 ]
 ]
 },
@@ -3668,6 +5292,14 @@
 [
 "That's just what I needed.",
 "딱 필요했던 거예요."
+],
+[
+"No help is needed.",
+"도움은 필요 없어요."
+],
+[
+"She needed a rest.",
+"그녀는 쉬어야 했어요."
 ]
 ]
 },
@@ -3686,6 +5318,14 @@
 [
 "He's acting weird.",
 "걔 좀 이상해."
+],
+[
+"It felt weird.",
+"기분이 이상했어요."
+],
+[
+"That's a weird smell.",
+"냄새가 이상해요."
 ]
 ]
 },
@@ -3704,6 +5344,14 @@
 [
 "She studies law.",
 "걔는 법을 공부해."
+],
+[
+"The law changed last year.",
+"법이 작년에 바뀌었어요."
+],
+[
+"He works in law.",
+"그는 법조계에서 일해요."
 ]
 ]
 },
@@ -3722,6 +5370,14 @@
 [
 "He needs your help.",
 "그는 네 도움이 필요해."
+],
+[
+"The car needs gas.",
+"차에 기름 넣어야 해요."
+],
+[
+"Nobody needs that much.",
+"그렇게까지 필요한 사람은 없어요."
 ]
 ]
 },
@@ -3740,6 +5396,14 @@
 [
 "Thank the lord for that.",
 "그건 정말 다행이에요."
+],
+[
+"The lord owned the land.",
+"영주가 그 땅을 소유했어요."
+],
+[
+"Good lord, look at the time.",
+"세상에, 시간 좀 봐요."
 ]
 ]
 },
@@ -3758,6 +5422,14 @@
 [
 "He is our team captain.",
 "그가 우리 팀 주장이에요."
+],
+[
+"The captain called us.",
+"기장님이 우리를 불렀어요."
+],
+[
+"He became a captain.",
+"그는 선장이 됐어요."
 ]
 ]
 },
@@ -3776,6 +5448,14 @@
 [
 "He acts like a king.",
 "그는 왕처럼 굴어요."
+],
+[
+"The king was kind.",
+"그 왕은 자애로웠어요."
+],
+[
+"He is king of the kitchen.",
+"그가 주방의 왕이에요."
 ]
 ]
 },
@@ -3794,6 +5474,14 @@
 [
 "My uncle lives abroad.",
 "삼촌은 외국에 살아요."
+],
+[
+"She lives alone now.",
+"그녀는 이제 혼자 살아요."
+],
+[
+"He lives for football.",
+"그는 축구가 인생이에요."
 ]
 ]
 },
@@ -3812,6 +5500,14 @@
 [
 "Shoot, I forgot my keys.",
 "아 참, 열쇠를 깜빡했어."
+],
+[
+"Let's shoot some photos.",
+"사진 좀 찍자."
+],
+[
+"Shoot straight with me.",
+"저한테 솔직하게 말해 주세요."
 ]
 ]
 },
@@ -3830,6 +5526,14 @@
 [
 "Nobody is perfect, we're human.",
 "완벽한 사람은 없어요, 다 사람인걸요."
+],
+[
+"It's only human to worry.",
+"걱정하는 건 사람이라 그래요."
+],
+[
+"The human body is amazing.",
+"인체는 놀라워요."
 ]
 ]
 },
@@ -3848,6 +5552,14 @@
 [
 "Jack is my neighbor.",
 "잭은 제 이웃이에요."
+],
+[
+"Jack fixed my bike.",
+"잭이 제 자전거를 고쳐 줬어요."
+],
+[
+"Use the jack carefully.",
+"잭을 조심해서 쓰세요."
 ]
 ]
 },
@@ -3866,6 +5578,14 @@
 [
 "It was a murder case.",
 "그건 살인 사건이었어요."
+],
+[
+"The murder was solved.",
+"그 살인 사건은 해결됐어요."
+],
+[
+"Getting there is murder.",
+"거기 가는 게 아주 고역이에요."
 ]
 ]
 },
@@ -3884,6 +5604,14 @@
 [
 "What happens next?",
 "다음엔 어떻게 되나요?"
+],
+[
+"It happens to me too.",
+"저한테도 그래요."
+],
+[
+"Nothing happens here.",
+"여긴 아무 일도 없어요."
 ]
 ]
 },
@@ -3902,6 +5630,14 @@
 [
 "She kept laughing all night.",
 "그녀는 밤새 계속 웃었어요."
+],
+[
+"We were all laughing.",
+"우리 다 웃었어요."
+],
+[
+"He is laughing again.",
+"그가 또 웃어요."
 ]
 ]
 },
@@ -3920,6 +5656,14 @@
 [
 "She wants to master English.",
 "그녀는 영어를 완전히 익히고 싶어해요."
+],
+[
+"The master returned home.",
+"주인이 집에 돌아왔어요."
+],
+[
+"She is a chess master.",
+"그녀는 체스 고수예요."
 ]
 ]
 },
@@ -3938,6 +5682,14 @@
 [
 "I have known her for years.",
 "그녀를 몇 년째 알고 지내요."
+],
+[
+"It's a known problem.",
+"알려진 문제예요."
+],
+[
+"He has known me for years.",
+"그는 저를 몇 년째 알아요."
 ]
 ]
 },
@@ -3956,6 +5708,14 @@
 [
 "The painting shows Jesus.",
 "그 그림엔 예수가 그려져 있어요."
+],
+[
+"The Jesus statue is tall.",
+"그 예수상은 높아요."
+],
+[
+"She prays to Jesus.",
+"그녀는 예수께 기도해요."
 ]
 ]
 },
@@ -3974,6 +5734,14 @@
 [
 "The sun beat down all day.",
 "햇볕이 하루 종일 내리쬈어요."
+],
+[
+"My heart beat fast.",
+"심장이 빨리 뛰었어요."
+],
+[
+"Beat the eggs first.",
+"달걀을 먼저 푸세요."
 ]
 ]
 },
@@ -3992,6 +5760,14 @@
 [
 "Looking forward to seeing you.",
 "만나뵙기를 기대할게요."
+],
+[
+"Seeing is believing.",
+"백문이 불여일견이에요."
+],
+[
+"I'm seeing her tonight.",
+"오늘 밤 그녀를 만나요."
 ]
 ]
 },
@@ -4010,6 +5786,14 @@
 [
 "Given the rain, let's stay in.",
 "비도 오니 그냥 집에 있자."
+],
+[
+"Any given day is fine.",
+"아무 날이나 괜찮아요."
+],
+[
+"He was given a warning.",
+"그는 경고를 받았어요."
 ]
 ]
 },
@@ -4028,6 +5812,14 @@
 [
 "We loved our trip.",
 "우리 여행 정말 좋았어요."
+],
+[
+"They loved the show.",
+"그들은 공연을 아주 좋아했어요."
+],
+[
+"He loved his old car.",
+"그는 낡은 차를 아꼈어요."
 ]
 ]
 },
@@ -4046,6 +5838,14 @@
 [
 "She turned off the light.",
 "그녀가 불을 껐어요."
+],
+[
+"The weather turned cold.",
+"날씨가 추워졌어요."
+],
+[
+"He turned around.",
+"그가 뒤돌아봤어요."
 ]
 ]
 },
@@ -4064,6 +5864,14 @@
 [
 "I absolutely love it.",
 "저 이거 정말 좋아요."
+],
+[
+"Absolutely delicious.",
+"진짜 맛있어요."
+],
+[
+"I'm absolutely sure.",
+"저는 확신해요."
 ]
 ]
 },
@@ -4082,6 +5890,14 @@
 [
 "Dude, that's amazing.",
 "야, 그거 대단하다."
+],
+[
+"The dude was friendly.",
+"그 사람 친절했어요."
+],
+[
+"Dude, calm down.",
+"야, 진정해."
 ]
 ]
 },
@@ -4100,6 +5916,14 @@
 [
 "I'm giving up sugar.",
 "저 설탕 끊는 중이에요."
+],
+[
+"Giving is better than getting.",
+"주는 게 받는 것보다 나아요."
+],
+[
+"She is giving it away.",
+"그녀가 그걸 공짜로 줘요."
 ]
 ]
 },
@@ -4118,6 +5942,14 @@
 [
 "The president gave a speech.",
 "대통령이 연설했어요."
+],
+[
+"The president left early.",
+"대통령이 일찍 떠났어요."
+],
+[
+"He became president.",
+"그는 회장이 됐어요."
 ]
 ]
 },
@@ -4136,6 +5968,14 @@
 [
 "The small ones are sold out.",
 "작은 건 다 팔렸어요."
+],
+[
+"Which ones do you want?",
+"어떤 걸로 드릴까요?"
+],
+[
+"The old ones still work.",
+"옛날 것도 아직 잘 돼요."
 ]
 ]
 },
@@ -4154,6 +5994,14 @@
 [
 "The weather report says rain.",
 "일기예보에 비 온대요."
+],
+[
+"The report is due today.",
+"보고서는 오늘까지예요."
+],
+[
+"Report to the front desk.",
+"프런트에 알리세요."
 ]
 ]
 },
@@ -4172,6 +6020,14 @@
 [
 "One piece is missing.",
 "한 조각이 없어요."
+],
+[
+"The missing bag was found.",
+"없어진 가방을 찾았어요."
+],
+[
+"Two pages are missing.",
+"두 쪽이 빠졌어요."
 ]
 ]
 },
@@ -4190,6 +6046,14 @@
 [
 "That's a good choice.",
 "좋은 선택이에요."
+],
+[
+"You have a choice.",
+"선택권이 있어요."
+],
+[
+"It was the right choice.",
+"옳은 선택이었어요."
 ]
 ]
 },
@@ -4208,6 +6072,14 @@
 [
 "Something strange is happening.",
 "뭔가 이상한 일이 일어나고 있어요."
+],
+[
+"It's happening now.",
+"지금 벌어지고 있어요."
+],
+[
+"Nothing much is happening.",
+"별일 없어요."
 ]
 ]
 },
@@ -4226,6 +6098,14 @@
 [
 "She is our chief cook.",
 "그녀가 우리 주방장이에요."
+],
+[
+"The chief agreed.",
+"책임자가 동의했어요."
+],
+[
+"He is chief of the team.",
+"그가 팀장이에요."
 ]
 ]
 },
@@ -4244,6 +6124,14 @@
 [
 "The wedding was beautiful.",
 "결혼식이 정말 아름다웠어요."
+],
+[
+"We danced at the wedding.",
+"결혼식에서 춤췄어요."
+],
+[
+"The wedding is outdoors.",
+"결혼식은 야외에서 해요."
 ]
 ]
 },
@@ -4262,6 +6150,14 @@
 [
 "A strange man knocked.",
 "모르는 남자가 문을 두드렸어요."
+],
+[
+"Strange things happen here.",
+"여긴 이상한 일이 생겨요."
+],
+[
+"It felt strange.",
+"기분이 묘했어요."
 ]
 ]
 },
@@ -4280,6 +6176,14 @@
 [
 "He is a retired general.",
 "그는 퇴역한 장군이에요."
+],
+[
+"The general rule is simple.",
+"일반적인 규칙은 간단해요."
+],
+[
+"In general, I agree.",
+"대체로 동의해요."
 ]
 ]
 },
@@ -4298,6 +6202,14 @@
 [
 "Have you decided yet?",
 "결정하셨어요?"
+],
+[
+"He decided to wait.",
+"그는 기다리기로 했어요."
+],
+[
+"Nothing was decided.",
+"결정된 건 없어요."
 ]
 ]
 },
@@ -4316,6 +6228,14 @@
 [
 "An officer helped us.",
 "경찰관이 우리를 도와줬어요."
+],
+[
+"The officer was kind.",
+"그 경찰관은 친절했어요."
+],
+[
+"A traffic officer stopped us.",
+"교통경찰이 우리를 세웠어요."
 ]
 ]
 },
@@ -4334,6 +6254,14 @@
 [
 "She kept her promise.",
 "그녀는 약속을 지켰어요."
+],
+[
+"She kept quiet.",
+"그녀는 조용히 있었어요."
+],
+[
+"We kept walking.",
+"우리는 계속 걸었어요."
 ]
 ]
 },
@@ -4352,6 +6280,14 @@
 [
 "That's even worse.",
 "그건 더 안 좋아요."
+],
+[
+"It could be worse.",
+"이보다 나쁠 수도 있었죠."
+],
+[
+"My cold got worse.",
+"감기가 더 심해졌어요."
 ]
 ]
 },
@@ -4370,6 +6306,14 @@
 [
 "Sorry, my mistake.",
 "죄송해요, 제가 잘못했어요."
+],
+[
+"Don't make the same mistake.",
+"같은 실수를 하지 마세요."
+],
+[
+"That was a costly mistake.",
+"값비싼 실수였어요."
 ]
 ]
 },
@@ -4388,6 +6332,14 @@
 [
 "Kiss the baby goodnight.",
 "아기한테 잘 자라고 뽀뽀해 줘."
+],
+[
+"A kiss on the cheek.",
+"볼에 뽀뽀."
+],
+[
+"She gave me a kiss.",
+"그녀가 저에게 뽀뽀했어요."
 ]
 ]
 },
@@ -4406,6 +6358,14 @@
 [
 "Age is just a number.",
 "나이는 숫자일 뿐이에요."
+],
+[
+"At my age, I need rest.",
+"제 나이엔 쉬어야 해요."
+],
+[
+"The house shows its age.",
+"집이 오래돼 보여요."
 ]
 ]
 },
@@ -4424,6 +6384,14 @@
 [
 "They ship it for free.",
 "무료로 배송해 줘요."
+],
+[
+"The ship is full.",
+"배가 만석이에요."
+],
+[
+"We watched the ship leave.",
+"배가 떠나는 걸 봤어요."
 ]
 ]
 },
@@ -4442,6 +6410,14 @@
 [
 "She caught the ball.",
 "그녀가 공을 잡았어요."
+],
+[
+"I caught him sleeping.",
+"그가 자는 걸 봤어요."
+],
+[
+"The bag caught on the door.",
+"가방이 문에 걸렸어요."
 ]
 ]
 },
@@ -4460,6 +6436,14 @@
 [
 "It was meant to be.",
 "그렇게 될 일이었어요."
+],
+[
+"She meant well.",
+"그녀는 좋은 뜻으로 그랬어요."
+],
+[
+"I meant it.",
+"진심이었어요."
 ]
 ]
 },
@@ -4478,6 +6462,14 @@
 [
 "He is watching TV.",
 "그는 티비 보고 있어요."
+],
+[
+"Watching TV is boring.",
+"티비 보는 건 지루해요."
+],
+[
+"Who is watching the shop?",
+"가게는 누가 봐요?"
 ]
 ]
 },
@@ -4496,6 +6488,14 @@
 [
 "We need a better system.",
 "더 나은 방법이 필요해요."
+],
+[
+"The system works well.",
+"그 방식 잘 돼요."
+],
+[
+"It's a new system.",
+"새 시스템이에요."
 ]
 ]
 },
@@ -4514,6 +6514,14 @@
 [
 "I suppose you're right.",
 "네 말이 맞는 것 같아."
+],
+[
+"What do you suppose happened?",
+"무슨 일이 있었던 것 같아요?"
+],
+[
+"I suppose we should leave.",
+"이제 가야 할 것 같아요."
 ]
 ]
 },
@@ -4532,6 +6540,14 @@
 [
 "Show me the evidence.",
 "증거를 보여주세요."
+],
+[
+"The evidence is clear.",
+"증거가 명확해요."
+],
+[
+"He hid the evidence.",
+"그가 증거를 숨겼어요."
 ]
 ]
 },
@@ -4550,6 +6566,14 @@
 [
 "I totally forgot.",
 "완전히 깜빡했어요."
+],
+[
+"You're totally right.",
+"완전 맞는 말이에요."
+],
+[
+"It's totally different.",
+"완전히 달라요."
 ]
 ]
 },
@@ -4568,6 +6592,14 @@
 [
 "He is a born leader.",
 "그는 타고난 리더예요."
+],
+[
+"She was born in March.",
+"그녀는 3월에 태어났어요."
+],
+[
+"Where were you born?",
+"어디서 태어나셨어요?"
 ]
 ]
 },
@@ -4586,6 +6618,14 @@
 [
 "Imagine how happy she was.",
 "그녀가 얼마나 기뻤을지 상상해 봐."
+],
+[
+"Imagine the noise.",
+"그 소음을 상상해 보세요."
+],
+[
+"I imagine it's expensive.",
+"비쌀 것 같은데요."
 ]
 ]
 },
@@ -4604,6 +6644,14 @@
 [
 "Definitely not today.",
 "오늘은 절대 아니에요."
+],
+[
+"It's definitely worth it.",
+"확실히 값어치 해요."
+],
+[
+"She definitely knows.",
+"그녀는 분명 알아요."
 ]
 ]
 },
@@ -4622,6 +6670,14 @@
 [
 "I'll certainly try.",
 "꼭 해볼게요."
+],
+[
+"It certainly looks good.",
+"확실히 좋아 보여요."
+],
+[
+"I certainly hope so.",
+"정말 그러길 바라요."
 ]
 ]
 },
@@ -4640,6 +6696,14 @@
 [
 "They are making a film.",
 "그들은 영화를 찍고 있어요."
+],
+[
+"The film was too long.",
+"영화가 너무 길었어요."
+],
+[
+"We saw a French film.",
+"프랑스 영화를 봤어요."
 ]
 ]
 },
@@ -4658,6 +6722,14 @@
 [
 "Stop lying, please.",
 "제발 거짓말 좀 그만해."
+],
+[
+"Why are you lying?",
+"왜 거짓말해요?"
+],
+[
+"The keys were lying there.",
+"열쇠가 거기 놓여 있었어요."
 ]
 ]
 },
@@ -4676,6 +6748,14 @@
 [
 "Don't call unless it's urgent.",
 "급한 거 아니면 전화하지 마세요."
+],
+[
+"Unless it's free, no thanks.",
+"공짜 아니면 됐어요."
+],
+[
+"Unless you're busy, join us.",
+"안 바쁘시면 같이 가요."
 ]
 ]
 },
@@ -4694,6 +6774,14 @@
 [
 "I need warm clothes.",
 "따뜻한 옷이 필요해요."
+],
+[
+"Hang the clothes outside.",
+"빨래를 밖에 너세요."
+],
+[
+"The clothes shop closed.",
+"옷 가게가 문 닫았어요."
 ]
 ]
 },
@@ -4712,6 +6800,14 @@
 [
 "Christmas is on Thursday.",
 "크리스마스는 목요일이에요."
+],
+[
+"The Christmas lights are on.",
+"크리스마스 전구가 켜졌어요."
+],
+[
+"What did you get for Christmas?",
+"크리스마스에 뭐 받았어요?"
 ]
 ]
 },
@@ -4730,6 +6826,14 @@
 [
 "It was a panic attack.",
 "공황 발작이었어요."
+],
+[
+"The attack came suddenly.",
+"공격이 갑자기 시작됐어요."
+],
+[
+"She had an asthma attack.",
+"그녀는 천식 발작이 왔어요."
 ]
 ]
 },
@@ -4748,6 +6852,14 @@
 [
 "We expect ten guests.",
 "손님 열 분을 예상해요."
+],
+[
+"What do you expect?",
+"뭘 기대하세요?"
+],
+[
+"I didn't expect that.",
+"그건 예상 못 했어요."
 ]
 ]
 },
@@ -4766,6 +6878,14 @@
 [
 "That's a terrible idea.",
 "그건 정말 안 좋은 생각이에요."
+],
+[
+"The traffic was terrible.",
+"교통이 최악이었어요."
+],
+[
+"What a terrible smell.",
+"냄새가 지독하네요."
 ]
 ]
 },
@@ -4784,6 +6904,14 @@
 [
 "Check your search history.",
 "검색 기록을 확인해 봐."
+],
+[
+"History repeats itself.",
+"역사는 반복돼요."
+],
+[
+"He knows local history.",
+"그는 이 지역 역사를 알아요."
 ]
 ]
 },
@@ -4802,6 +6930,14 @@
 [
 "I'm broke this month.",
 "저 이번 달 돈이 없어요."
+],
+[
+"The chair broke last night.",
+"어젯밤에 의자가 부서졌어요."
+],
+[
+"She broke her promise.",
+"그녀는 약속을 어겼어요."
 ]
 ]
 },
@@ -4820,6 +6956,14 @@
 [
 "He was seriously hurt.",
 "그는 심하게 다쳤어요."
+],
+[
+"Are you seriously going?",
+"진짜 가는 거예요?"
+],
+[
+"I seriously doubt it.",
+"정말 아닐 것 같아요."
 ]
 ]
 },
@@ -4838,6 +6982,14 @@
 [
 "Nothing lasts forever.",
 "영원한 건 없어요."
+],
+[
+"The line took forever.",
+"줄이 정말 오래 걸렸어요."
+],
+[
+"I'll remember it forever.",
+"평생 기억할게요."
 ]
 ]
 },
@@ -4856,6 +7008,14 @@
 [
 "Let me be frank with you.",
 "솔직하게 말씀드릴게요."
+],
+[
+"Frank is my coworker.",
+"프랭크는 제 동료예요."
+],
+[
+"A frank talk helps.",
+"솔직한 대화가 도움돼요."
 ]
 ]
 },
@@ -4874,6 +7034,14 @@
 [
 "I like all fruit except durian.",
 "두리안 빼고 과일 다 좋아해요."
+],
+[
+"All done except one.",
+"하나 빼고 다 됐어요."
+],
+[
+"Nobody knew except me.",
+"저 말고는 아무도 몰랐어요."
 ]
 ]
 },
@@ -4892,6 +7060,14 @@
 [
 "Nobody thinks that.",
 "아무도 그렇게 생각 안 해요."
+],
+[
+"She thinks it's funny.",
+"그녀는 웃기다고 생각해요."
+],
+[
+"He thinks before he speaks.",
+"그는 말하기 전에 생각해요."
 ]
 ]
 },
@@ -4910,6 +7086,14 @@
 [
 "It rained the entire day.",
 "하루 종일 비가 왔어요."
+],
+[
+"The entire street was closed.",
+"길 전체가 통제됐어요."
+],
+[
+"I read the entire book.",
+"책을 다 읽었어요."
 ]
 ]
 },
@@ -4928,6 +7112,14 @@
 [
 "Ask Joe about it.",
 "그건 조한테 물어봐요."
+],
+[
+"Joe brought the drinks.",
+"조가 음료를 가져왔어요."
+],
+[
+"Joe is on holiday.",
+"조는 휴가 중이에요."
 ]
 ]
 },
@@ -4946,6 +7138,14 @@
 [
 "She talked about her trip.",
 "그녀는 여행 얘기를 했어요."
+],
+[
+"They talked all evening.",
+"그들은 저녁 내내 얘기했어요."
+],
+[
+"Nobody talked about it.",
+"아무도 그 얘길 안 했어요."
 ]
 ]
 },
@@ -4964,6 +7164,14 @@
 [
 "The bread is hard as a rock.",
 "빵이 돌처럼 딱딱해요."
+],
+[
+"The rock is slippery.",
+"바위가 미끄러워요."
+],
+[
+"He plays rock guitar.",
+"그는 록 기타를 쳐요."
 ]
 ]
 },
@@ -4982,6 +7190,14 @@
 [
 "That's a lovely dress.",
 "드레스가 정말 예뻐요."
+],
+[
+"What a lovely garden.",
+"정원이 참 예뻐요."
+],
+[
+"She is a lovely person.",
+"그녀는 참 좋은 사람이에요."
 ]
 ]
 },
@@ -5000,6 +7216,14 @@
 [
 "Put it in the middle.",
 "가운데에 놓으세요."
+],
+[
+"It's in the middle drawer.",
+"가운데 서랍에 있어요."
+],
+[
+"We left in the middle.",
+"우리는 중간에 나왔어요."
 ]
 ]
 },
@@ -5018,6 +7242,14 @@
 [
 "Thanks a lot, buddy.",
 "진짜 고마워, 친구."
+],
+[
+"My buddy works there.",
+"제 친구가 거기서 일해요."
+],
+[
+"Come on, buddy.",
+"자, 친구."
 ]
 ]
 },
@@ -5036,6 +7268,14 @@
 [
 "We must protect the kids.",
 "우리는 아이들을 지켜야 해요."
+],
+[
+"A case will protect it.",
+"케이스가 보호해 줘요."
+],
+[
+"Protect your eyes from the sun.",
+"햇빛에서 눈을 보호하세요."
 ]
 ]
 },
@@ -5054,6 +7294,14 @@
 [
 "She is using my charger.",
 "그녀가 제 충전기를 쓰고 있어요."
+],
+[
+"Stop using my towel.",
+"제 수건 좀 그만 쓰세요."
+],
+[
+"He is using an old phone.",
+"그는 오래된 폰을 써요."
 ]
 ]
 },
@@ -5072,6 +7320,14 @@
 [
 "The situation got better.",
 "상황이 나아졌어요."
+],
+[
+"The situation is under control.",
+"상황은 통제되고 있어요."
+],
+[
+"It's a strange situation.",
+"이상한 상황이에요."
 ]
 ]
 },
@@ -5090,6 +7346,14 @@
 [
 "Don't do anything dangerous.",
 "위험한 짓 하지 마세요."
+],
+[
+"Swimming here is dangerous.",
+"여기서 수영하면 위험해요."
+],
+[
+"It's a dangerous corner.",
+"위험한 모퉁이예요."
 ]
 ]
 },
@@ -5108,6 +7372,14 @@
 [
 "The army helped after the flood.",
 "홍수 후에 군인들이 도왔어요."
+],
+[
+"The army built the bridge.",
+"군이 다리를 놓았어요."
+],
+[
+"An army of ants came.",
+"개미 떼가 몰려왔어요."
 ]
 ]
 },
@@ -5126,6 +7398,14 @@
 [
 "She will lead the team.",
 "그녀가 팀을 이끌 거예요."
+],
+[
+"Follow my lead.",
+"제가 하는 대로 따라 하세요."
+],
+[
+"Old pipes may have lead.",
+"오래된 배관엔 납이 있을 수 있어요."
 ]
 ]
 },
@@ -5144,6 +7424,14 @@
 [
 "The price seems fair.",
 "가격이 적당한 것 같아요."
+],
+[
+"Be fair to your brother.",
+"동생한테 공평하게 하렴."
+],
+[
+"The weather is fair today.",
+"오늘 날씨가 괜찮아요."
 ]
 ]
 },
@@ -5162,6 +7450,14 @@
 [
 "April Fool's Day is fun.",
 "만우절은 재밌어요."
+],
+[
+"Don't fool around.",
+"장난치지 마세요."
+],
+[
+"He is nobody's fool.",
+"그는 만만한 사람이 아니에요."
 ]
 ]
 },
@@ -5180,6 +7476,14 @@
 [
 "I want a simple meal.",
 "간단한 식사를 원해요."
+],
+[
+"Simple is best.",
+"단순한 게 최고예요."
+],
+[
+"The answer is simple.",
+"답은 간단해요."
 ]
 ]
 },
@@ -5198,6 +7502,14 @@
 [
 "He told an interesting story.",
 "그는 재미있는 이야기를 했어요."
+],
+[
+"It's an interesting place.",
+"흥미로운 곳이에요."
+],
+[
+"That's an interesting point.",
+"흥미로운 지적이네요."
 ]
 ]
 },
@@ -5216,6 +7528,14 @@
 [
 "He loves space movies.",
 "그는 우주 영화를 좋아해요."
+],
+[
+"Leave some space here.",
+"여기 자리를 좀 남기세요."
+],
+[
+"The space is too small.",
+"공간이 너무 좁아요."
 ]
 ]
 },
@@ -5234,6 +7554,14 @@
 [
 "Join our chat group.",
 "우리 채팅방에 들어와요."
+],
+[
+"Our group is full.",
+"우리 그룹은 다 찼어요."
+],
+[
+"A group of tourists arrived.",
+"관광객 한 무리가 왔어요."
 ]
 ]
 },
@@ -5252,6 +7580,14 @@
 [
 "They have a happy marriage.",
 "그들은 결혼 생활이 행복해요."
+],
+[
+"Their marriage lasted long.",
+"그들 결혼 생활은 오래갔어요."
+],
+[
+"It's her second marriage.",
+"그녀의 두 번째 결혼이에요."
 ]
 ]
 },
@@ -5270,6 +7606,14 @@
 [
 "There's nothing to fear.",
 "무서워할 것 없어요."
+],
+[
+"Fear kept him awake.",
+"두려움에 잠을 못 잤어요."
+],
+[
+"She has no fear.",
+"그녀는 겁이 없어요."
 ]
 ]
 },
@@ -5288,6 +7632,14 @@
 [
 "The country is at peace.",
 "그 나라는 평화로워요."
+],
+[
+"Peace and quiet, at last.",
+"드디어 조용하네요."
+],
+[
+"Make peace with him.",
+"그와 화해하세요."
 ]
 ]
 },
@@ -5306,6 +7658,14 @@
 [
 "Nobody can force you.",
 "아무도 강요 못 해요."
+],
+[
+"The wind has real force.",
+"바람이 정말 세요."
+],
+[
+"They force us to wait.",
+"그들이 우릴 기다리게 해요."
 ]
 ]
 },
@@ -5324,6 +7684,14 @@
 [
 "Everything looks normal.",
 "다 정상으로 보여요."
+],
+[
+"Back to normal now.",
+"이제 정상으로 돌아왔어요."
+],
+[
+"That's not normal.",
+"그건 정상이 아니에요."
 ]
 ]
 },
@@ -5342,6 +7710,14 @@
 [
 "Let's enjoy the present.",
 "지금 이 순간을 즐기자."
+],
+[
+"He is present today.",
+"그는 오늘 출석했어요."
+],
+[
+"I wrapped the present.",
+"선물을 포장했어요."
 ]
 ]
 },
@@ -5360,6 +7736,14 @@
 [
 "He reported the crime.",
 "그는 범죄를 신고했어요."
+],
+[
+"Crime is going down.",
+"범죄가 줄고 있어요."
+],
+[
+"It's a crime to waste food.",
+"음식 버리는 건 죄예요."
 ]
 ]
 },
@@ -5378,6 +7762,14 @@
 [
 "We're on the ground floor.",
 "우리는 1층에 있어요."
+],
+[
+"The ground floor is busy.",
+"1층이 붐벼요."
+],
+[
+"Put your bag on the ground.",
+"가방을 바닥에 놓으세요."
 ]
 ]
 },
@@ -5396,6 +7788,14 @@
 [
 "We ate at an American diner.",
 "미국식 식당에서 먹었어요."
+],
+[
+"An American couple sat there.",
+"미국인 부부가 거기 앉았어요."
+],
+[
+"It's an American brand.",
+"미국 브랜드예요."
 ]
 ]
 },
@@ -5414,6 +7814,14 @@
 [
 "Let me count the money.",
 "돈 좀 세볼게요."
+],
+[
+"The count was wrong.",
+"계산이 틀렸어요."
+],
+[
+"Count me in.",
+"저도 낄게요."
 ]
 ]
 },
@@ -5432,6 +7840,14 @@
 [
 "They honor their parents.",
 "그들은 부모님을 공경해요."
+],
+[
+"It's a great honor.",
+"큰 영광이에요."
+],
+[
+"We honor her memory.",
+"우리는 그녀를 기려요."
 ]
 ]
 },
@@ -5450,6 +7866,14 @@
 [
 "The radio is too loud.",
 "라디오가 너무 시끄러워요."
+],
+[
+"The radio said rain.",
+"라디오에서 비 온대요."
+],
+[
+"He fixed the car radio.",
+"그가 차 라디오를 고쳤어요."
 ]
 ]
 },
@@ -5468,6 +7892,14 @@
 [
 "Don't spoil the surprise.",
 "깜짝 놀랄 일을 망치지 마."
+],
+[
+"The surprise worked.",
+"깜짝 이벤트가 성공했어요."
+],
+[
+"It came as a surprise.",
+"뜻밖이었어요."
 ]
 ]
 },
@@ -5486,6 +7918,14 @@
 [
 "We rented a small boat.",
 "작은 배를 빌렸어요."
+],
+[
+"The boat was full.",
+"배가 만석이었어요."
+],
+[
+"A boat passed by.",
+"배 한 척이 지나갔어요."
 ]
 ]
 },
@@ -5504,6 +7944,14 @@
 [
 "He won a gold medal.",
 "그는 금메달을 땄어요."
+],
+[
+"The gold shop is closed.",
+"금은방이 닫았어요."
+],
+[
+"It's not real gold.",
+"진짜 금이 아니에요."
 ]
 ]
 },
@@ -5522,6 +7970,14 @@
 [
 "Nobody was hurt in the accident.",
 "사고에서 다친 사람은 없어요."
+],
+[
+"The accident blocked the road.",
+"사고로 길이 막혔어요."
+],
+[
+"I found it by accident.",
+"우연히 찾았어요."
 ]
 ]
 },
@@ -5540,6 +7996,14 @@
 [
 "The government closed the road.",
 "정부가 도로를 폐쇄했어요."
+],
+[
+"The government pays for it.",
+"정부가 비용을 대요."
+],
+[
+"A government worker helped us.",
+"공무원이 도와줬어요."
 ]
 ]
 },
@@ -5558,6 +8022,14 @@
 [
 "She fell asleep early.",
 "그녀는 일찍 잠들었어요."
+],
+[
+"The vase fell over.",
+"꽃병이 넘어졌어요."
+],
+[
+"It fell out of my bag.",
+"가방에서 떨어졌어요."
 ]
 ]
 },
@@ -5576,6 +8048,14 @@
 [
 "Insurance will cover it.",
 "보험으로 처리될 거예요."
+],
+[
+"Cover your head.",
+"머리를 가리세요."
+],
+[
+"The cover is missing.",
+"덮개가 없어요."
 ]
 ]
 },
@@ -5594,6 +8074,14 @@
 [
 "Certain shops close early.",
 "어떤 가게들은 일찍 닫아요."
+],
+[
+"A certain shop sells it.",
+"어떤 가게에서 팔아요."
+],
+[
+"Nothing is certain.",
+"확실한 건 없어요."
 ]
 ]
 },
@@ -5612,6 +8100,14 @@
 [
 "He looked interested.",
 "그는 관심 있어 보였어요."
+],
+[
+"She is interested in art.",
+"그녀는 미술에 관심이 있어요."
+],
+[
+"Not interested, thanks.",
+"괜찮아요, 관심 없어요."
 ]
 ]
 },
@@ -5630,6 +8126,14 @@
 [
 "It's deep in the forest.",
 "숲 깊은 곳에 있어요."
+],
+[
+"The water is too deep.",
+"물이 너무 깊어요."
+],
+[
+"He is in deep trouble.",
+"그는 큰일 났어요."
 ]
 ]
 },
@@ -5648,6 +8152,14 @@
 [
 "I love the sea breeze.",
 "바닷바람이 좋아요."
+],
+[
+"We drove along the sea.",
+"바다를 따라 운전했어요."
+],
+[
+"Sea food is fresh here.",
+"여긴 해산물이 신선해요."
 ]
 ]
 },
@@ -5666,6 +8178,14 @@
 [
 "Do you agree?",
 "동의하세요?"
+],
+[
+"I couldn't agree more.",
+"전적으로 동의해요."
+],
+[
+"They didn't agree.",
+"그들은 동의하지 않았어요."
 ]
 ]
 },
@@ -5684,6 +8204,14 @@
 [
 "The car has problems.",
 "차에 문제가 있어요."
+],
+[
+"Problems come and go.",
+"문제는 생겼다 없어져요."
+],
+[
+"Solve the problems first.",
+"문제부터 해결하세요."
 ]
 ]
 },
@@ -5702,6 +8230,14 @@
 [
 "The detective solved it.",
 "형사가 사건을 해결했어요."
+],
+[
+"A detective called me.",
+"형사가 전화했어요."
+],
+[
+"The detective took notes.",
+"형사가 메모를 했어요."
 ]
 ]
 },
@@ -5720,6 +8256,14 @@
 [
 "She visited him in prison.",
 "그녀가 면회를 갔어요."
+],
+[
+"Prison changed him.",
+"교도소가 그를 바꿨어요."
+],
+[
+"He left prison last year.",
+"그는 작년에 출소했어요."
 ]
 ]
 },
@@ -5738,6 +8282,14 @@
 [
 "There was a major delay.",
 "큰 지연이 있었어요."
+],
+[
+"She is a major in the army.",
+"그녀는 육군 소령이에요."
+],
+[
+"It's a major road.",
+"주요 도로예요."
 ]
 ]
 },
@@ -5756,6 +8308,14 @@
 [
 "The rice will stick to the pot.",
 "밥이 냄비에 눌어붙어요."
+],
+[
+"The stick broke.",
+"막대기가 부러졌어요."
+],
+[
+"Stick it on the wall.",
+"벽에 붙이세요."
 ]
 ]
 },
@@ -5774,6 +8334,14 @@
 [
 "He asked a difficult question.",
 "그는 어려운 질문을 했어요."
+],
+[
+"It's a difficult choice.",
+"어려운 선택이에요."
+],
+[
+"Don't make it difficult.",
+"어렵게 만들지 마세요."
 ]
 ]
 },
@@ -5792,6 +8360,14 @@
 [
 "Keep your personal things safe.",
 "개인 물건 잘 챙기세요."
+],
+[
+"It's nothing personal.",
+"개인감정은 아니에요."
+],
+[
+"This is my personal phone.",
+"이건 제 개인 폰이에요."
 ]
 ]
 },
@@ -5810,6 +8386,14 @@
 [
 "Let me record this.",
 "이거 녹음할게요."
+],
+[
+"The record was broken.",
+"기록이 깨졌어요."
+],
+[
+"Play the old record.",
+"옛날 음반을 틀어요."
 ]
 ]
 },
@@ -5828,6 +8412,14 @@
 [
 "My watch stopped.",
 "시계가 멈췄어요."
+],
+[
+"The lift stopped working.",
+"엘리베이터가 멈췄어요."
+],
+[
+"She stopped by today.",
+"그녀가 오늘 들렀어요."
 ]
 ]
 },
@@ -5846,6 +8438,14 @@
 [
 "The kids like to hide.",
 "아이들은 숨는 걸 좋아해요."
+],
+[
+"Hide it in your bag.",
+"가방에 숨기세요."
+],
+[
+"There's nothing to hide.",
+"숨길 게 없어요."
 ]
 ]
 },
@@ -5864,6 +8464,14 @@
 [
 "Whether it rains or not, we go.",
 "비가 오든 말든 우린 가요."
+],
+[
+"Whether or not, we go.",
+"그러든 말든 우린 가요."
+],
+[
+"Check whether it's open.",
+"문 열었는지 확인해요."
 ]
 ]
 },
@@ -5882,6 +8490,14 @@
 [
 "Relax, we have time.",
 "진정해, 시간 있어."
+],
+[
+"Relax your shoulders.",
+"어깨에 힘을 빼세요."
+],
+[
+"The music helps me relax.",
+"음악이 긴장을 풀어줘요."
 ]
 ]
 },
@@ -5900,6 +8516,14 @@
 [
 "He studied in America.",
 "그는 미국에서 공부했어요."
+],
+[
+"America is a big country.",
+"미국은 큰 나라예요."
+],
+[
+"Her family is in America.",
+"그녀 가족은 미국에 있어요."
 ]
 ]
 },
@@ -5918,6 +8542,14 @@
 [
 "The brain needs rest.",
 "뇌도 쉬어야 해요."
+],
+[
+"He has a sharp brain.",
+"그는 머리가 좋아요."
+],
+[
+"Sleep helps the brain.",
+"잠이 뇌에 좋아요."
 ]
 ]
 },
@@ -5936,6 +8568,14 @@
 [
 "They will fix it tomorrow.",
 "내일 고쳐 준대요."
+],
+[
+"Let me fix your collar.",
+"옷깃 좀 고쳐 드릴게요."
+],
+[
+"A quick fix won't last.",
+"임시방편은 오래 못 가요."
 ]
 ]
 },
@@ -5954,6 +8594,14 @@
 [
 "He sings with soul.",
 "그는 감정을 담아 노래해요."
+],
+[
+"Not a soul was there.",
+"아무도 없었어요."
+],
+[
+"Music feeds the soul.",
+"음악이 마음을 채워 줘요."
 ]
 ]
 },
@@ -5972,6 +8620,14 @@
 [
 "They were fighting over a toy.",
 "장난감 때문에 다투고 있었어요."
+],
+[
+"They stopped fighting.",
+"그들은 싸움을 멈췄어요."
+],
+[
+"She is fighting a cold.",
+"그녀는 감기와 싸우고 있어요."
 ]
 ]
 },
@@ -5990,6 +8646,14 @@
 [
 "You don't need to be rich.",
 "부자일 필요는 없어요."
+],
+[
+"Rich or poor, be kind.",
+"부자든 아니든 친절하세요."
+],
+[
+"The cake is too rich.",
+"케이크가 너무 느끼해요."
 ]
 ]
 },
@@ -6008,6 +8672,14 @@
 [
 "The agent called me back.",
 "담당자가 다시 전화 줬어요."
+],
+[
+"The agent found us a house.",
+"중개인이 집을 찾아 줬어요."
+],
+[
+"Talk to your agent first.",
+"담당자와 먼저 얘기하세요."
 ]
 ]
 },
@@ -6026,6 +8698,14 @@
 [
 "That was a big blow.",
 "그건 큰 타격이었어요."
+],
+[
+"A blow to the head hurts.",
+"머리에 맞으면 아파요."
+],
+[
+"Let the soup blow off steam.",
+"국을 좀 식히세요."
 ]
 ]
 },
@@ -6044,6 +8724,14 @@
 [
 "It's my favorite scene.",
 "제가 제일 좋아하는 장면이에요."
+],
+[
+"The scene was quiet.",
+"현장은 조용했어요."
+],
+[
+"Don't make a scene.",
+"소란 피우지 마세요."
 ]
 ]
 },
@@ -6062,6 +8750,14 @@
 [
 "We're just killing time.",
 "그냥 시간 때우는 중이에요."
+],
+[
+"The wait is killing me.",
+"기다리다 죽겠어요."
+],
+[
+"She is killing it at work.",
+"그녀는 일을 아주 잘해요."
 ]
 ]
 },
@@ -6080,6 +8776,14 @@
 [
 "Stop standing there.",
 "거기 그렇게 서 있지 마."
+],
+[
+"A standing fan is cheaper.",
+"선풍기가 더 싸요."
+],
+[
+"They were standing in line.",
+"그들은 줄 서 있었어요."
 ]
 ]
 },
@@ -6098,6 +8802,14 @@
 [
 "We saved a lot of money.",
 "돈을 많이 아꼈어요."
+],
+[
+"She saved my number.",
+"그녀가 제 번호를 저장했어요."
+],
+[
+"The rain saved the plants.",
+"비가 식물을 살렸어요."
 ]
 ]
 },
@@ -6116,6 +8828,14 @@
 [
 "He has my respect.",
 "저는 그를 존경해요."
+],
+[
+"Respect the local rules.",
+"현지 규칙을 존중하세요."
+],
+[
+"With respect, I disagree.",
+"죄송하지만 저는 반대예요."
 ]
 ]
 },
@@ -6134,6 +8854,14 @@
 [
 "That exam was a killer.",
 "그 시험 진짜 어려웠어요."
+],
+[
+"The heat is a killer today.",
+"오늘 더위가 살인적이에요."
+],
+[
+"It's a killer app.",
+"엄청난 앱이에요."
 ]
 ]
 },
@@ -6152,6 +8880,14 @@
 [
 "My hair is a mess.",
 "머리가 엉망이에요."
+],
+[
+"Who made this mess?",
+"누가 이렇게 어질렀어요?"
+],
+[
+"The kitchen is in a mess.",
+"주방이 엉망이에요."
 ]
 ]
 },
@@ -6170,6 +8906,14 @@
 [
 "You need to be tough.",
 "좀 강해져야 해요."
+],
+[
+"Tough luck.",
+"운이 안 좋았네요."
+],
+[
+"She is a tough woman.",
+"그녀는 강단 있는 사람이에요."
 ]
 ]
 },
@@ -6188,6 +8932,14 @@
 [
 "This shirt feels soft.",
 "이 셔츠 촉감이 부드러워요."
+],
+[
+"It feels like rain.",
+"비 올 것 같아요."
+],
+[
+"He feels sorry about it.",
+"그는 그걸 미안해해요."
 ]
 ]
 },
@@ -6206,6 +8958,14 @@
 [
 "There's an old church nearby.",
 "근처에 오래된 교회가 있어요."
+],
+[
+"The church bells rang.",
+"교회 종이 울렸어요."
+],
+[
+"They married in a church.",
+"그들은 교회에서 결혼했어요."
 ]
 ]
 },
@@ -6224,6 +8984,14 @@
 [
 "Every cell needs water.",
 "모든 세포엔 물이 필요해요."
+],
+[
+"My cell is out of battery.",
+"제 폰 배터리가 없어요."
+],
+[
+"The cell door was open.",
+"감방 문이 열려 있었어요."
 ]
 ]
 },
@@ -6242,6 +9010,14 @@
 [
 "She got drunk at the party.",
 "그녀는 파티에서 취했어요."
+],
+[
+"The drunk man sang loudly.",
+"취한 사람이 큰 소리로 노래했어요."
+],
+[
+"I never get drunk.",
+"저는 절대 안 취해요."
 ]
 ]
 },
@@ -6260,6 +9036,14 @@
 [
 "The camera is on.",
 "카메라 켜져 있어요."
+],
+[
+"Point the camera here.",
+"카메라를 여기로 향하세요."
+],
+[
+"The camera battery died.",
+"카메라 배터리가 나갔어요."
 ]
 ]
 },
@@ -6278,6 +9062,14 @@
 [
 "Birds fly south in winter.",
 "새들은 겨울에 남쪽으로 날아가요."
+],
+[
+"Time does fly.",
+"시간 참 빨라요."
+],
+[
+"Don't let the fly in.",
+"파리 들어오지 않게 하세요."
 ]
 ]
 },
@@ -6296,6 +9088,14 @@
 [
 "She's not my girlfriend.",
 "그녀는 제 여자친구가 아니에요."
+],
+[
+"His girlfriend called.",
+"그의 여자친구가 전화했어요."
+],
+[
+"My girlfriend loves this cafe.",
+"제 여자친구가 이 카페를 좋아해요."
 ]
 ]
 },
@@ -6314,6 +9114,14 @@
 [
 "It's good to laugh.",
 "웃는 게 좋아요."
+],
+[
+"We had a good laugh.",
+"우리는 한바탕 웃었어요."
+],
+[
+"Try not to laugh.",
+"웃지 않으려고 해봐요."
 ]
 ]
 },
@@ -6332,6 +9140,14 @@
 [
 "The flowers smell nice.",
 "꽃 냄새가 좋아요."
+],
+[
+"The smell is gone now.",
+"이제 냄새가 사라졌어요."
+],
+[
+"Smell this, please.",
+"이거 냄새 좀 맡아 보세요."
 ]
 ]
 },
@@ -6350,6 +9166,14 @@
 [
 "Is the aircon broken?",
 "에어컨 고장났나요?"
+],
+[
+"A broken chair sat outside.",
+"부서진 의자가 밖에 있었어요."
+],
+[
+"The zip is broken.",
+"지퍼가 고장났어요."
 ]
 ]
 },
@@ -6368,6 +9192,14 @@
 [
 "Give me an honest answer.",
 "솔직하게 답해 주세요."
+],
+[
+"Be honest with me.",
+"저한테 솔직하세요."
+],
+[
+"An honest mistake happens.",
+"누구나 실수할 수 있어요."
 ]
 ]
 },
@@ -6386,6 +9218,14 @@
 [
 "It rains often in June.",
 "6월엔 비가 자주 와요."
+],
+[
+"We often eat outside.",
+"우리는 자주 밖에서 먹어요."
+],
+[
+"Not often, but sometimes.",
+"자주는 아니고 가끔요."
 ]
 ]
 },
@@ -6404,6 +9244,14 @@
 [
 "Prices are starting to rise.",
 "가격이 오르기 시작했어요."
+],
+[
+"The rain is starting again.",
+"비가 또 오기 시작해요."
+],
+[
+"Starting today, it's free.",
+"오늘부터 무료예요."
 ]
 ]
 },
@@ -6422,6 +9270,14 @@
 [
 "Nobody calls anymore.",
 "이젠 아무도 전화 안 해요."
+],
+[
+"He calls his mother daily.",
+"그는 매일 어머니께 전화해요."
+],
+[
+"Two calls came for you.",
+"전화 두 통 왔어요."
 ]
 ]
 },
@@ -6440,6 +9296,14 @@
 [
 "He spent all day cleaning.",
 "그는 하루 종일 청소했어요."
+],
+[
+"We spent the day at home.",
+"우리는 하루를 집에서 보냈어요."
+],
+[
+"She spent it on books.",
+"그녀는 그 돈을 책에 썼어요."
 ]
 ]
 },
@@ -6458,6 +9322,14 @@
 [
 "You can judge for yourself.",
 "직접 판단해 보세요."
+],
+[
+"The judge came in.",
+"판사가 들어왔어요."
+],
+[
+"Don't judge by the price.",
+"가격으로 판단하지 마세요."
 ]
 ]
 },
@@ -6476,6 +9348,14 @@
 [
 "How dare he say that?",
 "걔가 어떻게 그런 말을 해?"
+],
+[
+"Nobody would dare ask.",
+"아무도 감히 못 물어요."
+],
+[
+"I dare say it's fine.",
+"아마 괜찮을 거예요."
 ]
 ]
 },
@@ -6494,6 +9374,14 @@
 [
 "It's a work relationship.",
 "업무상 관계예요."
+],
+[
+"The relationship ended.",
+"그 관계는 끝났어요."
+],
+[
+"Build a good relationship.",
+"좋은 관계를 쌓으세요."
 ]
 ]
 },
@@ -6512,6 +9400,14 @@
 [
 "The receipt will prove it.",
 "영수증이 증명해 줄 거예요."
+],
+[
+"Time will prove me right.",
+"시간이 제가 옳았음을 보여줄 거예요."
+],
+[
+"You have nothing to prove.",
+"증명할 필요 없어요."
 ]
 ]
 },
@@ -6530,6 +9426,14 @@
 [
 "There's a hole in the wall.",
 "벽에 구멍이 있어요."
+],
+[
+"The wall needs paint.",
+"벽에 페인트칠이 필요해요."
+],
+[
+"Push it against the wall.",
+"벽에 붙여 놓으세요."
 ]
 ]
 },
@@ -6548,6 +9452,14 @@
 [
 "Change the position of the sofa.",
 "소파 위치를 바꿔요."
+],
+[
+"Hold that position.",
+"그 자세를 유지하세요."
+],
+[
+"The position is still open.",
+"그 자리는 아직 비어 있어요."
 ]
 ]
 },
@@ -6566,6 +9478,14 @@
 [
 "She will realize it soon.",
 "그녀도 곧 알게 될 거예요."
+],
+[
+"You'll realize later.",
+"나중에 알게 될 거예요."
+],
+[
+"I realize it's hard.",
+"힘든 거 알아요."
 ]
 ]
 },
@@ -6584,6 +9504,14 @@
 [
 "Weekends are busy, especially Sunday.",
 "주말은 바빠요, 특히 일요일이요."
+],
+[
+"Especially in June, it rains.",
+"특히 6월에 비가 와요."
+],
+[
+"She loves fruit, especially durian.",
+"그녀는 과일, 특히 두리안을 좋아해요."
 ]
 ]
 },
@@ -6602,6 +9530,14 @@
 [
 "Walking is good for you.",
 "걷는 건 건강에 좋아요."
+],
+[
+"Walking here takes ten minutes.",
+"걸어서 10분 걸려요."
+],
+[
+"The kids are walking home.",
+"아이들이 걸어서 집에 가요."
 ]
 ]
 },
@@ -6620,6 +9556,14 @@
 [
 "Reading is a pleasure.",
 "독서는 즐거움이에요."
+],
+[
+"It was a real pleasure.",
+"정말 즐거웠어요."
+],
+[
+"He takes pleasure in cooking.",
+"그는 요리를 즐겨요."
 ]
 ]
 },
@@ -6638,6 +9582,14 @@
 [
 "He finished college last year.",
 "그는 작년에 대학을 졸업했어요."
+],
+[
+"College is expensive.",
+"대학은 비싸요."
+],
+[
+"They met in college.",
+"그들은 대학에서 만났어요."
 ]
 ]
 },
@@ -6656,6 +9608,14 @@
 [
 "We tried a French bakery.",
 "프랑스식 빵집에 가봤어요."
+],
+[
+"French bread is crusty.",
+"프랑스 빵은 겉이 바삭해요."
+],
+[
+"He studies French.",
+"그는 프랑스어를 공부해요."
 ]
 ]
 },
@@ -6674,6 +9634,14 @@
 [
 "He is involved in the project.",
 "그는 그 프로젝트에 참여해요."
+],
+[
+"Everyone involved was happy.",
+"관련된 사람들 다 좋아했어요."
+],
+[
+"It got me involved.",
+"그것 때문에 제가 끼게 됐어요."
 ]
 ]
 },
@@ -6692,6 +9660,14 @@
 [
 "It made me cry.",
 "그것 때문에 울었어요."
+],
+[
+"She started to cry.",
+"그녀가 울기 시작했어요."
+],
+[
+"There's no need to cry.",
+"울 필요 없어요."
 ]
 ]
 },
@@ -6710,6 +9686,14 @@
 [
 "She became my friend.",
 "그녀는 제 친구가 됐어요."
+],
+[
+"It became my habit.",
+"그게 제 습관이 됐어요."
+],
+[
+"They became close friends.",
+"그들은 친한 친구가 됐어요."
 ]
 ]
 },
@@ -6728,6 +9712,14 @@
 [
 "They lived in Penang.",
 "그들은 페낭에 살았어요."
+],
+[
+"Nobody lived here before.",
+"전엔 아무도 안 살았어요."
+],
+[
+"She lived a long life.",
+"그녀는 오래 사셨어요."
 ]
 ]
 },
@@ -6746,6 +9738,14 @@
 [
 "It's impossible to park here.",
 "여긴 주차가 불가능해요."
+],
+[
+"It's not impossible.",
+"불가능한 건 아니에요."
+],
+[
+"She loves impossible tasks.",
+"그녀는 어려운 일을 좋아해요."
 ]
 ]
 },
@@ -6764,6 +9764,14 @@
 [
 "That's obviously wrong.",
 "그건 명백히 틀렸어요."
+],
+[
+"Obviously, it's closed.",
+"딱 봐도 닫았네요."
+],
+[
+"He obviously likes you.",
+"그는 딱 봐도 당신을 좋아해요."
 ]
 ]
 },
@@ -6782,6 +9790,14 @@
 [
 "Neither of us can come.",
 "우리 둘 다 못 가요."
+],
+[
+"Neither answer is right.",
+"두 답 다 틀렸어요."
+],
+[
+"Neither shop was open.",
+"두 가게 다 닫았어요."
 ]
 ]
 },
@@ -6800,6 +9816,14 @@
 [
 "It's cheap, and clean besides.",
 "싸고 게다가 깨끗해요."
+],
+[
+"Besides that, I agree.",
+"그것 말고는 동의해요."
+],
+[
+"Who else came besides you?",
+"당신 말고 또 누가 왔어요?"
 ]
 ]
 },
@@ -6818,6 +9842,14 @@
 [
 "Long live the queen.",
 "여왕 만세."
+],
+[
+"The queen waved to us.",
+"여왕이 우리에게 손을 흔들었어요."
+],
+[
+"She acts like a queen.",
+"그녀는 여왕처럼 굴어요."
 ]
 ]
 },
@@ -6836,6 +9868,14 @@
 [
 "For safety's sake, wear a helmet.",
 "안전을 위해 헬멧을 쓰세요."
+],
+[
+"For heaven's sake, hurry.",
+"제발 좀 서둘러요."
+],
+[
+"He quit for his health's sake.",
+"그는 건강을 위해 그만뒀어요."
 ]
 ]
 },
@@ -6854,6 +9894,14 @@
 [
 "My daughter loves this song.",
 "제 딸이 이 노래를 좋아해요."
+],
+[
+"Everyone loves a bargain.",
+"다들 싼 걸 좋아해요."
+],
+[
+"He loves his job.",
+"그는 자기 일을 좋아해요."
 ]
 ]
 },
@@ -6872,6 +9920,14 @@
 [
 "Please carry your passport.",
 "여권을 챙겨 다니세요."
+],
+[
+"I'll carry the small one.",
+"제가 작은 걸 들게요."
+],
+[
+"Do you carry batteries?",
+"건전지 파세요?"
 ]
 ]
 },
@@ -6890,6 +9946,14 @@
 [
 "Teach the kids to swim.",
 "아이들에게 수영을 가르쳐요."
+],
+[
+"Teach me one word daily.",
+"매일 한 단어씩 가르쳐 주세요."
+],
+[
+"He wants to teach abroad.",
+"그는 외국에서 가르치고 싶어해요."
 ]
 ]
 },
@@ -6908,6 +9972,14 @@
 [
 "He rented an apartment.",
 "그는 아파트를 빌렸어요."
+],
+[
+"The apartment is on level five.",
+"아파트는 5층이에요."
+],
+[
+"We moved to a new apartment.",
+"새 아파트로 이사했어요."
 ]
 ]
 },
@@ -6926,6 +9998,14 @@
 [
 "My stomach is upset.",
 "속이 안 좋아요."
+],
+[
+"The delay upset everyone.",
+"지연 때문에 다들 언짢았어요."
+],
+[
+"He gets upset easily.",
+"그는 쉽게 속상해해요."
 ]
 ]
 },
@@ -6944,6 +10024,14 @@
 [
 "We liked the hotel.",
 "우리는 그 호텔이 좋았어요."
+],
+[
+"Nobody liked the ending.",
+"아무도 결말을 안 좋아했어요."
+],
+[
+"I liked her right away.",
+"저는 그녀가 바로 좋았어요."
 ]
 ]
 },
@@ -6962,6 +10050,14 @@
 [
 "Money isn't evil.",
 "돈이 나쁜 건 아니에요."
+],
+[
+"Good beats evil in the story.",
+"이야기에선 선이 악을 이겨요."
+],
+[
+"She has an evil laugh.",
+"그녀는 웃음소리가 짓궂어요."
 ]
 ]
 },
@@ -6980,6 +10076,14 @@
 [
 "She became a professor.",
 "그녀는 교수가 됐어요."
+],
+[
+"The professor was late.",
+"교수님이 늦으셨어요."
+],
+[
+"He studied under a professor.",
+"그는 어느 교수 밑에서 배웠어요."
 ]
 ]
 },
@@ -6998,6 +10102,14 @@
 [
 "Contact me anytime.",
 "언제든 연락 주세요."
+],
+[
+"We lost contact last year.",
+"작년에 연락이 끊겼어요."
+],
+[
+"Contact the landlord first.",
+"집주인에게 먼저 연락하세요."
 ]
 ]
 },
@@ -7016,6 +10128,14 @@
 [
 "Don't take the joke seriously.",
 "농담을 진지하게 받지 마세요."
+],
+[
+"The joke wasn't funny.",
+"그 농담 안 웃겼어요."
+],
+[
+"He can't take a joke.",
+"그는 농담을 못 받아들여요."
 ]
 ]
 },
@@ -7034,6 +10154,14 @@
 [
 "Ask that cop for help.",
 "저 경찰한테 도움을 청해요."
+],
+[
+"The cop wrote a ticket.",
+"경찰이 딱지를 뗐어요."
+],
+[
+"A cop was at the corner.",
+"모퉁이에 경찰이 있었어요."
 ]
 ]
 },
@@ -7052,6 +10180,14 @@
 [
 "We saw a huge crowd.",
 "엄청난 인파를 봤어요."
+],
+[
+"The bill was huge.",
+"계산서가 어마어마했어요."
+],
+[
+"There's a huge difference.",
+"차이가 어마어마해요."
 ]
 ]
 },
@@ -7070,6 +10206,14 @@
 [
 "They visited a holy temple.",
 "그들은 성스러운 사원을 방문했어요."
+],
+[
+"Holy smoke, that's fast!",
+"우와, 진짜 빠르네요!"
+],
+[
+"The holy book sat there.",
+"경전이 거기 놓여 있었어요."
 ]
 ]
 },
@@ -7088,6 +10232,14 @@
 [
 "The jail is downtown.",
 "구치소는 시내에 있어요."
+],
+[
+"He avoided jail.",
+"그는 감옥은 면했어요."
+],
+[
+"The jail was old.",
+"그 구치소는 낡았어요."
 ]
 ]
 },
@@ -7106,6 +10258,14 @@
 [
 "My son likes cars.",
 "제 아들은 자동차를 좋아해요."
+],
+[
+"Nobody likes waiting.",
+"기다리는 걸 좋아하는 사람은 없어요."
+],
+[
+"She likes it hot.",
+"그녀는 맵게 먹는 걸 좋아해요."
 ]
 ]
 },
@@ -7124,6 +10284,14 @@
 [
 "She works as a lawyer.",
 "그녀는 변호사로 일해요."
+],
+[
+"The lawyer read the contract.",
+"변호사가 계약서를 읽었어요."
+],
+[
+"Ask a lawyer about it.",
+"그건 변호사에게 물어보세요."
 ]
 ]
 },
@@ -7142,6 +10310,14 @@
 [
 "Without a doubt, it's the best.",
 "의심할 여지 없이 최고예요."
+],
+[
+"I have my doubt about it.",
+"저는 그게 좀 의심스러워요."
+],
+[
+"No doubt he'll be late.",
+"분명 그는 늦을 거예요."
 ]
 ]
 },
@@ -7160,6 +10336,14 @@
 [
 "Continue straight ahead.",
 "계속 직진하세요."
+],
+[
+"Shall we continue?",
+"계속할까요?"
+],
+[
+"Please continue reading.",
+"계속 읽어 주세요."
 ]
 ]
 },
@@ -7178,6 +10362,14 @@
 [
 "He'll appreciate the gift.",
 "그가 선물을 고마워할 거예요."
+],
+[
+"I appreciate the ride.",
+"태워다 주셔서 감사해요."
+],
+[
+"She would appreciate a call.",
+"그녀는 전화 한 통 반가워할 거예요."
 ]
 ]
 },
@@ -7196,6 +10388,14 @@
 [
 "Say congratulations to her.",
 "그녀에게 축하한다고 전해요."
+],
+[
+"Congratulations on the new job!",
+"새 직장 축하해요!"
+],
+[
+"Big congratulations to you.",
+"진심으로 축하드려요."
 ]
 ]
 },
@@ -7214,6 +10414,14 @@
 [
 "He wrote the report.",
 "그가 보고서를 썼어요."
+],
+[
+"Who wrote this note?",
+"이 메모 누가 썼어요?"
+],
+[
+"She wrote her name here.",
+"그녀가 여기 이름을 썼어요."
 ]
 ]
 },
@@ -7232,6 +10440,14 @@
 [
 "She grew up in a village.",
 "그녀는 시골에서 자랐어요."
+],
+[
+"The village is very quiet.",
+"그 마을은 아주 조용해요."
+],
+[
+"A village market opens Sunday.",
+"마을 장은 일요일에 열려요."
 ]
 ]
 },
@@ -7250,6 +10466,14 @@
 [
 "Don't quit now.",
 "지금 포기하지 마."
+],
+[
+"She quit last month.",
+"그녀는 지난달에 그만뒀어요."
+],
+[
+"Never quit trying.",
+"포기하지 말고 계속해요."
 ]
 ]
 },
@@ -7268,6 +10492,14 @@
 [
 "It's quieter down south.",
 "남쪽은 더 조용해요."
+],
+[
+"The south side gets sun.",
+"남쪽이 햇볕이 잘 들어요."
+],
+[
+"Fly south for winter.",
+"겨울엔 남쪽으로 가요."
 ]
 ]
 },
@@ -7286,6 +10518,14 @@
 [
 "He is sleeping in today.",
 "그는 오늘 늦잠 자요."
+],
+[
+"The dog is sleeping outside.",
+"개가 밖에서 자고 있어요."
+],
+[
+"Sleeping helps you heal.",
+"잠이 회복에 도움돼요."
 ]
 ]
 },
@@ -7304,6 +10544,14 @@
 [
 "It's a small island.",
 "작은 섬이에요."
+],
+[
+"The island has one road.",
+"그 섬엔 길이 하나예요."
+],
+[
+"We spent a week on the island.",
+"섬에서 일주일 보냈어요."
 ]
 ]
 },
@@ -7322,6 +10570,14 @@
 [
 "Be careful, it's glass.",
 "조심하세요, 유리예요."
+],
+[
+"The glass is empty.",
+"잔이 비었어요."
+],
+[
+"Wipe the glass door.",
+"유리문을 닦으세요."
 ]
 ]
 },
@@ -7340,6 +10596,14 @@
 [
 "The beginning was slow.",
 "초반은 좀 느렸어요."
+],
+[
+"The beginning was confusing.",
+"초반이 헷갈렸어요."
+],
+[
+"At the beginning, it was cheap.",
+"처음엔 쌌어요."
 ]
 ]
 },
@@ -7358,6 +10622,14 @@
 [
 "The plant is dying.",
 "화분이 죽어가요."
+],
+[
+"The flowers are dying.",
+"꽃이 시들어 가요."
+],
+[
+"He is dying to meet you.",
+"그가 당신을 너무 만나고 싶어해요."
 ]
 ]
 },
@@ -7376,6 +10648,14 @@
 [
 "I can't tell the difference.",
 "저는 구별을 못 하겠어요."
+],
+[
+"The difference is small.",
+"차이가 작아요."
+],
+[
+"What a difference a day makes.",
+"하루 만에 이렇게 달라지네요."
 ]
 ]
 },
@@ -7394,6 +10674,14 @@
 [
 "The sale continues until Friday.",
 "세일은 금요일까지 계속돼요."
+],
+[
+"The line continues outside.",
+"줄이 밖까지 이어져요."
+],
+[
+"She continues to work.",
+"그녀는 계속 일해요."
 ]
 ]
 },
@@ -7412,6 +10700,14 @@
 [
 "Who is singing that song?",
 "저 노래 누가 부르는 거예요?"
+],
+[
+"Singing helps me relax.",
+"노래하면 마음이 편해져요."
+],
+[
+"He started singing loudly.",
+"그가 크게 노래하기 시작했어요."
 ]
 ]
 },
@@ -7430,6 +10726,14 @@
 [
 "It's colder up north.",
 "북쪽은 더 추워요."
+],
+[
+"North of the river is quiet.",
+"강 북쪽은 조용해요."
+],
+[
+"The wind came from the north.",
+"바람이 북쪽에서 불었어요."
 ]
 ]
 },
@@ -7448,6 +10752,14 @@
 [
 "The food truck is open.",
 "푸드트럭 열었어요."
+],
+[
+"The truck is unloading.",
+"트럭이 짐을 내리고 있어요."
+],
+[
+"A truck horn woke me.",
+"트럭 경적에 깼어요."
 ]
 ]
 },
@@ -7466,6 +10778,14 @@
 [
 "He doesn't drink beer.",
 "그는 맥주를 안 마셔요."
+],
+[
+"Two beer, please.",
+"맥주 두 잔 주세요."
+],
+[
+"Beer is cheaper here.",
+"여긴 맥주가 싸요."
 ]
 ]
 },
@@ -7484,6 +10804,14 @@
 [
 "We got stuck in the rain.",
 "비에 발이 묶였어요."
+],
+[
+"The key is stuck.",
+"열쇠가 안 빠져요."
+],
+[
+"We were stuck for an hour.",
+"한 시간 발이 묶였어요."
 ]
 ]
 },
@@ -7502,6 +10830,14 @@
 [
 "There's no magic answer.",
 "마법 같은 해답은 없어요."
+],
+[
+"She did a magic trick.",
+"그녀가 마술을 보여줬어요."
+],
+[
+"Magic won't fix this.",
+"이건 마법으로 안 돼요."
 ]
 ]
 },
@@ -7520,6 +10856,14 @@
 [
 "This phone needs support.",
 "이 폰은 수리가 필요해요."
+],
+[
+"They support the school.",
+"그들이 학교를 후원해요."
+],
+[
+"The chair needs support.",
+"의자에 받침이 필요해요."
 ]
 ]
 },
@@ -7538,6 +10882,14 @@
 [
 "Every school has rules.",
 "모든 학교엔 규칙이 있어요."
+],
+[
+"House rules are on the wall.",
+"이용 규칙이 벽에 있어요."
+],
+[
+"Follow the safety rules.",
+"안전 수칙을 지키세요."
 ]
 ]
 },
@@ -7556,6 +10908,14 @@
 [
 "It works immediately.",
 "바로 효과가 있어요."
+],
+[
+"Reply immediately, please.",
+"즉시 답장해 주세요."
+],
+[
+"The pain stopped immediately.",
+"통증이 바로 멎었어요."
 ]
 ]
 },
@@ -7574,6 +10934,14 @@
 [
 "Give me thirty seconds.",
 "30초만 주세요."
+],
+[
+"Ten seconds left.",
+"10초 남았어요."
+],
+[
+"It only takes seconds.",
+"몇 초면 돼요."
 ]
 ]
 },
@@ -7592,6 +10960,14 @@
 [
 "Thanks a thousand times.",
 "정말 너무 고마워요."
+],
+[
+"One thousand and one.",
+"천하고도 하나."
+],
+[
+"A thousand thanks.",
+"정말 감사합니다."
 ]
 ]
 },
@@ -7610,6 +10986,14 @@
 [
 "He gives me a ride daily.",
 "그가 매일 태워다 줘요."
+],
+[
+"The tree gives good shade.",
+"그 나무가 그늘이 좋아요."
+],
+[
+"Nobody gives it away.",
+"아무도 그냥 안 줘요."
 ]
 ]
 },
@@ -7628,6 +11012,14 @@
 [
 "Travel gives you experience.",
 "여행은 경험을 줘요."
+],
+[
+"Experience is the best teacher.",
+"경험이 최고의 스승이에요."
+],
+[
+"She has ten years of experience.",
+"그녀는 10년 경력이에요."
 ]
 ]
 },
@@ -7646,6 +11038,14 @@
 [
 "He raised his glass and said cheers.",
 "그가 잔을 들고 건배를 외쳤어요."
+],
+[
+"Cheers to the new house!",
+"새집을 위하여!"
+],
+[
+"Cheers, see you tomorrow.",
+"고마워요, 내일 봐요."
 ]
 ]
 },
@@ -7664,6 +11064,14 @@
 [
 "Don't be a victim.",
 "피해자가 되지 마세요."
+],
+[
+"The victim was not hurt.",
+"피해자는 다치지 않았어요."
+],
+[
+"Every victim gets support.",
+"피해자마다 지원을 받아요."
 ]
 ]
 },
@@ -7682,6 +11090,14 @@
 [
 "Winter is upon us.",
 "겨울이 다가왔어요."
+],
+[
+"The decision rests upon you.",
+"결정은 당신에게 달렸어요."
+],
+[
+"Christmas is almost upon us.",
+"크리스마스가 코앞이에요."
 ]
 ]
 },
@@ -7700,6 +11116,14 @@
 [
 "She works on a computer.",
 "그녀는 컴퓨터로 일해요."
+],
+[
+"The computer needs a restart.",
+"컴퓨터를 다시 켜야 해요."
+],
+[
+"I saved it on the computer.",
+"컴퓨터에 저장했어요."
 ]
 ]
 },
@@ -7718,6 +11142,14 @@
 [
 "They study about Christ.",
 "그들은 그리스도에 대해 공부해요."
+],
+[
+"The Christ figure stood tall.",
+"그리스도 상이 우뚝 서 있었어요."
+],
+[
+"Christ taught kindness.",
+"그리스도는 친절을 가르쳤어요."
 ]
 ]
 },
@@ -7736,6 +11168,14 @@
 [
 "Let's save the planet.",
 "지구를 지킵시다."
+],
+[
+"The planet is getting hotter.",
+"지구가 더워지고 있어요."
+],
+[
+"Which planet is that?",
+"저건 무슨 행성이에요?"
 ]
 ]
 },
@@ -7754,6 +11194,14 @@
 [
 "She promised not to tell.",
 "그녀는 말 안 하기로 약속했어요."
+],
+[
+"They promised free delivery.",
+"무료 배송을 약속했어요."
+],
+[
+"I promised to be there.",
+"거기 가겠다고 약속했어요."
 ]
 ]
 },
@@ -7772,6 +11220,14 @@
 [
 "Henry lives next door.",
 "헨리는 옆집에 살아요."
+],
+[
+"Henry brought the tools.",
+"헨리가 공구를 가져왔어요."
+],
+[
+"Call Henry about the rent.",
+"월세는 헨리한테 전화하세요."
 ]
 ]
 },
@@ -7790,6 +11246,14 @@
 [
 "I'll search my bag.",
 "가방을 뒤져 볼게요."
+],
+[
+"The search was quick.",
+"검색이 빨랐어요."
+],
+[
+"Search under the bed.",
+"침대 밑을 찾아보세요."
 ]
 ]
 },
@@ -7808,6 +11272,14 @@
 [
 "Sweet dreams!",
 "좋은 꿈 꿔요!"
+],
+[
+"His dreams came true.",
+"그의 꿈이 이루어졌어요."
+],
+[
+"Bad dreams woke her.",
+"악몽 때문에 깼어요."
 ]
 ]
 },
@@ -7826,6 +11298,14 @@
 [
 "They made an arrest.",
 "그들이 한 명 체포했어요."
+],
+[
+"The arrest happened quietly.",
+"체포는 조용히 이뤄졌어요."
+],
+[
+"They didn't arrest anyone.",
+"아무도 체포하지 않았어요."
 ]
 ]
 },
@@ -7844,6 +11324,14 @@
 [
 "Stop holding the door.",
 "문 좀 그만 잡고 있어요."
+],
+[
+"Who is holding the ticket?",
+"표는 누가 갖고 있어요?"
+],
+[
+"I'm holding a seat for you.",
+"자리 맡아 뒀어요."
 ]
 ]
 },
@@ -7862,6 +11350,14 @@
 [
 "The car suddenly stopped.",
 "차가 갑자기 멈췄어요."
+],
+[
+"Suddenly, everything went quiet.",
+"갑자기 조용해졌어요."
+],
+[
+"Prices suddenly went up.",
+"가격이 갑자기 올랐어요."
 ]
 ]
 },
@@ -7880,6 +11376,14 @@
 [
 "We got rid of the old sofa.",
 "낡은 소파를 처분했어요."
+],
+[
+"Let's get rid of the boxes.",
+"상자들 좀 치우자."
+],
+[
+"How do we get rid of ants?",
+"개미를 어떻게 없애죠?"
 ]
 ]
 },
@@ -7898,6 +11402,14 @@
 [
 "Knock on the door.",
 "문을 두드리세요."
+],
+[
+"There was a loud knock.",
+"크게 노크 소리가 났어요."
+],
+[
+"Knock twice, please.",
+"두 번 노크해 주세요."
 ]
 ]
 },
@@ -7916,6 +11428,14 @@
 [
 "The line will grow longer.",
 "줄이 더 길어질 거예요."
+],
+[
+"Herbs grow well here.",
+"여기선 허브가 잘 자라요."
+],
+[
+"Let your hair grow.",
+"머리를 기르세요."
 ]
 ]
 },
@@ -7934,6 +11454,14 @@
 [
 "The worst is over.",
 "최악은 지나갔어요."
+],
+[
+"The worst part is waiting.",
+"제일 힘든 건 기다리는 거예요."
+],
+[
+"It was my worst mistake.",
+"제 최악의 실수였어요."
 ]
 ]
 },
@@ -7952,6 +11480,14 @@
 [
 "Don't swim in the river.",
 "강에서 수영하지 마세요."
+],
+[
+"The river runs to the sea.",
+"강은 바다로 흘러가요."
+],
+[
+"A bridge crosses the river.",
+"다리가 강을 건너요."
 ]
 ]
 },
@@ -7970,6 +11506,14 @@
 [
 "Cut the fat off, please.",
 "기름기를 잘라 주세요."
+],
+[
+"Trim the fat first.",
+"기름부터 떼어 내세요."
+],
+[
+"It's a low fat option.",
+"저지방 제품이에요."
 ]
 ]
 },
@@ -7988,6 +11532,14 @@
 [
 "Time passed quickly.",
 "시간이 빨리 갔어요."
+],
+[
+"He passed the exam easily.",
+"그는 시험에 쉽게 붙었어요."
+],
+[
+"The bus passed our stop.",
+"버스가 우리 정류장을 지나쳤어요."
 ]
 ]
 },
@@ -8006,6 +11558,14 @@
 [
 "We watched the final game.",
 "결승전을 봤어요."
+],
+[
+"It's the final day.",
+"마지막 날이에요."
+],
+[
+"The final bill was higher.",
+"최종 청구서가 더 높았어요."
 ]
 ]
 },
@@ -8024,6 +11584,14 @@
 [
 "It's a summer dress.",
 "여름 원피스예요."
+],
+[
+"Summer here is long.",
+"여긴 여름이 길어요."
+],
+[
+"We swim all summer.",
+"여름 내내 수영해요."
 ]
 ]
 },
@@ -8042,6 +11610,14 @@
 [
 "Bob works from home.",
 "밥은 재택근무해요."
+],
+[
+"Bob helped us move.",
+"밥이 이사를 도와줬어요."
+],
+[
+"Bob knows the shortcut.",
+"밥이 지름길을 알아요."
 ]
 ]
 },
@@ -8060,6 +11636,14 @@
 [
 "Thanks for listening.",
 "들어줘서 고마워요."
+],
+[
+"Listening is hard for me.",
+"저는 듣기가 어려워요."
+],
+[
+"She is listening carefully.",
+"그녀가 주의 깊게 듣고 있어요."
 ]
 ]
 },
@@ -8078,6 +11662,14 @@
 [
 "Find the escape route.",
 "비상 통로를 찾으세요."
+],
+[
+"They tried to escape the heat.",
+"그들은 더위를 피하려 했어요."
+],
+[
+"It was a lucky escape.",
+"다행히 위기를 넘겼어요."
 ]
 ]
 },
@@ -8096,6 +11688,14 @@
 [
 "Traffic is bad everywhere.",
 "어디나 차가 막혀요."
+],
+[
+"Water was everywhere.",
+"물이 사방에 있었어요."
+],
+[
+"His name is everywhere.",
+"그 사람 이름이 여기저기 보여요."
 ]
 ]
 },
@@ -8114,6 +11714,14 @@
 [
 "Raise both arms.",
 "양팔을 드세요."
+],
+[
+"She crossed her arms.",
+"그녀는 팔짱을 꼈어요."
+],
+[
+"My arms are full.",
+"팔이 꽉 찼어요."
 ]
 ]
 },
@@ -8132,6 +11740,14 @@
 [
 "Do you have a match?",
 "성냥 있어요?"
+],
+[
+"This shirt is a good match.",
+"이 셔츠가 잘 어울려요."
+],
+[
+"The match starts at eight.",
+"경기는 8시에 시작해요."
 ]
 ]
 },
@@ -8150,6 +11766,14 @@
 [
 "That's a grand idea.",
 "아주 멋진 생각이에요."
+],
+[
+"A grand total of fifty.",
+"전부 합쳐 오십이에요."
+],
+[
+"The grand hall was empty.",
+"큰 홀이 비어 있었어요."
 ]
 ]
 },
@@ -8168,6 +11792,14 @@
 [
 "I can't decide.",
 "결정을 못 하겠어요."
+],
+[
+"Help me decide.",
+"고르는 것 좀 도와주세요."
+],
+[
+"They will decide tonight.",
+"그들이 오늘 밤 결정할 거예요."
 ]
 ]
 },
@@ -8186,6 +11818,14 @@
 [
 "My mate lives nearby.",
 "제 친구가 근처에 살아요."
+],
+[
+"My mate got a new job.",
+"제 친구가 새 직장을 구했어요."
+],
+[
+"He is a good mate.",
+"그는 좋은 친구예요."
 ]
 ]
 },
@@ -8204,6 +11844,14 @@
 [
 "Is this drinking water?",
 "이거 마시는 물이에요?"
+],
+[
+"Drinking water is important.",
+"물 마시는 게 중요해요."
+],
+[
+"They are drinking tea.",
+"그들은 차를 마시고 있어요."
 ]
 ]
 },
@@ -8222,6 +11870,14 @@
 [
 "Sorry to bother you.",
 "귀찮게 해서 죄송해요."
+],
+[
+"It might bother the neighbors.",
+"이웃에게 폐가 될 수도 있어요."
+],
+[
+"Don't bother, I'll walk.",
+"괜찮아요, 걸어갈게요."
 ]
 ]
 },
@@ -8240,6 +11896,14 @@
 [
 "He took the blame.",
 "그가 책임을 졌어요."
+],
+[
+"Don't blame the weather.",
+"날씨 탓하지 마세요."
+],
+[
+"The blame is shared.",
+"책임은 나눠야죠."
 ]
 ]
 },
@@ -8258,6 +11922,14 @@
 [
 "He never used drugs.",
 "그는 마약을 한 적 없어요."
+],
+[
+"The drugs made me sleepy.",
+"약 때문에 졸렸어요."
+],
+[
+"Keep drugs away from kids.",
+"약은 아이 손이 닿지 않게 두세요."
 ]
 ]
 },
@@ -8276,6 +11948,14 @@
 [
 "He's not my type.",
 "제 스타일이 아니에요."
+],
+[
+"What type of car is it?",
+"어떤 종류의 차예요?"
+],
+[
+"This type sells fast.",
+"이 종류가 잘 팔려요."
 ]
 ]
 },
@@ -8294,6 +11974,14 @@
 [
 "It was a rescue mission.",
 "구조 작전이었어요."
+],
+[
+"The mission was hard.",
+"임무가 힘들었어요."
+],
+[
+"Our mission is to help.",
+"우리 사명은 돕는 거예요."
 ]
 ]
 },
@@ -8312,6 +12000,14 @@
 [
 "She named her cat Coco.",
 "그녀는 고양이를 코코라고 불러요."
+],
+[
+"A shop named Sun opened.",
+"선이라는 가게가 열었어요."
+],
+[
+"He is named after his father.",
+"그는 아버지 이름을 땄어요."
 ]
 ]
 },
@@ -8330,6 +12026,14 @@
 [
 "It's heaven here.",
 "여긴 천국이에요."
+],
+[
+"A cold drink is heaven.",
+"시원한 음료는 천국이에요."
+],
+[
+"Heaven knows why.",
+"왜 그런지 누가 알겠어요."
 ]
 ]
 },
@@ -8348,6 +12052,14 @@
 [
 "She studied in Paris.",
 "그녀는 파리에서 공부했어요."
+],
+[
+"Paris was crowded.",
+"파리는 사람이 많았어요."
+],
+[
+"The Paris trip was short.",
+"파리 여행은 짧았어요."
 ]
 ]
 },
@@ -8366,6 +12078,14 @@
 [
 "There's a small risk.",
 "작은 위험이 있어요."
+],
+[
+"At your own risk.",
+"책임은 본인이 지세요."
+],
+[
+"The risk is too high.",
+"위험이 너무 커요."
 ]
 ]
 },
@@ -8384,6 +12104,14 @@
 [
 "Let's discuss it further.",
 "더 얘기해 봅시다."
+],
+[
+"Nothing further to add.",
+"더 할 말은 없어요."
+],
+[
+"Walk further down the road.",
+"길을 더 내려가세요."
 ]
 ]
 },
@@ -8402,6 +12130,14 @@
 [
 "Take action now.",
 "지금 행동하세요."
+],
+[
+"Action speaks louder than words.",
+"말보다 행동이에요."
+],
+[
+"The action was quick.",
+"조치가 빨랐어요."
 ]
 ]
 },
@@ -8420,6 +12156,14 @@
 [
 "He learned it fast.",
 "그는 빨리 익혔어요."
+],
+[
+"I learned it the hard way.",
+"고생하며 배웠어요."
+],
+[
+"They learned about Malaysia.",
+"그들은 말레이시아에 대해 배웠어요."
 ]
 ]
 },
@@ -8438,6 +12182,14 @@
 [
 "She arrived late.",
 "그녀는 늦게 도착했어요."
+],
+[
+"The guests arrived early.",
+"손님들이 일찍 도착했어요."
+],
+[
+"Winter has arrived.",
+"겨울이 왔어요."
 ]
 ]
 },
@@ -8456,6 +12208,14 @@
 [
 "Nick has the keys.",
 "열쇠는 닉이 갖고 있어요."
+],
+[
+"Nick fixed the tap.",
+"닉이 수도꼭지를 고쳤어요."
+],
+[
+"Nick is out today.",
+"닉은 오늘 자리에 없어요."
 ]
 ]
 },
@@ -8474,6 +12234,14 @@
 [
 "Leave now, otherwise you'll miss it.",
 "지금 나가세요, 안 그러면 놓쳐요."
+],
+[
+"Bring cash, otherwise you can't pay.",
+"현금 챙기세요, 안 그럼 결제 못 해요."
+],
+[
+"He said otherwise.",
+"그는 다르게 말했어요."
 ]
 ]
 },
@@ -8492,6 +12260,14 @@
 [
 "The pictures came out well.",
 "사진이 잘 나왔어요."
+],
+[
+"The pictures are on my phone.",
+"사진은 제 폰에 있어요."
+],
+[
+"Take fewer pictures, enjoy more.",
+"사진은 덜 찍고 더 즐기세요."
 ]
 ]
 },
@@ -8510,6 +12286,14 @@
 [
 "The smoke made me cough.",
 "연기 때문에 기침이 났어요."
+],
+[
+"Smoke came from the kitchen.",
+"주방에서 연기가 났어요."
+],
+[
+"He quit smoke last year.",
+"그는 작년에 담배를 끊었어요."
 ]
 ]
 },
@@ -8528,6 +12312,14 @@
 [
 "I owe you a favor.",
 "신세 졌어요."
+],
+[
+"Do yourself a favor and rest.",
+"자신을 위해서라도 좀 쉬세요."
+],
+[
+"She did me a big favor.",
+"그녀가 큰 도움을 줬어요."
 ]
 ]
 },
@@ -8546,6 +12338,14 @@
 [
 "She played the piano.",
 "그녀는 피아노를 쳤어요."
+],
+[
+"They played until dark.",
+"그들은 어두워질 때까지 놀았어요."
+],
+[
+"The song played twice.",
+"그 노래가 두 번 나왔어요."
 ]
 ]
 },
@@ -8564,6 +12364,14 @@
 [
 "Did you notice the smell?",
 "냄새 못 맡았어요?"
+],
+[
+"Give one month notice.",
+"한 달 전에 알려 주세요."
+],
+[
+"I notice a change.",
+"변화가 느껴져요."
 ]
 ]
 },
@@ -8582,6 +12390,14 @@
 [
 "You did an awesome job.",
 "정말 잘했어요."
+],
+[
+"The trip was awesome.",
+"여행이 끝내줬어요."
+],
+[
+"What an awesome day.",
+"정말 멋진 날이에요."
 ]
 ]
 },
@@ -8600,6 +12416,14 @@
 [
 "She became a director.",
 "그녀는 감독이 됐어요."
+],
+[
+"The director called a meeting.",
+"이사님이 회의를 소집했어요."
+],
+[
+"Our director is on leave.",
+"저희 부장님은 휴가 중이에요."
 ]
 ]
 },
@@ -8618,6 +12442,14 @@
 [
 "There's a guard at the gate.",
 "정문에 경비가 있어요."
+],
+[
+"The guard opened the gate.",
+"경비원이 문을 열어 줬어요."
+],
+[
+"Guard the door, please.",
+"문 좀 지켜 주세요."
 ]
 ]
 },
@@ -8636,6 +12468,14 @@
 [
 "Begin with the easy part.",
 "쉬운 것부터 시작해요."
+],
+[
+"When does it begin?",
+"언제 시작해요?"
+],
+[
+"Begin again from here.",
+"여기서 다시 시작하세요."
 ]
 ]
 },
@@ -8654,6 +12494,14 @@
 [
 "There's a spot on my shirt.",
 "셔츠에 얼룩이 있어요."
+],
+[
+"Did you spot the mistake?",
+"실수 찾으셨어요?"
+],
+[
+"That's our usual spot.",
+"저기가 우리 늘 앉는 자리예요."
 ]
 ]
 },
@@ -8672,6 +12520,14 @@
 [
 "Don't be surprised.",
 "놀라지 마세요."
+],
+[
+"He was surprised by the price.",
+"그는 가격에 놀랐어요."
+],
+[
+"We were pleasantly surprised.",
+"기분 좋게 놀랐어요."
 ]
 ]
 },
@@ -8690,6 +12546,14 @@
 [
 "The child looks innocent.",
 "그 아이는 순수해 보여요."
+],
+[
+"An innocent question is fine.",
+"순수한 질문은 괜찮아요."
+],
+[
+"They found him innocent.",
+"그는 무죄로 밝혀졌어요."
 ]
 ]
 },
@@ -8708,6 +12572,14 @@
 [
 "She works in London.",
 "그녀는 런던에서 일해요."
+],
+[
+"London has good museums.",
+"런던엔 좋은 박물관이 있어요."
+],
+[
+"It rains a lot in London.",
+"런던은 비가 많이 와요."
 ]
 ]
 },
@@ -8726,6 +12598,14 @@
 [
 "Talk about your feelings.",
 "감정을 말해 보세요."
+],
+[
+"Feelings change over time.",
+"감정은 시간이 지나면 변해요."
+],
+[
+"His feelings were hurt.",
+"그는 마음이 상했어요."
 ]
 ]
 },
@@ -8744,6 +12624,14 @@
 [
 "Heat is the enemy of batteries.",
 "열은 배터리의 적이에요."
+],
+[
+"Rust is the enemy of metal.",
+"녹은 금속의 적이에요."
+],
+[
+"He treats me like an enemy.",
+"그는 저를 적처럼 대해요."
 ]
 ]
 },
@@ -8762,6 +12650,14 @@
 [
 "He lost the battle.",
 "그는 그 싸움에서 졌어요."
+],
+[
+"The battle lasted all day.",
+"전투는 하루 종일 이어졌어요."
+],
+[
+"It's a battle every morning.",
+"매일 아침이 전쟁이에요."
 ]
 ]
 },
@@ -8780,6 +12676,14 @@
 [
 "Please allow ten minutes.",
 "10분 정도 잡으세요."
+],
+[
+"Allow me to pay.",
+"제가 계산할게요."
+],
+[
+"They allow bags inside.",
+"가방은 들고 들어가도 돼요."
 ]
 ]
 },
@@ -8798,6 +12702,14 @@
 [
 "Gay couples can marry there.",
 "거기선 동성 커플도 결혼할 수 있어요."
+],
+[
+"My gay friend visited us.",
+"제 게이 친구가 놀러 왔어요."
+],
+[
+"The city has a gay bar.",
+"그 도시엔 게이 바가 있어요."
 ]
 ]
 },
@@ -8816,6 +12728,14 @@
 [
 "The store has a toy department.",
 "그 가게엔 장난감 코너가 있어요."
+],
+[
+"The department is closed today.",
+"그 부서는 오늘 쉬어요."
+],
+[
+"She leads the design department.",
+"그녀가 디자인 부서를 이끌어요."
 ]
 ]
 },
@@ -8834,6 +12754,14 @@
 [
 "Don't feel guilty about resting.",
 "쉬는 걸 미안해하지 마세요."
+],
+[
+"Guilty or not, be fair.",
+"죄가 있든 없든 공정해야죠."
+],
+[
+"She felt guilty about lying.",
+"그녀는 거짓말한 게 미안했어요."
 ]
 ]
 },
@@ -8852,6 +12780,14 @@
 [
 "Stand apart from the crowd.",
 "사람들과 좀 떨어져 서세요."
+],
+[
+"Take it apart carefully.",
+"조심해서 분해하세요."
+],
+[
+"We sat apart.",
+"우리는 떨어져 앉았어요."
 ]
 ]
 },
@@ -8870,6 +12806,14 @@
 [
 "The west side is quieter.",
 "서쪽이 더 조용해요."
+],
+[
+"We drove west all day.",
+"하루 종일 서쪽으로 운전했어요."
+],
+[
+"The west wind is cool.",
+"서풍이 시원해요."
 ]
 ]
 },
@@ -8888,6 +12832,14 @@
 [
 "The table has four legs.",
 "탁자 다리가 네 개예요."
+],
+[
+"His legs are long.",
+"그는 다리가 길어요."
+],
+[
+"My legs fell asleep.",
+"다리가 저렸어요."
 ]
 ]
 },
@@ -8906,6 +12858,14 @@
 [
 "The movie has no hero.",
 "그 영화엔 주인공다운 주인공이 없어요."
+],
+[
+"Every kid needs a hero.",
+"아이마다 영웅이 필요해요."
+],
+[
+"She is my daughter's hero.",
+"그녀는 제 딸의 영웅이에요."
 ]
 ]
 },
@@ -8924,6 +12884,14 @@
 [
 "Rain can destroy paper.",
 "비에 종이가 망가져요."
+],
+[
+"Heat can destroy the screen.",
+"열이 화면을 망칠 수 있어요."
+],
+[
+"Don't destroy the box.",
+"상자를 부수지 마세요."
 ]
 ]
 },
@@ -8942,6 +12910,14 @@
 [
 "The stage was dark.",
 "무대가 어두웠어요."
+],
+[
+"Set up the stage first.",
+"무대부터 설치하세요."
+],
+[
+"We are at an early stage.",
+"아직 초기 단계예요."
 ]
 ]
 },
@@ -8960,6 +12936,14 @@
 [
 "Thanks a bunch.",
 "진짜 고마워요."
+],
+[
+"A bunch of keys was left.",
+"열쇠 뭉치가 남아 있었어요."
+],
+[
+"I bought a bunch of grapes.",
+"포도 한 송이를 샀어요."
 ]
 ]
 },
@@ -8978,6 +12962,14 @@
 [
 "According to the news, rain is coming.",
 "뉴스에 따르면 비가 온대요."
+],
+[
+"According to her, it's cheap.",
+"그녀 말론 싸대요."
+],
+[
+"Pay according to the size.",
+"크기에 따라 내세요."
 ]
 ]
 },
@@ -8996,6 +12988,14 @@
 [
 "Speak in a low voice.",
 "작은 목소리로 말하세요."
+],
+[
+"Keep the volume low.",
+"볼륨을 낮게 유지하세요."
+],
+[
+"The shelf is too low.",
+"선반이 너무 낮아요."
 ]
 ]
 },
@@ -9014,6 +13014,14 @@
 [
 "I want a second helping.",
 "한 그릇 더 주세요."
+],
+[
+"She is helping me pack.",
+"그녀가 짐 싸는 걸 돕고 있어요."
+],
+[
+"Helping others feels good.",
+"남을 돕는 건 기분 좋아요."
 ]
 ]
 },
@@ -9032,6 +13040,14 @@
 [
 "Admit your mistake.",
 "잘못을 인정하세요."
+],
+[
+"I have to admit it's good.",
+"솔직히 좋긴 하네요."
+],
+[
+"They admit only members.",
+"회원만 입장돼요."
 ]
 ]
 },
@@ -9050,6 +13066,14 @@
 [
 "Their names are on the list.",
 "그들 이름이 명단에 있어요."
+],
+[
+"The names are misspelled.",
+"이름 철자가 틀렸어요."
+],
+[
+"Call out the names.",
+"이름을 불러 주세요."
 ]
 ]
 },
@@ -9068,6 +13092,14 @@
 [
 "We need a witness.",
 "증인이 필요해요."
+],
+[
+"A witness saw everything.",
+"목격자가 다 봤어요."
+],
+[
+"I witness it every day.",
+"저는 매일 그걸 봐요."
 ]
 ]
 },
@@ -9086,6 +13118,14 @@
 [
 "Hold my arm.",
 "제 팔을 잡으세요."
+],
+[
+"Her arm is in a cast.",
+"그녀 팔에 깁스했어요."
+],
+[
+"He put an arm around me.",
+"그가 제 어깨를 감쌌어요."
 ]
 ]
 },
@@ -9104,6 +13144,14 @@
 [
 "At that price, it's a steal.",
 "그 가격이면 완전 거저예요."
+],
+[
+"Nobody will steal it here.",
+"여기선 아무도 안 훔쳐가요."
+],
+[
+"Don't steal the show.",
+"주목을 다 가로채지 마세요."
 ]
 ]
 },
@@ -9122,6 +13170,14 @@
 [
 "Jimmy called earlier.",
 "지미가 아까 전화했어요."
+],
+[
+"Jimmy lost his shoe.",
+"지미가 신발 한 짝을 잃어버렸어요."
+],
+[
+"Jimmy is in the pool.",
+"지미는 수영장에 있어요."
 ]
 ]
 },
@@ -9140,6 +13196,14 @@
 [
 "He gave the door a kick.",
 "그가 문을 발로 찼어요."
+],
+[
+"She wants to kick the habit.",
+"그녀는 그 버릇을 고치고 싶어해요."
+],
+[
+"Kick it back to me.",
+"저한테 다시 차 주세요."
 ]
 ]
 },
@@ -9158,6 +13222,14 @@
 [
 "It costs twice as much.",
 "값이 두 배예요."
+],
+[
+"Think twice before buying.",
+"사기 전에 다시 생각하세요."
+],
+[
+"We met twice already.",
+"벌써 두 번 만났어요."
 ]
 ]
 },
@@ -9176,6 +13248,14 @@
 [
 "Old ways are sometimes best.",
 "옛날 방식이 나을 때도 있어요."
+],
+[
+"There are two ways there.",
+"거기 가는 길이 두 가지예요."
+],
+[
+"Ways of cooking differ.",
+"요리 방법이 달라요."
 ]
 ]
 },
@@ -9194,6 +13274,14 @@
 [
 "It was hot indeed.",
 "정말 더웠어요."
+],
+[
+"Thank you very much indeed.",
+"정말 감사드려요."
+],
+[
+"Indeed, she was right.",
+"정말 그녀가 옳았어요."
 ]
 ]
 },
@@ -9212,6 +13300,14 @@
 [
 "Turn off the gas.",
 "가스 잠그세요."
+],
+[
+"The gas ran out.",
+"가스가 떨어졌어요."
+],
+[
+"Fill up with gas first.",
+"기름부터 넣으세요."
 ]
 ]
 },
@@ -9230,6 +13326,14 @@
 [
 "She is keeping busy.",
 "그녀는 바쁘게 지내요."
+],
+[
+"Keeping cool is hard here.",
+"여기선 시원하게 지내기 힘들어요."
+],
+[
+"He is keeping a secret.",
+"그는 비밀을 지키고 있어요."
 ]
 ]
 },
@@ -9248,6 +13352,14 @@
 [
 "Save energy at home.",
 "집에서 전기를 아껴요."
+],
+[
+"The energy bill went up.",
+"전기 요금이 올랐어요."
+],
+[
+"She has endless energy.",
+"그녀는 에너지가 끝이 없어요."
 ]
 ]
 },
@@ -9266,6 +13378,14 @@
 [
 "Pregnant women should rest.",
 "임산부는 쉬어야 해요."
+],
+[
+"The pregnant woman sat down.",
+"임산부가 앉았어요."
+],
+[
+"Is she pregnant again?",
+"그녀 또 임신했어요?"
 ]
 ]
 },
@@ -9284,6 +13404,14 @@
 [
 "Don't waste your time.",
 "시간 낭비하지 마세요."
+],
+[
+"What a waste of water.",
+"물 낭비네요."
+],
+[
+"Don't waste the leftovers.",
+"남은 음식 버리지 마세요."
 ]
 ]
 },
@@ -9302,6 +13430,14 @@
 [
 "She helped with the bags.",
 "그녀가 짐 드는 걸 도와줬어요."
+],
+[
+"Nobody helped him.",
+"아무도 그를 안 도왔어요."
+],
+[
+"The fan helped a lot.",
+"선풍기가 큰 도움이 됐어요."
 ]
 ]
 },
@@ -9320,6 +13456,14 @@
 [
 "The oven fired up quickly.",
 "오븐이 금방 달아올랐어요."
+],
+[
+"She fired back an answer.",
+"그녀가 곧바로 답했어요."
+],
+[
+"Two workers were fired.",
+"직원 두 명이 해고됐어요."
 ]
 ]
 },
@@ -9338,6 +13482,14 @@
 [
 "Tony lives upstairs.",
 "토니는 위층에 살아요."
+],
+[
+"Tony parked outside.",
+"토니가 밖에 주차했어요."
+],
+[
+"Ask Tony to wait.",
+"토니한테 기다리라고 해요."
 ]
 ]
 },
@@ -9356,6 +13508,14 @@
 [
 "This has no taste.",
 "이건 아무 맛이 안 나요."
+],
+[
+"The taste is too strong.",
+"맛이 너무 세요."
+],
+[
+"Taste before you add salt.",
+"소금 넣기 전에 맛보세요."
 ]
 ]
 },
@@ -9374,6 +13534,14 @@
 [
 "She locked the gate.",
 "그녀가 대문을 잠갔어요."
+],
+[
+"He locked himself out.",
+"그는 열쇠를 두고 나왔어요."
+],
+[
+"The drawer stays locked.",
+"서랍은 잠가 둬요."
 ]
 ]
 },
@@ -9392,6 +13560,14 @@
 [
 "Save our places in line.",
 "줄에서 자리 좀 맡아줘요."
+],
+[
+"Places like this are rare.",
+"이런 곳은 드물어요."
+],
+[
+"He goes places on weekends.",
+"그는 주말에 여기저기 다녀요."
 ]
 ]
 },
@@ -9410,6 +13586,14 @@
 [
 "Writing helps me think.",
 "글쓰기가 생각 정리에 도움돼요."
+],
+[
+"Writing an email takes time.",
+"이메일 쓰는 데 시간이 걸려요."
+],
+[
+"Put it in writing.",
+"서면으로 남겨 주세요."
 ]
 ]
 },
@@ -9428,6 +13612,14 @@
 [
 "Ask Adam about it.",
 "그건 아담한테 물어봐요."
+],
+[
+"Adam is on the phone.",
+"아담이 통화 중이에요."
+],
+[
+"Adam parked the van.",
+"아담이 승합차를 세웠어요."
 ]
 ]
 },
@@ -9446,6 +13638,14 @@
 [
 "She read a prince story.",
 "그녀는 왕자 이야기를 읽었어요."
+],
+[
+"The prince waved to us.",
+"왕자가 손을 흔들었어요."
+],
+[
+"A prince lived in that castle.",
+"왕자가 그 성에 살았어요."
 ]
 ]
 },
@@ -9464,6 +13664,14 @@
 [
 "The kids made silly faces.",
 "아이들이 우스꽝스러운 표정을 지었어요."
+],
+[
+"It was a silly mistake.",
+"어이없는 실수였어요."
+],
+[
+"Stop being silly.",
+"장난 그만해요."
 ]
 ]
 },
@@ -9482,6 +13690,14 @@
 [
 "She forgot to mention that.",
 "그녀가 그 얘길 깜빡했어요."
+],
+[
+"Did he mention the time?",
+"그가 시간을 말했어요?"
+],
+[
+"Please mention my name.",
+"제 이름을 말해 주세요."
 ]
 ]
 },
@@ -9500,6 +13716,14 @@
 [
 "It takes time to build trust.",
 "신뢰는 시간이 걸려요."
+],
+[
+"They build fast here.",
+"여긴 공사가 빨라요."
+],
+[
+"Build it step by step.",
+"한 단계씩 만드세요."
 ]
 ]
 },
@@ -9518,6 +13742,14 @@
 [
 "The hole is deep.",
 "구멍이 깊어요."
+],
+[
+"A hole in the road appeared.",
+"길에 구멍이 생겼어요."
+],
+[
+"Cover the hole for now.",
+"일단 구멍을 덮으세요."
 ]
 ]
 },
@@ -9536,6 +13768,14 @@
 [
 "She figured out the price.",
 "그녀가 가격을 계산해 냈어요."
+],
+[
+"She figured he was busy.",
+"그녀는 그가 바쁠 거라 생각했어요."
+],
+[
+"They figured a way out.",
+"그들은 방법을 찾아냈어요."
 ]
 ]
 },
@@ -9554,6 +13794,14 @@
 [
 "Don't forget to lock it.",
 "잠그는 거 잊지 마세요."
+],
+[
+"The lock needs oil.",
+"자물쇠에 기름칠이 필요해요."
+],
+[
+"Turn the lock twice.",
+"자물쇠를 두 번 돌리세요."
 ]
 ]
 },
@@ -9572,6 +13820,14 @@
 [
 "Put your leg up.",
 "다리를 올려놓으세요."
+],
+[
+"The chair has a broken leg.",
+"의자 다리가 부러졌어요."
+],
+[
+"Stretch your leg slowly.",
+"다리를 천천히 펴세요."
 ]
 ]
 },
@@ -9590,6 +13846,14 @@
 [
 "See the note above.",
 "위의 메모를 보세요."
+],
+[
+"Above all, stay safe.",
+"무엇보다 안전이 우선이에요."
+],
+[
+"The sky above is clear.",
+"위쪽 하늘이 맑아요."
 ]
 ]
 },
@@ -9608,6 +13872,14 @@
 [
 "She seemed happy.",
 "그녀는 행복해 보였어요."
+],
+[
+"It seemed too good.",
+"너무 좋아 보였어요."
+],
+[
+"Nobody seemed to care.",
+"아무도 신경 안 쓰는 것 같았어요."
 ]
 ]
 },
@@ -9626,6 +13898,14 @@
 [
 "The engine sounds strange.",
 "엔진 소리가 이상해요."
+],
+[
+"The engine is quiet.",
+"엔진이 조용해요."
+],
+[
+"Turn the engine off.",
+"시동 끄세요."
 ]
 ]
 },
@@ -9644,6 +13924,14 @@
 [
 "He has written three books.",
 "그는 책을 세 권 썼어요."
+],
+[
+"Is it written in English?",
+"영어로 쓰여 있어요?"
+],
+[
+"The date is written there.",
+"날짜가 거기 적혀 있어요."
 ]
 ]
 },
@@ -9662,6 +13950,14 @@
 [
 "We had a video call.",
 "우리는 영상통화를 했어요."
+],
+[
+"The video is loading.",
+"영상이 로딩 중이에요."
+],
+[
+"She made a short video.",
+"그녀가 짧은 영상을 만들었어요."
 ]
 ]
 },
@@ -9680,6 +13976,14 @@
 [
 "However you do it, be careful.",
 "어떻게 하든 조심하세요."
+],
+[
+"However late, please come.",
+"아무리 늦어도 오세요."
+],
+[
+"It's small, however it works.",
+"작지만 잘 돼요."
 ]
 ]
 },
@@ -9698,6 +14002,14 @@
 [
 "Sunscreen is my weapon against heat.",
 "선크림이 제 더위 무기예요."
+],
+[
+"A weapon was never found.",
+"무기는 발견되지 않았어요."
+],
+[
+"Patience is my best weapon.",
+"인내가 제 최고의 무기예요."
 ]
 ]
 },
@@ -9716,6 +14028,14 @@
 [
 "She needs to study more.",
 "그녀는 더 공부해야 해요."
+],
+[
+"The study took two years.",
+"그 연구는 2년 걸렸어요."
+],
+[
+"Study a little every day.",
+"매일 조금씩 공부하세요."
 ]
 ]
 },
@@ -9734,6 +14054,14 @@
 [
 "I got a burn on my hand.",
 "손에 화상을 입었어요."
+],
+[
+"The lights burn all night.",
+"불이 밤새 켜져 있어요."
+],
+[
+"Don't burn your tongue.",
+"혀 데지 않게 조심하세요."
 ]
 ]
 },
@@ -9752,6 +14080,14 @@
 [
 "Thanks for reading.",
 "읽어 줘서 고마워요."
+],
+[
+"Reading before bed helps.",
+"자기 전 독서가 도움돼요."
+],
+[
+"She is reading the sign.",
+"그녀가 표지판을 읽고 있어요."
 ]
 ]
 },
@@ -9770,6 +14106,14 @@
 [
 "A crowd gathered outside.",
 "밖에 사람들이 모였어요."
+],
+[
+"The crowd cheered loudly.",
+"관중이 크게 환호했어요."
+],
+[
+"A crowd formed at the gate.",
+"정문에 사람들이 모였어요."
 ]
 ]
 },
@@ -9788,6 +14132,14 @@
 [
 "The doctor will treat it.",
 "의사가 치료해 줄 거예요."
+],
+[
+"This is a special treat.",
+"이건 특별한 간식이에요."
+],
+[
+"They treat guests well.",
+"그들은 손님을 잘 대해요."
 ]
 ]
 },
@@ -9806,6 +14158,14 @@
 [
 "Keep your spirit up.",
 "기운 내세요."
+],
+[
+"His spirit stayed strong.",
+"그는 정신력이 강했어요."
+],
+[
+"That's the spirit!",
+"바로 그거예요!"
 ]
 ]
 },
@@ -9824,6 +14184,14 @@
 [
 "He is out of danger.",
 "그는 고비를 넘겼어요."
+],
+[
+"Danger, keep out.",
+"위험, 출입 금지."
+],
+[
+"The danger has passed.",
+"위험은 지나갔어요."
 ]
 ]
 },
@@ -9842,6 +14210,14 @@
 [
 "My tank is empty.",
 "기름이 다 떨어졌어요."
+],
+[
+"Empty the bin, please.",
+"쓰레기통 좀 비워 주세요."
+],
+[
+"An empty seat is there.",
+"저기 빈자리가 있어요."
 ]
 ]
 },
@@ -9860,6 +14236,14 @@
 [
 "The phone has no memory left.",
 "폰에 저장 공간이 없어요."
+],
+[
+"Save it to memory.",
+"저장해 두세요."
+],
+[
+"Memory fades with time.",
+"기억은 시간이 지나면 흐려져요."
 ]
 ]
 },
@@ -9878,6 +14262,14 @@
 [
 "Stop acting like a child.",
 "애처럼 굴지 마세요."
+],
+[
+"She is acting in a play.",
+"그녀가 연극에 출연해요."
+],
+[
+"He is acting as manager.",
+"그가 매니저 대행이에요."
 ]
 ]
 },
@@ -9896,6 +14288,14 @@
 [
 "It caught my interest.",
 "그게 제 관심을 끌었어요."
+],
+[
+"The interest rate went up.",
+"금리가 올랐어요."
+],
+[
+"Show some interest.",
+"좀 관심을 보이세요."
 ]
 ]
 },
@@ -9914,6 +14314,14 @@
 [
 "Make plans early.",
 "계획을 일찍 세우세요."
+],
+[
+"Change of plans.",
+"계획이 바뀌었어요."
+],
+[
+"Their plans fell through.",
+"그들 계획이 무산됐어요."
 ]
 ]
 },
@@ -9932,6 +14340,14 @@
 [
 "Read the following note.",
 "아래 메모를 읽으세요."
+],
+[
+"She is following the recipe.",
+"그녀는 레시피대로 하고 있어요."
+],
+[
+"The following week was busy.",
+"다음 주는 바빴어요."
 ]
 ]
 },
@@ -9950,6 +14366,14 @@
 [
 "He built a shelf.",
 "그가 선반을 만들었어요."
+],
+[
+"They built a new mall.",
+"새 몰을 지었어요."
+],
+[
+"The house was built in 1990.",
+"그 집은 1990년에 지어졌어요."
 ]
 ]
 },
@@ -9968,6 +14392,14 @@
 [
 "Move the chair closer.",
 "의자를 더 가까이 옮겨요."
+],
+[
+"Look closer at the price.",
+"가격을 더 자세히 보세요."
+],
+[
+"We are getting closer.",
+"점점 가까워지고 있어요."
 ]
 ]
 },
@@ -9986,6 +14418,14 @@
 [
 "Ray is my coworker.",
 "레이는 제 동료예요."
+],
+[
+"Ray drove us home.",
+"레이가 집까지 태워다 줬어요."
+],
+[
+"A ray of light came through.",
+"빛 한 줄기가 들어왔어요."
 ]
 ]
 },
@@ -10004,6 +14444,14 @@
 [
 "Sarah called this morning.",
 "사라가 아침에 전화했어요."
+],
+[
+"Sarah brought a cake.",
+"사라가 케이크를 가져왔어요."
+],
+[
+"Sarah works part time.",
+"사라는 아르바이트해요."
 ]
 ]
 },
@@ -10022,6 +14470,14 @@
 [
 "Use the rubber band.",
 "고무줄을 쓰세요."
+],
+[
+"The band played till late.",
+"밴드가 늦게까지 연주했어요."
+],
+[
+"Wrap a band around it.",
+"그 위에 밴드를 감으세요."
 ]
 ]
 },
@@ -10040,6 +14496,14 @@
 [
 "Richard is on leave.",
 "리처드는 휴가 중이에요."
+],
+[
+"Richard fixed the aircon.",
+"리처드가 에어컨을 고쳤어요."
+],
+[
+"Richard has the receipt.",
+"영수증은 리처드가 갖고 있어요."
 ]
 ]
 },
@@ -10058,6 +14522,14 @@
 [
 "He is losing weight.",
 "그는 살이 빠지고 있어요."
+],
+[
+"The team is losing.",
+"팀이 지고 있어요."
+],
+[
+"I keep losing socks.",
+"자꾸 양말을 잃어버려요."
 ]
 ]
 },
@@ -10076,6 +14548,14 @@
 [
 "Animals need shade too.",
 "동물도 그늘이 필요해요."
+],
+[
+"Wild animals live here.",
+"여긴 야생동물이 살아요."
+],
+[
+"The animals need water.",
+"동물들에게 물이 필요해요."
 ]
 ]
 },
@@ -10094,6 +14574,14 @@
 [
 "Nature is beautiful here.",
 "여긴 자연이 아름다워요."
+],
+[
+"Nature takes its time.",
+"자연은 서두르지 않아요."
+],
+[
+"A walk in nature helps.",
+"자연 속 산책이 도움돼요."
 ]
 ]
 },
@@ -10112,6 +14600,14 @@
 [
 "I'll pop out for a minute.",
 "잠깐 나갔다 올게요."
+],
+[
+"Pop it in the fridge.",
+"냉장고에 넣어 두세요."
+],
+[
+"The lid made a pop.",
+"뚜껑이 뻥 소리를 냈어요."
 ]
 ]
 },
@@ -10130,6 +14626,14 @@
 [
 "She is our biggest client.",
 "그녀가 우리 최대 고객이에요."
+],
+[
+"The client paid today.",
+"고객이 오늘 결제했어요."
+],
+[
+"A new client called.",
+"새 고객이 전화했어요."
 ]
 ]
 },
@@ -10148,6 +14652,14 @@
 [
 "That curry is the bomb.",
 "저 카레 진짜 끝내줘요."
+],
+[
+"The test was a bomb.",
+"시험을 완전히 망쳤어요."
+],
+[
+"Police checked for a bomb.",
+"경찰이 폭발물을 확인했어요."
 ]
 ]
 },
@@ -10166,6 +14678,14 @@
 [
 "Wear it around your neck.",
 "목에 거세요."
+],
+[
+"Turn your neck slowly.",
+"목을 천천히 돌리세요."
+],
+[
+"The bottle neck is narrow.",
+"병목이 좁아요."
 ]
 ]
 },
@@ -10184,6 +14704,14 @@
 [
 "We suspect a leak.",
 "누수가 의심돼요."
+],
+[
+"The suspect ran off.",
+"용의자가 도망갔어요."
+],
+[
+"I suspect she knows.",
+"그녀가 아는 것 같아요."
 ]
 ]
 },
@@ -10202,6 +14730,14 @@
 [
 "A van blocked the exit.",
 "승합차가 출구를 막았어요."
+],
+[
+"The van needs gas.",
+"승합차에 기름 넣어야 해요."
+],
+[
+"A white van waited outside.",
+"흰 승합차가 밖에서 기다렸어요."
 ]
 ]
 },
@@ -10220,6 +14756,14 @@
 [
 "Are dogs allowed here?",
 "여기 개 들어와도 돼요?"
+],
+[
+"The dogs ran in the park.",
+"개들이 공원에서 뛰었어요."
+],
+[
+"Some dogs hate the heat.",
+"더위를 싫어하는 개도 있어요."
 ]
 ]
 },
@@ -10238,6 +14782,14 @@
 [
 "The party was wild.",
 "파티가 엄청났어요."
+],
+[
+"It was a wild ride.",
+"정신없는 여정이었어요."
+],
+[
+"Wild flowers grow here.",
+"여긴 들꽃이 자라요."
 ]
 ]
 },
@@ -10256,6 +14808,14 @@
 [
 "I simply forgot.",
 "그냥 깜빡했어요."
+],
+[
+"Simply put, it's cheap.",
+"간단히 말해 싸요."
+],
+[
+"She simply walked away.",
+"그녀는 그냥 가버렸어요."
 ]
 ]
 },
@@ -10274,6 +14834,14 @@
 [
 "Lee works next door.",
 "리 씨는 옆에서 일해요."
+],
+[
+"Lee fixed the door.",
+"리 씨가 문을 고쳤어요."
+],
+[
+"Mrs. Lee runs the shop.",
+"리 부인이 가게를 운영해요."
 ]
 ]
 },
@@ -10292,6 +14860,14 @@
 [
 "A dog is my favorite animal.",
 "개가 제일 좋아하는 동물이에요."
+],
+[
+"A wild animal crossed the road.",
+"야생동물이 길을 건넜어요."
+],
+[
+"Don't touch that animal.",
+"그 동물 만지지 마세요."
 ]
 ]
 },
@@ -10310,6 +14886,14 @@
 [
 "The test showed nothing.",
 "검사에서 아무것도 안 나왔어요."
+],
+[
+"The map showed a shortcut.",
+"지도에 지름길이 있었어요."
+],
+[
+"He showed no interest.",
+"그는 관심을 안 보였어요."
 ]
 ]
 },
@@ -10328,6 +14912,14 @@
 [
 "The shooting starts at nine.",
 "촬영은 9시에 시작해요."
+],
+[
+"They finished shooting today.",
+"오늘 촬영을 끝냈어요."
+],
+[
+"A shooting star passed.",
+"별똥별이 지나갔어요."
 ]
 ]
 },
@@ -10346,6 +14938,14 @@
 [
 "She keeps a diary.",
 "그녀는 일기를 써요."
+],
+[
+"The lid keeps it fresh.",
+"뚜껑이 신선하게 유지해 줘요."
+],
+[
+"She keeps her word.",
+"그녀는 약속을 지켜요."
 ]
 ]
 },
@@ -10364,6 +14964,14 @@
 [
 "Let's camp by the river.",
 "강가에서 캠핑하자."
+],
+[
+"The camp was fun.",
+"캠프가 재밌었어요."
+],
+[
+"They camp every summer.",
+"그들은 여름마다 캠핑해요."
 ]
 ]
 },
@@ -10382,6 +14990,14 @@
 [
 "Police officers carry guns.",
 "경찰관은 총을 소지해요."
+],
+[
+"Water guns are fun.",
+"물총은 재밌어요."
+],
+[
+"Guns need a license here.",
+"여기선 총기에 면허가 필요해요."
 ]
 ]
 },
@@ -10400,6 +15016,14 @@
 [
 "It's a medical problem.",
 "의학적인 문제예요."
+],
+[
+"The medical bill was high.",
+"진료비가 많이 나왔어요."
+],
+[
+"She studies medical science.",
+"그녀는 의학을 공부해요."
 ]
 ]
 },
@@ -10418,6 +15042,14 @@
 [
 "He felt deep shame.",
 "그는 깊은 수치심을 느꼈어요."
+],
+[
+"It's a shame to waste it.",
+"버리기 아깝네요."
+],
+[
+"There's no shame in asking.",
+"물어보는 게 부끄러운 일이 아니에요."
 ]
 ]
 },
@@ -10436,6 +15068,14 @@
 [
 "She is hoping you'll call.",
 "그녀는 네가 전화하길 바라."
+],
+[
+"We are hoping for the best.",
+"잘되기를 바라고 있어요."
+],
+[
+"I'm hoping to sleep early.",
+"일찍 자려고요."
 ]
 ]
 },
@@ -10454,6 +15094,14 @@
 [
 "The flowers need water.",
 "꽃에 물을 줘야 해요."
+],
+[
+"Fresh flowers cost little here.",
+"여긴 생화가 싸요."
+],
+[
+"The flowers opened today.",
+"꽃이 오늘 피었어요."
 ]
 ]
 },
@@ -10472,6 +15120,14 @@
 [
 "It's famous for seafood.",
 "여긴 해산물로 유명해요."
+],
+[
+"The chef is famous.",
+"그 요리사는 유명해요."
+],
+[
+"It became famous overnight.",
+"하룻밤 사이 유명해졌어요."
 ]
 ]
 },
@@ -10490,6 +15146,14 @@
 [
 "That's the beauty of it.",
 "그게 바로 좋은 점이에요."
+],
+[
+"Beauty is everywhere here.",
+"여긴 아름다운 게 많아요."
+],
+[
+"She has natural beauty.",
+"그녀는 자연스러운 아름다움이 있어요."
 ]
 ]
 },
@@ -10508,6 +15172,14 @@
 [
 "The keys are on the table.",
 "열쇠는 탁자 위에 있어요."
+],
+[
+"Hand me the keys.",
+"열쇠 좀 주세요."
+],
+[
+"The keys don't fit.",
+"열쇠가 안 맞아요."
 ]
 ]
 },
@@ -10526,6 +15198,14 @@
 [
 "That's an awful price.",
 "가격이 말도 안 돼요."
+],
+[
+"The wait was awful.",
+"기다림이 끔찍했어요."
+],
+[
+"An awful noise woke us.",
+"끔찍한 소리에 깼어요."
 ]
 ]
 },
@@ -10544,6 +15224,14 @@
 [
 "I don't deserve this.",
 "저는 이럴 자격이 없어요."
+],
+[
+"Kids deserve a good school.",
+"아이들은 좋은 학교를 누릴 자격이 있어요."
+],
+[
+"You deserve better than that.",
+"당신은 더 나은 대접을 받아야 해요."
 ]
 ]
 },
@@ -10562,6 +15250,14 @@
 [
 "It's a stone wall.",
 "돌담이에요."
+],
+[
+"A stone hit the window.",
+"돌이 창문에 맞았어요."
+],
+[
+"The stone path is uneven.",
+"돌길이 울퉁불퉁해요."
 ]
 ]
 },
@@ -10580,6 +15276,14 @@
 [
 "Grace is my daughter's name.",
 "그레이스는 제 딸 이름이에요."
+],
+[
+"She handled it with grace.",
+"그녀는 우아하게 처리했어요."
+],
+[
+"Grace called this morning.",
+"그레이스가 아침에 전화했어요."
 ]
 ]
 },
@@ -10598,6 +15302,14 @@
 [
 "Consider the price first.",
 "가격을 먼저 따져보세요."
+],
+[
+"Consider it done.",
+"다 된 걸로 아세요."
+],
+[
+"We should consider the cost.",
+"비용을 고려해야 해요."
 ]
 ]
 },
@@ -10616,6 +15328,14 @@
 [
 "We're wondering if it's open.",
 "문 열었나 궁금해요."
+],
+[
+"He is wondering about the price.",
+"그가 가격을 궁금해해요."
+],
+[
+"I'm wondering what to eat.",
+"뭘 먹을지 고민 중이에요."
 ]
 ]
 },
@@ -10634,6 +15354,14 @@
 [
 "She lay down for a nap.",
 "그녀는 낮잠 자려고 누웠어요."
+],
+[
+"Lay the baby down gently.",
+"아기를 살살 눕히세요."
+],
+[
+"He lay awake all night.",
+"그는 밤새 깨어 누워 있었어요."
 ]
 ]
 },
@@ -10652,6 +15380,14 @@
 [
 "Plenty of shops are open.",
 "문 연 가게가 많아요."
+],
+[
+"Plenty of seats are left.",
+"자리가 많이 남았어요."
+],
+[
+"There's plenty for everyone.",
+"다들 먹을 만큼 있어요."
 ]
 ]
 },
@@ -10670,6 +15406,14 @@
 [
 "He is willing to pay more.",
 "그는 더 낼 생각이 있어요."
+],
+[
+"She is willing to wait.",
+"그녀는 기다릴 마음이 있어요."
+],
+[
+"Are you willing to share?",
+"나눠 주실 의향 있으세요?"
 ]
 ]
 },
@@ -10688,6 +15432,14 @@
 [
 "The skin is thin.",
 "껍질이 얇아요."
+],
+[
+"The heat is hard on skin.",
+"더위가 피부에 안 좋아요."
+],
+[
+"Peel the skin off.",
+"껍질을 벗기세요."
 ]
 ]
 },
@@ -10706,6 +15458,14 @@
 [
 "Her English is excellent.",
 "그녀 영어가 아주 좋아요."
+],
+[
+"Excellent, thank you.",
+"훌륭해요, 감사합니다."
+],
+[
+"The room was in excellent shape.",
+"방 상태가 아주 좋았어요."
 ]
 ]
 },
@@ -10724,6 +15484,14 @@
 [
 "It's a quiet beach.",
 "조용한 해변이에요."
+],
+[
+"The beach was clean.",
+"해변이 깨끗했어요."
+],
+[
+"Beach days are the best.",
+"해변 가는 날이 최고예요."
 ]
 ]
 },
@@ -10742,6 +15510,14 @@
 [
 "Don't lose faith.",
 "믿음을 잃지 마세요."
+],
+[
+"She lost her faith.",
+"그녀는 믿음을 잃었어요."
+],
+[
+"Have a little faith.",
+"조금만 믿어 봐요."
 ]
 ]
 },
@@ -10760,6 +15536,14 @@
 [
 "He is a responsible driver.",
 "그는 책임감 있는 운전자예요."
+],
+[
+"I'm responsible for this.",
+"이건 제 책임이에요."
+],
+[
+"Be responsible with money.",
+"돈은 책임감 있게 쓰세요."
 ]
 ]
 },
@@ -10778,6 +15562,14 @@
 [
 "It's a military hospital.",
 "군 병원이에요."
+],
+[
+"His son joined the military.",
+"그의 아들이 군에 입대했어요."
+],
+[
+"A military truck passed.",
+"군용 트럭이 지나갔어요."
 ]
 ]
 },
@@ -10796,6 +15588,14 @@
 [
 "I had no opportunity to ask.",
 "물어볼 기회가 없었어요."
+],
+[
+"This opportunity won't wait.",
+"이 기회는 기다려 주지 않아요."
+],
+[
+"She took the opportunity.",
+"그녀는 기회를 잡았어요."
 ]
 ]
 },
@@ -10814,6 +15614,14 @@
 [
 "Rain is common here.",
 "여긴 비가 자주 와요."
+],
+[
+"It's common to be late.",
+"늦는 게 흔한 일이에요."
+],
+[
+"Common sense helps here.",
+"여긴 상식이 통해요."
 ]
 ]
 },
@@ -10832,6 +15640,14 @@
 [
 "The bottom is wet.",
 "밑바닥이 젖었어요."
+],
+[
+"Read the bottom line.",
+"맨 아랫줄을 읽으세요."
+],
+[
+"He sat at the bottom step.",
+"그는 맨 아래 계단에 앉았어요."
 ]
 ]
 },
@@ -10850,6 +15666,14 @@
 [
 "We ate at a German place.",
 "독일식 식당에서 먹었어요."
+],
+[
+"German cars are popular.",
+"독일 차가 인기예요."
+],
+[
+"She studies German.",
+"그녀는 독일어를 공부해요."
 ]
 ]
 },
@@ -10868,6 +15692,14 @@
 [
 "He walked past me.",
 "그가 제 옆을 지나갔어요."
+],
+[
+"They walked to school.",
+"그들은 학교까지 걸어갔어요."
+],
+[
+"I walked in the rain.",
+"비 맞으며 걸었어요."
 ]
 ]
 },
@@ -10886,6 +15718,14 @@
 [
 "The court brings justice.",
 "법원이 정의를 세워요."
+],
+[
+"Justice was done.",
+"정의가 실현됐어요."
+],
+[
+"It's a matter of justice.",
+"정의의 문제예요."
 ]
 ]
 },
@@ -10904,6 +15744,14 @@
 [
 "Ask the commander.",
 "지휘관에게 물어보세요."
+],
+[
+"The commander stayed calm.",
+"지휘관은 침착했어요."
+],
+[
+"A commander visited the base.",
+"지휘관이 기지를 방문했어요."
 ]
 ]
 },
@@ -10922,6 +15770,14 @@
 [
 "He needs a new drug.",
 "그는 다른 약이 필요해요."
+],
+[
+"Take the drug after meals.",
+"약은 식후에 드세요."
+],
+[
+"This drug has side effects.",
+"이 약은 부작용이 있어요."
 ]
 ]
 },
@@ -10940,6 +15796,14 @@
 [
 "Be careful with the knife.",
 "칼 조심하세요."
+],
+[
+"Wash the knife carefully.",
+"칼을 조심해서 씻으세요."
+],
+[
+"A butter knife is enough.",
+"버터 나이프면 충분해요."
 ]
 ]
 },
@@ -10958,6 +15822,14 @@
 [
 "The devil is in the details.",
 "문제는 세부 사항에 있어요."
+],
+[
+"The poor devil lost everything.",
+"그 딱한 사람은 다 잃었어요."
+],
+[
+"He works like a devil.",
+"그는 지독하게 일해요."
 ]
 ]
 },
@@ -10976,6 +15848,14 @@
 [
 "It's not necessary to book.",
 "예약 안 해도 돼요."
+],
+[
+"Take the necessary papers.",
+"필요한 서류를 챙기세요."
+],
+[
+"It became necessary to move.",
+"이사가 불가피해졌어요."
 ]
 ]
 },
@@ -10994,6 +15874,14 @@
 [
 "Although he's young, he's smart.",
 "어리지만 똑똑해요."
+],
+[
+"Although late, he came.",
+"늦었지만 그는 왔어요."
+],
+[
+"Although cheap, it works well.",
+"싸지만 잘 돼요."
 ]
 ]
 },
@@ -11012,6 +15900,14 @@
 [
 "My daughter is my princess.",
 "제 딸은 저의 공주예요."
+],
+[
+"The princess waved.",
+"공주가 손을 흔들었어요."
+],
+[
+"She is our little princess.",
+"그녀는 우리 집 공주님이에요."
 ]
 ]
 },
@@ -11030,6 +15926,14 @@
 [
 "Flying makes me tired.",
 "비행기 타면 피곤해요."
+],
+[
+"Flying is faster than driving.",
+"비행기가 운전보다 빨라요."
+],
+[
+"Birds are flying south.",
+"새들이 남쪽으로 날아가요."
 ]
 ]
 },
@@ -11048,6 +15952,14 @@
 [
 "The sun rose early.",
 "해가 일찍 떴어요."
+],
+[
+"The rose smells sweet.",
+"장미 향이 좋아요."
+],
+[
+"She rose early today.",
+"그녀는 오늘 일찍 일어났어요."
 ]
 ]
 },
@@ -11066,6 +15978,14 @@
 [
 "Knowing the price helps.",
 "가격을 아는 게 도움돼요."
+],
+[
+"Knowing that helps a lot.",
+"그걸 알면 큰 도움이 돼요."
+],
+[
+"She left without knowing.",
+"그녀는 모른 채 떠났어요."
 ]
 ]
 },
@@ -11084,6 +16004,14 @@
 [
 "I can see it clearly.",
 "선명하게 보여요."
+],
+[
+"Write your name clearly.",
+"이름을 또렷하게 쓰세요."
+],
+[
+"Clearly, we need a plan.",
+"분명히 계획이 필요해요."
 ]
 ]
 },
@@ -11102,6 +16030,14 @@
 [
 "Everyone agreed.",
 "다들 동의했어요."
+],
+[
+"It's agreed then.",
+"그럼 그렇게 하죠."
+],
+[
+"He agreed with me.",
+"그가 제 말에 동의했어요."
 ]
 ]
 },
@@ -11120,6 +16056,14 @@
 [
 "That's a good note.",
 "좋은 지적이에요."
+],
+[
+"Make a note of it.",
+"적어 두세요."
+],
+[
+"The note fell off.",
+"메모가 떨어졌어요."
 ]
 ]
 },
@@ -11138,6 +16082,14 @@
 [
 "Tommy broke the cup.",
 "토미가 컵을 깼어요."
+],
+[
+"Tommy needs new shoes.",
+"토미는 새 신발이 필요해요."
+],
+[
+"Where did Tommy go?",
+"토미 어디 갔어요?"
 ]
 ]
 },
@@ -11156,6 +16108,14 @@
 [
 "That's the correct answer.",
 "그게 정답이에요."
+],
+[
+"Correct me if I'm wrong.",
+"틀리면 고쳐 주세요."
+],
+[
+"The correct time is three.",
+"정확한 시간은 3시예요."
 ]
 ]
 },
@@ -11174,6 +16134,14 @@
 [
 "He learns a new language.",
 "그는 새 언어를 배워요."
+],
+[
+"Language takes practice.",
+"언어는 연습이 필요해요."
+],
+[
+"Watch your language.",
+"말 좀 가려서 하세요."
 ]
 ]
 },
@@ -11192,6 +16160,14 @@
 [
 "We counted the stars.",
 "우리는 별을 셌어요."
+],
+[
+"No stars tonight.",
+"오늘 밤은 별이 없네요."
+],
+[
+"The stars came out late.",
+"별이 늦게 떴어요."
 ]
 ]
 },
@@ -11210,6 +16186,14 @@
 [
 "The cars stopped suddenly.",
 "차들이 갑자기 멈췄어요."
+],
+[
+"Cars line up here.",
+"차들이 여기 줄 서요."
+],
+[
+"Old cars break down often.",
+"오래된 차는 자주 고장 나요."
 ]
 ]
 },
@@ -11228,6 +16212,14 @@
 [
 "A fellow student helped me.",
 "같은 학생이 도와줬어요."
+],
+[
+"The fellow was very kind.",
+"그분 정말 친절했어요."
+],
+[
+"A fellow guest helped us.",
+"같은 손님이 도와줬어요."
 ]
 ]
 },
@@ -11246,6 +16238,14 @@
 [
 "It took several hours.",
 "몇 시간 걸렸어요."
+],
+[
+"Several people asked.",
+"여러 사람이 물었어요."
+],
+[
+"We stayed several nights.",
+"우리는 며칠 묵었어요."
 ]
 ]
 },
@@ -11264,6 +16264,14 @@
 [
 "The leader spoke first.",
 "리더가 먼저 말했어요."
+],
+[
+"A leader listens first.",
+"리더는 먼저 들어요."
+],
+[
+"They chose a new leader.",
+"그들은 새 리더를 뽑았어요."
 ]
 ]
 },
@@ -11282,6 +16290,14 @@
 [
 "The east side is busy.",
 "동쪽은 복잡해요."
+],
+[
+"We drove east all morning.",
+"아침 내내 동쪽으로 갔어요."
+],
+[
+"East of here is the sea.",
+"여기 동쪽이 바다예요."
 ]
 ]
 },
@@ -11300,6 +16316,14 @@
 [
 "Love is blind.",
 "사랑은 눈이 멀어요."
+],
+[
+"A blind man crossed safely.",
+"시각장애인이 안전하게 건넜어요."
+],
+[
+"Pull the blind down.",
+"블라인드를 내리세요."
 ]
 ]
 },
@@ -11318,6 +16342,14 @@
 [
 "There's no ghost here.",
 "여기 귀신 없어요."
+],
+[
+"A ghost story scared them.",
+"귀신 이야기에 놀랐어요."
+],
+[
+"The town is a ghost town.",
+"그 마을은 유령 도시예요."
 ]
 ]
 },
@@ -11336,6 +16368,14 @@
 [
 "The line has gotten long.",
 "줄이 길어졌어요."
+],
+[
+"It has gotten cheaper.",
+"더 싸졌어요."
+],
+[
+"Have you gotten the mail?",
+"우편 받으셨어요?"
 ]
 ]
 },
@@ -11354,6 +16394,14 @@
 [
 "The conversation was fun.",
 "대화가 재밌었어요."
+],
+[
+"Start a conversation.",
+"대화를 시작해 보세요."
+],
+[
+"The conversation went quiet.",
+"대화가 조용해졌어요."
 ]
 ]
 },
@@ -11372,6 +16420,14 @@
 [
 "The sign tells you where to go.",
 "표지판이 갈 길을 알려줘요."
+],
+[
+"Nobody tells me anything.",
+"아무도 저한테 말을 안 해줘요."
+],
+[
+"The clock tells the time.",
+"시계가 시간을 알려줘요."
 ]
 ]
 },
@@ -11390,6 +16446,14 @@
 [
 "The truth lies in between.",
 "진실은 그 중간에 있어요."
+],
+[
+"The truth lies here.",
+"진실은 여기 있어요."
+],
+[
+"Small lies grow big.",
+"작은 거짓말이 커져요."
 ]
 ]
 },
@@ -11408,6 +16472,14 @@
 [
 "The car pulled over.",
 "차가 길가에 섰어요."
+],
+[
+"He pulled out his phone.",
+"그가 폰을 꺼냈어요."
+],
+[
+"The train pulled in.",
+"기차가 들어왔어요."
 ]
 ]
 },
@@ -11426,6 +16498,14 @@
 [
 "A picture is hanging there.",
 "저기 그림이 걸려 있어요."
+],
+[
+"A lamp is hanging low.",
+"전등이 낮게 걸려 있어요."
+],
+[
+"She is hanging the laundry.",
+"그녀가 빨래를 널고 있어요."
 ]
 ]
 },
@@ -11444,6 +16524,14 @@
 [
 "Pick up the speed.",
 "속도를 좀 내요."
+],
+[
+"Reduce your speed here.",
+"여기선 속도를 줄이세요."
+],
+[
+"The speed of the wifi is good.",
+"와이파이 속도가 좋아요."
 ]
 ]
 },
@@ -11462,6 +16550,14 @@
 [
 "I love bedtime stories.",
 "저는 잠자리 동화를 좋아해요."
+],
+[
+"Their stories are similar.",
+"그들 이야기가 비슷해요."
+],
+[
+"She writes short stories.",
+"그녀는 단편을 써요."
 ]
 ]
 },
@@ -11480,6 +16576,14 @@
 [
 "Health is wealth.",
 "건강이 재산이에요."
+],
+[
+"Health problems cost money.",
+"건강 문제는 돈이 들어요."
+],
+[
+"Take care of your health.",
+"건강 챙기세요."
 ]
 ]
 },
@@ -11498,6 +16602,14 @@
 [
 "He held the door for me.",
 "그가 문을 잡아줬어요."
+],
+[
+"The bag held everything.",
+"가방에 다 들어갔어요."
+],
+[
+"They held a party here.",
+"그들이 여기서 파티를 열었어요."
 ]
 ]
 },
@@ -11516,6 +16628,14 @@
 [
 "That's beyond me.",
 "그건 제 이해를 넘어요."
+],
+[
+"Beyond that, I don't know.",
+"그 이상은 몰라요."
+],
+[
+"The field lies beyond the trees.",
+"들판은 나무 너머에 있어요."
 ]
 ]
 },
