@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.153";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.154";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7161,6 +7161,7 @@ async function wpSubmit(q, answer, viaMic){
   }
   // 💡 정답을 다 보고(전체 공개) 맞힌 경우 → 정답 처리 X, 복습 대기로
   if(answer && correct && q._answerShown){
+    q._shownButRight=true;    // 답은 맞다 — 화면에서 틀린 것처럼 보이지 않게
     if(!q._missLogged){
       srsFail(q.word.word, q.word.ko, (state.vocabTheme&&state.vocabTheme.id)||"daily");
       q._missLogged=true;
@@ -7237,9 +7238,9 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
     stageEl.querySelectorAll(".wp-blank").forEach(sp=>{ const b=document.createElement("b"); b.style.color="var(--jade)"; b.textContent=a; sp.replaceWith(b); });
     const box=document.createElement("div"); box.id="wpResultBox";
     box.innerHTML=`
-    <div class="mbtab" style="margin-top:10px">${correct?"✅ 정답!":"💡 정답 확인"}</div>
+    <div class="mbtab" style="margin-top:10px">${correct?"✅ 정답!":(q._shownButRight?"✅ 맞아요":"💡 정답 확인")}</div>
     <div class="mbcard" style="padding:15px 18px;text-align:center">
-      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
+      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:6px">${answer?(q._shownButRight?`내 답: "${escapeHtml(answer)}" ✓ — 정답을 다 본 뒤라 뒤에서 한 번 더 나와요`:`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`):gaveUp?"정답을 확인하세요":""}</div>`}
       <div style="font-family:var(--serif);font-size:28px;color:var(--jade);font-weight:700;line-height:1.15">${escapeHtml(a)}</div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:11px">
         <button class="wp-spd" id="wpSay" style="flex:1">🔊 듣기</button>
@@ -7283,9 +7284,9 @@ function wpResult(q, answer, correct, elapsed, gaveUp){
   // 폴백(문제 화면이 없을 때만): 기존 전체 교체 방식
   const card=document.createElement("div");
   card.innerHTML=`
-    <div class="mbtab">${correct?"✅ 정답!":"💡 정답 확인"}</div>
+    <div class="mbtab">${correct?"✅ 정답!":(q._shownButRight?"✅ 맞아요":"💡 정답 확인")}</div>
     <div class="mbcard" style="padding:18px 18px;text-align:center">
-      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">${answer?`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`:gaveUp?"정답을 확인하세요":""}</div>`}
+      ${(answer&&correct)?`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">내 답: "${escapeHtml(answer)}" ✓</div>`:`<div style="font-size:13px;color:var(--muted);margin-bottom:7px">${answer?(q._shownButRight?`내 답: "${escapeHtml(answer)}" ✓ — 정답을 다 본 뒤라 뒤에서 한 번 더 나와요`:`내 답: "${escapeHtml(answer)}" — 뒤에서 다시 나와요`):gaveUp?"정답을 확인하세요":""}</div>`}
       <div style="font-size:13px;color:var(--jade);font-weight:700;margin-bottom:4px">정답</div>
       <div style="font-family:var(--serif);font-size:30px;color:var(--jade);font-weight:700;line-height:1.15">${escapeHtml(a)}</div>
       <div style="font-family:var(--serif);font-size:21px;color:var(--text);margin-top:11px;line-height:1.4">${tappableEn(full)}</div>
