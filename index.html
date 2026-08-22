@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.156";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.157";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5855,7 +5855,27 @@ levelCap(),
   ].filter(Boolean).join("\n");
   });
 }
+/* 💸 하루 AI 생성 상한. 넘으면 내장 단어장으로 넘어간다(학습은 계속된다).
+   아이들이 화면을 여러 번 드나들면 생성 횟수가 그대로 요금이 된다. */
+const AI_DAY_CAP=25;
+function aiBudgetLeft(){
+  try{
+    const k="speakingroom:aiday", t=hGet(k,null);
+    const d=EDAY();
+    if(!t || t.d!==d) return AI_DAY_CAP;
+    return Math.max(0, AI_DAY_CAP-(t.n||0));
+  }catch(e){ return AI_DAY_CAP; }
+}
+function aiBudgetUse(){
+  try{
+    const k="speakingroom:aiday", d=EDAY(); let t=hGet(k,null);
+    if(!t || t.d!==d) t={d, n:0};
+    t.n=(t.n||0)+1; hSet(k,t);
+  }catch(e){}
+}
 async function aiVocabSet(theme){
+  if(aiBudgetLeft()<=0) return null;       // 오늘 몫을 다 썼다 — 내장 단어장으로
+  aiBudgetUse();
   const data=await callClaude(vocabPrompt(theme),[{role:"user",content:"Create the vocabulary set now."}], FAST_MODEL);
   const obj=parseJSON(extractText(data));
   return (obj.words||[]).filter(w=>w&&w.word);
@@ -5863,7 +5883,7 @@ async function aiVocabSet(theme){
 let prefetchingTheme=null;
 async function prefetchVocab(theme){
   if(!theme) return;
-  const b=vbankGet(); if((b[bankKey(theme.id)]||[]).length>=3) return;
+  const b=vbankGet(); if((b[bankKey(theme.id)]||[]).length>=2) return;   // 테마 20개 × 2 = 최대 40세트
   const tk=bankKey(theme.id);
   if(prefetchingTheme===tk) return; prefetchingTheme=tk;
   try{ const set=await aiVocabSet(theme); if(set&&set.length) pushToBank(theme.id,set); }catch(e){}
@@ -6497,10 +6517,11 @@ function commonFreqWindow(){
 function commonFreqPromptWords(theme){
   const pool=commonFreqWindow().filter(w=>!COMMON_FREQ_SKIP.has(w));
   if(!pool.length) return [];
-  const step=Math.max(1, Math.floor(pool.length/220));
+  // 220개를 넣으면 프롬프트의 3분의 1이 이 목록이다. 100개로도 충분히 방향이 잡힌다.
+  const step=Math.max(1, Math.floor(pool.length/100));
   const offset=(Math.random()*step)|0;
   const out=[];
-  for(let i=offset;i<pool.length&&out.length<220;i+=step) out.push(pool[i]);
+  for(let i=offset;i<pool.length&&out.length<100;i+=step) out.push(pool[i]);
   return out;
 }
 function commonFreqPromptLine(theme){
@@ -6591,10 +6612,10 @@ async function generateVocab(){
     // 2) 캐시 없음 → 기다리지 말고 레벨맞춤 스타터를 0초에 띄움 (앱 끄지 않게)
     vocabWords=prependMyWords(starterSet()); vbIdx=0; markVocabSeen(vocabWords); myWordsMarkStudied(vocabWords); showVocabCard();
   }
-  // 3) 백그라운드로 다음 세트들 미리 생성 (다음 진입은 즉시 AI 단어)
+  /* 3) 다음 세트 하나만 미리 만든다.
+     예전엔 진입할 때마다 3개(지금 테마 + 랜덤 테마 2개)를 만들어서,
+     가보지도 않은 테마 것까지 생성하느라 요금이 3배로 나갔다. */
   prefetchVocab(theme);
-  prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
-  prefetchVocab(VOCAB_THEMES[(Math.random()*VOCAB_THEMES.length)|0]);
 }
 // 내 단어장 단어를 세트 맨 앞에 끼움 (중복 제거, 세트당 최대 3개 — 테마 학습도 유지)
 function prependMyWords(set){
