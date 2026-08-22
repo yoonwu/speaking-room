@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.159";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.160";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6563,6 +6563,40 @@ const SQC_STOP=new Set(("i you he she it we they me him her us them my your his 
  +"there here what when where who why how which whose "
  +"one some any all more most much many few little other another same such own each every "
  +"okay ok oh hey hi yeah yep nope well now again still even ever never always").split(" "));
+/* 📕 직접 써 넣은 단어 카드(word-bank.json). 자막 빈도가 아니라
+   이 가족이 실제로 쓸 말 기준으로 고른다. AI 호출 0. */
+const WB_URL="word-bank.json";
+let wordBank=null;
+async function wordBankLoad(){
+  if(wordBank) return;
+  try{
+    const r=await fetch(WB_URL,{cache:"default"});
+    if(r.ok){ const d=await r.json(); if(Array.isArray(d)&&d.length){ wordBank=d; try{localStorage.setItem("speakingroom:wbank",JSON.stringify(d));}catch(e){} return; } }
+  }catch(e){}
+  try{ const d=JSON.parse(localStorage.getItem("speakingroom:wbank")||"null"); if(Array.isArray(d)&&d.length) wordBank=d; }catch(e){}
+}
+let _wbCards=null;
+function wbWordCards(){
+  if(_wbCards) return _wbCards;
+  _wbCards=[];
+  try{
+    (wordBank||[]).forEach(it=>{
+      const w=String(it.w||"").toLowerCase().trim(); if(!w||!it.ko||!Array.isArray(it.s)||!it.s.length) return;
+      const ex=it.s.filter(p=>Array.isArray(p)&&p[0]&&p[1]).map(p=>({en:String(p[0]), ko:String(p[1])}));
+      if(!ex.length) return;
+      const re=new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+      const first=ex.find(e=>re.test(e.en)); if(!first) return;
+      const rank=_FREQ_INDEX[w];
+      _wbCards.push({ word:w, ko:it.ko, diff:(rank==null?2:(rank<700?1:(rank<1400?2:3))), _wb:true,
+        examples:ex.slice(0,3), blank:{en:first.en.replace(re,"____"), ko:first.ko, answer:w} });
+    });
+  }catch(e){}
+  return _wbCards;
+}
+function wbCardsForBand(bandKey){
+  const want = bandKey==="low"?1:(bandKey==="mid"?2:3);
+  return wbWordCards().filter(c=>c.diff<=want);
+}
 let _sqCards=null;
 function sqWordCards(){
   if(_sqCards) return _sqCards;
@@ -6621,7 +6655,7 @@ function starterSet(){
     ? SEED_VOCAB[state.vocabTheme.id].flat()
     : [];
   // 내장 카드 + 상황 듣기 문장에서 만든 카드 + 테마 시드
-  const all = uniqueVocabWords(band.concat(currentThemeSeeds).concat(sqCardsForBand(bandKey)).concat(seedVocabWords()));
+  const all = uniqueVocabWords(band.concat(currentThemeSeeds).concat(wbCardsForBand(bandKey)).concat(sqCardsForBand(bandKey)).concat(seedVocabWords()));
   const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
   let pool=all.filter(w=>!recent.has(vocabWordKey(w)));
   if(pool.length<VOCAB_SET_SIZE){
@@ -6651,6 +6685,7 @@ function fillVocabSet(set){
 }
 function startVocab(noResume){ try{ ttStart("vocab"); }catch(e){}
   try{ if(!sqBank) sqBankLoad().then(()=>{ _sqCards=null; }); }catch(e){}   // 문장 은행 준비 (AI 아님)
+  try{ if(!wordBank) wordBankLoad().then(()=>{ _wbCards=null; }); }catch(e){}
   if(noResume && typeof wpClearProgress==="function") wpClearProgress();
   if(!noResume && wpResumeData()){ return wpResume(); }   // 미완료 세트 있으면 이어하기
   state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
