@@ -1546,5 +1546,2165 @@
 "애들 들어오라고 해."
 ]
 ]
+},
+{
+"w": "told",
+"ko": "말해줬다",
+"s": [
+[
+"He told me the price.",
+"그분이 가격을 알려줬어요."
+],
+[
+"I told you already.",
+"이미 말했잖아."
+],
+[
+"Who told you that?",
+"누가 그래?"
+]
+]
+},
+{
+"w": "guys",
+"ko": "얘들아/여러분",
+"s": [
+[
+"Hey guys, over here!",
+"얘들아, 여기야!"
+],
+[
+"Are you guys ready?",
+"다들 준비됐어?"
+],
+[
+"Thanks, guys.",
+"다들 고마워."
+]
+]
+},
+{
+"w": "wanted",
+"ko": "원했다",
+"s": [
+[
+"I wanted to ask you.",
+"물어보고 싶었어요."
+],
+[
+"She wanted the window seat.",
+"걔는 창가 자리를 원했어."
+],
+[
+"We wanted to leave early.",
+"일찍 나가고 싶었어요."
+]
+]
+},
+{
+"w": "happened",
+"ko": "일어났다",
+"s": [
+[
+"What happened here?",
+"여기 무슨 일이에요?"
+],
+[
+"It happened yesterday.",
+"어제 있었던 일이에요."
+],
+[
+"Nothing happened.",
+"아무 일도 없었어."
+]
+]
+},
+{
+"w": "talking",
+"ko": "말하는 중",
+"s": [
+[
+"Who are you talking to?",
+"누구랑 얘기해?"
+],
+[
+"We're talking about dinner.",
+"저녁 얘기 중이야."
+],
+[
+"Stop talking, please.",
+"조용히 해 주세요."
+]
+]
+},
+{
+"w": "found",
+"ko": "찾았다",
+"s": [
+[
+"I found my keys.",
+"열쇠 찾았어."
+],
+[
+"We found a good place.",
+"좋은 데를 찾았어요."
+],
+[
+"Where did you find it?",
+"어디서 찾았어?"
+]
+]
+},
+{
+"w": "looking",
+"ko": "찾는 중/보는 중",
+"s": [
+[
+"I'm looking for the station.",
+"역을 찾고 있어요."
+],
+[
+"What are you looking at?",
+"뭐 보고 있어?"
+],
+[
+"She's looking for a job.",
+"걔 일자리 찾는 중이야."
+]
+]
+},
+{
+"w": "went",
+"ko": "갔다",
+"s": [
+[
+"I went to the market.",
+"시장에 갔어요."
+],
+[
+"We went home early.",
+"일찍 집에 갔어요."
+],
+[
+"Where did you go?",
+"어디 갔었어?"
+]
+]
+},
+{
+"w": "best",
+"ko": "최고의",
+"s": [
+[
+"This is the best one.",
+"이게 제일 좋아요."
+],
+[
+"Do your best.",
+"최선을 다해."
+],
+[
+"What's the best way there?",
+"거기 가는 제일 좋은 방법이 뭐예요?"
+]
+]
+},
+{
+"w": "saw",
+"ko": "보았다",
+"s": [
+[
+"I saw him yesterday.",
+"어제 걔 봤어."
+],
+[
+"Did you see that?",
+"저거 봤어?"
+],
+[
+"We saw a movie.",
+"영화 봤어요."
+]
+]
+},
+{
+"w": "real",
+"ko": "진짜의",
+"s": [
+[
+"Is this real gold?",
+"이거 진짜 금이에요?"
+],
+[
+"That's a real problem.",
+"그건 진짜 문제야."
+],
+[
+"For real?",
+"진짜야?"
+]
+]
+},
+{
+"w": "seen",
+"ko": "본 적 있는",
+"s": [
+[
+"Have you seen my bag?",
+"제 가방 못 보셨어요?"
+],
+[
+"I've seen this before.",
+"전에 본 적 있어요."
+],
+[
+"I haven't seen her today.",
+"오늘 걔 못 봤어."
+]
+]
+},
+{
+"w": "heard",
+"ko": "들었다",
+"s": [
+[
+"I heard a noise.",
+"무슨 소리를 들었어요."
+],
+[
+"Have you heard the news?",
+"그 소식 들었어?"
+],
+[
+"I heard it's closed.",
+"문 닫았다고 들었어요."
+]
+]
+},
+{
+"w": "knew",
+"ko": "알았다",
+"s": [
+[
+"I knew it.",
+"그럴 줄 알았어."
+],
+[
+"She knew the answer.",
+"걔는 답을 알고 있었어."
+],
+[
+"I never knew that.",
+"전혀 몰랐어요."
+]
+]
+},
+{
+"w": "gone",
+"ko": "가버린/없어진",
+"s": [
+[
+"My phone is gone.",
+"폰이 없어졌어요."
+],
+[
+"He's already gone.",
+"걔 벌써 갔어."
+],
+[
+"The food is all gone.",
+"음식이 다 없어졌어요."
+]
+]
+},
+{
+"w": "saying",
+"ko": "말하는 중",
+"s": [
+[
+"What are you saying?",
+"무슨 말이야?"
+],
+[
+"I'm just saying.",
+"그냥 하는 말이야."
+],
+[
+"She kept saying sorry.",
+"걔가 계속 미안하다고 했어."
+]
+]
+},
+{
+"w": "wants",
+"ko": "원한다",
+"s": [
+[
+"He wants more rice.",
+"걔 밥 더 달래."
+],
+[
+"She wants to go home.",
+"걔 집에 가고 싶어 해."
+],
+[
+"Nobody wants that.",
+"아무도 그걸 원하지 않아."
+]
+]
+},
+{
+"w": "thinking",
+"ko": "생각하는 중",
+"s": [
+[
+"I'm thinking about it.",
+"생각 중이에요."
+],
+[
+"What are you thinking?",
+"무슨 생각 해?"
+],
+[
+"We're thinking of moving.",
+"이사를 생각 중이에요."
+]
+]
+},
+{
+"w": "working",
+"ko": "일하는 중/작동하는",
+"s": [
+[
+"I'm working right now.",
+"지금 일하는 중이에요."
+],
+[
+"The lift isn't working.",
+"엘리베이터가 안 돼요."
+],
+[
+"Are you still working?",
+"아직 일해?"
+]
+]
+},
+{
+"w": "knows",
+"ko": "안다",
+"s": [
+[
+"He knows the way.",
+"걔가 길을 알아."
+],
+[
+"Nobody knows yet.",
+"아직 아무도 몰라."
+],
+[
+"She knows my name.",
+"그분이 제 이름을 알아요."
+]
+]
+},
+{
+"w": "hit",
+"ko": "치다/부딪히다",
+"s": [
+[
+"The ball hit the window.",
+"공이 창문에 맞았어요."
+],
+[
+"I hit my head.",
+"머리를 부딪혔어요."
+],
+[
+"Don't hit your brother.",
+"동생 때리지 마."
+]
+]
+},
+{
+"w": "taking",
+"ko": "타는 중/가져가는 중",
+"s": [
+[
+"I'm taking the bus.",
+"버스 타고 가요."
+],
+[
+"Are you taking that?",
+"그거 가져가는 거야?"
+],
+[
+"She's taking a shower.",
+"걔 샤워 중이야."
+]
+]
+},
+{
+"w": "means",
+"ko": "의미한다",
+"s": [
+[
+"Red means stop.",
+"빨간불은 멈추라는 뜻이야."
+],
+[
+"It means a lot to me.",
+"저한텐 큰 의미예요."
+],
+[
+"That means we're late.",
+"그럼 우리 늦은 거네."
+]
+]
+},
+{
+"w": "makes",
+"ko": "만든다",
+"s": [
+[
+"He makes good coffee.",
+"걔가 커피를 잘 만들어."
+],
+[
+"That makes sense.",
+"말이 되네요."
+],
+[
+"It makes me happy.",
+"그게 절 기쁘게 해요."
+]
+]
+},
+{
+"w": "making",
+"ko": "만드는 중",
+"s": [
+[
+"I'm making dinner.",
+"저녁 만드는 중이야."
+],
+[
+"Stop making noise.",
+"시끄럽게 하지 마."
+],
+[
+"She's making a call.",
+"걔 전화하는 중이야."
+]
+]
+},
+{
+"w": "dear",
+"ko": "소중한/얘야",
+"s": [
+[
+"Thank you, dear.",
+"고마워, 얘야."
+],
+[
+"Dear friends, welcome.",
+"친애하는 여러분, 환영합니다."
+],
+[
+"Oh dear, I forgot.",
+"이런, 깜빡했네."
+]
+]
+},
+{
+"w": "though",
+"ko": "~이긴 하지만",
+"s": [
+[
+"It's expensive, though.",
+"근데 비싸요."
+],
+[
+"Even though it rained, we went.",
+"비가 왔는데도 갔어요."
+],
+[
+"Nice place, though.",
+"그래도 괜찮은 곳이네."
+]
+]
+},
+{
+"w": "playing",
+"ko": "놀고 있는/하고 있는",
+"s": [
+[
+"The kids are playing outside.",
+"애들이 밖에서 놀아요."
+],
+[
+"What are you playing?",
+"뭐 하고 놀아?"
+],
+[
+"He's playing soccer.",
+"걔 축구하고 있어."
+]
+]
+},
+{
+"w": "met",
+"ko": "만났다",
+"s": [
+[
+"We met at the airport.",
+"공항에서 만났어요."
+],
+[
+"Have we met before?",
+"저희 전에 만난 적 있나요?"
+],
+[
+"I met her last year.",
+"작년에 만났어요."
+]
+]
+},
+{
+"w": "telling",
+"ko": "말하고 있는",
+"s": [
+[
+"Are you telling the truth?",
+"사실대로 말하는 거야?"
+],
+[
+"I'm telling you, it's closed.",
+"진짜라니까, 문 닫았어."
+],
+[
+"Stop telling me what to do.",
+"이래라저래라 하지 마."
+]
+]
+},
+{
+"w": "tried",
+"ko": "해봤다",
+"s": [
+[
+"I tried it once.",
+"한번 해봤어요."
+],
+[
+"Have you tried this?",
+"이거 드셔보셨어요?"
+],
+[
+"We tried to call you.",
+"전화하려고 했어요."
+]
+]
+},
+{
+"w": "stupid",
+"ko": "바보 같은",
+"s": [
+[
+"That was stupid of me.",
+"제가 바보 같았어요."
+],
+[
+"It's a stupid rule.",
+"말도 안 되는 규칙이야."
+],
+[
+"Don't say stupid things.",
+"바보 같은 소리 하지 마."
+]
+]
+},
+{
+"w": "fight",
+"ko": "싸우다/싸움",
+"s": [
+[
+"Don't fight with your sister.",
+"누나랑 싸우지 마."
+],
+[
+"They had a fight.",
+"걔네 싸웠어."
+],
+[
+"Stop the fight.",
+"그만 싸워."
+]
+]
+},
+{
+"w": "fire",
+"ko": "불/화재",
+"s": [
+[
+"There's a fire!",
+"불이야!"
+],
+[
+"Where is the fire exit?",
+"비상구가 어디예요?"
+],
+[
+"Call the fire department.",
+"소방서에 전화해요."
+]
+]
+},
+{
+"w": "police",
+"ko": "경찰",
+"s": [
+[
+"Call the police.",
+"경찰에 신고하세요."
+],
+[
+"The police are here.",
+"경찰이 왔어요."
+],
+[
+"I went to the police station.",
+"경찰서에 갔어요."
+]
+]
+},
+{
+"w": "kill",
+"ko": "죽이다/없애다",
+"s": [
+[
+"This spray kills mosquitoes.",
+"이 스프레이가 모기를 잡아요."
+],
+[
+"The heat is killing me.",
+"더워 죽겠어요."
+],
+[
+"We have time to kill.",
+"시간이 남아요."
+]
+]
+},
+{
+"w": "killed",
+"ko": "죽였다/없앴다",
+"s": [
+[
+"The frost killed the plants.",
+"서리에 식물이 다 죽었어요."
+],
+[
+"The rain killed our plans.",
+"비 때문에 계획이 다 틀어졌어요."
+],
+[
+"That noise killed the mood.",
+"그 소리가 분위기를 망쳤어요."
+]
+]
+},
+{
+"w": "die",
+"ko": "죽다/멎다",
+"s": [
+[
+"My phone is about to die.",
+"폰 배터리가 곧 나가요."
+],
+[
+"The plant will die without water.",
+"물 없으면 식물이 죽어요."
+],
+[
+"The engine died.",
+"시동이 꺼졌어요."
+]
+]
+},
+{
+"w": "died",
+"ko": "죽었다/멎었다",
+"s": [
+[
+"My battery died.",
+"배터리가 나갔어요."
+],
+[
+"The engine died again.",
+"시동이 또 꺼졌어요."
+],
+[
+"His grandfather died last year.",
+"걔 할아버지가 작년에 돌아가셨어."
+]
+]
+},
+{
+"w": "dead",
+"ko": "죽은/작동 안 하는",
+"s": [
+[
+"My phone is dead.",
+"폰이 꺼졌어요."
+],
+[
+"The battery is dead.",
+"배터리가 다 됐어요."
+],
+[
+"This street is dead at night.",
+"이 거리는 밤엔 조용해요."
+]
+]
+},
+{
+"w": "death",
+"ko": "죽음",
+"s": [
+[
+"I'm scared to death.",
+"무서워 죽겠어요."
+],
+[
+"It was a sad death.",
+"안타까운 죽음이었어요."
+],
+[
+"We were bored to death.",
+"지루해 죽는 줄 알았어요."
+]
+]
+},
+{
+"w": "gun",
+"ko": "총",
+"s": [
+[
+"That's a toy gun.",
+"그거 장난감 총이야."
+],
+[
+"Guns are not allowed here.",
+"여기는 총기 반입 금지예요."
+],
+[
+"He has a water gun.",
+"걔 물총 있어."
+]
+]
+},
+{
+"w": "shot",
+"ko": "주사/한 장/샷",
+"s": [
+[
+"I need a flu shot.",
+"독감 주사 맞아야 해요."
+],
+[
+"Nice shot!",
+"나이스 샷!"
+],
+[
+"Give it a shot.",
+"한번 해봐."
+]
+]
+},
+{
+"w": "war",
+"ko": "전쟁",
+"s": [
+[
+"We learned about the war.",
+"전쟁에 대해 배웠어요."
+],
+[
+"The war ended long ago.",
+"그 전쟁은 오래전에 끝났어요."
+],
+[
+"It's a war movie.",
+"전쟁 영화예요."
+]
+]
+},
+{
+"w": "months",
+"ko": "개월",
+"s": [
+[
+"We stayed three months.",
+"석 달 있었어요."
+],
+[
+"It takes two months.",
+"두 달 걸려요."
+],
+[
+"The lease is six months.",
+"계약이 6개월이에요."
+]
+]
+},
+{
+"w": "sometimes",
+"ko": "가끔",
+"s": [
+[
+"Sometimes I walk to work.",
+"가끔 걸어서 출근해요."
+],
+[
+"It's sometimes closed.",
+"가끔 문을 닫아요."
+],
+[
+"Sometimes she calls me.",
+"가끔 걔가 전화해."
+]
+]
+},
+{
+"w": "become",
+"ko": "~이 되다",
+"s": [
+[
+"It became very hot.",
+"아주 더워졌어요."
+],
+[
+"He wants to become a doctor.",
+"걔는 의사가 되고 싶어 해."
+],
+[
+"It's become a habit.",
+"습관이 됐어요."
+]
+]
+},
+{
+"w": "along",
+"ko": "~을 따라",
+"s": [
+[
+"Walk along this street.",
+"이 길을 따라 걸으세요."
+],
+[
+"Come along with us.",
+"우리랑 같이 가."
+],
+[
+"Bring your passport along.",
+"여권 챙겨 와."
+]
+]
+},
+{
+"w": "hate",
+"ko": "싫어하다",
+"s": [
+[
+"I hate waiting.",
+"기다리는 거 싫어."
+],
+[
+"She hates spicy food.",
+"걔는 매운 거 싫어해."
+],
+[
+"I hate to say it, but no.",
+"이런 말 하기 싫지만, 안 돼."
+]
+]
+},
+{
+"w": "country",
+"ko": "나라",
+"s": [
+[
+"What country are you from?",
+"어느 나라에서 오셨어요?"
+],
+[
+"It's a beautiful country.",
+"아름다운 나라예요."
+],
+[
+"We live in this country now.",
+"이제 이 나라에 살아요."
+]
+]
+},
+{
+"w": "clear",
+"ko": "분명한/맑은",
+"s": [
+[
+"Is that clear?",
+"이해되셨어요?"
+],
+[
+"The water is clear.",
+"물이 맑아요."
+],
+[
+"Please clear the table.",
+"식탁 좀 치워주세요."
+]
+]
+},
+{
+"w": "fact",
+"ko": "사실",
+"s": [
+[
+"In fact, it's free.",
+"사실 무료예요."
+],
+[
+"That's a fact.",
+"그건 사실이에요."
+],
+[
+"The fact is, we're late.",
+"사실 우리 늦었어요."
+]
+]
+},
+{
+"w": "alive",
+"ko": "살아있는",
+"s": [
+[
+"The fish is still alive.",
+"생선이 아직 살아있어요."
+],
+[
+"Keep the plant alive.",
+"화분 잘 살려두세요."
+],
+[
+"I feel alive today.",
+"오늘 기운이 나요."
+]
+]
+},
+{
+"w": "feeling",
+"ko": "느낌/기분",
+"s": [
+[
+"How are you feeling?",
+"몸은 좀 어때요?"
+],
+[
+"I have a good feeling.",
+"느낌이 좋아요."
+],
+[
+"I'm not feeling well.",
+"몸이 안 좋아요."
+]
+]
+},
+{
+"w": "living",
+"ko": "사는/생활",
+"s": [
+[
+"The living room is big.",
+"거실이 커요."
+],
+[
+"Living here is easy.",
+"여기 사는 건 편해요."
+],
+[
+"What do you do for a living?",
+"무슨 일 하세요?"
+]
+]
+},
+{
+"w": "cause",
+"ko": "원인/일으키다",
+"s": [
+[
+"What caused the delay?",
+"왜 늦어진 거예요?"
+],
+[
+"Rain can cause traffic.",
+"비 오면 차가 막혀요."
+],
+[
+"The cause is unknown.",
+"원인을 몰라요."
+]
+]
+},
+{
+"w": "lose",
+"ko": "잃다/지다",
+"s": [
+[
+"Don't lose your ticket.",
+"표 잃어버리지 마세요."
+],
+[
+"We might lose the game.",
+"우리가 질 수도 있어."
+],
+[
+"I don't want to lose it.",
+"그거 잃어버리기 싫어요."
+]
+]
+},
+{
+"w": "plan",
+"ko": "계획",
+"s": [
+[
+"What's the plan?",
+"계획이 뭐야?"
+],
+[
+"I have no plans today.",
+"오늘 약속 없어요."
+],
+[
+"Let's make a plan.",
+"계획을 세우자."
+]
+]
+},
+{
+"w": "sort",
+"ko": "종류/정리하다",
+"s": [
+[
+"What sort of food?",
+"어떤 종류 음식이요?"
+],
+[
+"Sort of.",
+"좀 그런 편이야."
+],
+[
+"Let me sort this out.",
+"제가 정리할게요."
+]
+]
+},
+{
+"w": "leaving",
+"ko": "떠나는 중",
+"s": [
+[
+"I'm leaving now.",
+"지금 나가요."
+],
+[
+"What time are you leaving?",
+"몇 시에 출발해요?"
+],
+[
+"The bus is leaving.",
+"버스 떠나요."
+]
+]
+},
+{
+"w": "boss",
+"ko": "상사/사장",
+"s": [
+[
+"My boss is nice.",
+"제 상사는 좋은 분이에요."
+],
+[
+"Ask the boss.",
+"사장님께 여쭤보세요."
+],
+[
+"She's the boss here.",
+"여기는 그분이 책임자예요."
+]
+]
+},
+{
+"w": "promise",
+"ko": "약속하다",
+"s": [
+[
+"I promise.",
+"약속할게."
+],
+[
+"Don't break your promise.",
+"약속 어기지 마."
+],
+[
+"Promise me one thing.",
+"한 가지만 약속해줘."
+]
+]
+},
+{
+"w": "safe",
+"ko": "안전한",
+"s": [
+[
+"Is it safe here?",
+"여기 안전해요?"
+],
+[
+"Have a safe trip.",
+"조심히 가세요."
+],
+[
+"Keep it in a safe place.",
+"안전한 데 보관하세요."
+]
+]
+},
+{
+"w": "anybody",
+"ko": "아무나",
+"s": [
+[
+"Is anybody here?",
+"누구 계세요?"
+],
+[
+"Anybody can do it.",
+"누구나 할 수 있어요."
+],
+[
+"I didn't tell anybody.",
+"아무한테도 말 안 했어."
+]
+]
+},
+{
+"w": "perfect",
+"ko": "완벽한/딱 좋은",
+"s": [
+[
+"That's perfect.",
+"딱 좋아요."
+],
+[
+"The weather is perfect.",
+"날씨가 완벽해요."
+],
+[
+"Perfect, thank you.",
+"좋아요, 감사합니다."
+]
+]
+},
+{
+"w": "perhaps",
+"ko": "아마",
+"s": [
+[
+"Perhaps tomorrow.",
+"아마 내일이요."
+],
+[
+"Perhaps she forgot.",
+"아마 깜빡했나 봐."
+],
+[
+"Perhaps we should ask.",
+"물어보는 게 좋겠어요."
+]
+]
+},
+{
+"w": "sounds",
+"ko": "~처럼 들린다",
+"s": [
+[
+"That sounds good.",
+"좋은 것 같아요."
+],
+[
+"It sounds expensive.",
+"비쌀 것 같은데요."
+],
+[
+"Sounds like a plan.",
+"그렇게 하죠."
+]
+]
+},
+{
+"w": "serious",
+"ko": "심각한/진지한",
+"s": [
+[
+"Are you serious?",
+"진심이야?"
+],
+[
+"It's not serious.",
+"심각한 건 아니에요."
+],
+[
+"He looks serious.",
+"걔 표정이 진지해."
+]
+]
+},
+{
+"w": "company",
+"ko": "회사",
+"s": [
+[
+"I work for a small company.",
+"작은 회사에서 일해요."
+],
+[
+"The company moved.",
+"회사가 이전했어요."
+],
+[
+"Thanks for the company.",
+"같이 있어줘서 고마워요."
+]
+]
+},
+{
+"w": "uncle",
+"ko": "삼촌",
+"s": [
+[
+"My uncle lives here.",
+"삼촌이 여기 사세요."
+],
+[
+"This is my uncle.",
+"저희 삼촌이에요."
+],
+[
+"I visited my uncle.",
+"삼촌을 뵈러 갔어요."
+]
+]
+},
+{
+"w": "poor",
+"ko": "가난한/불쌍한",
+"s": [
+[
+"Poor thing.",
+"불쌍해라."
+],
+[
+"The signal is poor.",
+"신호가 약해요."
+],
+[
+"He grew up poor.",
+"걔는 어렵게 자랐어."
+]
+]
+},
+{
+"w": "earth",
+"ko": "지구/땅",
+"s": [
+[
+"The Earth is warming.",
+"지구가 더워지고 있어요."
+],
+[
+"What on earth is that?",
+"도대체 저게 뭐야?"
+],
+[
+"It fell to the earth.",
+"땅에 떨어졌어요."
+]
+]
+},
+{
+"w": "sound",
+"ko": "소리",
+"s": [
+[
+"What's that sound?",
+"저거 무슨 소리야?"
+],
+[
+"Turn the sound down.",
+"소리 좀 줄여."
+],
+[
+"The sound is too loud.",
+"소리가 너무 커요."
+]
+]
+},
+{
+"w": "asking",
+"ko": "묻는 중",
+"s": [
+[
+"I'm just asking.",
+"그냥 물어보는 거야."
+],
+[
+"She's asking for help.",
+"걔가 도와달래."
+],
+[
+"He kept asking why.",
+"걔가 계속 왜냐고 물었어."
+]
+]
+},
+{
+"w": "win",
+"ko": "이기다",
+"s": [
+[
+"We can win this.",
+"우리 이길 수 있어."
+],
+[
+"Who won?",
+"누가 이겼어?"
+],
+[
+"I never win.",
+"난 한 번도 못 이겨."
+]
+]
+},
+{
+"w": "control",
+"ko": "조절하다/통제",
+"s": [
+[
+"Where is the remote control?",
+"리모컨 어디 있어?"
+],
+[
+"I can't control it.",
+"제어가 안 돼요."
+],
+[
+"Keep it under control.",
+"잘 관리하세요."
+]
+]
+},
+{
+"w": "hair",
+"ko": "머리카락",
+"s": [
+[
+"I need a hair cut.",
+"머리 잘라야 해요."
+],
+[
+"Her hair is long.",
+"걔 머리가 길어."
+],
+[
+"Dry your hair.",
+"머리 말려."
+]
+]
+},
+{
+"w": "luck",
+"ko": "운",
+"s": [
+[
+"Good luck!",
+"행운을 빌어!"
+],
+[
+"Bad luck today.",
+"오늘 운이 없네."
+],
+[
+"With any luck, we'll make it.",
+"운이 좋으면 갈 수 있어요."
+]
+]
+},
+{
+"w": "air",
+"ko": "공기/에어컨",
+"s": [
+[
+"The air is fresh here.",
+"여기 공기가 맑아요."
+],
+[
+"Turn on the air.",
+"에어컨 켜줘."
+],
+[
+"Open the window for air.",
+"환기 좀 시켜."
+]
+]
+},
+{
+"w": "daddy",
+"ko": "아빠",
+"s": [
+[
+"Daddy is home!",
+"아빠 오셨다!"
+],
+[
+"Ask your daddy.",
+"아빠한테 물어봐."
+],
+[
+"Daddy, look at this.",
+"아빠, 이거 봐."
+]
+]
+},
+{
+"w": "finally",
+"ko": "마침내",
+"s": [
+[
+"Finally, we're here.",
+"드디어 도착했다."
+],
+[
+"It finally stopped raining.",
+"드디어 비가 그쳤어요."
+],
+[
+"He finally answered.",
+"걔가 드디어 답했어."
+]
+]
+},
+{
+"w": "seem",
+"ko": "~인 것 같다",
+"s": [
+[
+"You seem tired.",
+"피곤해 보여요."
+],
+[
+"It seems closed.",
+"닫은 것 같아요."
+],
+[
+"They seem nice.",
+"좋은 분들 같아요."
+]
+]
+},
+{
+"w": "words",
+"ko": "말/단어들",
+"s": [
+[
+"I don't know these words.",
+"이 단어들 모르겠어요."
+],
+[
+"In other words, it's full.",
+"그러니까 자리가 없다는 거죠."
+],
+[
+"Words are not enough.",
+"말로는 부족해요."
+]
+]
+},
+{
+"w": "hang",
+"ko": "걸다",
+"s": [
+[
+"Hang your coat here.",
+"외투 여기 거세요."
+],
+[
+"Hang on a second.",
+"잠깐만요."
+],
+[
+"Let's hang out later.",
+"이따 같이 놀자."
+]
+]
+},
+{
+"w": "till",
+"ko": "~까지",
+"s": [
+[
+"We're open till nine.",
+"9시까지 열어요."
+],
+[
+"Wait till I come back.",
+"내가 올 때까지 기다려."
+],
+[
+"Till tomorrow, then.",
+"그럼 내일 봐요."
+]
+]
+},
+{
+"w": "others",
+"ko": "다른 사람들",
+"s": [
+[
+"Where are the others?",
+"다른 사람들은 어디 있어?"
+],
+[
+"The others already left.",
+"나머지는 벌써 갔어요."
+],
+[
+"Ask the others too.",
+"다른 분들께도 물어보세요."
+]
+]
+},
+{
+"w": "catch",
+"ko": "잡다/타다",
+"s": [
+[
+"I need to catch the bus.",
+"버스 타야 해요."
+],
+[
+"Catch the ball!",
+"공 받아!"
+],
+[
+"I didn't catch that.",
+"못 알아들었어요."
+]
+]
+},
+{
+"w": "sense",
+"ko": "느낌/의미",
+"s": [
+[
+"That makes sense.",
+"말이 되네요."
+],
+[
+"It doesn't make sense.",
+"말이 안 돼요."
+],
+[
+"He has a good sense of humor.",
+"걔는 유머 감각이 좋아."
+]
+]
+},
+{
+"w": "lie",
+"ko": "거짓말/눕다",
+"s": [
+[
+"Don't lie to me.",
+"거짓말하지 마."
+],
+[
+"That's a lie.",
+"그건 거짓말이야."
+],
+[
+"Lie down and rest.",
+"누워서 쉬어."
+]
+]
+},
+{
+"w": "dream",
+"ko": "꿈",
+"s": [
+[
+"I had a strange dream.",
+"이상한 꿈을 꿨어요."
+],
+[
+"It's my dream job.",
+"제 꿈의 직업이에요."
+],
+[
+"Sweet dreams.",
+"잘 자."
+]
+]
+},
+{
+"w": "rather",
+"ko": "차라리/꽤",
+"s": [
+[
+"I'd rather stay home.",
+"차라리 집에 있을래."
+],
+[
+"It's rather expensive.",
+"꽤 비싸요."
+],
+[
+"I'd rather not.",
+"안 하는 게 좋겠어요."
+]
+]
+},
+{
+"w": "felt",
+"ko": "느꼈다",
+"s": [
+[
+"I felt sick yesterday.",
+"어제 몸이 안 좋았어요."
+],
+[
+"It felt too long.",
+"너무 길게 느껴졌어요."
+],
+[
+"She felt better after lunch.",
+"점심 먹고 나아졌어."
+]
+]
+},
+{
+"w": "lucky",
+"ko": "운 좋은",
+"s": [
+[
+"You're lucky.",
+"운이 좋으시네요."
+],
+[
+"That was lucky.",
+"운이 좋았어요."
+],
+[
+"I'm not lucky today.",
+"오늘은 운이 없네."
+]
+]
+},
+{
+"w": "somewhere",
+"ko": "어딘가",
+"s": [
+[
+"Let's go somewhere else.",
+"다른 데 가자."
+],
+[
+"I left it somewhere.",
+"어딘가에 뒀어요."
+],
+[
+"Somewhere near here.",
+"이 근처 어딘가요."
+]
+]
+},
+{
+"w": "bet",
+"ko": "장담하다",
+"s": [
+[
+"I bet it's closed.",
+"분명 닫았을 거야."
+],
+[
+"You bet.",
+"당연하지."
+],
+[
+"I bet you're tired.",
+"피곤하시겠어요."
+]
+]
+},
+{
+"w": "longer",
+"ko": "더 오래/더 긴",
+"s": [
+[
+"I can't wait any longer.",
+"더는 못 기다려요."
+],
+[
+"It takes longer by bus.",
+"버스로 가면 더 걸려요."
+],
+[
+"Stay a little longer.",
+"조금만 더 있다 가."
+]
+]
+},
+{
+"w": "worked",
+"ko": "일했다/통했다",
+"s": [
+[
+"It worked!",
+"됐다!"
+],
+[
+"I worked late yesterday.",
+"어제 늦게까지 일했어요."
+],
+[
+"That didn't work.",
+"그건 안 통했어."
+]
+]
+},
+{
+"w": "looked",
+"ko": "보았다/~해 보였다",
+"s": [
+[
+"She looked tired.",
+"걔 피곤해 보였어."
+],
+[
+"I looked everywhere.",
+"다 찾아봤어요."
+],
+[
+"It looked expensive.",
+"비싸 보였어요."
+]
+]
+},
+{
+"w": "secret",
+"ko": "비밀",
+"s": [
+[
+"Keep it a secret.",
+"비밀로 해줘."
+],
+[
+"It's not a secret.",
+"비밀 아니에요."
+],
+[
+"Can you keep a secret?",
+"비밀 지킬 수 있어?"
+]
+]
+},
+{
+"w": "fall",
+"ko": "떨어지다/넘어지다",
+"s": [
+[
+"Be careful, don't fall.",
+"조심해, 넘어지지 마."
+],
+[
+"The price will fall.",
+"가격이 내려갈 거예요."
+],
+[
+"I fell on the stairs.",
+"계단에서 넘어졌어요."
+]
+]
+},
+{
+"w": "fault",
+"ko": "잘못",
+"s": [
+[
+"It's my fault.",
+"제 잘못이에요."
+],
+[
+"It's not your fault.",
+"네 잘못 아니야."
+],
+[
+"Whose fault is it?",
+"누구 잘못이야?"
+]
+]
+},
+{
+"w": "future",
+"ko": "미래",
+"s": [
+[
+"In the future, be careful.",
+"앞으로는 조심하세요."
+],
+[
+"What are your future plans?",
+"앞으로 계획이 뭐예요?"
+],
+[
+"The future looks good.",
+"앞날이 밝아 보여요."
+]
+]
+},
+{
+"w": "calm",
+"ko": "침착한",
+"s": [
+[
+"Stay calm.",
+"침착해."
+],
+[
+"Keep calm and wait.",
+"진정하고 기다려."
+],
+[
+"The sea is calm today.",
+"오늘 바다가 잔잔해요."
+]
+]
+},
+{
+"w": "wonderful",
+"ko": "멋진",
+"s": [
+[
+"That's wonderful news.",
+"정말 좋은 소식이네요."
+],
+[
+"We had a wonderful time.",
+"아주 좋았어요."
+],
+[
+"What a wonderful place.",
+"정말 멋진 곳이네요."
+]
+]
+},
+{
+"w": "mad",
+"ko": "화난",
+"s": [
+[
+"Are you mad at me?",
+"나한테 화났어?"
+],
+[
+"Don't get mad.",
+"화내지 마."
+],
+[
+"He was mad about the delay.",
+"걔가 지연 때문에 화났어."
+]
+]
+},
+{
+"w": "ladies",
+"ko": "여성분들",
+"s": [
+[
+"Ladies first.",
+"여성분 먼저요."
+],
+[
+"The ladies room is there.",
+"여자 화장실은 저기예요."
+],
+[
+"Good evening, ladies.",
+"안녕하세요, 여러분."
+]
+]
+},
+{
+"w": "learn",
+"ko": "배우다",
+"s": [
+[
+"I want to learn English.",
+"영어를 배우고 싶어요."
+],
+[
+"You learn fast.",
+"빨리 배우시네요."
+],
+[
+"Learn from your mistakes.",
+"실수에서 배워."
+]
+]
+},
+{
+"w": "explain",
+"ko": "설명하다",
+"s": [
+[
+"Can you explain it again?",
+"다시 설명해 주실래요?"
+],
+[
+"Let me explain.",
+"제가 설명할게요."
+],
+[
+"It's hard to explain.",
+"설명하기 어려워요."
+]
+]
+},
+{
+"w": "piece",
+"ko": "조각",
+"s": [
+[
+"One piece of cake, please.",
+"케이크 한 조각 주세요."
+],
+[
+"A piece of paper.",
+"종이 한 장이요."
+],
+[
+"It came in three pieces.",
+"세 조각으로 왔어요."
+]
+]
+},
+{
+"w": "land",
+"ko": "착륙하다/땅",
+"s": [
+[
+"The plane will land soon.",
+"비행기가 곧 착륙해요."
+],
+[
+"We landed on time.",
+"제시간에 도착했어요."
+],
+[
+"They bought land here.",
+"여기 땅을 샀어요."
+]
+]
+},
+{
+"w": "wonder",
+"ko": "궁금하다",
+"s": [
+[
+"I wonder if it's open.",
+"열었을까 궁금하네."
+],
+[
+"I wonder where he is.",
+"걔 어디 있는지 모르겠네."
+],
+[
+"No wonder you're tired.",
+"그러니 피곤하지."
+]
+]
+},
+{
+"w": "questions",
+"ko": "질문들",
+"s": [
+[
+"Any questions?",
+"질문 있으세요?"
+],
+[
+"I have two questions.",
+"질문이 두 개 있어요."
+],
+[
+"Good questions.",
+"좋은 질문이에요."
+]
+]
+},
+{
+"w": "worth",
+"ko": "~의 가치가 있는",
+"s": [
+[
+"Is it worth the money?",
+"돈값 해요?"
+],
+[
+"It's worth a try.",
+"해볼 만해요."
+],
+[
+"Not worth the wait.",
+"기다릴 만하진 않아요."
+]
+]
+},
+{
+"w": "figure",
+"ko": "알아내다",
+"s": [
+[
+"I can't figure it out.",
+"도무지 모르겠어요."
+],
+[
+"Let me figure this out.",
+"제가 알아볼게요."
+],
+[
+"We figured out the problem.",
+"문제를 알아냈어요."
+]
+]
+},
+{
+"w": "none",
+"ko": "하나도 없음",
+"s": [
+[
+"None of them worked.",
+"하나도 안 됐어요."
+],
+[
+"None left, sorry.",
+"남은 게 없어요."
+],
+[
+"None of my business.",
+"제 알 바 아니에요."
+]
+]
+},
+{
+"w": "works",
+"ko": "작동한다",
+"s": [
+[
+"It works now.",
+"이제 돼요."
+],
+[
+"The lift works again.",
+"엘리베이터 다시 돼요."
+],
+[
+"He works at a bank.",
+"걔는 은행에서 일해."
+]
+]
+},
+{
+"w": "act",
+"ko": "행동하다",
+"s": [
+[
+"Act normal.",
+"자연스럽게 행동해."
+],
+[
+"He acted fast.",
+"걔가 빨리 대처했어."
+],
+[
+"Don't act like that.",
+"그렇게 굴지 마."
+]
+]
+},
+{
+"w": "needed",
+"ko": "필요했다",
+"s": [
+[
+"I needed help.",
+"도움이 필요했어요."
+],
+[
+"We needed more time.",
+"시간이 더 필요했어요."
+],
+[
+"That's just what I needed.",
+"딱 필요했던 거예요."
+]
+]
+},
+{
+"w": "weird",
+"ko": "이상한",
+"s": [
+[
+"That's weird.",
+"이상하네."
+],
+[
+"It tastes weird.",
+"맛이 이상해요."
+],
+[
+"He's acting weird.",
+"걔 좀 이상해."
+]
+]
+},
+{
+"w": "law",
+"ko": "법",
+"s": [
+[
+"It's against the law.",
+"법에 어긋나요."
+],
+[
+"That's the law here.",
+"여기 법이 그래요."
+],
+[
+"She studies law.",
+"걔는 법을 공부해."
+]
+]
 }
 ]
