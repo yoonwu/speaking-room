@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.150";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.151";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7891,7 +7891,7 @@ async function micFillCb(rawCb, refText, opts){
           if(res.data) return res.data;
           if(res.err===429){ meta.sttErr="잠시 요청이 몰렸어요 — 잠깐 뒤 다시 말해보세요"; return null; }
           if(res.err==="parse"){ meta.sttErr="응답 형식 오류"; return null; }
-          meta.sttErr="서버 "+res.err+(res.body?" · "+String(res.body).slice(0,80):"");
+          meta.sttErr="서버 "+res.err+(res.body?" · "+String(res.body).slice(0,70):"")+(_sttVia?" ["+_sttVia+"]":"");
           return null;
         }catch(e){
           meta.sttErr="연결 실패"+((e&&e.message)?" · "+String(e.message).slice(0,60):"");
@@ -8339,6 +8339,7 @@ async function recordedToWav(blob){
 // 무음에 잘 지어내는 문구들 — 짧거나 소리가 안 잡힌 녹음에서만 걸러낸다
 const STT_HALLUC=/^(thank you|thanks( for watching)?|thank you for watching|bye+|you|okay|ok|uh|um|hmm|please subscribe|subscribe)?[.!?…\s]*$/i;
 let _sttSoftOff=0;                       // 관대한 쪽이 죽어 있으면 잠시 안 부른다
+let _sttVia="";                          // 이번 인식이 어느 경로로 갔는지 (화면 진단용)
 async function sttRecognize(raw, actualMime){
   let body, ctype;
   try{ body=await recordedToWav(raw); ctype="audio/wav"; }
@@ -8351,14 +8352,18 @@ async function sttRecognize(raw, actualMime){
           : (actualMime||"audio/webm; codecs=opus");
   }
   const send=(path)=>fetch(PROXY_URL+path,{method:"POST",headers:{"Content-Type":ctype},body});
+  _sttVia="Azure";
   if(STT_SOFT && Date.now()>_sttSoftOff){
     try{
       const r=await send("/stt2");
-      if(r.ok) return r;
+      if(r.ok){ _sttVia="관대"; return r; }
       // 501=키 없음, 404=구버전 워커 → 한동안 안 부른다. 그 외(429·5xx)는 다음번에 다시 시도.
-      if(r.status===501||r.status===404) _sttSoftOff=Date.now()+30*60000;
-    }catch(e){}
-  }
+      if(r.status===404){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(워커가 구버전)"; }
+      else if(r.status===501){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OPENAI_API_KEY 없음)"; }
+      else _sttVia="Azure(관대 인식 "+r.status+")";
+    }catch(e){ _sttVia="Azure(관대 인식 연결실패)"; }
+  } else if(STT_SOFT){ _sttVia="Azure(관대 인식 잠시 중단됨)"; }
+  else { _sttVia="Azure(관대 인식 꺼짐)"; }
   return send("/stt");
 }
 async function toggleMic(){
