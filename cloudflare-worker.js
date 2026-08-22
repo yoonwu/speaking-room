@@ -1,6 +1,6 @@
 // ============================================================
 //  스피킹 룸 — Cloudflare Worker 프록시 v6
-//  GET  /version   → 배포 확인용 ("worker-v6" 반환)
+//  GET  /version   → 배포 확인용 ("worker-v7" 반환)
 //  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
 //  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
 //  GET  /board     → 전체 사용자 랭킹 요약 목록      ★ v6 신규
@@ -13,13 +13,14 @@
 //     (Workers & Pages → speaking-room → Edit code)에 붙여넣고 Save & Deploy.
 //     비밀키는 코드에 없고 워커 환경변수(env)에 있음: ANTHROPIC_API_KEY,
 //     AZURE_SPEECH_KEY, AZURE_SPEECH_REGION(기본 koreacentral)
+//     OPENAI_API_KEY (선택 — 있으면 /stt2 관대한 음성인식이 열린다)
 //
 //  ★ v6 추가 준비물 — KV 저장소 바인딩 (대시보드에서 1회 설정)
 //     Workers & Pages → speaking-room → Settings → Bindings → Add → KV namespace
 //     Variable name: USERDATA   /   KV namespace: 새로 만들기(예: speaking-room-data)
 //     (바인딩이 없으면 /u 는 503을 돌려주고, 앱은 기기 저장만으로 정상 동작합니다)
 // ============================================================
-const WORKER_VERSION = "worker-v6";
+const WORKER_VERSION = "worker-v7";
 
 export default {
   async fetch(request, env, ctx) {
@@ -215,6 +216,41 @@ export default {
         );
         // raw 그대로 전달 (json 파싱 실패로 인한 500 방지)
         return new Response(await r.text(), { status: r.status, headers: { ...cors, "Content-Type": "application/json" } });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+      }
+    }
+
+    // ── ③-2 OpenAI 음성인식 (관대한 채점용) ────────────────
+    //  Azure 는 들린 그대로 적고, 이쪽은 문맥으로 다듬어 준다.
+    //  발음이 서툴러도 뜻이 통하면 넘어가게 하려고 채점용 STT 만 이쪽을 쓴다.
+    //  발음 점수(/pronounce)는 계속 Azure 라 실력은 그대로 드러난다.
+    //  응답은 Azure 모양({RecognitionStatus, DisplayText})으로 맞춰서 앱 파싱을 안 바꾼다.
+    if (path === "/stt2") {
+      if (!env.OPENAI_API_KEY) {
+        return new Response(JSON.stringify({ error: "OPENAI_API_KEY not set" }), { status: 501, headers: { ...cors, "Content-Type": "application/json" } });
+      }
+      try {
+        const audio = await request.arrayBuffer();
+        const ct = request.headers.get("Content-Type") || "audio/wav";
+        const ext = /wav/.test(ct) ? "wav" : /webm/.test(ct) ? "webm" : /ogg/.test(ct) ? "ogg" : /mp4|aac|m4a/.test(ct) ? "mp4" : "wav";
+        const fd = new FormData();
+        fd.append("file", new File([audio], "a." + ext, { type: ct }));
+        fd.append("model", env.OPENAI_STT_MODEL || "gpt-4o-transcribe");
+        fd.append("language", "en");
+        fd.append("response_format", "json");
+        // ⚠️ prompt 로 정답을 흘리면 안 된다. 뭘 말하든 그 문장이 그대로 돌아와 전부 정답이 된다.
+        const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+          method: "POST",
+          headers: { "Authorization": "Bearer " + env.OPENAI_API_KEY },
+          body: fd,
+        });
+        const t = await r.text();
+        if (!r.ok) return new Response(t, { status: r.status, headers: { ...cors, "Content-Type": "application/json" } });
+        let text = "";
+        try { text = (JSON.parse(t).text || "").trim(); } catch (e) {}
+        return new Response(JSON.stringify({ RecognitionStatus: text ? "Success" : "NoMatch", DisplayText: text }),
+          { headers: { ...cors, "Content-Type": "application/json" } });
       } catch (e) {
         return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
       }

@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.149";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.150";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -1987,6 +1987,9 @@ try{
 }catch(e){}
 const MODEL = "claude-sonnet-4-6";   // 대화·피드백용 (정확도 중요)
 const FAST_MODEL = "claude-haiku-4-5-20251001";  // 단어·듣기 생성용 (빠름)
+/* 🎧 채점용 음성인식을 '관대한 쪽'으로 먼저 시도할지.
+   false 로 두면 예전처럼 Azure 만 쓴다. 발음 점수는 이 값과 무관하게 항상 Azure. */
+const STT_SOFT = true;
 /* ============================================================ */
 
 /* localStorage 기반 저장 (claude.ai 밖에서도 진행도가 저장됨) */
@@ -2161,7 +2164,7 @@ async function syncDiagnose(){
       detail:"인터넷이 끊겼거나 서버 주소에 접속할 수 없어요.",
       fix:"와이파이/데이터를 확인해 주세요. 그래도 안 되면 워커 주소를 확인해야 해요."};
   }
-  if(ver!=="worker-v6"){
+  if(ver!=="worker-v7"){
     return {ok:false, title:"서버가 예전 버전이에요 (현재: "+ver+")",
       detail:"연동·랭킹 기능이 없는 버전이라 저장이 안 돼요.",
       fix:"Cloudflare 대시보드 → speaking-room → Edit code 에 최신 워커 코드를 붙여넣고 Save & Deploy 해주세요."};
@@ -7904,7 +7907,12 @@ async function micFillCb(rawCb, refText, opts){
         meta.sttErr="인식 결과 없음("+sttData.RecognitionStatus+")";
       }
       // DisplayText 가 없어도 상세 포맷이면 NBest 에 결과가 있다
-      const sttText = (sttData && (sttData.DisplayText || (Array.isArray(sttData.NBest)&&sttData.NBest[0]&&(sttData.NBest[0].Display||sttData.NBest[0].Lexical)))) || "";
+      let sttText = (sttData && (sttData.DisplayText || (Array.isArray(sttData.NBest)&&sttData.NBest[0]&&(sttData.NBest[0].Display||sttData.NBest[0].Lexical)))) || "";
+      /* 문맥으로 다듬어 주는 인식기는 조용한 녹음에 엉뚱한 문장을 지어낸다("Thank you." 류).
+         말소리가 안 잡혔거나 녹음이 아주 짧은데 결과가 나오면 그건 헛것이다. */
+      if(sttText && (!meta.spoke || (meta.recMs||0)<700) && STT_HALLUC.test(sttText.trim())){
+        meta.halluc=sttText; sttText="";
+      }
       let heard = String(sttText).replace(/[.?!]+$/,"").trim();
       if(heard){ cb(heard, meta); return; }
       /* ⚠️ 예전엔 여기서 더미 참조("hello world")로 텍스트를 복구하려 했는데,
@@ -8324,6 +8332,13 @@ async function recordedToWav(blob){
   return new Blob([encodeWAV(ch, rate)], {type:"audio/wav"});
 }
 // WAV 변환 시도 → 실패하면 원본(webm/opus 등) 그대로 STT. Azure는 webm-opus도 받음.
+/* 🎧 채점용 음성인식 — 관대한 쪽(/stt2)을 먼저 쓰고, 안 되면 Azure(/stt)로 넘어간다.
+   Azure 는 들린 그대로 적어서 발음이 서툴면 계속 오답이 난다. 아이·초보가 앱을 놓는 가장 큰 이유였다.
+   채점은 관대하게, 발음 점수는 /pronounce(Azure)가 그대로 맡아 진짜 실력을 보여준다.
+   /stt2 가 없는 워커(구버전)나 키 미설정(501)이면 자동으로 Azure 로 떨어진다. */
+// 무음에 잘 지어내는 문구들 — 짧거나 소리가 안 잡힌 녹음에서만 걸러낸다
+const STT_HALLUC=/^(thank you|thanks( for watching)?|thank you for watching|bye+|you|okay|ok|uh|um|hmm|please subscribe|subscribe)?[.!?…\s]*$/i;
+let _sttSoftOff=0;                       // 관대한 쪽이 죽어 있으면 잠시 안 부른다
 async function sttRecognize(raw, actualMime){
   let body, ctype;
   try{ body=await recordedToWav(raw); ctype="audio/wav"; }
@@ -8335,7 +8350,16 @@ async function sttRecognize(raw, actualMime){
           : /mp4|aac/.test(actualMime) ? "audio/mp4"
           : (actualMime||"audio/webm; codecs=opus");
   }
-  return fetch(PROXY_URL+"/stt",{method:"POST",headers:{"Content-Type":ctype},body});
+  const send=(path)=>fetch(PROXY_URL+path,{method:"POST",headers:{"Content-Type":ctype},body});
+  if(STT_SOFT && Date.now()>_sttSoftOff){
+    try{
+      const r=await send("/stt2");
+      if(r.ok) return r;
+      // 501=키 없음, 404=구버전 워커 → 한동안 안 부른다. 그 외(429·5xx)는 다음번에 다시 시도.
+      if(r.status===501||r.status===404) _sttSoftOff=Date.now()+30*60000;
+    }catch(e){}
+  }
+  return send("/stt");
 }
 async function toggleMic(){
   if(listening){ stopAzureSTT(); return; }
