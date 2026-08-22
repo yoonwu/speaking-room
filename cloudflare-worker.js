@@ -1,6 +1,6 @@
 // ============================================================
 //  스피킹 룸 — Cloudflare Worker 프록시 v6
-//  GET  /version   → 배포 확인용 ("worker-v7" 반환)
+//  GET  /version   → 배포 확인용 ("worker-v8" 반환)
 //  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
 //  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
 //  GET  /board     → 전체 사용자 랭킹 요약 목록      ★ v6 신규
@@ -20,7 +20,7 @@
 //     Variable name: USERDATA   /   KV namespace: 새로 만들기(예: speaking-room-data)
 //     (바인딩이 없으면 /u 는 503을 돌려주고, 앱은 기기 저장만으로 정상 동작합니다)
 // ============================================================
-const WORKER_VERSION = "worker-v7";
+const WORKER_VERSION = "worker-v8";
 
 export default {
   async fetch(request, env, ctx) {
@@ -239,7 +239,10 @@ export default {
         fd.append("model", env.OPENAI_STT_MODEL || "gpt-4o-transcribe");
         fd.append("language", "en");
         fd.append("response_format", "json");
-        // ⚠️ prompt 로 정답을 흘리면 안 된다. 뭘 말하든 그 문장이 그대로 돌아와 전부 정답이 된다.
+        // 영어 쪽으로 기울이는 '일반' 힌트. language=en 은 강제가 아니라 힌트라서
+        // 소리가 불분명하면 한글·일본어로 받아쓰는 일이 있다.
+        // ⚠️ 여기에 문제의 정답을 넣으면 안 된다. 뭘 말하든 그 문장이 그대로 돌아와 전부 정답이 된다.
+        fd.append("prompt", "A Korean learner speaking a short English sentence. Transcribe in English only.");
         const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
           method: "POST",
           headers: { "Authorization": "Bearer " + env.OPENAI_API_KEY },
