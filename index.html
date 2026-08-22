@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.166";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.167";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6588,7 +6588,7 @@ function wbWordCards(){
       const first=ex.find(e=>re.test(e.en)); if(!first) return;
       const rank=_FREQ_INDEX[w];
       _wbCards.push({ word:w, ko:it.ko, diff:(rank==null?2:(rank<700?1:(rank<1400?2:3))), _wb:true,
-        examples:ex.slice(0,3), blank:{en:first.en.replace(re,"____"), ko:first.ko, answer:w} });
+        examples:ex.slice(0,6), blank:{en:first.en.replace(re,"____"), ko:first.ko, answer:w} });
     });
   }catch(e){}
   return _wbCards;
