@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.151";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.152";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -8358,8 +8358,12 @@ async function sttRecognize(raw, actualMime){
       const r=await send("/stt2");
       if(r.ok){ _sttVia="관대"; return r; }
       // 501=키 없음, 404=구버전 워커 → 한동안 안 부른다. 그 외(429·5xx)는 다음번에 다시 시도.
+      let eb=""; try{ eb=await r.text(); }catch(e){}
       if(r.status===404){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(워커가 구버전)"; }
       else if(r.status===501){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OPENAI_API_KEY 없음)"; }
+      // 잔액 0 도 429 로 온다. 이건 기다린다고 풀리는 게 아니라 충전해야 하는 것이라 따로 알린다.
+      else if(/insufficient_quota|exceeded your current quota|billing/i.test(eb)){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OpenAI 크레딧 없음)"; }
+      else if(r.status===401||r.status===403){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OpenAI 키 오류 "+r.status+")"; }
       else _sttVia="Azure(관대 인식 "+r.status+")";
     }catch(e){ _sttVia="Azure(관대 인식 연결실패)"; }
   } else if(STT_SOFT){ _sttVia="Azure(관대 인식 잠시 중단됨)"; }
