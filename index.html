@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.157";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.159";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6553,6 +6553,63 @@ function seedVocabWords(){
   return full;
 }
 const VOCAB_SET_SIZE=12;
+/* 📚 이미 받아둔 상황 듣기 문장 은행(sq-bank, 1993문장)에서 빈칸 카드를 만든다.
+   AI를 안 부르고, 파일도 안 늘어난다. 5000개 목록은 '단어=뜻' 한 줄뿐이라
+   그것만으로는 문제를 못 내는데, 여기엔 진짜 문장과 한국어 번역이 같이 있다. */
+const SQC_STOP=new Set(("i you he she it we they me him her us them my your his our their this that these those "
+ +"the a an and or but so if then than as of to in on at for with from by about into over under "
+ +"is am are was were be been being do does did done doing have has had having "
+ +"can could will would shall should may might must not no yes please just very really too also "
+ +"there here what when where who why how which whose "
+ +"one some any all more most much many few little other another same such own each every "
+ +"okay ok oh hey hi yeah yep nope well now again still even ever never always").split(" "));
+let _sqCards=null;
+function sqWordCards(){
+  if(_sqCards) return _sqCards;
+  _sqCards=[];
+  try{
+    if(!Array.isArray(sqBank) || !sqBank.length) return _sqCards;
+    const byWord=Object.create(null);
+    sqBank.forEach(it=>{
+      const en=it&&it.e, ko=it&&it.k;
+      if(!en||!ko) return;
+      const words=String(en).match(/[A-Za-z][A-Za-z']*/g)||[];
+      if(words.length>10) return;                       // 초보가 한 번에 못 읽는 긴 문장 제외
+      const seen=new Set();
+      words.forEach(w=>{
+        const lw=w.toLowerCase();
+        if(seen.has(lw)||lw.length<3||SQC_STOP.has(lw)) return;
+        const rank=_FREQ_INDEX[lw]; if(rank==null||rank>=2000) return;   // 상위 2000 안만
+        if(typeof COMMON_FREQ_SKIP!=="undefined" && COMMON_FREQ_SKIP.has(lw)) return;  // 사람 이름·약어 등
+        const meaning=(typeof FREQ_DICT!=="undefined"&&FREQ_DICT[lw])||"";
+        if(!meaning) return;
+        // 같은 단어가 문장에 두 번 나오면 한 곳만 빈칸이 되어 정답이 그대로 보인다
+        let cnt=0; words.forEach(x=>{ if(x.toLowerCase()===lw) cnt++; });
+        if(cnt>1) return;
+        seen.add(lw);
+        (byWord[lw]=byWord[lw]||{ko:meaning, rank, ex:[]}).ex.push({en:String(en), ko:String(ko)});
+      });
+    });
+    Object.keys(byWord).forEach(w=>{
+      const g=byWord[w];
+      const ex=g.ex.slice(0,3);
+      const re=new RegExp("\\b"+w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i");
+      const first=ex[0];
+      if(!re.test(first.en)) return;
+      _sqCards.push({
+        word:w, ko:g.ko, diff:(g.rank<700?1:(g.rank<1400?2:3)), _sq:true,
+        examples:ex,
+        blank:{en:first.en.replace(re,"____"), ko:first.ko, answer:w}
+      });
+    });
+  }catch(e){}
+  return _sqCards;
+}
+// 지금 밴드에 맞는 것만 (low/mid/high)
+function sqCardsForBand(bandKey){
+  const want = bandKey==="low"?1:(bandKey==="mid"?2:3);
+  return sqWordCards().filter(c=>c.diff<=want);
+}
 function starterSet(){
   // 🎯 자동 wordLevel 기준 (D1~60 → 매크로 1~10 환산)
   let lvl; try{ lvl=Math.max(1,Math.min(10,Math.ceil(getAutoLevels().wordLevel/6))); }catch(e){ lvl=diffMacro(); }
@@ -6563,7 +6620,8 @@ function starterSet(){
   const currentThemeSeeds = state.vocabTheme && SEED_VOCAB[state.vocabTheme.id]
     ? SEED_VOCAB[state.vocabTheme.id].flat()
     : [];
-  const all = uniqueVocabWords(band.concat(currentThemeSeeds).concat(seedVocabWords()));
+  // 내장 카드 + 상황 듣기 문장에서 만든 카드 + 테마 시드
+  const all = uniqueVocabWords(band.concat(currentThemeSeeds).concat(sqCardsForBand(bandKey)).concat(seedVocabWords()));
   const recent=new Set((vocabSeenRecent||[]).map(x=>String(x).toLowerCase()));
   let pool=all.filter(w=>!recent.has(vocabWordKey(w)));
   if(pool.length<VOCAB_SET_SIZE){
@@ -6592,6 +6650,7 @@ function fillVocabSet(set){
   return uniqueVocabWords(base.concat(extra)).slice(0,VOCAB_SET_SIZE);
 }
 function startVocab(noResume){ try{ ttStart("vocab"); }catch(e){}
+  try{ if(!sqBank) sqBankLoad().then(()=>{ _sqCards=null; }); }catch(e){}   // 문장 은행 준비 (AI 아님)
   if(noResume && typeof wpClearProgress==="function") wpClearProgress();
   if(!noResume && wpResumeData()){ return wpResume(); }   // 미완료 세트 있으면 이어하기
   state.vocabTheme = nextVocabTheme();   // 진입할 때마다 새 랜덤 테마
@@ -6871,7 +6930,9 @@ function wpCardsSave(words){
       o[k]={word:w.word, ko:w.ko||"", diff:w.diff||2, examples:(w.examples||[]).slice(0,3), blank:w.blank||null, t:Date.now()};
     });
     const keys=Object.keys(o);
-    if(keys.length>400){ keys.sort((a,b)=>(o[a].t||0)-(o[b].t||0)).slice(0, keys.length-400).forEach(k=>delete o[k]); }
+    /* 예전엔 400개만 두고 오래된 걸 버렸다. 버리면 그 단어를 또 만들어야 해서
+       같은 단어에 요금이 반복해서 나갔다. 상위 2000 단어를 다 담고도 남게 올린다. */
+    if(keys.length>2500){ keys.sort((a,b)=>(o[a].t||0)-(o[b].t||0)).slice(0, keys.length-2500).forEach(k=>delete o[k]); }
     hSet(WP_CARDS_KEY,o);
   }catch(e){}
 }
