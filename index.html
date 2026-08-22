@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.154";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.155";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7915,8 +7915,16 @@ async function micFillCb(rawCb, refText, opts){
       if(sttText && (!meta.spoke || (meta.recMs||0)<700) && STT_HALLUC.test(sttText.trim())){
         meta.halluc=sttText; sttText="";
       }
-      // 영어가 아닌 글자로 왔으면 오답이 아니라 '영어로 말해달라'고 알려준다
-      if(sttText && STT_NON_EN.test(sttText)){ meta.notEnglish=sttText.trim().slice(0,40); sttText=""; }
+      /* 한글로 왔다고 다 한국어가 아니다.
+         영어로 제대로 말해도 인식기가 소리나는 대로 한글로 적어버리는 일이 있다
+         ("Ah, I understand now." → "아 언더스탠 나우"). 그걸 오답 처리하면
+         맞게 말한 아이가 틀렸다는 소리를 듣는다. 먼저 영어로 되돌려 보고,
+         진짜 한국어일 때만 '영어로 말해보세요'라고 안내한다. */
+      if(sttText && STT_NON_EN.test(sttText)){
+        const back=await sttFromHangul(sttText);
+        if(back){ sttText=back; meta.fromHangul=true; }
+        else { meta.notEnglish=sttText.trim().slice(0,40); sttText=""; }
+      }
       let heard = String(sttText).replace(/[.?!]+$/,"").trim();
       if(heard){ cb(heard, meta); return; }
       /* ⚠️ 예전엔 여기서 더미 참조("hello world")로 텍스트를 복구하려 했는데,
@@ -8347,6 +8355,23 @@ let _sttVia="";                          // 이번 인식이 어느 경로로 �
 /* 문맥으로 다듬는 인식기는 language=en 을 줘도 그건 힌트일 뿐이라,
    소리가 불분명하면 한글·일본어·한자로 받아쓴다. 그걸 영어 답으로 채점하면 안 된다. */
 const STT_NON_EN=/[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff]/;
+/* 한글로 적힌 영어를 영어로 되돌린다. 정답을 절대 넘기지 않는다 —
+   넘기면 뭘 말했든 그 문장이 돌아와서 전부 정답이 된다. 소리만 보고 복원한다.
+   진짜 한국어 문장이면 빈 값을 받아서 그때만 안내 문구를 띄운다. */
+const _hanCache=Object.create(null);
+async function sttFromHangul(t){
+  const key=String(t||"").trim(); if(!key) return "";
+  if(key in _hanCache) return _hanCache[key];
+  try{
+    const sys='The input is Korean-script text from a speech recognizer that heard ENGLISH speech and wrote it phonetically in Hangul. Reconstruct the English words the speaker most likely said.\nIf the input is genuinely the Korean language (a real Korean sentence, not English written in Hangul), return an empty string.\nDo not add words that are not in the sound. Return ONLY JSON: {"en":"..."}';
+    const d=await callClaude(sys,[{role:"user",content:key}], FAST_MODEL);
+    const o=parseJSON(extractText(d));
+    let en=(o&&typeof o.en==="string")?o.en.trim():"";
+    if(STT_NON_EN.test(en)) en="";               // 되돌리기 실패
+    _hanCache[key]=en; return en;
+  }catch(e){}
+  return "";
+}
 async function sttRecognize(raw, actualMime){
   let body, ctype;
   try{ body=await recordedToWav(raw); ctype="audio/wav"; }
