@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.167";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.168";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7276,7 +7276,13 @@ async function wpSubmit(q, answer, viaMic){
     flashResult(true);
     // 💡 힌트를 봤으면 '모르는 단어' 취급 — SRS 실패 기록 + 뒤에서 재출제 + 레벨 하강 신호
     if(q._hintUsed || q._micClose || q._synonym){
-      if(!q._missLogged){ srsFail(q.word.word, q.word.ko, ctxTag); q._missLogged=true; }
+      /* 뜻이 통하는 다른 표현은 정답이다(사용자 요청) — 그대로 통과시킨다.
+         힌트를 봤으면 통과는 아니지만 오답도 아니다 — 단계는 두고 내일 다시 본다. */
+      if(!q._missLogged){
+        if(q._synonym) srsPass(q.word.word, q.word.ko, ctxTag);
+        else srsHint(q.word.word, q.word.ko, ctxTag);
+        q._missLogged=true;
+      }
       if(!isRetry) wpRescheduleFail(q);
       /* 힌트를 보고라도 스스로 맞힌 건 '틀린 것'이 아니다.
          예전엔 miss로 기록해서, 12문제를 전부 맞혀도 힌트를 몇 번 쓰면 레벨이 떨어졌다.
@@ -12078,6 +12084,19 @@ function srsPass(en, ko, ctx){
   }catch(e){}
   try{ profRecordWordIfMastered(en, ko); }catch(e){}
 }
+/* 💡 힌트를 보고(또는 다른 표현으로) 맞힌 경우 — 틀린 게 아니다.
+   예전엔 이걸 srsFail로 기록해서 단계가 깎이고 miss가 쌓였다.
+   miss가 쌓인 단어는 srsDue 맨 앞에 고정돼서, 이미 맞힌 단어가
+   같은 날 앱을 켤 때마다 다시 나왔다. (측정: 6번 켜면 3개씩 재출제, 14일에 한 단어가 8번)
+   단계는 그대로 두고 due만 내일로 — 오늘 안에는 다시 안 나온다. */
+function srsHint(en, ko, ctx){
+  const o=srsAll(); const k=srsKey(en); if(!k) return; srsEnsure(en,ko);
+  const it=o[k]||srsAll()[k]; if(!it) return;
+  it.uses=(it.uses||0)+1;
+  if(ctx){ it.ctx=it.ctx||{}; it.ctx[ctx]=(it.ctx[ctx]||0)+1; }
+  it.due=EDAY()+1;              // 내일 한 번 더 — 오늘은 그만
+  it.lastT=Date.now(); o[k]=it; srsSave(o);
+}
 // 실패 → 단계 하락, 복습 빨리
 function srsFail(en, ko, ctx){
   const o=srsAll(); const k=srsKey(en); if(!k) return; srsEnsure(en,ko);
@@ -12097,7 +12116,9 @@ function srsDue(max){
   const today=EDAY();
   return Object.values(srsAll())
     .filter(x=>x && x.stage!=="mastered" && (x.due||0)<=today)
-    .sort((a,b)=>(b.miss||0)-(a.miss||0) || (a.due||0)-(b.due||0))
+    /* 예전엔 miss 많은 순으로만 줄을 세웠다. 한 번 많이 틀린 단어가 매 세션 맨 앞에
+       그대로 다시 서 있어서 같은 단어만 반복됐다. 오래 안 본 것부터 돌아가게 한다. */
+    .sort((a,b)=>(a.due||0)-(b.due||0) || (a.lastT||0)-(b.lastT||0) || (b.miss||0)-(a.miss||0))
     .slice(0, max||50);
 }
 function srsStats(){
