@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.169";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.170";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7156,6 +7156,7 @@ function wpWordEq(a, b){
   if(a.length>=3 && b.length>=3 && stem(a)===stem(b)) return true;
   // 🎤 음성인식이 비슷한 소리로 잘못 받아쓰는 경우 (for↔four, real↔reel, week↔weak)
   if(a.length>=3 && b.length>=3 && wpSoundKey(a)===wpSoundKey(b)) return true;
+  if(phWordEq(a,b)) return true;                 // 🇰🇷 한국식 발음
   return false;
 }
 // 발음 뼈대만 남기는 키 — 자음은 살리고 모음은 하나로 뭉갠다
@@ -7235,13 +7236,16 @@ async function wpSubmit(q, answer, viaMic){
   // 🎤 발음이 맞아도 음성인식이 딴 단어로 받아쓰면 영영 못 넘어간다.
   //    세 번째 시도부터는 충분히 가까우면 인정하되, 힌트 본 것과 같은 '복습 대상'으로 남긴다.
   if(!strict && answer && viaMic && (q._wrongCount||0)>=2 && wpCloseEnough(ans, target)) q._micClose=true;
+  /* 🇰🇷 한국식 발음 — 인식기가 소리가 비슷한 다른 낱말로 받아써도 정답이다.
+     여기서 바로 끝내야 한다. AI에 물어보러 가면 몇 초씩 멈춰 서서 '느리다'가 된다. */
+  if(!strict && answer && phClose(answer, q.blank.answer)) q._sound=true;
   // 틀렸다고 하기 전에 '다른 낱말인데 뜻이 같은 답'인지 한 번 확인한다
-  if(!strict && !q._micClose && answer && wpSynWorth(q, answer)){
+  if(!strict && !q._micClose && !q._sound && answer && wpSynWorth(q, answer)){
     const st=$("#wpStatus"); if(st){ st.style.color="#189E79"; st.textContent="확인 중…"; }
     const ok=await wpAiSynonym(q, answer);
     if(ok===true) q._synonym=answer;
   }
-  const correct = strict || !!q._micClose || !!q._synonym;
+  const correct = strict || !!q._sound || !!q._micClose || !!q._synonym;
   const gaveUp = !answer;   // "정답 보기" 눌러 빈 답
   // 오답은 정답지로 넘기지 않는다. 같은 문제에서 최대한 다시 생각하게 둔다.
   if(answer && !correct){
@@ -7275,7 +7279,7 @@ async function wpSubmit(q, answer, viaMic){
   if(correct){
     flashResult(true);
     // 💡 힌트를 봤으면 '모르는 단어' 취급 — SRS 실패 기록 + 뒤에서 재출제 + 레벨 하강 신호
-    if(q._hintUsed || q._micClose || q._synonym){
+    if(q._hintUsed || q._micClose || q._synonym){   // (소리로 맞힌 _sound 는 그냥 정답)
       /* 뜻이 통하는 다른 표현은 정답이다(사용자 요청) — 그대로 통과시킨다.
          힌트를 봤으면 통과는 아니지만 오답도 아니다 — 단계는 두고 내일 다시 본다. */
       if(!q._missLogged){
@@ -8005,7 +8009,11 @@ async function micFillCb(rawCb, refText, opts){
       })();
       const wantPron = !!(opts && opts.pron) && !!refText;
       const pronP = wantPron ? pronouncePractice(refText, raw, am).catch(()=>null) : Promise.resolve(null);
-      const [sttData, pr] = await Promise.all([sttP, pronP]);
+      /* 발음 점수는 화면에 곁들이는 정보다. 예전엔 이걸 Promise.all 로 같이 기다려서,
+         인식 결과가 이미 왔는데도 발음 채점이 끝날 때까지 정답 처리가 멈춰 있었다.
+         늦으면 점수 없이 먼저 넘긴다 — 체감 속도가 여기서 크게 갈린다. */
+      const sttData = await sttP;
+      const pr = wantPron ? await Promise.race([pronP, new Promise(r=>setTimeout(()=>r(null), 400))]) : null;
       meta.sttDoneAt=Date.now();
       if(pr && pr.score!=null) meta.pron={score:pr.score, acc:pr.acc, words:pr.words||[]};
       if(sttData && sttData.RecognitionStatus && sttData.RecognitionStatus!=="Success" && !meta.sttErr){
@@ -8029,7 +8037,7 @@ async function micFillCb(rawCb, refText, opts){
           const roman=hanRoman(sttText);
           /* 1) 이번 문제의 정답과 소리가 같으면 그걸 말한 것이다.
                 (정답은 인식기·AI 어디에도 보내지 않는다. 여기서 소리만 맞춰 본다.) */
-          if(refText && phClose(roman, refText)){ sttText=String(refText); meta.fromHangul="소리"; }
+          if(refText && phCloseHan(roman, refText)){ sttText=String(refText); meta.fromHangul="소리"; }
           else{
             // 2) AI로 되돌려 본다 (되면 제일 정확하다)
             const back=await sttFromHangul(sttText);
@@ -8498,20 +8506,66 @@ function hanRoman(str){
 /* 발음 뼈대 — 한국어로 옮겨 적힌 영어와 원래 영어를 같은 모양으로 만든다.
    한국어에는 f/v, r/l, z/j 구분이 없고 자음 뒤에 '으'가 붙는다. 그걸 흡수한다. */
 function phKey(str){
-  let t=hanRoman(str).toLowerCase().replace(/[^a-z]+/g,"");
-  t=t.replace(/eu/g,"")                                  // 자음 뒤에 붙는 '으'
-     .replace(/ph/g,"p").replace(/f/g,"p").replace(/v/g,"b")
-     .replace(/th/g,"t").replace(/sh|ch/g,"s").replace(/z|j/g,"s")
-     .replace(/ci(?=[aeou])/g,"s").replace(/ti(?=on)/g,"s").replace(/sy/g,"s")   // delicious·station 의 c/t 는 [ʃ] (한글은 셔=sy)
-     .replace(/x/g,"ks").replace(/c|q|k/g,"k")
-     .replace(/l/g,"r")                                  // r/l 구분 없음
-     .replace(/r(?=[^aeiouy]|$)/g,"")                    // 자음 앞 r 은 한국어가 안 적는다(understand·form)
-     .replace(/[hw]/g,"")                                // now/나우 처럼 반모음은 빼야 맞는다
-     .replace(/[aeiou]/g,"a")                            // 모음은 한 종류로
+  let t=hanRoman(str).toLowerCase().replace(/[^a-z ]+/g," ").replace(/\s+/g," ").trim();
+  const one=(w)=>{
+    if(!w) return "";
+    let x=w;
+    // 철자만 있고 소리는 없는 것들
+    x=x.replace(/^kn/,"n").replace(/^wr/,"r").replace(/^ps/,"s");
+    x=x.replace(/ough/g,"o").replace(/ight/g,"it").replace(/ght/g,"t").replace(/gh/g,"");
+    x=x.replace(/tion|sion/g,"san").replace(/ck/g,"k").replace(/qu/g,"kw");
+    // 모음 — 한국 사람도 모음은 구별한다(캣/컷). 철자만 정리한다.
+    x=x.replace(/eu/g,"")                                   // 한글이 자음 뒤에 넣는 '으'
+       .replace(/ee|ea|ie|ey/g,"i").replace(/oo|ou|ew|ue|ui/g,"u")
+       .replace(/oa|ow|oe/g,"o").replace(/ai|ay|ae/g,"a")
+       .replace(/au|aw/g,"o").replace(/oi|oy/g,"oi").replace(/eo/g,"o");
+    x=x.replace(/ce$/,"s").replace(/ge$/,"s");             // rice·page 의 끝소리
+    x=x.replace(/e$/,"").replace(/y$/,"i");                 // 묵음 e, 끝 y
+    // 자음 — 한국어에 없는 구분은 하나로 (f/v/b/p, th/t/d, s/z/j/sh/ch, r/l)
+    x=x.replace(/ci(?=[aeou])|ti(?=[aeou])/g,"s")
+       .replace(/sh|ch/g,"s").replace(/th/g,"t")
+       .replace(/ph|f|v|b/g,"p").replace(/z|j/g,"s")
+       .replace(/c(?=[eiy])/g,"s").replace(/c|q|k|g/g,"k")
+       .replace(/x/g,"ks").replace(/d/g,"t").replace(/l/g,"r");
+    x=x.replace(/(.)\1+/g,"$1");
+    return x;
+  };
+  return t.split(" ").map(one).filter(Boolean).join("");
+}
+/* 한글로 받아쓴 경우엔 모음까지 믿을 수 없다(워터=weoteo). 모음을 뭉갠 느슨한 키.
+   영어로 받아쓴 경우엔 모음이 꽤 정확해서(cat/cut) 위의 phKey 를 그대로 쓴다. */
+function phKeyLoose(str){
+  /* 한글은 음절마다 띄어 두는데, 그대로 두면 '체크아웃'이 che|keu|aut 로 쪼개져
+     음절을 넘나드는 규칙(eu 삭제 등)이 안 먹는다. 붙여서 한 덩어리로 본다. */
+  let t=phKey(hanRoman(str).replace(/\s+/g,""));
+  t=t.replace(/sy/g,"s");                 // 한글의 셔·션 = sy
+  t=t.replace(/r(?=[^aeiou]|$)/g,"")     // 자음 앞 r 은 한국어가 안 적는다(understand·form)
+     .replace(/[hw]/g,"")                // now/나우 처럼 반모음
+     .replace(/[aeiou]/g,"a")
      .replace(/(.)\1+/g,"$1");
-  /* 한국어는 영어 끝소리 r 을 안 적고(워터·컴퓨터) 대신 모음을 붙인다 — 양쪽에서 지운다 */
-  while(/[ra]$/.test(t)) t=t.slice(0,-1);
+  while(/[ra]$/.test(t)) t=t.slice(0,-1);   // 끝소리 r 과 한국어가 덧붙인 모음
   return t;
+}
+/* 한글 → 정답 비교 전용. 낱말 하나짜리는 소리가 완전히 같을 때만 인정한다
+   (핫/hat, 캣/cut 처럼 짧은 건 우연히 겹친다). */
+/* 🇰🇷 낱말 하나짜리 소리 비교. 발음이 한국식이면 인식기가 비슷한 소리의
+   다른 낱말로 받아쓴다(like→rike, very→berry, coffee→copy). 그건 같은 낱말로 본다.
+   짧은 낱말(cat/cut)은 우연이 많아 3글자 이상만. */
+function phWordEq(a,b){
+  a=String(a||"").toLowerCase(); b=String(b||"").toLowerCase();
+  if(a===b) return true;
+  if(a.length<3 || b.length<3) return false;
+  const x=phKey(a);
+  return !!x && x===phKey(b);
+}
+function phCloseHan(roman, ref){
+  const x=phKeyLoose(roman), y=phKeyLoose(ref);
+  if(!x||!y) return false;
+  const L=Math.max(x.length,y.length);
+  const words=String(ref||"").trim().split(/\s+/).filter(Boolean).length;
+  if(words<=1) return x===y && String(ref||"").replace(/[^a-z]/gi,"").length>=5;
+  if(x===y) return L>=4;
+  return L>=6 && phDist(x,y)/L <= 0.18;
 }
 function phDist(a,b){
   const m=a.length, n=b.length;
@@ -8532,10 +8586,12 @@ function phClose(a,b){
   const x=phKey(a), y=phKey(b);
   if(!x||!y) return false;
   const L=Math.max(x.length,y.length);
-  const words=String(b||"").trim().split(/\s+/).filter(Boolean).length;
-  if(words<=1) return x===y && String(b||"").replace(/[^a-z]/gi,"").length>=5;
-  if(x===y) return L>=4;
-  return L>=6 && phDist(x,y)/L <= 0.25;
+  /* 소리 뼈대가 완전히 같으면 같은 말이다. 두 글자짜리(it/eat)는 우연이 많아서 뺀다. */
+  if(x===y) return L>=3;
+  /* 한 글자 차이는 어느 정도 길 때만 봐준다.
+     짧을 때 봐주면 ten/tent, desk/disk 같은 다른 답이 통과한다. */
+  if(L>=5 && phDist(x,y)<=1) return true;
+  return L>=9 && phDist(x,y)/L <= 0.25;
 }
 const _hanCache=Object.create(null);
 async function sttFromHangul(t){
@@ -8575,8 +8631,10 @@ async function sttRecognize(raw, actualMime){
       // 잔액 0 도 429 로 온다. 이건 기다린다고 풀리는 게 아니라 충전해야 하는 것이라 따로 알린다.
       else if(/insufficient_quota|exceeded your current quota|billing/i.test(eb)){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OpenAI 크레딧 없음)"; }
       else if(r.status===401||r.status===403){ _sttSoftOff=Date.now()+30*60000; _sttVia="Azure(OpenAI 키 오류 "+r.status+")"; }
-      else _sttVia="Azure(관대 인식 "+r.status+")";
-    }catch(e){ _sttVia="Azure(관대 인식 연결실패)"; }
+      /* 예전엔 아는 상태코드만 쉬어서, 그 외 실패는 답할 때마다 왕복을 두 번씩 했다.
+         한 번 실패하면 5분은 바로 Azure 로 간다 — 체감 속도가 여기서 갈린다. */
+      else { _sttSoftOff=Date.now()+5*60000; _sttVia="Azure(관대 인식 "+r.status+")"; }
+    }catch(e){ _sttSoftOff=Date.now()+5*60000; _sttVia="Azure(관대 인식 연결실패)"; }
   } else if(STT_SOFT){ _sttVia="Azure(관대 인식 잠시 중단됨)"; }
   else { _sttVia="Azure(관대 인식 꺼짐)"; }
   return send("/stt");
@@ -14796,7 +14854,7 @@ function wrGrade(item, heard){
   const h=wrNorm(heard);
   if(!h) return {ok:false, near:false};
   const cands=[item.en].concat(item.alts||[]);
-  for(const c of cands){ if(wrNorm(c)===h) return {ok:true, near:false}; }
+  for(const c of cands){ if(wrNorm(c)===h || phClose(h, wrNorm(c))) return {ok:true, near:false}; }
   const gotAll=wrKey(h);
   let near=false;
   for(const c of cands){
@@ -14806,7 +14864,8 @@ function wrGrade(item, heard){
     // 같은 답으로 통과시키면 안 된다(핵심어만 보면 둘 다 통과해 버린다).
     if(wrNegN(want)!==wrNegN(got)) continue;
     const gset=new Set(got);
-    const hit=want.filter(w=>gset.has(w)).length;
+    // 소리가 같으면 같은 낱말로 센다 — "i rike it" 을 "I like it" 으로 인정
+    const hit=want.filter(w=>gset.has(w)||got.some(g=>phWordEq(g,w))).length;
     // 핵심어를 전부 말했고 군더더기가 과하지 않으면 정답 (어순 무관)
     if(hit===want.length && got.length<=want.length+5) return {ok:true, near:false};
     // '얼추 그 문장' — 모범답안 따라 말하기 단계에서 통과 기준으로 쓴다.
