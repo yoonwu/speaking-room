@@ -1974,7 +1974,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.170";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.171";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7047,7 +7047,7 @@ function wpAsk(q){
         <div class="wp-q-ko">${escapeHtml(q.blank.ko)}</div>
         <div class="wp-q-en">${enHtml}</div>
       </div>
-      <div class="wp-speech" id="wpStatus">🎤 아래 버튼을 눌러 말해보세요</div>
+      <div class="wp-speech" id="wpStatus">🎤 빈칸만 말해도 되고, 문장을 통째로 말해도 돼요</div>
       <div id="wpHintPanel" class="mbcard" style="display:none;text-align:left;padding:13px 15px;margin-top:10px"></div>
     </div>
     <div class="wp-dock">
@@ -7129,7 +7129,7 @@ function wpAsk(q){
     if(back) back.style.display="none";
     if(mic) mic.style.display="";
     if(row) row.style.display="";
-    status.style.color=""; status.textContent="🎤 아래 버튼을 눌러 말해보세요";
+    status.style.color=""; status.textContent="🎤 빈칸만 말해도 되고, 문장을 통째로 말해도 돼요";
   };
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v) wpSubmit(q,v); }});
   $("#wpGiveup").onclick=()=>wpSubmit(q,"");
@@ -7148,6 +7148,24 @@ function wpMatch(ansNorm, targetNorm){
   // 정답 외 덧붙인 말이 정답 길이를 크게 넘으면 인정하지 않는다.
   const extra = ansWords.length - tgtWords.length;
   return extra <= Math.max(4, tgtWords.length + 2);
+}
+/* 🗣 빈칸 하나만 말하라고 해도, 사람은 문장을 통째로 말한다.
+   "This table is next to the window" 처럼 말해도 table 을 꺼낸 것이니 맞힌 것이다.
+   예전엔 wpMatch 의 '덧붙인 말 4개까지' 상한에 걸려서 문장으로 말하면 무조건 오답이었다.
+   상한을 고정값이 아니라 그 문제의 문장 길이로 잡는다. */
+function wpSaidTarget(answer, q){
+  const t=normAns((q&&q.blank&&q.blank.answer)||"").split(/\s+/).filter(Boolean);
+  const a=normAns(answer).split(/\s+/).filter(Boolean);
+  if(!t.length || a.length<=t.length) return false;
+  const frame=String((q&&q.blank&&q.blank.en)||"").replace(/\[ ?_+ ?\]|_{2,}/g," ");
+  const frameN=normAns(frame).split(/\s+/).filter(Boolean).length + t.length;
+  if(a.length > frameN+3) return false;              // 문장보다 훨씬 길면 딴소리
+  for(let i=0;i+t.length<=a.length;i++){
+    let ok=true;
+    for(let j=0;j<t.length;j++){ if(!wpWordEq(a[i+j], t[j])){ ok=false; break; } }
+    if(ok) return true;
+  }
+  return false;
 }
 function wpWordEq(a, b){
   if(a===b) return true;
@@ -7239,6 +7257,8 @@ async function wpSubmit(q, answer, viaMic){
   /* 🇰🇷 한국식 발음 — 인식기가 소리가 비슷한 다른 낱말로 받아써도 정답이다.
      여기서 바로 끝내야 한다. AI에 물어보러 가면 몇 초씩 멈춰 서서 '느리다'가 된다. */
   if(!strict && answer && phClose(answer, q.blank.answer)) q._sound=true;
+  // 문장을 통째로 말한 경우 — 그 안에 목표 낱말이 들어 있으면 맞힌 것이다
+  if(!strict && !q._sound && answer && wpSaidTarget(answer, q)) q._sound=true;
   // 틀렸다고 하기 전에 '다른 낱말인데 뜻이 같은 답'인지 한 번 확인한다
   if(!strict && !q._micClose && !q._sound && answer && wpSynWorth(q, answer)){
     const st=$("#wpStatus"); if(st){ st.style.color="#189E79"; st.textContent="확인 중…"; }
@@ -8556,7 +8576,11 @@ function phWordEq(a,b){
   if(a===b) return true;
   if(a.length<3 || b.length<3) return false;
   const x=phKey(a);
-  return !!x && x===phKey(b);
+  if(x && x===phKey(b)) return true;
+  /* 한국식으로 자음 사이에 모음을 넣어 말하면(table→테이블→taburu) 위 키로는 안 맞는다.
+     모음을 뭉갠 키로 한 번 더 본다. 짧은 낱말은 우연히 겹쳐서 5글자 이상만. */
+  if(a.length>=5 && b.length>=5){ const lx=phKeyLoose(a); return !!lx && lx===phKeyLoose(b); }
+  return false;
 }
 function phCloseHan(roman, ref){
   const x=phKeyLoose(roman), y=phKeyLoose(ref);
