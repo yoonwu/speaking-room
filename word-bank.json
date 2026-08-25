@@ -443,7 +443,7 @@
 },
 {
 "w": "care",
-"ko": "돌봄/신경 쓰다",
+"ko": "조심/상관하다/챙기다",
 "s": [
 [
 "Take care of yourself.",
@@ -703,7 +703,7 @@
 },
 {
 "w": "guess",
-"ko": "~인 것 같다",
+"ko": "~것 같다/맞히다",
 "s": [
 [
 "I guess so.",
@@ -781,7 +781,7 @@
 },
 {
 "w": "myself",
-"ko": "나 자신",
+"ko": "직접/스스로",
 "s": [
 [
 "I made it myself.",
@@ -937,7 +937,7 @@
 },
 {
 "w": "everybody",
-"ko": "모두",
+"ko": "다들/모두",
 "s": [
 [
 "Everybody is here.",
@@ -989,7 +989,7 @@
 },
 {
 "w": "true",
-"ko": "진짜의",
+"ko": "사실인/진짜의",
 "s": [
 [
 "Is that true?",
@@ -1613,7 +1613,7 @@
 },
 {
 "w": "wish",
-"ko": "바라다",
+"ko": "~면 좋겠다/빌다",
 "s": [
 [
 "I wish I could go.",
@@ -1769,7 +1769,7 @@
 },
 {
 "w": "lady",
-"ko": "여성분",
+"ko": "저분/여성분",
 "s": [
 [
 "The lady over there.",
@@ -2055,7 +2055,7 @@
 },
 {
 "w": "gets",
-"ko": "~해지다",
+"ko": "~해진다/~한다",
 "s": [
 [
 "It gets hot in the afternoon.",
@@ -2289,7 +2289,7 @@
 },
 {
 "w": "wanted",
-"ko": "원했다",
+"ko": "~하고 싶었다/원했다",
 "s": [
 [
 "I wanted to ask you.",
@@ -2445,7 +2445,7 @@
 },
 {
 "w": "best",
-"ko": "최고의",
+"ko": "제일 좋은/최고의",
 "s": [
 [
 "This is the best one.",
@@ -2471,7 +2471,7 @@
 },
 {
 "w": "saw",
-"ko": "보았다",
+"ko": "봤다",
 "s": [
 [
 "I saw him yesterday.",
@@ -2627,7 +2627,7 @@
 },
 {
 "w": "saying",
-"ko": "말하는 중",
+"ko": "말/하는 말",
 "s": [
 [
 "What are you saying?",
@@ -2653,7 +2653,7 @@
 },
 {
 "w": "wants",
-"ko": "원한다",
+"ko": "원한다/~하고 싶어한다",
 "s": [
 [
 "He wants more rice.",
@@ -2757,7 +2757,7 @@
 },
 {
 "w": "hit",
-"ko": "치다/부딪히다",
+"ko": "맞았다/때리다/치다",
 "s": [
 [
 "The ball hit the window.",
@@ -2835,7 +2835,7 @@
 },
 {
 "w": "makes",
-"ko": "만든다",
+"ko": "만든다/~하게 한다",
 "s": [
 [
 "He makes good coffee.",
@@ -2913,7 +2913,7 @@
 },
 {
 "w": "though",
-"ko": "~이긴 하지만",
+"ko": "근데/~지만",
 "s": [
 [
 "It's expensive, though.",
@@ -3173,7 +3173,7 @@
 },
 {
 "w": "killed",
-"ko": "죽였다/없앴다",
+"ko": "죽였다/망쳤다/끊었다",
 "s": [
 [
 "The frost killed the plants.",
@@ -3225,7 +3225,7 @@
 },
 {
 "w": "died",
-"ko": "죽었다/멎었다",
+"ko": "나갔다/꺼졌다/죽었다",
 "s": [
 [
 "My battery died.",
@@ -3251,7 +3251,7 @@
 },
 {
 "w": "dead",
-"ko": "죽은/작동 안 하는",
+"ko": "꺼진/다 된/죽은",
 "s": [
 [
 "My phone is dead.",
@@ -3953,7 +3953,7 @@
 },
 {
 "w": "sounds",
-"ko": "~처럼 들린다",
+"ko": "~것 같다/소리",
 "s": [
 [
 "That sounds good.",
@@ -4187,7 +4187,7 @@
 },
 {
 "w": "control",
-"ko": "조절하다/통제",
+"ko": "제어/리모컨/조절하다",
 "s": [
 [
 "Where is the remote control?",
@@ -4317,7 +4317,7 @@
 },
 {
 "w": "finally",
-"ko": "마침내",
+"ko": "드디어/마침내",
 "s": [
 [
 "Finally, we're here.",
@@ -4473,7 +4473,7 @@
 },
 {
 "w": "catch",
-"ko": "잡다/타다",
+"ko": "받다/타다/알아듣다",
 "s": [
 [
 "I need to catch the bus.",
@@ -4681,7 +4681,7 @@
 },
 {
 "w": "bet",
-"ko": "장담하다",
+"ko": "분명 ~일 거다/장담하다",
 "s": [
 [
 "I bet it's closed.",
@@ -5383,7 +5383,7 @@
 },
 {
 "w": "lord",
-"ko": "주님/영주",
+"ko": "세상에/주님/영주",
 "s": [
 [
 "Oh, good lord!",
@@ -5487,7 +5487,7 @@
 },
 {
 "w": "shoot",
-"ko": "쏘다",
+"ko": "보내다/찍다/쏘다",
 "s": [
 [
 "Shoot me a message later.",
@@ -5799,7 +5799,7 @@
 },
 {
 "w": "loved",
-"ko": "사랑했다",
+"ko": "아주 좋아했다",
 "s": [
 [
 "I loved that movie.",
@@ -5825,7 +5825,7 @@
 },
 {
 "w": "turned",
-"ko": "돌렸다",
+"ko": "돌렸다/변했다",
 "s": [
 [
 "He turned left at the corner.",
@@ -6085,7 +6085,7 @@
 },
 {
 "w": "chief",
-"ko": "대장",
+"ko": "책임자/서장/대장",
 "s": [
 [
 "He is the chief of police.",
@@ -6319,7 +6319,7 @@
 },
 {
 "w": "kiss",
-"ko": "키스(하다)",
+"ko": "뽀뽀/키스",
 "s": [
 [
 "Give me a kiss.",
@@ -6501,7 +6501,7 @@
 },
 {
 "w": "suppose",
-"ko": "~라고 생각하다",
+"ko": "~것 같다",
 "s": [
 [
 "I suppose so.",
@@ -6735,7 +6735,7 @@
 },
 {
 "w": "unless",
-"ko": "~하지 않으면",
+"ko": "~아니면",
 "s": [
 [
 "Unless it rains, we walk.",
@@ -6865,7 +6865,7 @@
 },
 {
 "w": "terrible",
-"ko": "끔찍한",
+"ko": "최악의/지독한",
 "s": [
 [
 "The weather is terrible.",
@@ -7281,7 +7281,7 @@
 },
 {
 "w": "using",
-"ko": "사용하는 중",
+"ko": "쓰는 중",
 "s": [
 [
 "Are you using this chair?",
@@ -8997,7 +8997,7 @@
 },
 {
 "w": "drunk",
-"ko": "술 취한",
+"ko": "취한",
 "s": [
 [
 "He is drunk.",
@@ -9465,7 +9465,7 @@
 },
 {
 "w": "realize",
-"ko": "깨닫다",
+"ko": "알다/깨닫다",
 "s": [
 [
 "I didn't realize that.",
@@ -9673,7 +9673,7 @@
 },
 {
 "w": "became",
-"ko": "~이 되었다",
+"ko": "~이 됐다",
 "s": [
 [
 "He became a teacher.",
@@ -9751,7 +9751,7 @@
 },
 {
 "w": "obviously",
-"ko": "분명히",
+"ko": "딱 봐도/분명히",
 "s": [
 [
 "Obviously, he forgot.",
@@ -9881,7 +9881,7 @@
 },
 {
 "w": "loves",
-"ko": "사랑한다",
+"ko": "아주 좋아한다",
 "s": [
 [
 "She loves durian.",
@@ -9907,7 +9907,7 @@
 },
 {
 "w": "carry",
-"ko": "나르다",
+"ko": "들다/갖고 다니다",
 "s": [
 [
 "Can you carry this bag?",
@@ -10037,7 +10037,7 @@
 },
 {
 "w": "evil",
-"ko": "사악한",
+"ko": "악한/나쁜",
 "s": [
 [
 "He plays an evil king.",
@@ -11077,11 +11077,11 @@
 },
 {
 "w": "upon",
-"ko": "~위에",
+"ko": "~위에/~에 달린",
 "s": [
 [
-"Once upon a time, there was a king.",
-"옛날 옛적에 왕이 있었어요."
+"Place it upon the table.",
+"탁자 위에 올려 두세요."
 ],
 [
 "It depends upon the weather.",
@@ -11649,7 +11649,7 @@
 },
 {
 "w": "escape",
-"ko": "탈출하다",
+"ko": "피하다/도망가다",
 "s": [
 [
 "There's no escape from the heat.",
@@ -11935,7 +11935,7 @@
 },
 {
 "w": "type",
-"ko": "유형/타이핑하다",
+"ko": "종류/스타일/입력하다",
 "s": [
 [
 "What type of room?",
@@ -12663,7 +12663,7 @@
 },
 {
 "w": "allow",
-"ko": "허락하다",
+"ko": "~해도 된다/허락하다",
 "s": [
 [
 "They don't allow pets.",
@@ -12871,7 +12871,7 @@
 },
 {
 "w": "destroy",
-"ko": "파괴하다",
+"ko": "부수다/망가뜨리다",
 "s": [
 [
 "The storm could destroy the roof.",
@@ -13313,7 +13313,7 @@
 },
 {
 "w": "keeping",
-"ko": "유지하는 중",
+"ko": "보관하는/지내는",
 "s": [
 [
 "Thanks for keeping it safe.",
@@ -14093,7 +14093,7 @@
 },
 {
 "w": "crowd",
-"ko": "군중",
+"ko": "사람들/관중",
 "s": [
 [
 "The crowd was huge.",
@@ -14795,7 +14795,7 @@
 },
 {
 "w": "simply",
-"ko": "단순히",
+"ko": "그냥/단순히",
 "s": [
 [
 "It's simply too expensive.",
@@ -15809,15 +15809,15 @@
 },
 {
 "w": "devil",
-"ko": "악마",
+"ko": "악마/사람(농담조)",
 "s": [
 [
 "Speak of the devil!",
 "호랑이도 제 말 하면 온다더니!"
 ],
 [
-"He is a lucky devil.",
-"그 사람 운도 좋네요."
+"The devil is a scary character.",
+"악마는 무서운 인물이에요."
 ],
 [
 "The devil is in the details.",
@@ -16251,7 +16251,7 @@
 },
 {
 "w": "leader",
-"ko": "지도자",
+"ko": "리더/지도자",
 "s": [
 [
 "She is a good leader.",
@@ -16485,7 +16485,7 @@
 },
 {
 "w": "hanging",
-"ko": "매달린",
+"ko": "걸려 있는/널린",
 "s": [
 [
 "The clothes are hanging outside.",
@@ -18487,7 +18487,7 @@
 },
 {
 "w": "united",
-"ko": "연합한",
+"ko": "하나로 뭉친/연합한",
 "s": [
 [
 "The United States is far.",
@@ -18955,7 +18955,7 @@
 },
 {
 "w": "belong",
-"ko": "속하다",
+"ko": "~의 것이다/속하다",
 "s": [
 [
 "These belong to me.",
@@ -19761,7 +19761,7 @@
 },
 {
 "w": "destroyed",
-"ko": "파괴했다",
+"ko": "망가뜨렸다/부쉈다",
 "s": [
 [
 "The fire destroyed the shop.",
@@ -20047,7 +20047,7 @@
 },
 {
 "w": "surely",
-"ko": "확실히",
+"ko": "분명히/확실히",
 "s": [
 [
 "Surely that's wrong.",
@@ -20359,7 +20359,7 @@
 },
 {
 "w": "dumb",
-"ko": "멍청한",
+"ko": "바보 같은/멍청한",
 "s": [
 [
 "That was a dumb idea.",
@@ -20749,7 +20749,7 @@
 },
 {
 "w": "ugly",
-"ko": "못생긴/추한",
+"ko": "험한/보기 싫은/못생긴",
 "s": [
 [
 "The weather is ugly today.",
@@ -20827,7 +20827,7 @@
 },
 {
 "w": "exist",
-"ko": "존재하다",
+"ko": "있다/존재하다",
 "s": [
 [
 "Does that shop still exist?",
@@ -21035,7 +21035,7 @@
 },
 {
 "w": "stayed",
-"ko": "머물렀다",
+"ko": "있었다/묵었다",
 "s": [
 [
 "We stayed two nights.",
@@ -22387,7 +22387,7 @@
 },
 {
 "w": "community",
-"ko": "공동체",
+"ko": "동네/주민/공동체",
 "s": [
 [
 "It's a nice community.",
@@ -23557,7 +23557,7 @@
 },
 {
 "w": "cos",
-"ko": "왜냐하면(구어)",
+"ko": "~때문에/~서",
 "s": [
 [
 "I'm late cos of traffic.",
@@ -24857,7 +24857,7 @@
 },
 {
 "w": "buying",
-"ko": "구매",
+"ko": "사는 중/구매",
 "s": [
 [
 "I'm buying lunch.",
@@ -24935,7 +24935,7 @@
 },
 {
 "w": "dna",
-"ko": "디엔에이",
+"ko": "유전자/천성",
 "s": [
 [
 "It's in my DNA.",
@@ -25247,7 +25247,7 @@
 },
 {
 "w": "crash",
-"ko": "충돌/추락",
+"ko": "사고/충돌",
 "s": [
 [
 "There was a car crash.",
@@ -26391,7 +26391,7 @@
 },
 {
 "w": "attacked",
-"ko": "공격했다",
+"ko": "달려들었다/공격했다",
 "s": [
 [
 "The dog attacked nobody.",
@@ -26677,7 +26677,7 @@
 },
 {
 "w": "assume",
-"ko": "추측하다",
+"ko": "단정하다/가정하다",
 "s": [
 [
 "Don't assume that.",
@@ -27119,7 +27119,7 @@
 },
 {
 "w": "grant",
-"ko": "보조금/허가하다",
+"ko": "지원금/들어주다",
 "s": [
 [
 "They gave him a grant.",
@@ -27587,7 +27587,7 @@
 },
 {
 "w": "confused",
-"ko": "혼란스러운",
+"ko": "헷갈리는/어리둥절한",
 "s": [
 [
 "I'm confused.",
@@ -27873,7 +27873,7 @@
 },
 {
 "w": "suffer",
-"ko": "고통받다",
+"ko": "시달리다/힘들어하다",
 "s": [
 [
 "I suffer from allergies.",
@@ -28237,7 +28237,7 @@
 },
 {
 "w": "mystery",
-"ko": "미스터리",
+"ko": "수수께끼/미스터리",
 "s": [
 [
 "It's a mystery.",

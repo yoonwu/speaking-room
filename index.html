@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.174";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.175";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7037,6 +7037,26 @@ function wpNext(){
    예전엔 문장만 보고 어느 낱말을 영어로 바꿔야 하는지 스스로 짚어야 해서,
    단어를 아는데도 문제를 읽는 데 시간이 걸렸다. 찾지 못하면 아래에 뜻을 따로 붙인다. */
 const WP_KO_SYN={
+  "~해진다":["져요","져","워져","해져","내요","일어나"],"~한다":["요","어","해"],
+  "마침내":["드디어"],"모두":["다들","전부","다"],"나 자신":["직접","스스로","제가"],
+  "장담하다":["분명","당연","확실"],"끔찍한":["최악","지독","너무 안 좋","안 좋"],
+  "돌봄":["조심","상관","챙기","소중히","봐"],"신경 쓰다":["상관","조심","챙기","신경"],
+  "죽은":["꺼졌","다 됐","끊겼","조용","낙엽"],"작동 안 하는":["꺼졌","다 됐","끊겼","나갔","맛이"],
+  "죽었다":["나갔","꺼졌","돌아가","잦아들","맛이"],"멎었다":["꺼졌","잦아들","나갔"],
+  "바라다":["좋겠","빌어","소원"],"~이긴 하지만":["근데","그래도","지만","는데"],
+  "~해지다":["져요","져","해져","내요"],"~처럼 들린다":["것 같","소리","목소리","그렇게"],
+  "사랑했다":["좋았","좋아했","아꼈"],"사랑한다":["좋아해","좋아하"],
+  "쏘다":["보내","슛","찍","솔직","아 참"],"돌렸다":["좌회전","상했","껐","추워졌","뒤돌"],
+  "대장":["서장","책임자","주방장","팀장"],"키스":["뽀뽀"],
+  "~라고 생각하다":["것 같","쳐봐"],"~하지 않으면":["안 오면","안 가면","아니면","안 바쁘"],
+  "사용하는 중":["쓰","써"],"술 취한":["취한","취했","음주"],
+  "깨닫다":["몰랐","알아","알게"],"~이 되었다":["됐","되었"],
+  "분명히":["딱 봐도","명백"],"나르다":["들","갖고 다니","챙겨 다니","파"],
+  "사악한":["악한","나쁜","악","짓궂"],"~위에":["옛날","달렸","다가왔","코앞"],
+  "탈출하다":["피할","도망","비상","피하려","위기"],"유형":["종류","스타일"],
+  "~라는 이름의":["이라는","라는","이름"],"허락하다":["안 돼","도와드릴","잡으세","계산","돼요"],
+  "파괴하다":["부술","버리","망가","망칠","부수"],"유지하는 중":["보관","챙겨","지내","지키"],
+  "모두":["다들","전부"],
   "어머니":["엄마"],"아버지":["아빠"],"남자":["사람","녀석","분","직원"],"여자":["사람","분"],
   "직업":["일자리","일","직장"],"제발":["주세요","주실래","해 주","줄래"],"부디":["주세요","주실래"],
   "의미하다":["뜻","무슨 말","말인지"],"것들":["짐","일","물건","상황","거"],
@@ -7055,9 +7075,15 @@ const WP_KO_SYN={
 };
 function wpKoStems(ko){
   const out=[];
+  const chunks=[];
   String(ko||"").split(/[\/,·]/).forEach(g=>{
-    let t=g.trim().replace(/^[~\-\s]+/,"").replace(/\(.*?\)/g,"").trim();
-    if(!t) return;
+    const t0=g.trim().replace(/^[~\-\s]+/,"").replace(/\(.*?\)/g,"").trim();
+    if(!t0) return;
+    chunks.push(t0);
+    /* 띄어쓰기로도 쪼갠다 — "술 취한"의 단서는 "취한", "~이 되었다"의 단서는 "되었다" 다 */
+    t0.split(/\s+/).forEach(w=>{ if(w && w!==t0) chunks.push(w); });
+  });
+  chunks.forEach(t=>{
     out.push(t);
     (WP_KO_SYN[t]||[]).forEach(x=>out.push(x));
     let x=t.replace(/(하다|되다|시키다|이다|없다|있다)$/,""); if(x&&x!==t) out.push(x);
@@ -7066,6 +7092,31 @@ function wpKoStems(ko){
     if(t.length>=4) out.push(t.slice(0,-2));
   });
   return [...new Set(out)].filter(Boolean).sort((a,b)=>b.length-a.length);
+}
+/* 한국어는 활용하면 글자가 바뀐다: 보다→봤어, 주다→줬어, 하다→했어, 되다→됐어.
+   그래서 '보'를 그대로 찾으면 "봤어"를 못 잡는다.
+   첫 음절을 초성+중성으로 쪼개, 활용으로 바뀔 수 있는 모음까지 같은 것으로 본다. */
+function koSplit(ch){
+  const c=String(ch||"").charCodeAt(0);
+  if(!(c>=0xAC00 && c<=0xD7A3)) return null;
+  const n=c-0xAC00;
+  return {cho:Math.floor(n/588), jung:Math.floor((n%588)/28)};
+}
+const KO_VFAM=[0,0,0,0, 1,1,1,1, 2,2,2,2,2, 3,3,3,3,3, 4,4, 5];   // ㅏ류/ㅓ류/ㅗ류/ㅜ류/ㅡ류/ㅣ
+function koVowelClose(a,b){
+  if(a===b) return true;
+  if(KO_VFAM[a]===KO_VFAM[b]) return true;
+  const eu=(x)=>KO_VFAM[x]===4, e=(x)=>KO_VFAM[x]===1, aa=(x)=>KO_VFAM[x]===0, i=(x)=>KO_VFAM[x]===5;
+  if(eu(a)&&(e(b)||aa(b))) return true;      // 쓰다→써
+  if(eu(b)&&(e(a)||aa(a))) return true;
+  if(i(a)&&e(b)) return true;                // 이다→여
+  if(i(b)&&e(a)) return true;
+  return false;
+}
+function koSameStart(ch, target){
+  const a=koSplit(ch), b=koSplit(target);
+  if(!a||!b) return false;
+  return a.cho===b.cho && koVowelClose(a.jung, b.jung);
 }
 function wpKoCue(koSent, koGloss){
   const s=String(koSent||"");
@@ -7093,6 +7144,15 @@ function wpKoCue(koSent, koGloss){
     const m=re.exec(s);
     if(m){ const i=m.index+m[1].length;
       return {html:escapeHtml(s.slice(0,i))+'<span class="wp-ko-hit">'+escapeHtml(s.slice(i,i+1))+'</span>'+escapeHtml(s.slice(i+1)), found:true}; }
+  }
+  /* 마지막: 어간 첫 글자를 활용형까지 감안해 어절 첫머리에서 찾는다(보다→봤어) */
+  for(const st of stems){
+    const head=st[0]; if(!koSplit(head)) continue;
+    const parts=s.split(/(\s+)/); let pos=0;
+    for(const seg of parts){
+      if(!/^\s/.test(seg) && seg && koSameStart(seg[0], head)) return mark(pos, 1);
+      pos+=seg.length;
+    }
   }
   return {html:escapeHtml(s), found:false};
 }
