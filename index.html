@@ -1685,6 +1685,9 @@ body{background:var(--paper)!important;color:var(--text)}
 .verb-explain-head{font-weight:800;margin-bottom:6px;opacity:.72;font-size:12.5px}
 .verb-explain-core{margin:0}
 .verb-explain-note{margin:8px 0 0;padding-top:8px;border-top:1px solid rgba(47,36,31,.15)}
+.wp-ko-hit{color:#0E7C5A;background:#D8F3E7;border-radius:6px;padding:1px 4px;font-weight:900;box-shadow:inset 0 -2px 0 #7FD3B4}
+.wp-ko-cue{margin-top:8px;font-size:13px;color:#5B7F72;font-weight:700}
+.wp-ko-cue b{color:#0E7C5A}
 </style>
 </head>
 <body>
@@ -1974,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.173";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.174";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -7030,6 +7033,69 @@ function wpNext(){
   wpSaveProgress();
   wpAsk(wpQueue[wpPos]);
 }
+/* 🎨 한국어 문장에서 '빈칸에 해당하는 부분'을 찾아 색으로 표시한다.
+   예전엔 문장만 보고 어느 낱말을 영어로 바꿔야 하는지 스스로 짚어야 해서,
+   단어를 아는데도 문제를 읽는 데 시간이 걸렸다. 찾지 못하면 아래에 뜻을 따로 붙인다. */
+const WP_KO_SYN={
+  "어머니":["엄마"],"아버지":["아빠"],"남자":["사람","녀석","분","직원"],"여자":["사람","분"],
+  "직업":["일자리","일","직장"],"제발":["주세요","주실래","해 주","줄래"],"부디":["주세요","주실래"],
+  "의미하다":["뜻","무슨 말","말인지"],"것들":["짐","일","물건","상황","거"],
+  "말해줬다":["말했","말하","알려줬","알려주","얘기","그래","그랬"],
+  "아마":["인가 봐","지도 몰라","것 같","나을 것","봐"],
+  "더 좋은":["나아","좋아졌","낫","나을"],"괜찮은":["좋","무방"],
+  "얘들아":["다들","너희","애들"],"여러분":["다들","너희","애들"],
+  "믿다":["믿","그런 것 같"],"아무것도 아닌":["별거","없"],
+  "물론":["당연","그럼"],"매우":["정말","아주","너무","엄청"],"조금":["좀","살짝"],
+  "아이":["애","얘"],"친구":["애들","걔","얘"],"돈":["값","요금","비용"],
+  "가게":["집","점","매장"],"지금":["이제","방금","현재"],"빨리":["얼른","어서","서둘"],
+  "정말로":["정말","진짜","really"],"살다":["살","사세","사는"],"~인 것 같다":["것 같","듯"],
+  "생각하다":["생각","같아"],"원하다":["원","싶"],"필요하다":["필요","해야"],
+  "가져오다":["가져","들고"],"보여주다":["보여","알려"],"확인하다":["확인","알아보"],
+  "시작하다":["시작"],"끝나다":["끝","마치"],"기다리다":["기다"],"도착하다":["도착"]
+};
+function wpKoStems(ko){
+  const out=[];
+  String(ko||"").split(/[\/,·]/).forEach(g=>{
+    let t=g.trim().replace(/^[~\-\s]+/,"").replace(/\(.*?\)/g,"").trim();
+    if(!t) return;
+    out.push(t);
+    (WP_KO_SYN[t]||[]).forEach(x=>out.push(x));
+    let x=t.replace(/(하다|되다|시키다|이다|없다|있다)$/,""); if(x&&x!==t) out.push(x);
+    x=t.replace(/(다|요|음|기|함|임)$/,"");                  if(x&&x!==t) out.push(x);
+    if(t.length>=3) out.push(t.slice(0,-1));
+    if(t.length>=4) out.push(t.slice(0,-2));
+  });
+  return [...new Set(out)].filter(Boolean).sort((a,b)=>b.length-a.length);
+}
+function wpKoCue(koSent, koGloss){
+  const s=String(koSent||"");
+  if(!s) return {html:escapeHtml(s), found:false};
+  const stems=wpKoStems(koGloss);
+  const mark=(i,len)=>({html:escapeHtml(s.slice(0,i))+'<span class="wp-ko-hit">'+escapeHtml(s.slice(i,i+len))+'</span>'+escapeHtml(s.slice(i+len)), found:true});
+  /* 어절 중간을 잘라 칠하면 "섞|인 것 같|아요" 처럼 보기 나쁘다 — 어절 첫머리를 먼저 찾는다 */
+  for(const st of stems){
+    if(st.length<2) continue;
+    let from=0, i;
+    while((i=s.indexOf(st,from))>=0){
+      if(i===0 || /\s/.test(s[i-1])) return mark(i, st.length);
+      from=i+1;
+    }
+  }
+  for(const st of stems){
+    if(st.length<2) continue;
+    const i=s.indexOf(st);
+    if(i>=0) return mark(i, st.length);
+  }
+  /* 동사·형용사는 어간이 한 글자인 경우가 많다(믿다→믿). 어절 첫 글자일 때만 인정한다. */
+  for(const st of stems){
+    if(st.length!==1) continue;
+    const re=new RegExp("(^|\\s)"+st.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+    const m=re.exec(s);
+    if(m){ const i=m.index+m[1].length;
+      return {html:escapeHtml(s.slice(0,i))+'<span class="wp-ko-hit">'+escapeHtml(s.slice(i,i+1))+'</span>'+escapeHtml(s.slice(i+1)), found:true}; }
+  }
+  return {html:escapeHtml(s), found:false};
+}
 function wpAsk(q){
   const total=wpQueue.length;
   $("#vbBarFill").style.width=Math.round(wpPos/total*100)+"%";
@@ -7043,13 +7109,17 @@ function wpAsk(q){
     : firstTime ? "🆕 새 표현"
     : ctxLabel ? ctxLabel+" — 또 나왔어요!"
     : "🔁 또 나왔어요 — 기억나요?";
+  // 한국어 문장에서 빈칸에 해당하는 부분을 색으로 (못 찾으면 아래에 뜻을 붙인다)
+  const _koGloss=String((q.word&&q.word.ko)||"").trim();
+  const _koCue=wpKoCue(q.blank.ko, _koGloss || q.blank.answer);
   // 빈칸 강조 — [ ___ ]를 하이라이트 박스로
   const enHtml = escapeHtml(q.blank.en).replace(/\[ ___ \]/g, '<span class="wp-blank">&nbsp;&nbsp;&nbsp;&nbsp;</span>');
   card.innerHTML=`
     <div class="wp-stage">
       <div class="wp-q-tab">${tabTxt}</div>
       <div class="wp-q-card">
-        <div class="wp-q-ko">${escapeHtml(q.blank.ko)}</div>
+        <div class="wp-q-ko">${_koCue.html}</div>
+        ${_koCue.found?"":`<div class="wp-ko-cue">빈칸 ⟶ <b>${escapeHtml(_koGloss)}</b></div>`}
         <div class="wp-q-en">${enHtml}</div>
       </div>
       <div class="wp-speech" id="wpStatus">🎤 빈칸만 말해도 되고, 문장을 통째로 말해도 돼요</div>
