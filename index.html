@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.178";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.179";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15036,6 +15036,13 @@ function travelBuildItems(count){
       limit:limits[0], rep:1, recall:false, discriminate:false };
   });
 }
+/* 상황을 읽는 시간은 '말 시작이 늦은 것'이 아니다.
+   여행팩은 한글 상황 길이만큼 읽는 시간을 먼저 빼주고, 그 뒤부터 말 시작 시간을 잰다. */
+function travelReadMs(it){
+  if(!it || !it._travel) return 0;
+  const n=String((it.ex&&it.ex.ko)||"").replace(/\s/g,"").length;
+  return Math.max(2500, Math.min(7000, Math.round(n*220)));
+}
 /* 채점 — 뜻 판정은 기존 문장 채점(wrGrade)을 그대로 쓰고,
    그 위에 '이번 팩의 목표 프레임을 실제로 썼는가'만 더 본다.
    뜻만 맞고 다른 표현을 쓴 경우는 틀린 영어가 아니라 '이번 연습 대상이 아님'으로 안내한다. */
@@ -17972,13 +17979,13 @@ function autoDrillRender(recallMode){
     ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${it._intro?escapeHtml(it.frame.ko)+" · ":""}여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}</div>`:""}
     ${(it._travel&&it._intro)?`<div style="background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span></div>`:""}
     <div class="auto-meta">
-      <span class="auto-chip">시작 지연 ${it.limit}초 안</span>
+      <span class="auto-chip">${it._travel?`상황 읽고 ${it.limit}초 안 시작`:`시작 지연 ${it.limit}초 안`}</span>
       <span class="auto-chip">말 길이 제외</span>
       <span class="auto-chip">${escapeHtml(bleContextLabel(it.ex))}</span>
     </div>
     <div class="auto-ko">${escapeHtml(adPromptKo(it))}</div>
     ${answerHtml}
-    <div class="auto-stat" id="autoStat">상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.</div>
+    <div class="auto-stat" id="autoStat">${it._travel?"상황을 <b>먼저 읽고</b>, 머릿속에 그려지면 말해보세요. 읽는 시간은 빼고 재요.":"상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요."}</div>
     <div class="auto-actions">
       <div class="auto-row">
         <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
@@ -18011,7 +18018,7 @@ function autoDrillRender(recallMode){
     // 통째로 쓰는 표현(넣을 슬롯이 없음)은 '단어만 보기'를 감춘다 — 누르면 정답이 되어버리므로
     const wb=document.getElementById("autoWord");
     if(wb) wb.style.display = adWordHint(autoDrill.items[autoDrill.idx]) ? "" : "none";
-  }, 7000);
+  }, 7000 + travelReadMs(it));
 }
 // 🔤 슬롯(빈칸) 단어만 살짝 보여주기 — 턴은 안 끝냄. 본 단어 = 모르는 단어 → 내부 등록
 function autoDrillShowWord(){
@@ -18041,7 +18048,8 @@ function autoDrillFinish(heard, meta){
   if(!autoDrill) return;
   if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; }
   const it=autoDrill.items[autoDrill.idx], stat=$("#autoStat");
-  const initMs=autoDrillInitMs(meta||{});
+  const readMs = it._travel ? travelReadMs(it) : 0;   // 여행팩은 상황 읽는 시간을 빼고 잰다
+  const initMs=Math.max(100, autoDrillInitMs(meta||{}) - readMs);
   const initSec=initMs/1000;
   const g = it._travel ? travelGrade(it, heard) : adGrade(it.block, it.ex, heard);
   const fast=initSec<=it.limit;
@@ -18073,17 +18081,21 @@ function autoDrillFinish(heard, meta){
   // 못 맞춘 문항 재등장: 1차 실패 → 2~3문제 뒤, 또 실패 → 세션 끝나기 전 한 번 더
   if(!perfect && (it._requeues||0)<2){
     const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _hintUsed:false, _wordShown:false, _requeues:(it._requeues||0)+1, _requeued:true});
-    if((it._requeues||0)===0){ const at=Math.min(autoDrill.items.length, autoDrill.idx+2+((Math.random()*2)|0)); autoDrill.items.splice(at,0,clone); }
+    /* 방금 본 답을 그대로 되뇌는 건 연습이 아니다 — 잊을 만큼 지난 뒤에 다시 낸다 */
+    if((it._requeues||0)===0){ const at=Math.min(autoDrill.items.length, autoDrill.idx+5+((Math.random()*3)|0)); autoDrill.items.splice(at,0,clone); }
     else { autoDrill.items.push(clone); }
   }
   if(perfect){
     if(stat) stat.innerHTML = it._travel
-      ? `<b style="color:#19a06b">✈️ 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · <b>${escapeHtml(it.frame.frame)}</b> 를 상황에 맞게 꺼냈어요.`
+      ? `<b style="color:#19a06b">✈️ 성공</b><br>상황 읽고 ${initSec.toFixed(1)}초 만에 <b>${escapeHtml(it.frame.frame)}</b> 를 꺼냈어요.`
       : `<b style="color:#19a06b">자동화 성공</b><br>발화 시작 ${initSec.toFixed(1)}초 · 목표 블록과 슬롯이 모두 들어갔어요.`;
     try{ profRecordSpeakPerfect&&profRecordSpeakPerfect(it.ex.en, it.ex.ko, "auto"); }catch(e){}
     autoDrillShowResult(it, false, true);
   }else if(g.ok){
-    if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. ${it.limit}초 안에 시작해봐요.`;
+    /* 여행팩은 늦어서 여기 오지 않는다 — 정답을 보고 맞힌 경우다 */
+    if(stat) stat.innerHTML = it._travel
+      ? `<b style="color:#E0A300">정답을 보고 맞혔어요</b><br>다음엔 상황만 보고 <b>${escapeHtml(it.frame.frame)}</b> 를 꺼내볼까요.`
+      : `<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. ${it.limit}초 안에 시작해봐요.`;
     autoDrillShowResult(it, true, false);
   }else{
     const why = it._travel
