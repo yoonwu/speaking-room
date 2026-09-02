@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.175";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.176";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14137,6 +14137,7 @@ function adSlotWords(ex, block){
 // 🔤 "단어만 보기"에 보여줄 말 — 이 문항에서 '새로 넣는 부분'만.
 // ex.object가 없으면 블록 패턴을 걷어낸 나머지를 쓴다. (예전엔 정답 문장을 통째로 보여줬음)
 function adWordHint(it){
+  if(it&&it._travel) return "";       // 여행팩엔 슬롯 개념이 없다 — 누르면 정답이 되어버린다
   const ex=(it&&it.ex)||{};
   const slot=String(ex.object||"").trim();
   if(slot) return slot;
@@ -14158,6 +14159,7 @@ function adWordHint(it){
 // (예: "길을 잃었어요." → 정답 "Can you help me?") 블록의 뜻으로 대체한다.
 function adPromptKo(it){
   const ex=(it&&it.ex)||{}, b=(it&&it.block)||{};
+  if(it&&it._travel) return String(ex.ko||"").trim();   // 여행팩은 상황 설명 그대로 보여준다
   const ko=String(ex.ko||"").trim();
   const hasSlot=!!String(ex.object||"").trim();
   // ⚠️ 채점(adSlotWords)은 예문 영어에서 '블록에 없는 내용어'를 슬롯으로 요구한다.
@@ -14738,16 +14740,354 @@ function renderDailyRoomCard(){
   }
 }
 
+const TRAVEL_FRAMES=[
+  { id:"travel_can_i_get", frame:"Can I get ~?", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", re:"\\bcan i get\\b",
+    items:[
+      {ko:"호텔 방에 수건이 부족하다. 직원에게 하나 더 요청해라.", en:"Can I get another towel?"},
+      {ko:"식당에서 물을 부탁해라.", en:"Can I get some water?"},
+      {ko:"계산을 마쳤는데 영수증이 필요하다.", en:"Can I get a receipt?"},
+      {ko:"카페에서 아이스 커피를 주문해라.", en:"Can I get an iced coffee?"},
+      {ko:"투어 데스크에서 표 두 장을 달라고 해라.", en:"Can I get two tickets?"},
+      {ko:"음식이 너무 매워서 밥을 더 달라고 해라.", en:"Can I get more rice?"},
+      {ko:"방 열쇠를 하나 더 받고 싶다.", en:"Can I get an extra key?"}
+    ]},
+  { id:"travel_can_you", frame:"Can you ~?", ko:"~해 주실 수 있어요?", purpose:"행동 요청", re:"\\bcan you\\b",
+    items:[
+      {ko:"Grab 기사에게 공항으로 가달라고 해라.", en:"Can you take me to the airport?"},
+      {ko:"식당이 시끄럽다. 직원에게 좀 크게 말해달라고 해라.", en:"Can you speak up a little?"},
+      {ko:"호텔 프런트에 택시를 불러달라고 부탁해라.", en:"Can you call a taxi for me?"},
+      {ko:"길을 물으며 지도에서 여기가 어디인지 짚어달라고 해라.", en:"Can you show me on the map?"},
+      {ko:"가족 사진을 찍어달라고 부탁해라.", en:"Can you take a photo of us?"},
+      {ko:"방 에어컨을 고쳐달라고 부탁해라.", en:"Can you fix the air conditioner?"},
+      {ko:"짐을 방까지 올려달라고 부탁해라.", en:"Can you bring my bags to the room?"}
+    ]},
+  { id:"travel_can_i_we", frame:"Can I / Can we ~?", ko:"~해도 될까요?", purpose:"허락", re:"\\bcan (i|we)\\b(?!\\s+get\\b)",
+    items:[
+      {ko:"식당에서 창가 자리에 앉아도 되는지 물어라.", en:"Can we sit by the window?"},
+      {ko:"박물관에서 사진을 찍어도 되는지 물어라.", en:"Can I take pictures here?"},
+      {ko:"호텔에서 늦게 체크아웃해도 되는지 물어라.", en:"Can we check out late?"},
+      {ko:"카페에서 화장실을 써도 되는지 물어라.", en:"Can I use the restroom?"},
+      {ko:"옷 가게에서 입어봐도 되는지 물어라.", en:"Can I try this on?"},
+      {ko:"체크아웃 후에도 수영장을 써도 되는지 물어라.", en:"Can we use the pool after checkout?"},
+      {ko:"투어에 아이를 데려가도 되는지 물어라.", en:"Can we bring our kids?"}
+    ]},
+  { id:"travel_do_you_have", frame:"Do you have ~?", ko:"~ 있어요?", purpose:"보유 여부", re:"\\bdo you have\\b",
+    items:[
+      {ko:"식당에서 안 매운 메뉴가 있는지 물어라.", en:"Do you have anything not spicy?"},
+      {ko:"호텔에 빈방이 있는지 물어라.", en:"Do you have a room available?"},
+      {ko:"가게에서 더 큰 사이즈가 있는지 물어라.", en:"Do you have a bigger size?"},
+      {ko:"카페에 두유가 있는지 물어라.", en:"Do you have soy milk?"},
+      {ko:"투어 회사에 내일 자리가 있는지 물어라.", en:"Do you have space for tomorrow?"},
+      {ko:"프런트에 콘센트 어댑터가 있는지 물어라.", en:"Do you have an adapter?"},
+      {ko:"메뉴를 못 읽겠다. 영어 메뉴가 있는지 물어라.", en:"Do you have an English menu?"}
+    ]},
+  { id:"travel_where_is", frame:"Where is ~?", ko:"~ 어디예요?", purpose:"장소 찾기", re:"\\bwhere (is|are)\\b",
+    items:[
+      {ko:"공항에서 짐 찾는 곳을 물어라.", en:"Where is baggage claim?"},
+      {ko:"화장실이 어디인지 물어라.", en:"Where is the restroom?"},
+      {ko:"호텔에서 아침 먹는 곳을 물어라.", en:"Where is the breakfast room?"},
+      {ko:"Grab 타는 곳이 어디인지 물어라.", en:"Where is the pickup area?"},
+      {ko:"환전소를 찾아라.", en:"Where is the money exchange?"},
+      {ko:"버스 정류장이 어디인지 물어라.", en:"Where is the bus stop?"},
+      {ko:"우리 게이트가 어디인지 물어라.", en:"Where is our gate?"}
+    ]},
+  { id:"travel_how_do_i_get_to", frame:"How do I get to ~?", ko:"~ 어떻게 가요?", purpose:"가는 방법", re:"\\bhow do (i|we) get to\\b",
+    items:[
+      {ko:"공항에서 호텔까지 가는 방법을 물어라.", en:"How do I get to the hotel?"},
+      {ko:"시내까지 가는 방법을 물어라.", en:"How do I get to downtown?"},
+      {ko:"섬 가는 배 타는 곳까지 어떻게 가는지 물어라.", en:"How do I get to the ferry terminal?"},
+      {ko:"야시장까지 가는 방법을 물어라.", en:"How do I get to the night market?"},
+      {ko:"공항까지 가는 방법을 물어라.", en:"How do I get to the airport?"},
+      {ko:"해변까지 가는 방법을 물어라.", en:"How do I get to the beach?"},
+      {ko:"추천받은 식당까지 가는 방법을 물어라.", en:"How do I get to that restaurant?"}
+    ]},
+  { id:"travel_how_long", frame:"How long does it take?", ko:"얼마나 걸려요?", purpose:"소요 시간", re:"\\bhow long does it take\\b",
+    items:[
+      {ko:"택시로 호텔까지 얼마나 걸리는지 물어라.", en:"How long does it take to the hotel?"},
+      {ko:"배로 섬까지 얼마나 걸리는지 물어라.", en:"How long does it take to the island?"},
+      {ko:"주문한 음식이 나오는 데 얼마나 걸리는지 물어라.", en:"How long does it take to cook?"},
+      {ko:"걸어서 얼마나 걸리는지 물어라.", en:"How long does it take on foot?"},
+      {ko:"투어 전체가 얼마나 걸리는지 물어라.", en:"How long does it take in total?"},
+      {ko:"체크인이 얼마나 걸리는지 물어라.", en:"How long does it take to check in?"},
+      {ko:"세탁 맡기면 얼마나 걸리는지 물어라.", en:"How long does it take for laundry?"}
+    ]},
+  { id:"travel_what_time_does", frame:"What time does ~ start/leave?", ko:"~ 몇 시에 시작해요/출발해요?", purpose:"시작·출발 시간", re:"\\bwhat time does\\b",
+    items:[
+      {ko:"투어가 몇 시에 시작하는지 물어라.", en:"What time does the tour start?"},
+      {ko:"배가 몇 시에 출발하는지 물어라.", en:"What time does the boat leave?"},
+      {ko:"호텔 조식이 몇 시에 시작하는지 물어라.", en:"What time does breakfast start?"},
+      {ko:"가게가 몇 시에 여는지 물어라.", en:"What time does the shop open?"},
+      {ko:"막차가 몇 시에 떠나는지 물어라.", en:"What time does the last bus leave?"},
+      {ko:"수영장이 몇 시에 닫는지 물어라.", en:"What time does the pool close?"},
+      {ko:"공연이 몇 시에 시작하는지 물어라.", en:"What time does the show start?"}
+    ]},
+  { id:"travel_what_time_need", frame:"What time do we need to ~?", ko:"몇 시까지 ~해야 해요?", purpose:"마감 시각", re:"\\bwhat time do (we|i) need to\\b",
+    items:[
+      {ko:"투어 픽업 때문에 몇 시까지 로비에 있어야 하는지 물어라.", en:"What time do we need to be in the lobby?"},
+      {ko:"몇 시까지 체크아웃해야 하는지 물어라.", en:"What time do we need to check out?"},
+      {ko:"몇 시까지 공항에 도착해야 하는지 물어라.", en:"What time do we need to be at the airport?"},
+      {ko:"몇 시까지 배에 타야 하는지 물어라.", en:"What time do we need to get on the boat?"},
+      {ko:"몇 시까지 돌아와야 하는지 물어라.", en:"What time do we need to come back?"},
+      {ko:"몇 시까지 준비를 끝내야 하는지 물어라.", en:"What time do we need to be ready?"},
+      {ko:"몇 시까지 방을 비워야 하는지 물어라.", en:"What time do we need to leave the room?"}
+    ]},
+  { id:"travel_do_i_need_to", frame:"Do I need to ~?", ko:"~해야 하나요?", purpose:"필요 여부", re:"\\bdo (i|we) need to\\b",
+    items:[
+      {ko:"투어를 미리 예약해야 하는지 물어라.", en:"Do I need to book in advance?"},
+      {ko:"지금 돈을 내야 하는지 물어라.", en:"Do I need to pay now?"},
+      {ko:"여권을 가져가야 하는지 물어라.", en:"Do I need to bring my passport?"},
+      {ko:"호핑투어에 수영복을 챙겨야 하는지 물어라.", en:"Do I need to bring a swimsuit?"},
+      {ko:"들어가기 전에 신발을 벗어야 하는지 물어라.", en:"Do I need to take off my shoes?"},
+      {ko:"줄을 서야 하는지 물어라.", en:"Do I need to wait in line?"},
+      {ko:"표를 미리 출력해야 하는지 물어라.", en:"Do I need to print the ticket?"}
+    ]},
+  { id:"travel_is_included", frame:"Is ~ included?", ko:"~ 포함인가요?", purpose:"포함 여부", re:"\\b(is|are)\\b[^.?]*\\bincluded\\b",
+    items:[
+      {ko:"호핑투어에 스노클 장비가 가격에 포함되는지 물어봐라.", en:"Is snorkeling gear included?"},
+      {ko:"숙박비에 아침이 포함인지 물어라.", en:"Is breakfast included?"},
+      {ko:"투어 요금에 점심이 포함인지 물어라.", en:"Is lunch included?"},
+      {ko:"호텔 픽업이 포함인지 물어라.", en:"Is pickup included?"},
+      {ko:"적힌 가격에 세금이 포함인지 물어라.", en:"Is tax included?"},
+      {ko:"입장료가 포함인지 물어라.", en:"Is the entrance fee included?"},
+      {ko:"생수가 포함인지 물어라.", en:"Is water included?"}
+    ]},
+  { id:"travel_how_much", frame:"How much is ~?", ko:"~ 얼마예요?", purpose:"가격", re:"\\bhow much (is|are)\\b",
+    items:[
+      {ko:"택시비가 얼마인지 물어라.", en:"How much is the taxi?"},
+      {ko:"하룻밤에 얼마인지 물어라.", en:"How much is it per night?"},
+      {ko:"이 셔츠가 얼마인지 물어라.", en:"How much is this shirt?"},
+      {ko:"투어가 1인당 얼마인지 물어라.", en:"How much is it per person?"},
+      {ko:"아이 요금이 얼마인지 물어라.", en:"How much is it for a child?"},
+      {ko:"보증금이 얼마인지 물어라.", en:"How much is the deposit?"},
+      {ko:"공항 픽업이 얼마인지 물어라.", en:"How much is the airport pickup?"}
+    ]},
+  { id:"travel_pay_by_card", frame:"Can I pay by card?", ko:"카드로 결제되나요?", purpose:"카드 결제", re:"\\bcan (i|we) pay by card\\b",
+    items:[
+      {ko:"식당에서 카드 결제가 되는지 물어라.", en:"Can I pay by card?"},
+      {ko:"시장 가게에서 카드가 되는지 물어라.", en:"Can I pay by card here?"},
+      {ko:"투어 요금을 카드로 낼 수 있는지 물어라.", en:"Can I pay by card for the tour?"},
+      {ko:"택시에서 카드가 되는지 물어라.", en:"Can I pay by card in the taxi?"},
+      {ko:"보증금을 카드로 낼 수 있는지 물어라.", en:"Can I pay by card for the deposit?"},
+      {ko:"현금이 부족하다. 지금 카드로 계산해도 되는지 물어라.", en:"Can I pay by card now?"}
+    ]},
+  { id:"travel_have_reservation", frame:"I have a reservation.", ko:"예약했어요.", purpose:"예약 알리기", re:"\\b(i|we) have a reservation\\b",
+    items:[
+      {ko:"호텔 체크인 카운터에서 예약했다고 말해라.", en:"I have a reservation."},
+      {ko:"식당에 들어가서 두 명 예약했다고 말해라.", en:"I have a reservation for two."},
+      {ko:"투어 데스크에서 예약했다고 말해라.", en:"I have a reservation for the tour."},
+      {ko:"직원이 이름을 묻는다. 김으로 예약했다고 말해라.", en:"I have a reservation under Kim."},
+      {ko:"오늘 밤으로 예약했다고 말해라.", en:"I have a reservation for tonight."},
+      {ko:"7시로 예약했다고 말해라.", en:"I have a reservation at seven."},
+      {ko:"렌터카 데스크에서 예약했다고 말해라.", en:"I have a reservation for a car."}
+    ]},
+  { id:"travel_can_i_leave", frame:"Can I leave ~ here?", ko:"~ 여기 맡겨도 될까요?", purpose:"짐 맡기기", re:"\\bcan (i|we) leave\\b",
+    items:[
+      {ko:"체크아웃했는데 저녁 비행기다. 짐을 맡기고 싶다.", en:"Can I leave my bags here?"},
+      {ko:"투어 가는 동안 배낭을 맡기고 싶다.", en:"Can I leave my backpack here?"},
+      {ko:"잠깐 캐리어를 두고 나가고 싶다.", en:"Can I leave my suitcase here?"},
+      {ko:"물놀이하는 동안 신발을 두고 가도 되는지 물어라.", en:"Can I leave my shoes here?"},
+      {ko:"저녁까지 짐을 맡길 수 있는지 물어라.", en:"Can I leave my bags here until evening?"},
+      {ko:"빌린 자전거를 여기 세워둬도 되는지 물어라.", en:"Can I leave my bike here?"},
+      {ko:"귀중품을 프런트에 맡길 수 있는지 물어라.", en:"Can I leave my valuables here?"}
+    ]},
+  { id:"travel_problem_with", frame:"There's a problem with ~.", ko:"~에 문제가 있어요.", purpose:"문제 알리기", re:"\\bthere ?s a problem with\\b",
+    items:[
+      {ko:"방 에어컨이 안 된다. 프런트에 알려라.", en:"There's a problem with the air conditioner."},
+      {ko:"방 와이파이가 안 된다고 알려라.", en:"There's a problem with the wifi."},
+      {ko:"샤워기에서 온수가 안 나온다고 알려라.", en:"There's a problem with the shower."},
+      {ko:"예약 내용이 우리가 신청한 것과 다르다고 알려라.", en:"There's a problem with my reservation."},
+      {ko:"계산서 금액이 이상하다고 알려라.", en:"There's a problem with the bill."},
+      {ko:"방 열쇠가 안 먹힌다고 알려라.", en:"There's a problem with my key."},
+      {ko:"주문한 음식이 잘못 나왔다고 알려라.", en:"There's a problem with my order."}
+    ]},
+  { id:"travel_cant_find", frame:"I can't find ~.", ko:"~를 못 찾겠어요.", purpose:"못 찾음", re:"\\bi cant find\\b",
+    items:[
+      {ko:"Grab 기사 위치를 못 찾겠다.", en:"I can't find my driver."},
+      {ko:"공항에서 게이트를 못 찾겠다.", en:"I can't find my gate."},
+      {ko:"가방을 뒤졌는데 여권이 안 보인다.", en:"I can't find my passport."},
+      {ko:"주소를 들고 왔는데 호텔을 못 찾겠다.", en:"I can't find the hotel."},
+      {ko:"컨베이어에서 짐이 안 나온다.", en:"I can't find my luggage."},
+      {ko:"예약 확인 메일을 못 찾겠다.", en:"I can't find my booking email."},
+      {ko:"사람이 많아 가족을 놓쳤다.", en:"I can't find my family."}
+    ]},
+  { id:"travel_think_i_left", frame:"I think I left ~.", ko:"~를 두고 온 것 같아요.", purpose:"두고 옴", re:"\\bi think i left\\b",
+    items:[
+      {ko:"택시에서 내렸는데 핸드폰이 없다.", en:"I think I left my phone in the taxi."},
+      {ko:"체크아웃하고 나오니 충전기가 없다.", en:"I think I left my charger in the room."},
+      {ko:"식당에서 나오니 우산이 없다.", en:"I think I left my umbrella at the restaurant."},
+      {ko:"배에서 내렸는데 가방이 없다.", en:"I think I left my bag on the boat."},
+      {ko:"카페에서 나오니 선글라스가 없다.", en:"I think I left my sunglasses at the cafe."},
+      {ko:"버스에서 내렸는데 카메라가 없다.", en:"I think I left my camera on the bus."},
+      {ko:"보안검색을 지나고 나니 지갑이 없다.", en:"I think I left my wallet at security."}
+    ]},
+  { id:"travel_does_that_mean", frame:"Does that mean ~?", ko:"그럼 ~라는 뜻이에요?", purpose:"의미 확인", re:"\\bdoes that mean\\b",
+    items:[
+      {ko:"마감시간이 지났다고 한다. 그러면 주문을 못 하는 건지 확인해라.", en:"Does that mean I can't order?"},
+      {ko:"날씨가 안 좋다고 한다. 투어가 취소인지 확인해라.", en:"Does that mean the tour is canceled?"},
+      {ko:"추가 요금이 있다고 한다. 더 내야 하는 건지 확인해라.", en:"Does that mean I have to pay more?"},
+      {ko:"배가 늦는다고 한다. 더 기다려야 하는지 확인해라.", en:"Does that mean we have to wait?"},
+      {ko:"카드가 안 된다고 한다. 현금만 되는지 확인해라.", en:"Does that mean it's cash only?"},
+      {ko:"픽업이 없다고 한다. 우리가 직접 가야 하는지 확인해라.", en:"Does that mean we go there ourselves?"},
+      {ko:"방이 없다고 한다. 다른 호텔을 찾아야 하는지 확인해라.", en:"Does that mean we need another hotel?"}
+    ]},
+  { id:"travel_say_again_slowly", frame:"Could you say that again, more slowly?", ko:"다시 천천히 말해 주실래요?", purpose:"다시 요청", re:"\\bcould you say that again\\b",
+    items:[
+      {ko:"직원이 너무 빨리 말해서 못 알아들었다.", en:"Could you say that again, more slowly?"},
+      {ko:"공항 안내 방송을 놓쳤다. 직원에게 다시 부탁해라.", en:"Could you say that again, more slowly?"},
+      {ko:"가이드 설명을 못 알아들었다.", en:"Could you say that again, more slowly?"},
+      {ko:"전화 목소리가 빨라서 못 알아들었다.", en:"Could you say that again, more slowly?"},
+      {ko:"길 안내를 들었는데 이해를 못 했다.", en:"Could you say that again, more slowly?"},
+      {ko:"가격을 말했는데 숫자를 못 들었다.", en:"Could you say that again, more slowly?"}
+    ]},
+  { id:"travel_what_recommend", frame:"What do you recommend?", ko:"뭐가 좋아요?", purpose:"추천 요청", re:"\\bwhat do you recommend\\b",
+    items:[
+      {ko:"식당에서 뭐가 맛있는지 물어라.", en:"What do you recommend?"},
+      {ko:"투어 종류가 많다. 가족한테 뭐가 좋은지 물어라.", en:"What do you recommend for a family?"},
+      {ko:"카페에서 뭘 마실지 추천받아라.", en:"What do you recommend to drink?"},
+      {ko:"기념품 가게에서 선물용으로 추천받아라.", en:"What do you recommend for a gift?"},
+      {ko:"해변이 여러 곳이다. 스노클링하기 좋은 데를 물어라.", en:"What do you recommend for snorkeling?"},
+      {ko:"첫 방문이다. 어디를 먼저 볼지 물어라.", en:"What do you recommend for a first visit?"},
+      {ko:"매운 걸 못 먹는다. 뭘 시킬지 물어라.", en:"What do you recommend that's not spicy?"}
+    ]},
+  { id:"travel_can_we_change", frame:"Can we change ~?", ko:"~ 바꿀 수 있을까요?", purpose:"변경", re:"\\bcan (we|i) change\\b",
+    items:[
+      {ko:"투어 날짜를 바꾸고 싶다.", en:"Can we change the date?"},
+      {ko:"방이 시끄럽다. 방을 바꾸고 싶다.", en:"Can we change rooms?"},
+      {ko:"식당 예약 시간을 바꾸고 싶다.", en:"Can we change the time?"},
+      {ko:"비행기에서 자리를 바꾸고 싶다.", en:"Can we change seats?"},
+      {ko:"픽업 장소를 바꾸고 싶다.", en:"Can we change the pickup place?"},
+      {ko:"인원이 한 명 늘었다.", en:"Can we change the number of people?"},
+      {ko:"주문을 바꾸고 싶다.", en:"Can we change our order?"}
+    ]},
+  { id:"travel_is_this_right", frame:"Is this the right ~?", ko:"이거 맞나요?", purpose:"맞는지 확인", re:"\\bis this the right\\b",
+    items:[
+      {ko:"버스에 타기 전에 이 버스가 맞는지 물어라.", en:"Is this the right bus?"},
+      {ko:"게이트 앞에서 여기가 맞는지 물어라.", en:"Is this the right gate?"},
+      {ko:"줄이 여러 개다. 이 줄이 맞는지 물어라.", en:"Is this the right line?"},
+      {ko:"여기서 내려야 하는 정류장이 맞는지 물어라.", en:"Is this the right stop?"},
+      {ko:"배 타는 부두가 맞는지 물어라.", en:"Is this the right pier?"},
+      {ko:"호텔 건물이 맞는지 물어라.", en:"Is this the right building?"},
+      {ko:"갈림길에서 이 길이 맞는지 물어라.", en:"Is this the right way?"}
+    ]},
+  { id:"travel_where_meet", frame:"Where do we meet?", ko:"어디서 모여요?", purpose:"집결 장소", re:"\\bwhere do (we|i) meet\\b",
+    items:[
+      {ko:"투어 집결 장소를 물어라.", en:"Where do we meet?"},
+      {ko:"가이드를 어디서 만나는지 물어라.", en:"Where do we meet the guide?"},
+      {ko:"픽업 기사를 어디서 만나는지 물어라.", en:"Where do we meet the driver?"},
+      {ko:"내일 아침 어디서 모이는지 물어라.", en:"Where do we meet tomorrow morning?"},
+      {ko:"점심 먹고 어디서 다시 모이는지 물어라.", en:"Where do we meet after lunch?"},
+      {ko:"배에서 내린 뒤 어디서 모이는지 물어라.", en:"Where do we meet after the boat?"},
+      {ko:"일행과 나중에 어디서 만날지 정해라.", en:"Where do we meet later?"}
+    ]},
+  { id:"travel_what_should_i_do", frame:"What should I/we do?", ko:"어떻게 해야 하나요?", purpose:"대처 방법", re:"\\bwhat should (i|we) do\\b",
+    items:[
+      {ko:"짐이 안 나왔다. 어떻게 해야 하는지 물어라.", en:"What should I do?"},
+      {ko:"비가 와서 투어가 취소됐다. 이제 어떻게 할지 물어라.", en:"What should we do now?"},
+      {ko:"표를 잃어버렸다. 어떻게 해야 하는지 물어라.", en:"What should I do about my ticket?"},
+      {ko:"배가 늦는다. 기다리는 동안 뭘 할지 물어라.", en:"What should we do while we wait?"},
+      {ko:"방에 문제가 있다. 어떻게 해야 할지 물어라.", en:"What should I do about the room?"},
+      {ko:"카드가 안 된다. 그럼 어떻게 해야 하는지 물어라.", en:"What should I do then?"},
+      {ko:"여권을 잃어버렸다. 먼저 뭘 해야 하는지 물어라.", en:"What should I do first?"}
+    ]}
+];
+
+/* ✈️ 여행 집중 — 기존 '블록 반복(입에 붙이기)' 화면·마이크·채점 UI를 그대로 쓰고
+   콘텐츠와 진행 기록만 분리한다. 새 엔진·새 API를 만들지 않는다.
+   · 블록 학습기록(bleRecord)·재사용 원장(reuse*)·자동레벨(autoLvlRecord)은 건드리지 않는다
+     — 여행 프레임 id 는 블록 id 가 아니라서 기록이 섞이면 기존 데이터가 깨진다.
+   · 진행 기록은 speakingroom:travelrepeat 한 곳에만 쌓는다. */
+const TRAVEL_KEY="speakingroom:travelrepeat";
+const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
+function travelAll(){ try{ return hGet(TRAVEL_KEY,{})||{}; }catch(e){ return {}; } }
+function travelSave(o){ try{ hSet(TRAVEL_KEY,o); }catch(e){} }
+function travelStat(id){ const o=travelAll(); return o[id]||{seen:0, ok:0, miss:0, lastT:0}; }
+function travelSeenCount(){ const o=travelAll(); return TRAVEL_FRAMES.filter(f=>(o[f.id]&&o[f.id].seen)>0).length; }
+function travelRecord(fid, ok){
+  const o=travelAll(); const s=o[fid]||{seen:0, ok:0, miss:0, lastT:0};
+  s.seen=(s.seen||0)+1; if(ok) s.ok=(s.ok||0)+1; else s.miss=(s.miss||0)+1;
+  s.lastT=Date.now(); o[fid]=s; travelSave(o);
+}
+/* 25개를 한 바퀴 다 돌기 전에는 같은 프레임이 다시 나오지 않게 한다(full-cycle 보장).
+   한 바퀴 뒤에는 약한 프레임(틀린 적 많음)·오래 안 본 프레임을 앞으로 보낸다. */
+function travelPickFrames(n){
+  const o=travelAll();
+  const unseen=TRAVEL_FRAMES.filter(f=>!(o[f.id]&&o[f.id].seen));
+  const seen=TRAVEL_FRAMES.filter(f=>(o[f.id]&&o[f.id].seen))
+    .sort((a,b)=>{ const x=o[a.id], y=o[b.id];
+      const wx=(x.miss||0)-(x.ok||0), wy=(y.miss||0)-(y.ok||0);
+      return wy-wx || (x.lastT||0)-(y.lastT||0); });
+  const order=bleShuffle(unseen).concat(seen);
+  const out=[];
+  for(let i=0; out.length<n; i++){ out.push(order[i%Math.max(1,order.length)]); if(i>400) break; }
+  return out;
+}
+function travelBuildItems(count){
+  const limits=adLimits();
+  const frames=travelPickFrames(count);
+  const usedByFrame={};
+  return frames.map((f,i)=>{
+    const st=travelStat(f.id);
+    const pool=f.items.slice();
+    const used=usedByFrame[f.id]||(usedByFrame[f.id]=[]);
+    const fresh=pool.filter(x=>used.indexOf(x.en)<0);
+    const pick=(fresh.length?fresh:pool)[Math.floor(Math.random()*(fresh.length?fresh.length:pool.length))];
+    used.push(pick.en);
+    return { _travel:true, frame:f, firstTime:!st.seen,
+      block:{ id:f.id, block:f.frame, meaningKo:f.ko },
+      ex:{ en:pick.en, ko:pick.ko, situation:"✈️ "+f.purpose },
+      limit:limits[0], rep:1, recall:false, discriminate:false };
+  });
+}
+/* 채점 — 뜻 판정은 기존 문장 채점(wrGrade)을 그대로 쓰고,
+   그 위에 '이번 팩의 목표 프레임을 실제로 썼는가'만 더 본다.
+   뜻만 맞고 다른 표현을 쓴 경우는 틀린 영어가 아니라 '이번 연습 대상이 아님'으로 안내한다. */
+function travelGrade(it, heard){
+  const h=adNorm(heard), hw=h.split(" ").filter(Boolean);
+  let frameOk=false;
+  try{ frameOk=new RegExp(it.frame.re,"i").test(h); }catch(e){ frameOk=false; }
+  /* 내용어 판정 — 목표 표현에 이미 들어 있는 낱말은 빼고, 그 상황의 핵심 낱말만 본다.
+     (Can I get ~? 의 핵심은 water·towel 같은 목적어지 can/i/get 이 아니다)
+     낱말 비교는 기존 것을 그대로 쓴다: adLooseWordEq(활용형) + phWordEq(한국식 발음). */
+  const frameWords=new Set(adWords(String(it.frame.frame||"").replace(/[~?]/g," ")));
+  const SKIP=new Set(("a an the some my our your is are was to it its do does did i we you he she they this that "
+    +"of in on at for and or with here there be been am not no").split(" "));
+  const want=adWords(it.ex.en).filter(w=>!frameWords.has(w)&&!SKIP.has(w));
+  const hasW=(w)=>hw.some(x=>x===w||adLooseWordEq(x,w)||(function(){ try{ return phWordEq(x,w); }catch(e){ return false; } })());
+  const missing=want.filter(w=>!hasW(w));
+  const contentOk = !want.length || (want.length-missing.length) >= Math.max(1, Math.ceil(want.length*0.6));
+  return { ok:(frameOk&&contentOk), blockHit:frameOk, slotHit:contentOk, slot:missing, hit:want.length-missing.length,
+           heardNorm:h, altBlock:null, meaningOnly:(!frameOk&&contentOk) };
+}
+function startTravelDrill(count){
+  const n=Math.max(3, Math.min(30, count||hGet("speakingroom:ad_count",10)||10));
+  try{ ttStart("drill"); }catch(e){}
+  autoDrill={items:travelBuildItems(n), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true};
+  try{ xpSessionStart(); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  autoDrillRender();
+}
 function startAutoDrill(focusIds){
   bleCtxCacheLoad();
   let blocks=autoDrillBlocks(focusIds);
   if(!blocks.length){
-    openModal({
-      title:"먼저 블록을 하나 배워요",
-      msg:"입에 붙이기는 배운 블록을 자동으로 나오게 하는 단계예요. 새 블록을 하나 배운 뒤 바로 이어서 할게요.",
-      okText:"새 블록 배우기",
-      onOk:()=>bleOpenHub()
-    });
+    /* 여행 집중은 '배운 블록' 제한을 받지 않는다 — 처음 켠 사람도 바로 할 수 있어야 한다 */
+    const ov0=document.createElement("div"); ov0.className="hub-ov";
+    ov0.innerHTML=`<div class="hub-bg"></div>
+     <div class="hub-sheet" style="background:#EAE3DD">
+       <div class="hub-grab"></div>
+       <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">🔁 반복 학습</div>
+       <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">일반 반복은 배운 블록이 하나는 있어야 해요. 여행 집중은 지금 바로 할 수 있어요.</div>
+       <button id="adGoBlock" style="width:100%;padding:15px;border:none;border-radius:14px;background:#fff;border:2px solid #C7E8DA;color:#3A2D27;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:9px">새 블록 배우기</button>
+       <button id="adGoTravel" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">✈️ 여행 집중 — 핵심 25표현</button>
+     </div>`;
+    document.body.appendChild(ov0);
+    ov0.querySelector(".hub-bg").onclick=()=>ov0.remove();
+    ov0.querySelector("#adGoBlock").onclick=()=>{ ov0.remove(); bleOpenHub(); };
+    ov0.querySelector("#adGoTravel").onclick=()=>{ ov0.remove(); startTravelDrill(); };
+    requestAnimationFrame(()=>ov0.classList.add("show"));
     return;
   }
   // 🔢 문제 수 선택 (7/10/15 + 직접 입력) — 마지막 선택 기억
@@ -14764,12 +15104,17 @@ function startAutoDrill(focusIds){
        <input id="adCntIn" type="number" inputmode="numeric" min="3" max="30" placeholder="직접 입력 (3~30)" style="flex:1;padding:14px;border:1.5px solid #C7E8DA;border-radius:14px;background:#fff;color:#3A2D27;font-size:16px;font-weight:800;text-align:center">
        <button id="adCntGo" style="flex:none;padding:14px 22px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">시작 →</button>
      </div>
+     <div style="border-top:1px solid #D9CEC6;margin:12px 0 10px"></div>
+     <button id="adCntTravel" style="width:100%;padding:14px;border:2px solid #189E79;border-radius:14px;background:#fff;color:#189E79;font-size:14.5px;font-weight:950;cursor:pointer">✈️ 여행 집중 — 핵심 표현 <span id="adTvProg">0 / 25</span></button>
    </div>`;
   document.body.appendChild(ov);
   const closeOv=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=closeOv;
   const go=(n)=>{ n=Math.max(3,Math.min(30,Math.round(n)||10)); try{ hSet("speakingroom:ad_count",n); }catch(e){} closeOv(); startAutoDrillRun(blocks,n); };
   ov.querySelectorAll(".adCntBtn").forEach(b=>{ b.onclick=()=>go(parseInt(b.getAttribute("data-n"),10)); });
+  try{ const tp=ov.querySelector("#adTvProg"); if(tp) tp.textContent=travelSeenCount()+" / "+TRAVEL_FRAMES.length; }catch(e){}
+  const tv=ov.querySelector("#adCntTravel");
+  if(tv) tv.onclick=()=>{ closeOv(); startTravelDrill(hGet("speakingroom:ad_count",10)||10); };
   const inp=ov.querySelector("#adCntIn");
   ov.querySelector("#adCntGo").onclick=()=>go(inp.value?parseInt(inp.value,10):last);
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(parseInt(inp.value,10)||last); } });
@@ -17613,8 +17958,10 @@ function autoDrillRender(recallMode){
       <div class="auto-prog"><i style="width:${prog}%"></i></div>
       <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
     </div>
-    <div class="auto-kicker">${it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"}</div>
-    <div class="auto-block">${it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?"}</div>
+    <div class="auto-kicker">${it._travel?"TRAVEL PACK":(it.recall?"HIDDEN RECALL":"AUTOMATION DRILL")}</div>
+    <div class="auto-block">${it._travel?("✈️ "+escapeHtml(it.frame.frame)):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?")}</div>
+    ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${escapeHtml(it.frame.ko)} · 여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}</div>`:""}
+    ${(it._travel&&it.firstTime)?`<div style="background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span></div>`:""}
     <div class="auto-meta">
       <span class="auto-chip">시작 지연 ${it.limit}초 안</span>
       <span class="auto-chip">말 길이 제외</span>
@@ -17687,24 +18034,30 @@ function autoDrillFinish(heard, meta){
   const it=autoDrill.items[autoDrill.idx], stat=$("#autoStat");
   const initMs=autoDrillInitMs(meta||{});
   const initSec=initMs/1000;
-  const g=adGrade(it.block, it.ex, heard);
+  const g = it._travel ? travelGrade(it, heard) : adGrade(it.block, it.ex, heard);
   const fast=initSec<=it.limit;
   if(g.ok){ try{ rtBump("drill"); }catch(e){} }   // 📋 오늘 루틴: 블록 반복 (맞힌 것만)
   const perfect=g.ok && fast && !it._hintUsed;   // 💡 힌트(단어 보기) 사용 시 자동화 성공 아님
   if(g.altBlock){ try{ bleShowHintToast('👍 <b>'+escapeHtml(g.altBlock.block)+'</b> 도 맞아요 · 오늘 목표는 <b>'+escapeHtml(it.block.block)+'</b>'); }catch(e){} }
+  /* 여행팩: 뜻은 맞지만 목표 프레임이 아닌 경우 — 틀린 영어가 아니라고 분명히 알린다 */
+  if(g.meaningOnly){ try{ bleShowHintToast('👍 뜻은 맞아요 · 이번 연습에서는 <b>'+escapeHtml(it.frame.frame)+'</b> 로 말해봐요'); }catch(e){} }
   const result=g.ok ? "PERFECT" : "MISS";
   try{ if(it&&it.block) it._blockId=it.block.id; }catch(e){}
   // 난이도 기반 XP (문항별): 자동화 성공=perfect, 뜻만 맞음=hit, 실패=miss
   try{ awardXP("output", xpForResult((it.ex&&it.ex.en)||"", perfect?"perfect":(g.ok?"hit":"miss")), "입에 붙이기", "auto:"+String((it.ex&&it.ex.en)||"").toLowerCase().slice(0,28)); }catch(e){}
-  bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
+  if(!it._travel) bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
-  try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){}
+  if(!it._travel){ try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){} }
+  if(it._travel){ try{ travelRecord(it.frame.id, g.ok); }catch(e){} }
   // 🎯 자동 레벨 기록 — block(인출 정확도)·speed(3초 시작)는 완전히 독립
-  try{
-    const blockKind=!g.ok?"miss":((it._hintUsed||it._requeued)?"ok":"perfect");
-    autoLvlRecord("block", blockKind);   // 느려도 스스로 맞히면 block 성공; 속도는 아래 speedLevel에서만 평가
-  }catch(e){}
-  try{ if(g.ok && !it._hintUsed) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
+  /* 여행팩은 기존 자동 레벨(블록·속도)에 영향을 주지 않는다 — 3주짜리 별도 덱이라 레벨을 흔들면 안 된다 */
+  if(!it._travel){
+    try{
+      const blockKind=!g.ok?"miss":((it._hintUsed||it._requeued)?"ok":"perfect");
+      autoLvlRecord("block", blockKind);   // 느려도 스스로 맞히면 block 성공; 속도는 아래 speedLevel에서만 평가
+    }catch(e){}
+    try{ if(g.ok && !it._hintUsed) autoLvlRecord("speed", initSec<=3?"perfect":(initSec<=5?"ok":"miss")); }catch(e){}
+  }
   // 못 맞춘 문항 재등장: 1차 실패 → 2~3문제 뒤, 또 실패 → 세션 끝나기 전 한 번 더
   if(!perfect && (it._requeues||0)<2){
     const clone=Object.assign({}, it, {rep:1, recall:false, discriminate:false, _discOpts:null, _discDone:false, _discAnswered:false, _hintUsed:false, _wordShown:false, _requeues:(it._requeues||0)+1, _requeued:true});
@@ -17719,7 +18072,9 @@ function autoDrillFinish(heard, meta){
     if(stat) stat.innerHTML=`<b style="color:#E0A300">뜻은 맞았지만 늦었어요</b><br>발화 시작 ${initSec.toFixed(1)}초. ${it.limit}초 안에 시작해봐요.`;
     autoDrillShowResult(it, true, false);
   }else{
-    const why=!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`;
+    const why = it._travel
+      ? (!g.blockHit?`이번 목표 표현 <b>${escapeHtml(it.frame.frame)}</b> 을 넣어서 말해봐요.`:`상황에 맞는 낱말이 부족했어요.`)
+      : (!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`);
     if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}`;
     autoDrillShowResult(it, true, false);
   }
