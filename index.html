@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.184";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.185";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15068,6 +15068,10 @@ const TRAVEL_FRAMES=[
     ]}
 ];
 const TRAVEL_KEY="speakingroom:travelrepeat";
+/* 하루 목표 — 맞힌 문제 수. 점수는 문제당 10점이라 목표 점수는 이것의 10배다.
+   화면 문구가 어긋나지 않도록 숫자는 전부 여기서 끌어다 쓴다. */
+const TRAVEL_DAY_GOAL=30;
+const TRAVEL_PT=10;
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 function travelAll(){ try{ return hGet(TRAVEL_KEY,{})||{}; }catch(e){ return {}; } }
 function travelSave(o){ try{ hSet(TRAVEL_KEY,o); }catch(e){} }
@@ -15178,7 +15182,7 @@ function travelGuideShow(onStart){
 
      ${step(3,"정답은 하나가 아니에요","핵심 표현만 제대로 쓰면 맞아요. 뒤는 상황에 맞게 바꿔도 됩니다.<br><span style=\"color:#19a06b;font-weight:800\">Can I get a towel? / Can I get one more towel?</span> 둘 다 정답.")}
      ${step(4,"천천히 읽고 말해도 돼요","상황을 읽는 시간은 빼고 재요. 급하게 안 해도 됩니다.")}
-     ${step(5,"맞히면 10점 · 50문제면 오늘 끝","하루 500점이 목표예요. 한 판은 10문제 정도라 5판이면 끝나요.")}
+     ${step(5,"맞히면 "+TRAVEL_PT+"점 · "+TRAVEL_DAY_GOAL+"문제면 오늘 끝","하루 "+(TRAVEL_DAY_GOAL*TRAVEL_PT)+"점이 목표예요. 한 판이 10문제 정도라 "+Math.ceil(TRAVEL_DAY_GOAL/10)+"판이면 끝나요.")}
 
      <button class="routine-main" id="tvGuideGo" style="margin-top:6px">${done?"이어서 시작 →":"시작하기 →"}</button>
      <button class="auto-sub" id="tvGuideClose" style="width:100%;margin-top:9px">나중에</button>
@@ -18685,8 +18689,8 @@ function rtGoalOf(st){ return st.fixed ? st.goal : st.goal*rtScale(); }
 function rtBonusXP(){ return {1:30,2:66,3:102}[rtScale()]||30; }
 function rtBump(k,n){ try{ const d=rtGet(); d[k]=(d[k]||0)+(n||1); hSet(rtKey(),d); renderRoutineCard(); }catch(e){} }
 const RT_STEPS=[
-  /* ✈️ 3주 여행 집중 — 정답 1개 10점, 50문제(500점)면 오늘 끝 */
-  {k:"travel", emo:"✈️", t:"여행 표현", sub:"상황 보고 바로 꺼내기 · 정답 1개 10점", goal:50, fixed:true, pts:true, main:true, go:()=>startTravelDrill()},
+  /* ✈️ 3주 여행 집중 — 정답 1개 10점, TRAVEL_DAY_GOAL 문제면 오늘 끝 */
+  {k:"travel", emo:"✈️", t:"여행 표현", sub:"상황 보고 바로 꺼내기 · 정답 1개 10점", goal:TRAVEL_DAY_GOAL, fixed:true, pts:true, main:true, go:()=>startTravelDrill()},
   {k:"drill", emo:"🔥", t:"블록 반복", sub:"입에 붙을 때까지", goal:12, go:()=>startAutoDrill()},
   {k:"vocab", emo:"💬", t:"단어", sub:"말할 재료 채우기", goal:10, go:()=>startVocabCoach()},
   {k:"newblk",emo:"🧱", t:"새 블록", sub:"오늘 새로 익힐 패턴 1개", goal:1,  go:()=>{ const set=bleActiveSet(); let introDone=false; try{ introDone=bleCheckSetIntro(set).introCompleted; }catch(e){} if(introDone) bleStartSetIntro(set.id); else gateNewBlock(()=>bleStartSetIntro(set.id)); }},
@@ -18702,7 +18706,7 @@ function renderRoutineCard(){
   const box=$("#routineCard"); if(!box) return;
   const d=rtGet();
   const doneN=RT_STEPS.filter(s=>rtCount(s.k,d)>=rtGoalOf(s)).length;
-  /* 여행 50문제만 채워도 오늘은 끝 — 3주 동안은 이게 하루 목표다 */
+  /* 여행 목표만 채워도 오늘은 끝 — 3주 동안은 이게 하루 목표다 */
   const tvStep=RT_STEPS.find(s=>s.k==="travel");
   const travelDone=!!tvStep && rtCount("travel",d)>=rtGoalOf(tvStep);
   const allDone=travelDone || doneN>=RT_STEPS.length;
@@ -18720,7 +18724,7 @@ function renderRoutineCard(){
     if(done) return `<button class="rt-row" data-i="${main}" style="grid-column:1/-1;position:relative;overflow:hidden;text-align:left;background:rgba(25,160,107,.08);border:1px solid rgba(25,160,107,.28);border-radius:16px;padding:13px 14px;cursor:pointer">
       <div style="position:absolute;right:-18px;top:-20px;font-size:74px;opacity:.12">${s.emo}</div>
       <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#19a06b">${s.pts?"3주 여행 집중 · 오늘 목표":"오늘의 핵심 퀘스트"}</span>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><b style="flex:1;font-size:${s.pts?"19":"17"}px;color:#177A54">${s.t} 완료 ✅</b><b style="font-size:${s.pts?"16":"14"}px;color:#19a06b">${s.pts?(cur*10+"점"):(cur+"/"+G)}</b></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px"><b style="flex:1;font-size:${s.pts?"19":"17"}px;color:#177A54">${s.t} 완료 ✅</b><b style="font-size:${s.pts?"16":"14"}px;color:#19a06b">${s.pts?(cur*TRAVEL_PT+"점"):(cur+"/"+G)}</b></div>
       <div style="height:6px;border-radius:99px;background:rgba(25,160,107,.15);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:100%;background:#19a06b"></span></div>
     </button>`;
     /* 점수형(여행)은 더 크게 — 홈에서 제일 먼저 눈에 들어와야 한다 */
@@ -18728,8 +18732,8 @@ function renderRoutineCard(){
       <div style="position:absolute;right:-18px;top:-20px;font-size:${s.pts?"104px":"74px"};opacity:.2">${s.emo}</div>
       <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.85)">${s.pts?"3주 여행 집중 · 오늘 목표":"오늘의 핵심 퀘스트"}</span>
       ${s.pts?`<div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
-        <b style="font-size:34px;line-height:1.05;color:#fff">${cur*10}<span style="font-size:17px;font-weight:800">점</span></b>
-        <span style="font-size:14px;font-weight:800;color:rgba(255,255,255,.75)">/ 500점</span>
+        <b style="font-size:34px;line-height:1.05;color:#fff">${cur*TRAVEL_PT}<span style="font-size:17px;font-weight:800">점</span></b>
+        <span style="font-size:14px;font-weight:800;color:rgba(255,255,255,.75)">/ ${G*TRAVEL_PT}점</span>
       </div>
       <b style="display:block;font-size:19px;color:#fff;margin-top:5px">${s.t}</b>`
       :`<div style="display:flex;align-items:center;gap:10px;margin-top:4px">
@@ -18738,7 +18742,7 @@ function renderRoutineCard(){
       </div>`}
       <div style="font-size:${s.pts?"12":"11"}px;color:rgba(255,255,255,.75);font-weight:700;margin-top:2px">${s.sub||""}</div>
       <div style="height:${s.pts?"9":"6"}px;border-radius:99px;background:rgba(255,255,255,.25);overflow:hidden;margin-top:${s.pts?"11":"8"}px"><span style="display:block;height:100%;width:${pc}%;background:#fff;transition:width .6s cubic-bezier(.22,1,.36,1)"></span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:${s.pts?"11":"9"}px"><span style="font-size:${s.pts?"12":"11"}px;color:rgba(255,255,255,.85);font-weight:800">${cur>0?(cur>=G?"초과 달성 중 🔥":(s.pts?("맞힌 문제 "+cur+"/"+G+" · "+(G-cur)+"문제 남았어요"):((G-cur)+"개 남았어요"))):(s.pts?"맞힐 때마다 10점 · 50문제면 오늘 끝":"오늘의 메인 훈련")}</span><span style="font-size:${s.pts?"13":"11.5"}px;font-weight:900;color:#189E79;background:#fff;padding:${s.pts?"7px 16px":"5px 13px"};border-radius:99px">GO ›</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:${s.pts?"11":"9"}px"><span style="font-size:${s.pts?"12":"11"}px;color:rgba(255,255,255,.85);font-weight:800">${cur>0?(cur>=G?"초과 달성 중 🔥":(s.pts?("맞힌 문제 "+cur+"/"+G+" · "+(G-cur)+"문제 남았어요"):((G-cur)+"개 남았어요"))):(s.pts?("맞힐 때마다 "+TRAVEL_PT+"점 · "+G+"문제면 오늘 끝"):"오늘의 메인 훈련")}</span><span style="font-size:${s.pts?"13":"11.5"}px;font-weight:900;color:#189E79;background:#fff;padding:${s.pts?"7px 16px":"5px 13px"};border-radius:99px">GO ›</span></div>
     </button>`;
   })();
   const tiles=RT_STEPS.map((s,i)=>{
@@ -18765,7 +18769,7 @@ function renderRoutineCard(){
       </span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">${hero}${tiles}</div>
-    <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:9px 0 1px;font-weight:700">${allDone?"오늘 끝! 더 하는 건 자유 😎":"✈️ 여행 50문제면 오늘 끝 · 전부 완료 시 보너스 +"+rtBonusXP()+" XP 🏆"+(rtScale()>1?" · "+rtScale()+"× 루틴":"")}</div>
+    <div style="font-size:10.5px;color:var(--muted);text-align:center;padding:9px 0 1px;font-weight:700">${allDone?"오늘 끝! 더 하는 건 자유 😎":"✈️ 여행 "+TRAVEL_DAY_GOAL+"문제면 오늘 끝 · 전부 완료 시 보너스 +"+rtBonusXP()+" XP 🏆"+(rtScale()>1?" · "+rtScale()+"× 루틴":"")}</div>
   </div>`;
   box.querySelectorAll(".rt-row").forEach(b=>{ b.onclick=()=>{ const s=RT_STEPS[parseInt(b.dataset.i,10)]; try{ s.go(); }catch(e){} }; });
   box.querySelectorAll(".rtScaleBtn").forEach(b=>{ b.onclick=(e)=>{ e.stopPropagation(); try{ hSet("speakingroom:rt_scale", parseInt(b.dataset.v,10)); }catch(e2){} renderRoutineCard(); }; });
