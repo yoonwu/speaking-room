@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.180";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.181";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -18197,6 +18197,7 @@ function autoDrillNextButton(label){
 }
 function autoDrillDone(){
   if(!autoDrill){ goToSetup(); return; }
+  const isTravel=!!autoDrill.travel;   // 끝낸 덱으로 '한 번 더'를 이어간다 — 여행 하다가 일반으로 새면 안 된다
   const res=autoDrill.results, total=res.length||1;
   const perfect=res.filter(r=>r.perfect).length, ok=res.filter(r=>r.ok).length;
   const avg=res.length?res.reduce((a,b)=>a+b.initMs,0)/res.length/1000:0;
@@ -18206,7 +18207,7 @@ function autoDrillDone(){
   res.forEach(r=>{ const k=r.block||r.id; if(!byBlock[k]) byBlock[k]={total:0,perfect:0}; byBlock[k].total++; if(r.perfect) byBlock[k].perfect++; });
   const blockKeys=Object.keys(byBlock);
   const blockListHtml=blockKeys.length?`<div style="background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px 15px;margin:0 0 12px;text-align:left">
-      <div style="font-size:11px;color:#C08763;font-weight:900;margin-bottom:9px">이번에 입에 붙인 블록 ${blockKeys.length}개</div>
+      <div style="font-size:11px;color:#C08763;font-weight:900;margin-bottom:9px">${isTravel?"이번에 연습한 여행 표현":"이번에 입에 붙인 블록"} ${blockKeys.length}개</div>
       ${blockKeys.map(k=>{ const v=byBlock[k]; const done=v.perfect===v.total; return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid #E9F4EE">
         <span style="font-family:var(--serif);font-size:15px;color:#3A2D27">${done?"✅":"🔸"} ${escapeHtml(k)}</span>
         <span style="font-size:12px;font-weight:800;color:${done?'#19a06b':'#C08763'}">자동화 ${v.perfect}/${v.total}</span>
@@ -18217,23 +18218,25 @@ function autoDrillDone(){
   const xpSum=(function(){ try{ return xpSummaryHtml(); }catch(e){ return ""; } })();
   $("#sprintScroll").style.background="";
   $("#sprintScroll").innerHTML=`<div class="auto-done">
-    <div class="em">⚡</div>
-    <h2>입에 붙이기 완료</h2>
-    <p style="font-size:13px;color:#8A6F62;margin:4px 0 14px">정답률보다 중요한 건 <b>상황 보자마자 입이 열리는 속도</b>예요.</p>
+    <div class="em">${isTravel?"✈️":"⚡"}</div>
+    <h2>${isTravel?"여행 표현 연습 완료":"입에 붙이기 완료"}</h2>
+    <p style="font-size:13px;color:#8A6F62;margin:4px 0 14px">${isTravel?"정답률보다 중요한 건 <b>상황 보자마자 그 표현이 떠오르는 것</b>이에요.":"정답률보다 중요한 건 <b>상황 보자마자 입이 열리는 속도</b>예요."}</p>
     <div style="display:flex;gap:9px;margin:12px 0">
       <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px"><b style="font-size:24px;color:#19a06b">${perfect}</b><div style="font-size:11px;color:#A28A7F">자동화 성공</div></div>
       <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px"><b style="font-size:24px;color:#189E79">${avg.toFixed(1)}초</b><div style="font-size:11px;color:#A28A7F">평균 시작 지연</div></div>
-      <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px"><b style="font-size:24px;color:#3A2D27">${autoNow}</b><div style="font-size:11px;color:#A28A7F">자동화 블록</div></div>
+      <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px"><b style="font-size:24px;color:#3A2D27">${isTravel?(travelSeenCount()+"/"+TRAVEL_FRAMES.length):autoNow}</b><div style="font-size:11px;color:#A28A7F">${isTravel?"익힌 여행 표현":"자동화 블록"}</div></div>
     </div>
     <div style="font-size:13px;color:#8A6F62;line-height:1.55;margin:8px 0 8px">통과 ${ok}/${total}. 실패한 문장은 가린 뒤 다시 꺼내게 처리했어요.</div>
     ${blockListHtml}
     ${xpSum}
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
-      <button class="routine-main" id="autoAgain" style="margin:0">한 번 더 자동화 →</button>
+      <button class="routine-main" id="autoAgain" style="margin:0">${isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"}</button>
+      <button class="auto-sub" id="autoOther">${isTravel?"일반 반복학습 하기":"✈️ 여행 표현 하기"}</button>
       <button class="auto-sub" id="autoHome">홈으로</button>
     </div>
   </div>`;
-  $("#autoAgain").onclick=()=>startAutoDrill();
+  $("#autoAgain").onclick=()=>{ autoDrill=null; if(isTravel) startTravelDrill(); else startAutoDrill(); };
+  $("#autoOther").onclick=()=>{ autoDrill=null; if(isTravel) startAutoDrill(); else startTravelDrill(); };
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
 // 🌎 실전상황 Engine — 실전 상황 시뮬레이션
