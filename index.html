@@ -1511,6 +1511,11 @@ body{background:var(--paper)!important;color:var(--text)}
 
 
 /* ===== 모드 허브 시트 (스피킹 훈련장 / 블록) ===== */
+.vb-tabs{display:flex;gap:7px;padding:2px 14px 10px}
+.vb-tab{flex:1;border:1px solid var(--line);background:var(--card2);color:var(--muted);border-radius:12px;padding:9px 8px;font-size:13px;font-weight:900;cursor:pointer;transition:background .12s}
+.vb-tab b{font-weight:900;opacity:.75;font-size:11.5px}
+.vb-tab.on{background:#189E79;border-color:#189E79;color:#fff}
+.vb-tab.on b{opacity:.85}
 .hub-ov{position:fixed;inset:0;z-index:140;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s}
 .hub-ov.show{opacity:1}
 .hub-bg{position:absolute;inset:0;background:rgba(60,30,20,.45)}
@@ -1830,6 +1835,10 @@ body{background:var(--paper)!important;color:var(--text)}
       <div class="rv-prog"><div class="rv-progbar"><i id="vbBarFill" style="width:0%"></i></div><div class="rv-progtxt" id="vbProgTxt"></div></div>
       <span class="rv-lvl" id="vbLvl">D1</span><div class="rv-mode" id="vbModeTag">📖 단어</div>
     </div>
+    <div class="vb-tabs" id="vbTabs">
+      <button class="vb-tab on" data-tab="daily">📖 오늘의 단어</button>
+      <button class="vb-tab" data-tab="travel">✈️ 여행 단어 <b id="vbTvProg">0/150</b></button>
+    </div>
     <div class="rv-body" id="vbBody"></div>
   </div>
 
@@ -1977,7 +1986,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.185";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.186";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -6596,6 +6605,42 @@ function wbWordCards(){
   }catch(e){}
   return _wbCards;
 }
+/* ✈️ 여행 단어 150 — 빈도 상위 1000 안에서 여행에 실제로 쓰는 것만 골랐다.
+   전부 word-bank 나 sq-bank 에 예문이 있어 카드가 만들어지는 단어다. */
+const TRAVEL_WORDS=[
+  "please", "thank", "thanks", "sorry", "excuse", "help", "need", "want", "wait", "stop", "hello", "home",
+  "water", "eat", "drink", "food", "coffee", "dinner", "order", "sit", "hot", "cold", "sweet", "full",
+  "hotel", "room", "bed", "door", "key", "stay", "night", "clean", "open", "close", "book", "building",
+  "floor", "pay", "buy", "sell", "check", "change", "number", "free", "half", "car", "train", "station",
+  "ride", "drive", "road", "street", "walk", "near", "far", "straight", "left", "around", "turn", "until",
+  "catch", "land", "ship", "time", "today", "tomorrow", "yesterday", "morning", "evening", "hour", "minute", "week",
+  "month", "early", "late", "soon", "later", "name", "phone", "call", "send", "meet", "leave", "keep",
+  "put", "give", "hours", "minutes", "use", "try", "start", "ask", "tell", "show", "speak", "understand",
+  "hear", "answer", "explain", "sure", "maybe", "welcome", "hurt", "pain", "lost", "find", "miss", "trouble",
+  "broke", "careful", "safe", "police", "wrong", "mistake", "city", "town", "picture", "watch", "plan", "luck",
+  "air", "line", "front", "top", "side", "inside", "outside", "sign", "better", "best", "nice", "fine",
+  "big", "small", "light", "high", "quiet", "busy", "ready", "possible", "enough", "hard", "wear", "clothes",
+  "bag", "couple", "rest", "pick", "four", "five"
+];
+const TRAVEL_WORD_SET=new Set(TRAVEL_WORDS);
+let _tvCards=null;
+function travelWordCards(){
+  if(_tvCards) return _tvCards;
+  const by={};
+  try{ wbWordCards().forEach(c=>{ if(TRAVEL_WORD_SET.has(c.word) && !by[c.word]) by[c.word]=c; }); }catch(e){}
+  try{ sqWordCards().forEach(c=>{ if(TRAVEL_WORD_SET.has(c.word) && !by[c.word]) by[c.word]=c; }); }catch(e){}
+  _tvCards=TRAVEL_WORDS.map(w=>by[w]).filter(Boolean).map(c=>Object.assign({}, c, {_travelWord:true}));
+  return _tvCards;
+}
+/* 진행도 — 한 번이라도 맞혀서 SRS 단계가 'new' 를 벗어난 단어를 센다.
+   여행 표현 진행도(25개)와 같은 눈금이라 헷갈리지 않는다. */
+function travelWordDone(){
+  try{
+    const o=srsAll(); let n=0;
+    TRAVEL_WORDS.forEach(w=>{ const it=o[srsKey(w)]; if(it && it.stage && it.stage!=="new") n++; });
+    return n;
+  }catch(e){ return 0; }
+}
 function wbCardsForBand(bandKey){
   const want = bandKey==="low"?1:(bandKey==="mid"?2:3);
   return wbWordCards().filter(c=>c.diff<=want);
@@ -6686,7 +6731,36 @@ function fillVocabSet(set){
   const extra=starterSet().filter(w=>!have.has(vocabWordKey(w)));
   return uniqueVocabWords(base.concat(extra)).slice(0,VOCAB_SET_SIZE);
 }
+/* ✈️ 여행 단어 150 — 오늘의 단어와 같은 엔진(wpStart/SRS)을 그대로 쓴다.
+   다른 건 '어떤 단어를 넣느냐' 뿐이다. */
+function startVocabTravel(){
+  try{ ttStart("vocab"); }catch(e){}
+  try{ if(!sqBank) sqBankLoad().then(()=>{ _sqCards=null; _tvCards=null; startVocabTravel(); }); }catch(e){}
+  wpTravelOnly=true;
+  if(typeof wpClearProgress==="function") wpClearProgress();
+  state.vocabTheme={id:"travel", t:"여행 단어", emo:"✈️", topic:"travel"};
+  markPractice({mode:"vocab", id:"travel", emo:"✈️", label:"여행 단어"});
+  enterStage("vocab"); $("#ctxBar").style.display="none";
+  $("#vbModeTag").textContent="✈️ 여행 단어";
+  vocabTabBind(); vocabTabRender("travel");
+  const cards=travelWordCards();
+  if(!cards.length){ $("#vbBody").innerHTML=`<div class="lloading">여행 단어를 준비하는 중…</div>`; return; }
+  wpStart(cards);
+}
+function vocabTabRender(which){
+  const box=$("#vbTabs"); if(!box) return;
+  box.querySelectorAll(".vb-tab").forEach(b=>b.classList.toggle("on", b.dataset.tab===which));
+  const pr=$("#vbTvProg"); if(pr) pr.textContent=travelWordDone()+"/"+TRAVEL_WORDS.length;
+}
+function vocabTabBind(){
+  const box=$("#vbTabs"); if(!box||box._bound) return; box._bound=true;
+  box.querySelectorAll(".vb-tab").forEach(b=>{ b.onclick=()=>{
+    if(b.classList.contains("on")) return;
+    if(b.dataset.tab==="travel") startVocabTravel(); else startVocab(true);
+  }; });
+}
 function startVocab(noResume){ try{ ttStart("vocab"); }catch(e){}
+  wpTravelOnly=false; vocabTabRender("daily");
   try{ if(!sqBank) sqBankLoad().then(()=>{ _sqCards=null; }); }catch(e){}   // 문장 은행 준비 (AI 아님)
   try{ if(!wordBank) wordBankLoad().then(()=>{ _wbCards=null; }); }catch(e){}
   if(noResume && typeof wpClearProgress==="function") wpClearProgress();
@@ -6695,6 +6769,7 @@ function startVocab(noResume){ try{ ttStart("vocab"); }catch(e){}
   markPractice({mode:"vocab", id:state.vocabTheme.id, emo:"📖", label:"단어"});
   enterStage("vocab"); $("#ctxBar").style.display="none";
   $("#vbModeTag").textContent="📖 "+(state.vocabTheme.emo||"")+" "+state.vocabTheme.t;
+  vocabTabBind(); vocabTabRender("daily");
   generateVocab();
 }
 async function generateVocab(){
@@ -6993,8 +7068,10 @@ function wpReviewCards(n){
    - 복습 12개+  → 신규 0개
    - 항상 복습을 먼저 풀고, 그 다음 신규 단어로 간다.
    한 번에 복습은 최대 12개까지만 잡아 세션이 너무 길어지지 않게 한다. */
+let wpTravelOnly=false;   // ✈️ 여행 단어 탭에서는 복습도 여행 단어만
 function wpComposeSet(fresh){
-  const dueAll=wpReviewCards(60);
+  let dueAll=wpReviewCards(60);
+  if(wpTravelOnly) dueAll=dueAll.filter(c=>c&&TRAVEL_WORD_SET.has(c.word));
   const dueCount=dueAll.length;
   const newMax = dueCount>=12 ? 0 : (dueCount>=6 ? 3 : 5);
 
