@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.181";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.182";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14749,7 +14749,10 @@ const TRAVEL_FRAMES=[
       {ko:"카페 카운터 앞이다. 아이스 커피를 주문해라.", en:"Can I get an iced coffee?"},
       {ko:"투어 데스크에서 두 명 표가 필요하다.", en:"Can I get two tickets?"},
       {ko:"음식이 너무 매워서 밥이 더 필요하다.", en:"Can I get more rice?"},
-      {ko:"가족이 따로 다닐 예정이다. 방 열쇠를 하나 더 요청해라.", en:"Can I get an extra key?"}
+      {ko:"가족이 따로 다닐 예정이다. 방 열쇠를 하나 더 요청해라.", en:"Can I get an extra key?"},
+      {ko:"Grab을 부른다. 아이가 있어서 카시트가 필요하다.", en:"Can I get a child seat?"},
+      {ko:"시장에서 물건을 샀는데 담을 게 없다. 봉투를 달라고 해라.", en:"Can I get a bag for this?"},
+      {ko:"내일 새벽 비행기다. 6시에 깨워달라고 프런트에 요청해라.", en:"Can I get a wake-up call at six?"}
     ]},
   { id:"travel_can_you", frame:"Can you ~?", tf:"can you", ko:"~해 주실 수 있어요?", purpose:"행동 요청", re:"\\bcan you\\b",
     items:[
@@ -14759,7 +14762,10 @@ const TRAVEL_FRAMES=[
       {ko:"길을 물었는데 말로는 모르겠다. 지도에서 짚어달라고 해라.", en:"Can you show me on the map?"},
       {ko:"가족이 다 모였다. 지나가는 사람에게 사진을 부탁해라.", en:"Can you take a photo of us?"},
       {ko:"방이 너무 덥다. 에어컨을 고쳐달라고 해라.", en:"Can you fix the air conditioner?"},
-      {ko:"짐이 무겁다. 방까지 올려달라고 부탁해라.", en:"Can you bring my bags to the room?"}
+      {ko:"짐이 무겁다. 방까지 올려달라고 부탁해라.", en:"Can you bring my bags to the room?"},
+      {ko:"가게에 잠깐 들를 것이다. 기사에게 5분만 기다려달라고 해라.", en:"Can you wait here for five minutes?"},
+      {ko:"기사에게 보여줄 주소가 필요하다. 적어달라고 해라.", en:"Can you write down the address?"},
+      {ko:"아이가 먹을 음식이다. 덜 맵게 해달라고 부탁해라.", en:"Can you make it less spicy?"}
     ]},
   { id:"travel_can_i_we", frame:"Can I / Can we ~?", tf:"can i / can we", ko:"~해도 될까요?", purpose:"허락", re:"\\bcan (i|we)\\b(?!\\s+(get|pay|leave|change)\\b)",
     items:[
@@ -14769,7 +14775,10 @@ const TRAVEL_FRAMES=[
       {ko:"카페에서 음료만 샀다. 화장실을 써도 되는지 물어라.", en:"Can I use the restroom?"},
       {ko:"옷 가게에서 사이즈가 걱정된다. 입어봐도 되는지 물어라.", en:"Can I try this on?"},
       {ko:"체크아웃은 했지만 비행기가 늦다. 수영장을 써도 되는지 물어라.", en:"Can we use the pool after checkout?"},
-      {ko:"투어를 예약하려는데 아이가 있다. 데려가도 되는지 물어라.", en:"Can we bring our kids?"}
+      {ko:"투어를 예약하려는데 아이가 있다. 데려가도 되는지 물어라.", en:"Can we bring our kids?"},
+      {ko:"실내가 너무 덥다. 밖에 앉아도 되는지 물어라.", en:"Can we sit outside?"},
+      {ko:"배터리가 거의 없다. 여기서 충전해도 되는지 물어라.", en:"Can I charge my phone here?"},
+      {ko:"오늘 투어는 마감이라고 한다. 다음 것에 낄 수 있는지 물어라.", en:"Can we join the next tour?"}
     ]},
   { id:"travel_do_you_have", frame:"Do you have ~?", tf:"do you have", ko:"~ 있어요?", purpose:"보유 여부", re:"\\bdo you have\\b",
     items:[
@@ -14779,7 +14788,10 @@ const TRAVEL_FRAMES=[
       {ko:"우유를 못 먹는다. 카페에 두유가 있는지 물어라.", en:"Do you have soy milk?"},
       {ko:"내일 호핑투어를 하고 싶다. 자리가 있는지 물어라.", en:"Do you have space for tomorrow?"},
       {ko:"콘센트 모양이 다르다. 프런트에 어댑터가 있는지 물어라.", en:"Do you have an adapter?"},
-      {ko:"메뉴를 못 읽겠다. 영어 메뉴가 있는지 물어라.", en:"Do you have an English menu?"}
+      {ko:"메뉴를 못 읽겠다. 영어 메뉴가 있는지 물어라.", en:"Do you have an English menu?"},
+      {ko:"아이가 어리다. 유아용 의자가 있는지 물어라.", en:"Do you have a high chair?"},
+      {ko:"섬에 가는데 선크림을 안 챙겼다. 가게에서 물어라.", en:"Do you have sunscreen?"},
+      {ko:"공항까지 이동해야 한다. 호텔 셔틀이 있는지 물어라.", en:"Do you have a shuttle to the airport?"}
     ]},
   { id:"travel_where_is", frame:"Where is ~?", tf:"where is", ko:"~ 어디예요?", purpose:"장소 찾기", re:"\\bwhere (is|are)\\b",
     items:[
@@ -14789,7 +14801,10 @@ const TRAVEL_FRAMES=[
       {ko:"Grab을 불렀는데 어디서 타는지 모르겠다.", en:"Where is the pickup area?"},
       {ko:"현금이 필요하다. 환전소가 어디인지 물어라.", en:"Where is the money exchange?"},
       {ko:"버스 정류장이 근처라는데 안 보인다. 위치를 물어라.", en:"Where is the bus stop?"},
-      {ko:"탑승 시간이 다 됐는데 게이트를 모르겠다.", en:"Where is our gate?"}
+      {ko:"탑승 시간이 다 됐는데 게이트를 모르겠다.", en:"Where is our gate?"},
+      {ko:"아이가 열이 난다. 약국이 어디인지 물어라.", en:"Where is the pharmacy?"},
+      {ko:"짐을 다 찾았다. 택시 타는 곳을 물어라.", en:"Where is the taxi stand?"},
+      {ko:"짐을 잠깐 넣어두고 싶다. 물품보관함이 어디인지 물어라.", en:"Where are the lockers?"}
     ]},
   { id:"travel_how_do_i_get_to", frame:"How do I get to ~?", tf:"how do i get to", ko:"~ 어떻게 가요?", purpose:"가는 방법", re:"\\bhow do (i|we) get to\\b",
     items:[
@@ -14799,7 +14814,10 @@ const TRAVEL_FRAMES=[
       {ko:"저녁에 야시장에 가고 싶다. 가는 방법을 물어라.", en:"How do I get to the night market?"},
       {ko:"내일 아침 비행기다. 공항까지 가는 방법을 물어라.", en:"How do I get to the airport?"},
       {ko:"바다를 보러 가고 싶다. 해변까지 가는 방법을 물어라.", en:"How do I get to the beach?"},
-      {ko:"추천받은 식당이 있다. 거기까지 가는 방법을 물어라.", en:"How do I get to that restaurant?"}
+      {ko:"추천받은 식당이 있다. 거기까지 가는 방법을 물어라.", en:"How do I get to that restaurant?"},
+      {ko:"비가 온다. 실내 쇼핑몰까지 가는 방법을 물어라.", en:"How do I get to the mall?"},
+      {ko:"아이가 아프다. 병원까지 가는 방법을 물어라.", en:"How do I get to the hospital?"},
+      {ko:"노을을 보러 가려 한다. 전망 좋은 곳까지 가는 방법을 물어라.", en:"How do I get to the sunset point?"}
     ]},
   { id:"travel_how_long", frame:"How long does it take?", tf:"how long does it take", ko:"얼마나 걸려요?", purpose:"소요 시간", re:"\\bhow long does it take\\b",
     items:[
@@ -14809,7 +14827,10 @@ const TRAVEL_FRAMES=[
       {ko:"택시를 안 타고 걸어가려 한다. 얼마나 걸리는지 물어라.", en:"How long does it take on foot?"},
       {ko:"투어를 예약하려 한다. 전체가 얼마나 걸리는지 물어라.", en:"How long does it take in total?"},
       {ko:"체크인 줄이 길다. 얼마나 걸리는지 물어라.", en:"How long does it take to check in?"},
-      {ko:"옷이 다 젖었다. 세탁이 얼마나 걸리는지 물어라.", en:"How long does it take for laundry?"}
+      {ko:"옷이 다 젖었다. 세탁이 얼마나 걸리는지 물어라.", en:"How long does it take for laundry?"},
+      {ko:"걸을지 택시를 탈지 고민이다. 택시로 얼마나 걸리는지 물어라.", en:"How long does it take by taxi?"},
+      {ko:"가이드가 다음 장소를 말했다. 거기까지 얼마나 걸리는지 물어라.", en:"How long does it take to get there?"},
+      {ko:"에어컨을 고쳐준다고 한다. 얼마나 걸리는지 물어라.", en:"How long does it take to fix it?"}
     ]},
   { id:"travel_what_time_does", frame:"What time does ~ start/leave?", tf:"what time does", ko:"~ 몇 시에 시작해요/출발해요?", purpose:"시작·출발 시간", re:"\\bwhat time does\\b",
     items:[
@@ -14819,7 +14840,10 @@ const TRAVEL_FRAMES=[
       {ko:"가게 앞인데 아직 닫혀 있다. 몇 시에 여는지 물어라.", en:"What time does the shop open?"},
       {ko:"늦게까지 놀 예정이다. 막차가 몇 시인지 물어라.", en:"What time does the last bus leave?"},
       {ko:"저녁에 수영하려 한다. 수영장이 몇 시에 닫는지 물어라.", en:"What time does the pool close?"},
-      {ko:"공연을 보러 왔다. 몇 시에 시작하는지 물어라.", en:"What time does the show start?"}
+      {ko:"공연을 보러 왔다. 몇 시에 시작하는지 물어라.", en:"What time does the show start?"},
+      {ko:"야시장에 가려 한다. 몇 시에 닫는지 물어라.", en:"What time does the market close?"},
+      {ko:"배를 놓쳤다. 다음 배가 몇 시에 뜨는지 물어라.", en:"What time does the next boat leave?"},
+      {ko:"예정보다 일찍 도착했다. 체크인이 몇 시부터인지 물어라.", en:"What time does check-in start?"}
     ]},
   { id:"travel_what_time_need", frame:"What time do we need to ~?", tf:"what time do we need to", ko:"몇 시까지 ~해야 해요?", purpose:"마감 시각", re:"\\bwhat time do (we|i) need to\\b",
     items:[
@@ -14829,7 +14853,10 @@ const TRAVEL_FRAMES=[
       {ko:"배 시간이 다 됐다. 몇 시까지 타야 하는지 물어라.", en:"What time do we need to get on the boat?"},
       {ko:"자유시간을 준다고 한다. 몇 시까지 돌아와야 하는지 물어라.", en:"What time do we need to come back?"},
       {ko:"아침에 픽업이 온다. 몇 시까지 준비해야 하는지 물어라.", en:"What time do we need to be ready?"},
-      {ko:"늦게 체크아웃하려 한다. 몇 시까지 방을 비워야 하는지 물어라.", en:"What time do we need to leave the room?"}
+      {ko:"늦게 체크아웃하려 한다. 몇 시까지 방을 비워야 하는지 물어라.", en:"What time do we need to leave the room?"},
+      {ko:"공연을 예약했다. 몇 시까지 도착해야 하는지 물어라.", en:"What time do we need to arrive?"},
+      {ko:"차를 빌렸다. 몇 시까지 반납해야 하는지 물어라.", en:"What time do we need to return the car?"},
+      {ko:"배 시간이 다 됐다. 몇 시까지 선착장에 가야 하는지 물어라.", en:"What time do we need to be at the pier?"}
     ]},
   { id:"travel_do_i_need_to", frame:"Do I need to ~?", tf:"do i need to", ko:"~해야 하나요?", purpose:"필요 여부", re:"^(?!.*what time).*\\bdo (i|we) need to\\b",
     items:[
@@ -14839,7 +14866,10 @@ const TRAVEL_FRAMES=[
       {ko:"호핑투어에 간다. 수영복을 챙겨야 하는지 물어라.", en:"Do I need to bring a swimsuit?"},
       {ko:"가게 입구에 신발이 여러 켤레 있다. 벗어야 하는지 물어라.", en:"Do I need to take off my shoes?"},
       {ko:"사람들이 서 있다. 줄을 서야 하는지 물어라.", en:"Do I need to wait in line?"},
-      {ko:"표를 폰으로 받았다. 미리 출력해야 하는지 물어라.", en:"Do I need to print the ticket?"}
+      {ko:"표를 폰으로 받았다. 미리 출력해야 하는지 물어라.", en:"Do I need to print the ticket?"},
+      {ko:"버스를 타려 한다. 자리를 미리 예약해야 하는지 물어라.", en:"Do I need to reserve a seat?"},
+      {ko:"섬에 간다. 수건을 챙겨야 하는지 물어라.", en:"Do we need to bring towels?"},
+      {ko:"입구를 이미 지났다. 표를 또 보여줘야 하는지 물어라.", en:"Do I need to show my ticket again?"}
     ]},
   { id:"travel_is_included", frame:"Is ~ included?", tf:"included", ko:"~ 포함인가요?", purpose:"포함 여부", re:"\\b(is|are)\\b[^.?]*\\bincluded\\b",
     items:[
@@ -14849,7 +14879,10 @@ const TRAVEL_FRAMES=[
       {ko:"호텔에서 멀다. 픽업이 포함인지 물어라.", en:"Is pickup included?"},
       {ko:"가격표에 숫자만 적혀 있다. 세금이 포함인지 물어라.", en:"Is tax included?"},
       {ko:"투어에 공원을 간다고 한다. 입장료가 포함인지 물어라.", en:"Is the entrance fee included?"},
-      {ko:"배 위에서 마실 게 필요하다. 생수가 포함인지 물어라.", en:"Is water included?"}
+      {ko:"배 위에서 마실 게 필요하다. 생수가 포함인지 물어라.", en:"Is water included?"},
+      {ko:"세트 메뉴를 시켰다. 음료가 포함인지 물어라.", en:"Is the drink included?"},
+      {ko:"섬 투어를 예약한다. 수건이 포함인지 물어라.", en:"Are towels included?"},
+      {ko:"계산서를 받았다. 팁이 포함인지 물어라.", en:"Is the tip included?"}
     ]},
   { id:"travel_how_much", frame:"How much is ~?", tf:"how much is", ko:"~ 얼마예요?", purpose:"가격", re:"\\bhow much (is|are)\\b",
     items:[
@@ -14859,7 +14892,10 @@ const TRAVEL_FRAMES=[
       {ko:"투어를 예약하려 한다. 1인당 얼마인지 물어라.", en:"How much is it per person?"},
       {ko:"아이도 같이 간다. 아이 요금을 물어라.", en:"How much is it for a child?"},
       {ko:"체크인할 때 보증금을 받는다고 한다. 얼마인지 물어라.", en:"How much is the deposit?"},
-      {ko:"공항 픽업을 신청하려 한다. 얼마인지 물어라.", en:"How much is the airport pickup?"}
+      {ko:"공항 픽업을 신청하려 한다. 얼마인지 물어라.", en:"How much is the airport pickup?"},
+      {ko:"섬에 가는 배표를 사려 한다. 얼마인지 물어라.", en:"How much is the ferry ticket?"},
+      {ko:"택시를 잡았다. 공항까지 얼마인지 물어라.", en:"How much is it to the airport?"},
+      {ko:"하루 더 있고 싶다. 하루 더 묵으면 얼마인지 물어라.", en:"How much is one more night?"}
     ]},
   { id:"travel_pay_by_card", frame:"Can I pay by card?", tf:"can i pay by card", ko:"카드로 결제되나요?", purpose:"카드 결제", re:"\\bcan (i|we) pay by card\\b",
     items:[
@@ -14868,7 +14904,11 @@ const TRAVEL_FRAMES=[
       {ko:"투어 데스크에서 결제하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
       {ko:"택시에서 내리기 전이다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
       {ko:"호텔에서 보증금을 요구한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"현금이 모자란다. 카드가 되는지 물어라.", en:"Can I pay by card?"}
+      {ko:"현금이 모자란다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
+      {ko:"편의점에서 물과 간식을 샀다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
+      {ko:"약국에서 약을 샀다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
+      {ko:"선착장에서 배표를 사려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
+      {ko:"기념품 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"}
     ]},
   { id:"travel_have_reservation", frame:"I have a reservation.", tf:"i have a reservation", ko:"예약했어요.", purpose:"예약 알리기", re:"\\b(i|we) have a reservation\\b",
     items:[
@@ -14878,7 +14918,10 @@ const TRAVEL_FRAMES=[
       {ko:"직원이 이름을 묻는다. 김으로 예약했다고 말해라.", en:"I have a reservation under Kim."},
       {ko:"늦게 도착했다. 오늘 밤으로 예약했다고 말해라.", en:"I have a reservation for tonight."},
       {ko:"식당이 꽉 찼다. 7시로 예약했다고 말해라.", en:"I have a reservation at seven."},
-      {ko:"렌터카 데스크 앞이다. 예약했다고 말해라.", en:"I have a reservation for a car."}
+      {ko:"렌터카 데스크 앞이다. 예약했다고 말해라.", en:"I have a reservation for a car."},
+      {ko:"프런트에서 며칠 묵는지 묻는다. 3박 예약했다고 말해라.", en:"I have a reservation for three nights."},
+      {ko:"선착장 창구 앞이다. 배를 예약했다고 말해라.", en:"I have a reservation for the boat."},
+      {ko:"식당에 가족 넷이 왔다. 네 명 예약했다고 말해라.", en:"We have a reservation for four."}
     ]},
   { id:"travel_can_i_leave", frame:"Can I leave ~ here?", tf:"can i leave", ko:"~ 여기 맡겨도 될까요?", purpose:"짐 맡기기", re:"\\bcan (i|we) leave\\b",
     items:[
@@ -14888,7 +14931,10 @@ const TRAVEL_FRAMES=[
       {ko:"물놀이하는 동안 신발을 두고 가도 되는지 물어라.", en:"Can I leave my shoes here?"},
       {ko:"방을 뺐지만 저녁까지 시간이 있다. 짐을 맡길 수 있는지 물어라.", en:"Can I leave my bags here until evening?"},
       {ko:"빌린 자전거를 여기 세워둬도 되는지 물어라.", en:"Can I leave my bike here?"},
-      {ko:"비싼 물건이 있다. 프런트에 맡길 수 있는지 물어라.", en:"Can I leave my valuables here?"}
+      {ko:"비싼 물건이 있다. 프런트에 맡길 수 있는지 물어라.", en:"Can I leave my valuables here?"},
+      {ko:"유모차를 끌고 왔는데 안에 못 들어간다. 여기 둬도 되는지 물어라.", en:"Can I leave my stroller here?"},
+      {ko:"방을 뺐다. 프런트에 짐을 맡길 수 있는지 물어라.", en:"Can we leave our bags at the front desk?"},
+      {ko:"찾는 사람이 자리에 없다. 메모를 남겨도 되는지 물어라.", en:"Can I leave a message for him?"}
     ]},
   { id:"travel_problem_with", frame:"There's a problem with ~.", tf:"there is a problem with", ko:"~에 문제가 있어요.", purpose:"문제 알리기", re:"\\bthere ?s a problem with\\b",
     items:[
@@ -14898,7 +14944,10 @@ const TRAVEL_FRAMES=[
       {ko:"예약 내용이 우리가 신청한 것과 다르다. 알려라.", en:"There's a problem with my reservation."},
       {ko:"계산서에 안 시킨 게 올라가 있다. 직원에게 알려라.", en:"There's a problem with the bill."},
       {ko:"카드키를 대도 문이 안 열린다. 프런트에 알려라.", en:"There's a problem with my key."},
-      {ko:"시킨 것과 다른 음식이 나왔다. 직원에게 알려라.", en:"There's a problem with my order."}
+      {ko:"시킨 것과 다른 음식이 나왔다. 직원에게 알려라.", en:"There's a problem with my order."},
+      {ko:"변기 물이 안 내려간다. 프런트에 알려라.", en:"There's a problem with the toilet."},
+      {ko:"카드 결제가 안 됐다고 뜬다. 직원에게 알려라.", en:"There's a problem with my payment."},
+      {ko:"픽업 차가 시간이 지나도 안 온다. 투어 데스크에 알려라.", en:"There's a problem with the pickup."}
     ]},
   { id:"travel_cant_find", frame:"I can't find ~.", tf:"i cannot find", ko:"~를 못 찾겠어요.", purpose:"못 찾음", re:"\\bi cant find\\b",
     items:[
@@ -14908,7 +14957,10 @@ const TRAVEL_FRAMES=[
       {ko:"주소를 들고 왔는데 호텔이 안 보인다.", en:"I can't find the hotel."},
       {ko:"다른 사람 짐은 다 나왔는데 내 것만 없다.", en:"I can't find my luggage."},
       {ko:"예약 확인 메일을 보여줘야 하는데 안 보인다.", en:"I can't find my booking email."},
-      {ko:"사람이 많아 가족을 놓쳤다.", en:"I can't find my family."}
+      {ko:"사람이 많아 가족을 놓쳤다.", en:"I can't find my family."},
+      {ko:"방 앞에 왔는데 카드키가 없다.", en:"I can't find my room key."},
+      {ko:"정류장이 여기라는데 아무리 봐도 안 보인다.", en:"I can't find the bus stop."},
+      {ko:"공연장에 들어왔는데 자리를 못 찾겠다.", en:"I can't find my seat."}
     ]},
   { id:"travel_think_i_left", frame:"I think I left ~.", tf:"i think i left", ko:"~를 두고 온 것 같아요.", purpose:"두고 옴", re:"\\bi think i left\\b",
     items:[
@@ -14918,7 +14970,10 @@ const TRAVEL_FRAMES=[
       {ko:"배에서 내렸는데 가방이 없다.", en:"I think I left my bag on the boat."},
       {ko:"카페에서 나오니 선글라스가 없다.", en:"I think I left my sunglasses at the cafe."},
       {ko:"버스에서 내렸는데 카메라가 없다.", en:"I think I left my camera on the bus."},
-      {ko:"보안검색을 지나고 나니 지갑이 없다.", en:"I think I left my wallet at security."}
+      {ko:"보안검색을 지나고 나니 지갑이 없다.", en:"I think I left my wallet at security."},
+      {ko:"체크아웃하고 나오니 겉옷이 없다.", en:"I think I left my jacket in the room."},
+      {ko:"체크인할 때 맡긴 여권을 안 돌려받았다.", en:"I think I left my passport at the front desk."},
+      {ko:"식당에서 나오니 핸드폰이 없다.", en:"I think I left my phone at the restaurant."}
     ]},
   { id:"travel_does_that_mean", frame:"Does that mean ~?", tf:"does that mean", ko:"그럼 ~라는 뜻이에요?", purpose:"의미 확인", re:"\\bdoes that mean\\b",
     items:[
@@ -14928,7 +14983,10 @@ const TRAVEL_FRAMES=[
       {ko:"배가 늦는다고 한다. 더 기다려야 하는지 확인해라.", en:"Does that mean we have to wait?"},
       {ko:"카드가 안 된다고 한다. 현금만 되는지 확인해라.", en:"Does that mean it's cash only?"},
       {ko:"픽업이 없다고 한다. 우리가 직접 가야 하는지 확인해라.", en:"Does that mean we go there ourselves?"},
-      {ko:"방이 없다고 한다. 다른 호텔을 찾아야 하는지 확인해라.", en:"Does that mean we need another hotel?"}
+      {ko:"방이 없다고 한다. 다른 호텔을 찾아야 하는지 확인해라.", en:"Does that mean we need another hotel?"},
+      {ko:"파도가 높다고 한다. 오늘 수영을 못 하는 건지 확인해라.", en:"Does that mean we can't swim today?"},
+      {ko:"조식 시간이 끝났다고 한다. 아침을 못 먹는 건지 확인해라.", en:"Does that mean breakfast is over?"},
+      {ko:"예약이 취소됐다고 한다. 다시 예약해야 하는 건지 확인해라.", en:"Does that mean I have to book again?"}
     ]},
   { id:"travel_say_again_slowly", frame:"Could you say that again, more slowly?", tf:"could you say that again", ko:"다시 천천히 말해 주실래요?", purpose:"다시 요청", re:"\\bcould you say that again\\b",
     items:[
@@ -14937,7 +14995,11 @@ const TRAVEL_FRAMES=[
       {ko:"가이드가 빠르게 설명하고 지나갔다.", en:"Could you say that again, more slowly?"},
       {ko:"전화 목소리가 빨라서 못 알아들었다.", en:"Could you say that again, more slowly?"},
       {ko:"길을 물었는데 설명이 빨라서 이해를 못 했다.", en:"Could you say that again, more slowly?"},
-      {ko:"가격을 말했는데 숫자를 못 들었다.", en:"Could you say that again, more slowly?"}
+      {ko:"가격을 말했는데 숫자를 못 들었다.", en:"Could you say that again, more slowly?"},
+      {ko:"기사가 요금을 말했는데 못 알아들었다.", en:"Could you say that again, more slowly?"},
+      {ko:"약 먹이는 방법을 설명해주는데 너무 빨라서 놓쳤다.", en:"Could you say that again, more slowly?"},
+      {ko:"체크인 규정을 빠르게 설명하고 넘어갔다.", en:"Could you say that again, more slowly?"},
+      {ko:"투어 집합 장소를 말해줬는데 못 들었다.", en:"Could you say that again, more slowly?"}
     ]},
   { id:"travel_what_recommend", frame:"What do you recommend?", tf:"what do you recommend", ko:"뭐가 좋아요?", purpose:"추천 요청", re:"\\bwhat do you recommend\\b",
     items:[
@@ -14947,7 +15009,10 @@ const TRAVEL_FRAMES=[
       {ko:"기념품 가게에 왔다. 선물용으로 추천받아라.", en:"What do you recommend for a gift?"},
       {ko:"해변이 여러 곳이다. 스노클링하기 좋은 데를 물어라.", en:"What do you recommend for snorkeling?"},
       {ko:"첫 방문이다. 어디를 먼저 볼지 물어라.", en:"What do you recommend for a first visit?"},
-      {ko:"매운 걸 못 먹는다. 뭘 시킬지 물어라.", en:"What do you recommend that's not spicy?"}
+      {ko:"매운 걸 못 먹는다. 뭘 시킬지 물어라.", en:"What do you recommend that's not spicy?"},
+      {ko:"아이들이 먹을 걸 골라야 한다. 뭐가 좋은지 물어라.", en:"What do you recommend for kids?"},
+      {ko:"숙소 근처에서 저녁을 먹으려 한다. 추천을 받아라.", en:"What do you recommend around here?"},
+      {ko:"하루가 통째로 비었다. 내일 뭘 하면 좋을지 물어라.", en:"What do you recommend for tomorrow?"}
     ]},
   { id:"travel_can_we_change", frame:"Can we change ~?", tf:"can we change", ko:"~ 바꿀 수 있을까요?", purpose:"변경", re:"\\bcan (we|i) change\\b",
     items:[
@@ -14957,7 +15022,10 @@ const TRAVEL_FRAMES=[
       {ko:"가족이 떨어져 앉았다. 자리를 바꿀 수 있는지 물어라.", en:"Can we change seats?"},
       {ko:"호텔 말고 공항에서 타고 싶다. 픽업 장소를 바꿀 수 있는지 물어라.", en:"Can we change the pickup place?"},
       {ko:"한 명이 더 가게 됐다. 인원을 바꿀 수 있는지 물어라.", en:"Can we change the number of people?"},
-      {ko:"아직 음식이 안 나왔다. 주문을 바꾸고 싶다.", en:"Can we change our order?"}
+      {ko:"아직 음식이 안 나왔다. 주문을 바꾸고 싶다.", en:"Can we change our order?"},
+      {ko:"방이 너무 좁다. 큰 방으로 바꿀 수 있는지 물어라.", en:"Can we change to a bigger room?"},
+      {ko:"현금이 필요하다. 여기서 환전이 되는지 물어라.", en:"Can I change some money here?"},
+      {ko:"일정이 바뀌었다. 비행기를 바꿀 수 있는지 물어라.", en:"Can I change my flight?"}
     ]},
   { id:"travel_is_this_right", frame:"Is this the right ~?", tf:"is this the right", ko:"이거 맞나요?", purpose:"맞는지 확인", re:"\\bis this the right\\b",
     items:[
@@ -14967,7 +15035,10 @@ const TRAVEL_FRAMES=[
       {ko:"내릴 정류장인지 확실하지 않다. 확인해라.", en:"Is this the right stop?"},
       {ko:"부두가 여러 개다. 배 타는 곳이 맞는지 물어라.", en:"Is this the right pier?"},
       {ko:"지도대로 왔는데 확실하지 않다. 이 건물이 맞는지 물어라.", en:"Is this the right building?"},
-      {ko:"갈림길에 섰다. 이 길이 맞는지 물어라.", en:"Is this the right way?"}
+      {ko:"갈림길에 섰다. 이 길이 맞는지 물어라.", en:"Is this the right way?"},
+      {ko:"창구가 여러 개다. 여기가 맞는지 물어라.", en:"Is this the right counter?"},
+      {ko:"배가 여러 대 대어 있다. 우리 배가 맞는지 물어라.", en:"Is this the right boat?"},
+      {ko:"옷을 골랐다. 이 사이즈가 맞는지 물어라.", en:"Is this the right size?"}
     ]},
   { id:"travel_where_meet", frame:"Where do we meet?", tf:"where do we meet", ko:"어디서 모여요?", purpose:"집결 장소", re:"\\bwhere do (we|i) meet\\b",
     items:[
@@ -14977,7 +15048,10 @@ const TRAVEL_FRAMES=[
       {ko:"내일 아침 일찍 출발한다. 어디서 모이는지 물어라.", en:"Where do we meet tomorrow morning?"},
       {ko:"점심은 각자 먹는다고 한다. 다시 어디서 모이는지 물어라.", en:"Where do we meet after lunch?"},
       {ko:"스노클링 끝나고 어디서 모이는지 물어라.", en:"Where do we meet after snorkeling?"},
-      {ko:"일행과 따로 다니기로 했다. 나중에 어디서 만날지 정해라.", en:"Where do we meet later?"}
+      {ko:"일행과 따로 다니기로 했다. 나중에 어디서 만날지 정해라.", en:"Where do we meet later?"},
+      {ko:"일행과 떨어졌다. 어디서 다시 모이는지 물어라.", en:"Where do we meet the group?"},
+      {ko:"배 시간이 다 됐다. 어디서 모이는지 물어라.", en:"Where do we meet for the boat?"},
+      {ko:"공항에서 픽업을 받기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet at the airport?"}
     ]},
   { id:"travel_what_should_i_do", frame:"What should I/we do?", tf:"what should i do", ko:"어떻게 해야 하나요?", purpose:"대처 방법", re:"\\bwhat should (i|we) do\\b",
     items:[
@@ -14987,7 +15061,10 @@ const TRAVEL_FRAMES=[
       {ko:"배가 늦는다. 기다리는 동안 뭘 할지 물어라.", en:"What should we do while we wait?"},
       {ko:"투어 시간과 픽업 시간이 겹쳤다. 어떻게 해야 할지 물어라.", en:"What should we do about the schedule?"},
       {ko:"카드가 안 된다. 그럼 어떻게 해야 하는지 물어라.", en:"What should I do then?"},
-      {ko:"여권을 잃어버렸다. 먼저 뭘 해야 하는지 물어라.", en:"What should I do first?"}
+      {ko:"여권을 잃어버렸다. 먼저 뭘 해야 하는지 물어라.", en:"What should I do first?"},
+      {ko:"야외 투어를 예약했다. 비가 오면 어떻게 하는지 물어라.", en:"What should I do if it rains?"},
+      {ko:"체크인 시간 전에 도착했다. 짐을 어떻게 해야 하는지 물어라.", en:"What should we do with our luggage?"},
+      {ko:"계산서에 모르는 요금이 붙었다. 어떻게 해야 하는지 물어라.", en:"What should I do about the extra charge?"}
     ]}
 ];
 const TRAVEL_KEY="speakingroom:travelrepeat";
