@@ -1977,7 +1977,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.183";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.184";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15145,7 +15145,54 @@ function travelGrade(it, heard){
            meaningOnly:(!frameOk && sameWords),      // 뜻은 통하는데 이번 프레임을 안 씀
            otherWords:(ok && !sameWords) };          // 프레임은 맞고 예시와 다른 낱말로 말함
 }
-function startTravelDrill(count){
+/* ✈️ 처음 들어오는 사람에게 한 번만 — 이 덱이 어떻게 굴러가는지 */
+const TRAVEL_GUIDE_KEY="speakingroom:travel_guide_seen";
+function travelGuideSeen(){ try{ return !!hGet(TRAVEL_GUIDE_KEY,false); }catch(e){ return false; } }
+function travelGuideShow(onStart){
+  const done=(()=>{ try{ return travelSeenCount(); }catch(e){ return 0; } })();
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="travelGuideOv";
+  const step=(n,t,d)=>`<div style="display:flex;gap:11px;align-items:flex-start;margin-bottom:13px">
+      <span style="flex:none;width:24px;height:24px;border-radius:50%;background:#189E79;color:#fff;font-size:12.5px;font-weight:900;display:grid;place-items:center;margin-top:1px">${n}</span>
+      <span style="flex:1;min-width:0"><b style="display:block;font-size:14.5px;color:var(--text);line-height:1.4">${t}</b>
+      <span style="display:block;font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:3px">${d}</span></span>
+    </div>`;
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet" style="max-height:88vh;overflow-y:auto">
+     <div class="hub-grab"></div>
+     <div class="hub-title">✈️ 여행 표현 ${TRAVEL_FRAMES.length}개</div>
+     <div class="hub-sub">여행에서 실제로 쓰는 표현 ${TRAVEL_FRAMES.length}개만 골랐어요.<br>이것만 입에 붙으면 웬만한 건 다 됩니다.</div>
+
+     ${step(1,"처음 나오는 표현은 영어를 보여줘요","아직 배우는 단계니까 답을 그대로 보여주고, 따라 말해보게 해요.")}
+     <div style="background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:14px;padding:11px 13px;margin:0 0 15px 35px">
+       <div style="font-size:10px;font-weight:900;letter-spacing:.1em;color:#C08763">처음 볼 때</div>
+       <div style="font-family:var(--serif);font-size:17px;color:#189E79;font-weight:800;margin-top:3px">✈️ Can I get ~?</div>
+       <div style="font-size:11.5px;color:#7FA396;margin-top:3px">처음 나오는 표현이에요 — 예: Can I get another towel?</div>
+     </div>
+
+     ${step(2,"그 다음부터는 영어가 사라져요","상황만 보고 <b>내가 직접 꺼내야</b> 해요. 이게 진짜 연습이에요.")}
+     <div style="background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:14px;padding:11px 13px;margin:0 0 15px 35px">
+       <div style="font-size:10px;font-weight:900;letter-spacing:.1em;color:#C08763">두 번째부터</div>
+       <div style="font-family:var(--serif);font-size:17px;color:#189E79;font-weight:800;margin-top:3px">✈️ 상황을 보고 말해보세요</div>
+       <div style="font-size:12.5px;color:#3A2D27;font-weight:800;margin-top:5px">호텔 방에 수건이 부족하다. 하나 더 요청해라.</div>
+     </div>
+
+     ${step(3,"정답은 하나가 아니에요","핵심 표현만 제대로 쓰면 맞아요. 뒤는 상황에 맞게 바꿔도 됩니다.<br><span style=\"color:#19a06b;font-weight:800\">Can I get a towel? / Can I get one more towel?</span> 둘 다 정답.")}
+     ${step(4,"천천히 읽고 말해도 돼요","상황을 읽는 시간은 빼고 재요. 급하게 안 해도 됩니다.")}
+     ${step(5,"맞히면 10점 · 50문제면 오늘 끝","하루 500점이 목표예요. 한 판은 10문제 정도라 5판이면 끝나요.")}
+
+     <button class="routine-main" id="tvGuideGo" style="margin-top:6px">${done?"이어서 시작 →":"시작하기 →"}</button>
+     <button class="auto-sub" id="tvGuideClose" style="width:100%;margin-top:9px">나중에</button>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  ov.querySelector("#tvGuideClose").onclick=close;
+  ov.querySelector("#tvGuideGo").onclick=()=>{ try{ hSet(TRAVEL_GUIDE_KEY,true); }catch(e){} close(); try{ onStart&&onStart(); }catch(e){} };
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function startTravelDrill(count, skipGuide){
+  /* 처음 오는 사람은 규칙부터 알고 시작해야 한다 — 답이 보이는 이유를 모르면 오해한다 */
+  if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true)); return; }
   const n=Math.max(3, Math.min(30, count||hGet("speakingroom:ad_count",10)||10));
   try{ ttStart("drill"); }catch(e){}
   autoDrill={items:travelBuildItems(n), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true};
@@ -18309,11 +18356,13 @@ function autoDrillDone(){
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="routine-main" id="autoAgain" style="margin:0">${isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"}</button>
       <button class="auto-sub" id="autoOther">${isTravel?"일반 반복학습 하기":"✈️ 여행 표현 하기"}</button>
+      ${isTravel?`<button class="auto-sub" id="autoTvGuide" style="font-size:12.5px">✈️ 여행팩 안내 다시 보기</button>`:""}
       <button class="auto-sub" id="autoHome">홈으로</button>
     </div>
   </div>`;
   $("#autoAgain").onclick=()=>{ autoDrill=null; if(isTravel) startTravelDrill(); else startAutoDrill(); };
   $("#autoOther").onclick=()=>{ autoDrill=null; if(isTravel) startAutoDrill(); else startTravelDrill(); };
+  if($("#autoTvGuide")) $("#autoTvGuide").onclick=()=>travelGuideShow(()=>{ autoDrill=null; startTravelDrill(undefined,true); });
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
 // 🌎 실전상황 Engine — 실전 상황 시뮬레이션
