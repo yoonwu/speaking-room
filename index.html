@@ -1988,7 +1988,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.189";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.190";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15292,35 +15292,71 @@ function travelRecord(fid, ok){
   s.seen=(s.seen||0)+1; if(ok) s.ok=(s.ok||0)+1; else s.miss=(s.miss||0)+1;
   s.lastT=Date.now(); o[fid]=s; travelSave(o);
 }
-/* 25개를 한 바퀴 다 돌기 전에는 같은 프레임이 다시 나오지 않게 한다(full-cycle 보장).
-   한 바퀴 뒤에는 약한 프레임(틀린 적 많음)·오래 안 본 프레임을 앞으로 보낸다. */
+/* 프레임 뽑기 — 운에 맡기지 않는다.
+   'shown'(지금까지 출제된 횟수)이 가장 적은 것들을 한 묶음으로 보고, 그 안에서 뽑는다.
+   그래서 25개가 한 바퀴 다 나오기 전에는 같은 프레임이 두 번 나올 수 없다.
+   묶음 안 순서는 매번 섞는다 — 고정 순서면 문장이 아니라 순서를 외워버린다.
+   약한 프레임(틀린 적 많음)은 같은 묶음 안에서 조금 더 자주 뽑히게만 한다. */
 function travelPickFrames(n){
   const o=travelAll();
-  const unseen=TRAVEL_FRAMES.filter(f=>!(o[f.id]&&o[f.id].seen));
-  const seen=TRAVEL_FRAMES.filter(f=>(o[f.id]&&o[f.id].seen))
-    .sort((a,b)=>{ const x=o[a.id], y=o[b.id];
-      const wx=(x.miss||0)-(x.ok||0), wy=(y.miss||0)-(y.ok||0);
-      return wy-wx || (x.lastT||0)-(y.lastT||0); });
-  const order=bleShuffle(unseen).concat(seen);
-  const out=[];
-  for(let i=0; out.length<n; i++){ out.push(order[i%Math.max(1,order.length)]); if(i>400) break; }
+  const shownOf=f=>((o[f.id]&&o[f.id].shown)||0);
+  const weakOf=f=>{ const x=o[f.id]||{}; return Math.max(0, Math.min(3, (x.miss||0)-(x.ok||0))); };
+  const out=[], bump={};
+  let remain=TRAVEL_FRAMES.slice();       // 이번 세션에 아직 안 쓴 프레임
+  while(out.length<n){
+    if(!remain.length) remain=TRAVEL_FRAMES.slice();   // 25개를 다 썼다 — 그때만 다시 돈다
+    const eff=f=>shownOf(f)+(bump[f.id]||0);
+    const lo=Math.min.apply(null, remain.map(eff));
+    const tier=remain.filter(f=>eff(f)===lo);
+    /* 약할수록 앞자리 확률이 높지만, 난수가 더 크게 작용해서 순서는 매번 달라진다 */
+    tier.sort((a,b)=>(weakOf(b)*0.6+Math.random()*2)-(weakOf(a)*0.6+Math.random()*2));
+    for(let i=0;i<tier.length && out.length<n;i++){
+      const f=tier[i];
+      out.push(f); bump[f.id]=(bump[f.id]||0)+1;
+      remain=remain.filter(x=>x.id!==f.id);
+    }
+  }
+  /* 지난 세션 마지막 문제와 첫 문제가 같은 프레임이면 자리를 바꾼다 —
+     앱을 다시 켰을 때 방금 본 표현이 또 나오는 느낌을 없앤다 */
+  try{
+    const lastId=hGet(TRAVEL_KEY+":lastFrame","");
+    if(lastId && out.length>1 && out[0].id===lastId){ const t=out[0]; out[0]=out[1]; out[1]=t; }
+    if(out.length) hSet(TRAVEL_KEY+":lastFrame", out[out.length-1].id);
+  }catch(e){}
   return out;
+}
+/* 프레임이 실제로 출제됐다는 기록 — 채점 여부와 무관하다.
+   이게 있어야 '안 나온 것부터' 가 성립한다. */
+function travelMarkShown(ids){
+  const o=travelAll();
+  (ids||[]).forEach(id=>{ const st=o[id]||{seen:0,ok:0,miss:0,lastT:0}; st.shown=(st.shown||0)+1; o[id]=st; });
+  travelSave(o);
+}
+/* 같은 프레임 안에서도 15개 상황을 골고루 — 한 바퀴 다 쓰기 전엔 같은 상황이 안 나온다.
+   한 바퀴가 끝나면 다시 시작하되, 방금 본 상황만은 연달아 안 나오게 뺀다. */
+function travelPickItem(f, o){
+  const st=o[f.id]||(o[f.id]={seen:0,ok:0,miss:0,lastT:0});
+  let used=Array.isArray(st.used)?st.used:[];
+  let fresh=f.items.filter(x=>used.indexOf(x.ko)<0);
+  if(!fresh.length){ used=[]; fresh=f.items.filter(x=>x.ko!==st.lastKo); if(!fresh.length) fresh=f.items.slice(); }
+  const pick=fresh[Math.floor(Math.random()*fresh.length)];
+  used.push(pick.ko); st.used=used; st.lastKo=pick.ko;
+  return pick;
 }
 function travelBuildItems(count){
   const limits=adLimits();
   const frames=travelPickFrames(count);
-  const usedByFrame={};
-  return frames.map((f,i)=>{
-    const pool=f.items.slice();
-    const used=usedByFrame[f.id]||(usedByFrame[f.id]=[]);
-    const fresh=pool.filter(x=>used.indexOf(x.en)<0);
-    const pick=(fresh.length?fresh:pool)[Math.floor(Math.random()*(fresh.length?fresh.length:pool.length))];
-    used.push(pick.en);
+  const o=travelAll();
+  const out=frames.map(f=>{
+    const pick=travelPickItem(f, o);
     return { _travel:true, frame:f,
       block:{ id:f.id, block:f.frame, meaningKo:f.ko },
       ex:{ en:pick.en, ko:pick.ko, situation:"✈️ "+f.purpose },
       limit:limits[0], rep:1, recall:false, discriminate:false };
   });
+  travelSave(o);                                  // 상황 사용 기록
+  travelMarkShown(frames.map(f=>f.id));           // 프레임 출제 기록
+  return out;
 }
 /* 상황을 읽는 시간은 '말 시작이 늦은 것'이 아니다.
    여행팩은 한글 상황 길이만큼 읽는 시간을 먼저 빼주고, 그 뒤부터 말 시작 시간을 잰다. */
