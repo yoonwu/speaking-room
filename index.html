@@ -1988,7 +1988,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.190";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.191";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15290,8 +15290,23 @@ function travelSeenCount(){ const o=travelAll(); return TRAVEL_FRAMES.filter(f=>
 function travelRecord(fid, ok){
   const o=travelAll(); const s=o[fid]||{seen:0, ok:0, miss:0, lastT:0};
   s.seen=(s.seen||0)+1; if(ok) s.ok=(s.ok||0)+1; else s.miss=(s.miss||0)+1;
+  s.streak = ok ? ((s.streak||0)+1) : 0;   // 연속 성공 — 자동화 판단의 핵심
   s.lastT=Date.now(); o[fid]=s; travelSave(o);
 }
+/* 자동화될수록 덜 나오게, 안 되는 건 더 나오게.
+   출제될 때마다 이 값만큼 '비용'이 쌓이고, 비용이 낮은 것부터 뽑는다.
+   값이 클수록 비용이 빨리 쌓여 다음 차례가 늦게 온다. */
+function travelWeight(st){
+  st=st||{};
+  const ok=st.ok||0, miss=st.miss||0, streak=st.streak||0;
+  if(miss>ok)      return 0.7;   // 맞힌 것보다 틀린 게 많다 — 더 자주
+  if(streak>=5)    return 3.2;   // 완전히 붙었다 — 가끔만
+  if(streak>=3)    return 2.2;   // 자동화됨
+  if(streak>=2)    return 1.5;   // 익숙해지는 중
+  return 1.0;                    // 기본
+}
+/* 예전 기록에는 cost 가 없다 — shown 을 그대로 옮겨 이어서 센다 */
+function travelCost(st){ st=st||{}; return (st.cost==null) ? (st.shown||0) : st.cost; }
 /* 프레임 뽑기 — 운에 맡기지 않는다.
    'shown'(지금까지 출제된 횟수)이 가장 적은 것들을 한 묶음으로 보고, 그 안에서 뽑는다.
    그래서 25개가 한 바퀴 다 나오기 전에는 같은 프레임이 두 번 나올 수 없다.
@@ -15299,23 +15314,21 @@ function travelRecord(fid, ok){
    약한 프레임(틀린 적 많음)은 같은 묶음 안에서 조금 더 자주 뽑히게만 한다. */
 function travelPickFrames(n){
   const o=travelAll();
-  const shownOf=f=>((o[f.id]&&o[f.id].shown)||0);
-  const weakOf=f=>{ const x=o[f.id]||{}; return Math.max(0, Math.min(3, (x.miss||0)-(x.ok||0))); };
   const out=[], bump={};
   let remain=TRAVEL_FRAMES.slice();       // 이번 세션에 아직 안 쓴 프레임
+  /* 고를 때: 비용이 낮은 것부터. 자동화된 프레임은 비용이 빨리 쌓여 뒤로 밀린다.
+     난수(±0.45)는 비용이 비슷한 것들 사이에서만 순서를 흔든다 —
+     차이가 분명하면 난수로 뒤집히지 않는다. */
   while(out.length<n){
     if(!remain.length) remain=TRAVEL_FRAMES.slice();   // 25개를 다 썼다 — 그때만 다시 돈다
-    const eff=f=>shownOf(f)+(bump[f.id]||0);
-    const lo=Math.min.apply(null, remain.map(eff));
-    const tier=remain.filter(f=>eff(f)===lo);
-    /* 약할수록 앞자리 확률이 높지만, 난수가 더 크게 작용해서 순서는 매번 달라진다 */
-    tier.sort((a,b)=>(weakOf(b)*0.6+Math.random()*2)-(weakOf(a)*0.6+Math.random()*2));
-    for(let i=0;i<tier.length && out.length<n;i++){
-      const f=tier[i];
-      out.push(f); bump[f.id]=(bump[f.id]||0)+1;
-      remain=remain.filter(x=>x.id!==f.id);
-    }
+    const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeight(o[f.id]) + Math.random()*0.45;
+    let best=remain[0], bv=eff(best);
+    remain.forEach(f=>{ const v=eff(f); if(v<bv){ bv=v; best=f; } });
+    out.push(best); bump[best.id]=(bump[best.id]||0)+1;
+    remain=remain.filter(x=>x.id!==best.id);
   }
+  /* 내는 순서는 따로 섞는다 — 비용순으로 나오면 순서를 외워버린다 */
+  for(let i=out.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=out[i]; out[i]=out[j]; out[j]=t; }
   /* 지난 세션 마지막 문제와 첫 문제가 같은 프레임이면 자리를 바꾼다 —
      앱을 다시 켰을 때 방금 본 표현이 또 나오는 느낌을 없앤다 */
   try{
@@ -15329,7 +15342,12 @@ function travelPickFrames(n){
    이게 있어야 '안 나온 것부터' 가 성립한다. */
 function travelMarkShown(ids){
   const o=travelAll();
-  (ids||[]).forEach(id=>{ const st=o[id]||{seen:0,ok:0,miss:0,lastT:0}; st.shown=(st.shown||0)+1; o[id]=st; });
+  (ids||[]).forEach(id=>{
+    const st=o[id]||{seen:0,ok:0,miss:0,lastT:0};
+    st.shown=(st.shown||0)+1;
+    st.cost=travelCost(st)+travelWeight(st);   // 잘하는 프레임일수록 비용이 크게 쌓인다
+    o[id]=st;
+  });
   travelSave(o);
 }
 /* 같은 프레임 안에서도 15개 상황을 골고루 — 한 바퀴 다 쓰기 전엔 같은 상황이 안 나온다.
