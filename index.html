@@ -1988,7 +1988,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.195";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.196";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15697,6 +15697,156 @@ function travelOtherFrameOf(heard, exceptId){
     return f?f.frame:"";
   }catch(e){ return ""; }
 }
+/* ===== 🎧 쉐도잉 — 손 안 대고 듣고 따라 말하기 =====
+   일하면서 귀로만 돌린다. 프레임 30개를 순서대로, 프레임마다 문장 몇 개씩.
+   문장 하나 재생 → 따라 말할 틈 → 다음. 화면은 안 봐도 된다. */
+const SHD_KEY="speakingroom:shadow";
+let shadow=null, _shdWake=null;
+function shdCfg(){ try{ return Object.assign({rate:0.95, gap:1.0, per:5, twice:false}, hGet(SHD_KEY,{})||{}); }catch(e){ return {rate:0.95, gap:1.0, per:5, twice:false}; } }
+function shdCfgSave(o){ try{ hSet(SHD_KEY, o); }catch(e){} }
+/* 화면이 꺼지면 브라우저가 소리를 멈추는 기기가 있다 — 가능하면 화면을 깨워 둔다 */
+async function shdWakeOn(){ try{ if(navigator.wakeLock&&!_shdWake) _shdWake=await navigator.wakeLock.request("screen"); }catch(e){} }
+function shdWakeOff(){ try{ _shdWake&&_shdWake.release(); }catch(e){} _shdWake=null; }
+/* 재생 — 서버 음성이 안 되면 브라우저 TTS 로 같은 흐름을 돈다 */
+function shdSpeak(en, rate, onEnd){
+  const done=()=>{ try{ onEnd&&onEnd(); }catch(e){} };
+  svSpeak(en, rate, done).then(ok=>{
+    if(ok) return;
+    if(!TTS||!SSU){ setTimeout(done, 900); return; }
+    try{ TTS.cancel(); }catch(e){}
+    setTimeout(()=>{
+      const u=new SSU(en); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=rate;
+      let fired=false; const one=()=>{ if(fired) return; fired=true; done(); };
+      u.onend=one; u.onerror=one; TTS.speak(u);
+      setTimeout(one, Math.max(2500, en.length*130));   // onend 가 안 오는 기기 대비
+    },120);
+  });
+}
+function shdSilence(){
+  try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); } }catch(e){}
+  try{ if(TTS) TTS.cancel(); }catch(e){}
+}
+/* 프레임마다 문장 몇 개를 고른다 — 20개 중 고르게 흩어서 뽑아 매번 같은 것만 듣지 않게 */
+function shdPickItems(f, n){
+  const N=f.items.length, step=Math.max(1, Math.floor(N/n)), off=(Math.random()*N)|0, out=[];
+  for(let k=0; out.length<Math.min(n,N); k++) out.push(f.items[(off+k*step)%N]);
+  return out;
+}
+function shdBuild(){
+  const c=shdCfg();
+  return TRAVEL_FRAMES.map(f=>({frame:f, items:shdPickItems(f, c.per)}));
+}
+function shadowOpen(){
+  const c=shdCfg();
+  shadow={list:shdBuild(), fi:0, si:0, playing:false, timer:null, cfg:c};
+  const ov=document.createElement("div"); ov.id="shadowOv";
+  ov.style.cssText="position:fixed;inset:0;z-index:200;background:var(--paper);display:flex;flex-direction:column";
+  document.body.appendChild(ov);
+  shadowRender();
+  shadowPlay();
+}
+function shadowClose(){
+  shadowPause(); shdWakeOff();
+  const ov=document.getElementById("shadowOv"); if(ov) ov.remove();
+  shadow=null;
+}
+function shadowRender(){
+  const ov=document.getElementById("shadowOv"); if(!ov||!shadow) return;
+  const cur=shadow.list[shadow.fi], it=cur.items[shadow.si], c=shadow.cfg;
+  const dots=cur.items.map((x,k)=>`<i style="width:7px;height:7px;border-radius:50%;background:${k===shadow.si?'#189E79':k<shadow.si?'#BCDCCE':'#E4EFE9'}"></i>`).join("");
+  const seg=(label,val,opts,key)=>`<div style="flex:1">
+      <div style="font-size:10.5px;color:#9BADA4;font-weight:600;margin-bottom:5px;text-align:center">${label}</div>
+      <div style="display:flex;background:#EFF4F1;border-radius:9px;padding:2px">
+        ${opts.map(([v,t])=>`<button class="shdOpt" data-k="${key}" data-v="${v}" style="flex:1;border:none;cursor:pointer;font-size:11.5px;font-weight:${val==v?"700":"500"};padding:6px 0;border-radius:7px;background:${val==v?"#fff":"transparent"};color:${val==v?"#1B3B2F":"#7C8F87"};box-shadow:${val==v?"0 1px 2px rgba(0,0,0,.08)":"none"}">${t}</button>`).join("")}
+      </div></div>`;
+  ov.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px 4px">
+      <button id="shdClose" style="border:none;background:none;font-size:22px;line-height:1;color:#7C8F87;cursor:pointer;padding:4px 6px">×</button>
+      <div style="flex:1;height:3px;border-radius:9px;background:#E4EFE9;overflow:hidden">
+        <span style="display:block;height:100%;width:${Math.round((shadow.fi+ (shadow.si+1)/cur.items.length)/shadow.list.length*100)}%;background:#189E79"></span>
+      </div>
+      <div style="font-size:12px;color:#7C8F87;font-weight:600">${shadow.fi+1} / ${shadow.list.length}</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 26px;text-align:center">
+      <div style="font-size:11px;letter-spacing:.14em;color:#A6B8B0;font-weight:600">SHADOWING</div>
+      <div style="font-family:var(--serif);font-size:26px;color:#189E79;font-weight:700;margin-top:8px;line-height:1.25">${escapeHtml(cur.frame.frame)}</div>
+      <div style="font-size:13px;color:#8A9A93;margin-top:4px">${escapeHtml(cur.frame.ko)}</div>
+      <div style="display:flex;gap:5px;justify-content:center;margin:22px 0 16px">${dots}</div>
+      <div style="font-family:var(--serif);font-size:23px;color:#1B3B2F;font-weight:600;line-height:1.4">${escapeHtml(it.en)}</div>
+      <div style="font-size:13px;color:#8A9A93;margin-top:10px;line-height:1.5">${escapeHtml(it.ko)}</div>
+    </div>
+    <div style="padding:0 22px 8px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:26px;margin-bottom:18px">
+        <button id="shdPrev" style="border:none;background:none;color:#5E7A6E;font-size:15px;font-weight:600;cursor:pointer;padding:10px">이전</button>
+        <button id="shdToggle" style="width:74px;height:74px;border:none;border-radius:50%;background:#189E79;color:#fff;font-size:26px;cursor:pointer">${shadow.playing?"❚❚":"▶"}</button>
+        <button id="shdNext" style="border:none;background:none;color:#5E7A6E;font-size:15px;font-weight:600;cursor:pointer;padding:10px">다음</button>
+      </div>
+      <div style="display:flex;gap:10px;padding-bottom:calc(16px + env(safe-area-inset-bottom))">
+        ${seg("속도", c.rate, [[0.8,"느리게"],[0.95,"보통"],[1.1,"빠르게"]], "rate")}
+        ${seg("따라 말할 틈", c.gap, [[0.6,"짧게"],[1,"보통"],[1.6,"길게"]], "gap")}
+        ${seg("문장", c.per, [[3,"3개"],[5,"5개"],[10,"10개"]], "per")}
+      </div>
+    </div>`;
+  ov.querySelector("#shdClose").onclick=shadowClose;
+  ov.querySelector("#shdToggle").onclick=()=>{ shadow.playing?shadowPause():shadowPlay(); };
+  ov.querySelector("#shdPrev").onclick=()=>shadowStep(-1);
+  ov.querySelector("#shdNext").onclick=()=>shadowStep(1);
+  ov.querySelectorAll(".shdOpt").forEach(b=>{ b.onclick=()=>{
+    const k=b.dataset.k, v=parseFloat(b.dataset.v);
+    shadow.cfg[k]=v; shdCfgSave(shadow.cfg);
+    if(k==="per"){ const keep=shadow.fi; shadow.list=shdBuild(); shadow.fi=keep; shadow.si=0; }
+    const wasOn=shadow.playing;
+    shadowPause(); shadowRender(); if(wasOn) shadowPlay();
+  }; });
+}
+function shadowPause(){
+  if(!shadow) return;
+  shadow.playing=false;
+  if(shadow.timer){ clearTimeout(shadow.timer); shadow.timer=null; }
+  shdSilence();
+  const t=document.getElementById("shdToggle"); if(t) t.textContent="▶";
+}
+/* 프레임 단위로 건너뛴다 — 듣다가 아는 것은 넘기고 약한 것만 남긴다 */
+function shadowStep(d){
+  if(!shadow) return;
+  const wasOn=shadow.playing;
+  shadowPause();
+  shadow.fi=(shadow.fi+d+shadow.list.length)%shadow.list.length; shadow.si=0;
+  shadowRender(); if(wasOn) shadowPlay();
+}
+function shadowPlay(){
+  if(!shadow) return;
+  shadow.playing=true; shdWakeOn(); shadowRender();
+  const step=()=>{
+    if(!shadow||!shadow.playing) return;
+    const cur=shadow.list[shadow.fi], it=cur.items[shadow.si], c=shadow.cfg;
+    try{ shdMedia(cur.frame.frame, it.en); }catch(e){}
+    const words=String(it.en).split(/\s+/).length;
+    const gapMs=Math.max(1100, words*360)*c.gap;      // 따라 말할 틈 — 문장이 길수록 길게
+    const after=()=>{
+      if(!shadow||!shadow.playing) return;
+      shadow.timer=setTimeout(()=>{
+        if(!shadow||!shadow.playing) return;
+        shadow.si++;
+        if(shadow.si>=cur.items.length){ shadow.si=0; shadow.fi=(shadow.fi+1)%shadow.list.length; }
+        shadowRender(); step();
+      }, gapMs);
+    };
+    shdSpeak(it.en, c.rate, after);
+  };
+  step();
+}
+/* 잠금화면·이어폰 버튼에서 보이게 — 화면을 안 볼 때 뭘 듣는지 알 수 있다 */
+function shdMedia(frame, line){
+  if(!("mediaSession" in navigator)) return;
+  try{
+    navigator.mediaSession.metadata=new MediaMetadata({title:line, artist:frame, album:"3초영어 · 쉐도잉"});
+    navigator.mediaSession.setActionHandler("play", ()=>shadowPlay());
+    navigator.mediaSession.setActionHandler("pause", ()=>shadowPause());
+    navigator.mediaSession.setActionHandler("previoustrack", ()=>shadowStep(-1));
+    navigator.mediaSession.setActionHandler("nexttrack", ()=>shadowStep(1));
+  }catch(e){}
+}
 function startTravelDrill(count, skipGuide){
   /* 처음 오는 사람은 규칙부터 알고 시작해야 한다 — 답이 보이는 이유를 모르면 오해한다 */
   if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true)); return; }
@@ -15722,12 +15872,14 @@ function startAutoDrill(focusIds){
        <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">🔁 반복 학습</div>
        <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">일반 반복은 배운 블록이 하나는 있어야 해요. 여행 집중은 지금 바로 할 수 있어요.</div>
        <button id="adGoBlock" style="width:100%;padding:15px;border:none;border-radius:14px;background:#fff;border:2px solid #C7E8DA;color:#3A2D27;font-size:15px;font-weight:900;cursor:pointer;margin-bottom:9px">새 블록 배우기</button>
-       <button id="adGoTravel" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">✈️ 여행 집중 — 핵심 25표현</button>
+       <button id="adGoTravel" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">✈️ 여행 집중 — 핵심 ${TRAVEL_FRAMES.length}표현</button>
+       <button id="adGoShadow" style="width:100%;margin-top:9px;padding:15px;border:1.5px solid #C7E8DA;border-radius:14px;background:#fff;color:#3A2D27;font-size:14.5px;font-weight:800;cursor:pointer">🎧 듣고 따라하기 — 손 안 대고 쉐도잉</button>
      </div>`;
     document.body.appendChild(ov0);
     ov0.querySelector(".hub-bg").onclick=()=>ov0.remove();
     ov0.querySelector("#adGoBlock").onclick=()=>{ ov0.remove(); bleOpenHub(); };
     ov0.querySelector("#adGoTravel").onclick=()=>{ ov0.remove(); startTravelDrill(); };
+    try{ ov0.querySelector("#adGoShadow").onclick=()=>{ ov0.remove(); shadowOpen(); }; }catch(e){}
     requestAnimationFrame(()=>ov0.classList.add("show"));
     return;
   }
@@ -15747,6 +15899,7 @@ function startAutoDrill(focusIds){
      </div>
      <div style="border-top:1px solid #D9CEC6;margin:12px 0 10px"></div>
      <button id="adCntTravel" style="width:100%;padding:14px;border:2px solid #189E79;border-radius:14px;background:#fff;color:#189E79;font-size:14.5px;font-weight:950;cursor:pointer">✈️ 여행 집중 — 핵심 표현 <span id="adTvProg">0 / ${TRAVEL_FRAMES.length}</span></button>
+     <button id="adCntShadow" style="width:100%;margin-top:8px;padding:14px;border:1.5px solid #C7E8DA;border-radius:14px;background:#fff;color:#3A2D27;font-size:14px;font-weight:800;cursor:pointer">🎧 듣고 따라하기 — 손 안 대고 쉐도잉</button>
    </div>`;
   document.body.appendChild(ov);
   const closeOv=()=>ov.remove();
@@ -15754,6 +15907,7 @@ function startAutoDrill(focusIds){
   const go=(n)=>{ n=Math.max(3,Math.min(30,Math.round(n)||10)); try{ hSet("speakingroom:ad_count",n); }catch(e){} closeOv(); startAutoDrillRun(blocks,n); };
   ov.querySelectorAll(".adCntBtn").forEach(b=>{ b.onclick=()=>go(parseInt(b.getAttribute("data-n"),10)); });
   try{ const tp=ov.querySelector("#adTvProg"); if(tp) tp.textContent=travelSeenCount()+" / "+TRAVEL_FRAMES.length; }catch(e){}
+  try{ const sh=ov.querySelector("#adCntShadow"); if(sh) sh.onclick=()=>{ ov.remove(); shadowOpen(); }; }catch(e){}
   const tv=ov.querySelector("#adCntTravel");
   if(tv) tv.onclick=()=>{ closeOv(); startTravelDrill(hGet("speakingroom:ad_count",10)||10); };
   const inp=ov.querySelector("#adCntIn");
@@ -18938,12 +19092,14 @@ function autoDrillDone(){
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="routine-main" id="autoAgain" style="margin:0">${isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"}</button>
       <button class="auto-sub" id="autoOther">${isTravel?"일반 반복학습 하기":"✈️ 여행 표현 하기"}</button>
+      ${isTravel?`<button class="auto-sub" id="autoShadow">🎧 듣고 따라하기</button>`:""}
       ${isTravel?`<button class="auto-sub" id="autoTvGuide" style="font-size:12.5px">✈️ 여행팩 안내 다시 보기</button>`:""}
       <button class="auto-sub" id="autoHome">홈으로</button>
     </div>
   </div>`;
   $("#autoAgain").onclick=()=>{ autoDrill=null; if(isTravel) startTravelDrill(); else startAutoDrill(); };
   $("#autoOther").onclick=()=>{ autoDrill=null; if(isTravel) startAutoDrill(); else startTravelDrill(); };
+  if($("#autoShadow")) $("#autoShadow").onclick=()=>{ autoDrill=null; shadowOpen(); };
   if($("#autoTvGuide")) $("#autoTvGuide").onclick=()=>travelGuideShow(()=>{ autoDrill=null; startTravelDrill(undefined,true); });
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
