@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.200";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.201";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15765,30 +15765,30 @@ function startTravelDrill(count, skipGuide, skipPick){
 const TRAVEL_REACT={
   "travel_can_i_get":[
     {cue:"I'm sorry, housekeeping only left one towel in your room.", en:"Can I get another towel?", ko:"호텔 방에 수건이 부족하다. 하나 더 요청해라."},
-    {cue:"The next boat leaves at two. Tickets are available right here.", en:"Can I get two tickets, please?", ko:"선착장에서 표 두 장을 사고 싶다."},
-    {cue:"Here's your table. Let me know if you need anything.", en:"Can I get some water, please?", ko:"식당에서 물을 요청해라."},
-    {cue:"I hope you enjoyed your meal.", en:"Can I get the bill, please?", ko:"식사가 끝났다. 계산서를 요청해라."},
+    {cue:"The next boat leaves at two. How many tickets do you need?", en:"Can I get two tickets, please?", ko:"선착장에서 표 두 장을 사고 싶다."},
+    {cue:"Here's your table. Would you like something to drink first?", en:"Can I get some water, please?", ko:"식당에서 물을 요청해라."},
+    {cue:"I hope you enjoyed your meal. Are you all finished here?", en:"Can I get the bill, please?", ko:"식사가 끝났다. 계산서를 요청해라."},
     {cue:"We still have aisle and window seats available.", en:"Can I get a window seat?", ko:"공항 체크인 중이다. 창가 좌석을 요청해라."}
   ],
   "travel_can_you":[
-    {cue:"Where would you like to go?", en:"Can you take me to the airport?", ko:"택시 기사에게 공항으로 가달라고 해라."},
-    {cue:"The pickup is at seven fifteen by the east entrance, next to the coffee shop.", en:"Can you speak more slowly?", ko:"상대가 너무 빨리 말한다. 천천히 말해달라고 해라."},
+    {cue:"Taxi! Where to? The airport is about forty minutes from here.", en:"Can you take me to the airport?", ko:"택시 기사에게 공항으로 가달라고 해라."},
+    {cue:"The bus number is one-six-four and it leaves from bay twenty-two at four fifty.", en:"Can you speak more slowly?", ko:"상대가 너무 빨리 말한다. 천천히 말해달라고 해라."},
     {cue:"That bag looks really heavy.", en:"Can you help me with this bag?", ko:"짐이 무겁다. 들어주는 것을 부탁해라."},
-    {cue:"We're almost at your hotel.", en:"Can you stop here, please?", ko:"택시에서 내릴 곳에 도착했다."},
-    {cue:"Go left at the bank, then turn right after the pharmacy.", en:"Can you show me on the map?", ko:"길 설명이 어렵다. 지도에 보여달라고 해라."}
+    {cue:"We're almost there. Should I drop you at the door or before the corner?", en:"Can you stop here, please?", ko:"택시에서 내릴 곳에 도착했다."},
+    {cue:"Go left at the bank, then right after the pharmacy. Do you have a map?", en:"Can you show me on the map?", ko:"길 설명이 어렵다. 지도에 보여달라고 해라."}
   ],
   "travel_can_i_we":[
     {cue:"Check-in normally starts at three, but your room is ready now.", en:"Can I check in now?", ko:"호텔에 일찍 도착했다. 지금 체크인 가능한지 물어라."},
-    {cue:"You can choose any open table.", en:"Can we sit here?", ko:"식당에 빈자리가 있다. 여기에 앉아도 되는지 물어라."},
+    {cue:"Come in. You can sit at any open table.", en:"Can we sit here?", ko:"식당에 빈자리가 있다. 여기에 앉아도 되는지 물어라."},
     {cue:"The restroom is for customers only.", en:"Can I use the bathroom?", ko:"화장실을 사용해도 되는지 물어라."},
     {cue:"The tour is leaving in about five minutes.", en:"Can we still join the tour?", ko:"투어 출발이 얼마 안 남았다. 아직 참가 가능한지 물어라."},
     {cue:"Photography is allowed in some areas.", en:"Can I take a photo here?", ko:"관광지에서 사진을 찍어도 되는지 물어라."}
   ],
   "travel_do_you_have":[
     {cue:"We may still have a few rooms left tonight.", en:"Do you have a room available?", ko:"예약 없이 호텔에 왔다. 빈방이 있는지 물어라."},
-    {cue:"That shirt looks a little loose on you.", en:"Do you have a smaller size?", ko:"옷이 너무 크다. 더 작은 사이즈가 있는지 물어라."},
+    {cue:"That shirt looks a little big on you. How does it fit?", en:"Do you have a smaller size?", ko:"옷이 너무 크다. 더 작은 사이즈가 있는지 물어라."},
     {cue:"Most of our dishes contain meat or seafood.", en:"Do you have any vegetarian options?", ko:"식당에서 채식 메뉴가 있는지 물어라."},
-    {cue:"You can work from the café if you want.", en:"Do you have Wi-Fi?", ko:"카페에서 와이파이가 있는지 물어라."},
+    {cue:"Feel free to work here at the cafe. There's a power outlet at every table.", en:"Do you have Wi-Fi?", ko:"카페에서 와이파이가 있는지 물어라."},
     {cue:"The total is twelve ringgit, and I can see you only have a fifty.", en:"Do you have change for fifty?", ko:"큰 지폐밖에 없다. 잔돈이 있는지 물어라."}
   ],
   "travel_where_is":[
@@ -15801,19 +15801,19 @@ const TRAVEL_REACT={
   "travel_how_do_i_get_to":[
     {cue:"Your hotel is in the city center.", en:"How do I get to the hotel?", ko:"공항에서 호텔로 가는 방법을 물어라."},
     {cue:"The boats to the islands leave from the jetty.", en:"How do I get to the jetty?", ko:"섬으로 가기 위해 선착장 가는 방법을 물어라."},
-    {cue:"Your flight is tomorrow morning.", en:"How do I get to the airport?", ko:"호텔에서 공항 가는 방법을 물어라."},
+    {cue:"Your flight is tomorrow morning. Have you arranged transport to the airport?", en:"How do I get to the airport?", ko:"호텔에서 공항 가는 방법을 물어라."},
     {cue:"Most shops and restaurants are downtown.", en:"How do I get to the city center?", ko:"숙소에서 시내 중심가로 가는 방법을 물어라."},
     {cue:"The night market is very popular in the evening.", en:"How do I get to the night market?", ko:"저녁에 야시장 가는 방법을 물어라."}
   ],
   "travel_how_long":[
     {cue:"Traffic to the airport is usually okay at this time.", en:"How long does it take to get to the airport?", ko:"호텔에서 공항까지 얼마나 걸리는지 물어라."},
-    {cue:"The island is not very far from here.", en:"How long does it take by boat?", ko:"배로 섬까지 가는 시간이 궁금하다."},
-    {cue:"We just need your passport and a deposit for check-in.", en:"How long does it take to check in?", ko:"호텔 체크인 절차 시간이 궁금하다."},
+    {cue:"The island is not far. The boat goes straight there.", en:"How long does it take by boat?", ko:"배로 섬까지 가는 시간이 궁금하다."},
+    {cue:"For check-in we just need your passport and a signature.", en:"How long does it take to check in?", ko:"호텔 체크인 절차 시간이 궁금하다."},
     {cue:"You can walk there from here.", en:"How long does it take to walk there?", ko:"목적지까지 걸어가는 시간이 궁금하다."},
     {cue:"The island is straight across from the jetty.", en:"How long does it take to get to the island?", ko:"이곳에서 섬까지 가는 시간이 궁금하다."}
   ],
   "travel_what_time_does":[
-    {cue:"Your tour is tomorrow morning.", en:"What time does the tour start?", ko:"투어가 몇 시에 시작하는지 물어라."},
+    {cue:"Your island tour is tomorrow. I'll write the details on your voucher.", en:"What time does the tour start?", ko:"투어가 몇 시에 시작하는지 물어라."},
     {cue:"The boat runs several times a day.", en:"What time does the boat leave?", ko:"배가 몇 시에 출발하는지 물어라."},
     {cue:"Breakfast is served downstairs.", en:"What time does breakfast start?", ko:"호텔 조식이 몇 시에 시작하는지 물어라."},
     {cue:"Be careful not to miss the last ferry.", en:"What time does the last ferry leave?", ko:"마지막 페리가 몇 시에 출발하는지 물어라."},
@@ -15821,9 +15821,9 @@ const TRAVEL_REACT={
   ],
   "travel_what_time_need":[
     {cue:"The driver will pick your group up from the hotel lobby.", en:"What time do we need to be in the lobby?", ko:"투어 픽업을 위해 로비에 몇 시까지 있어야 하는지 물어라."},
-    {cue:"Your flight is at ten tomorrow morning.", en:"What time do we need to leave the hotel?", ko:"공항에 가려면 호텔에서 몇 시에 출발해야 하는지 물어라."},
+    {cue:"Your flight is at ten tomorrow. The airport is about an hour from the hotel.", en:"What time do we need to leave the hotel?", ko:"공항에 가려면 호텔에서 몇 시에 출발해야 하는지 물어라."},
     {cue:"Please remember that check-out is tomorrow.", en:"What time do we need to check out?", ko:"체크아웃 시간이 궁금하다."},
-    {cue:"International flights can be busy in the morning.", en:"What time do we need to be at the airport?", ko:"비행기 때문에 공항에 몇 시까지 가야 하는지 물어라."},
+    {cue:"For international flights, the check-in desk closes well before departure.", en:"What time do we need to be at the airport?", ko:"비행기 때문에 공항에 몇 시까지 가야 하는지 물어라."},
     {cue:"The guide will meet your group before the boat leaves.", en:"What time do we need to meet the guide?", ko:"가이드를 몇 시에 만나야 하는지 물어라."}
   ],
   "travel_do_i_need_to":[
@@ -15834,11 +15834,11 @@ const TRAVEL_REACT={
     {cue:"We sent the ticket to your phone.", en:"Do I need to print the ticket?", ko:"전자표가 있다. 종이로 출력해야 하는지 물어라."}
   ],
   "travel_is_included":[
-    {cue:"The room rate is one hundred and eighty ringgit.", en:"Is breakfast included?", ko:"호텔 요금에 아침 식사가 포함인지 물어라."},
-    {cue:"The snorkeling package is one hundred ringgit per person.", en:"Is snorkeling gear included?", ko:"투어에 스노클링 장비가 포함인지 물어라."},
+    {cue:"The room rate is one hundred and eighty ringgit, and the restaurant opens at seven.", en:"Is breakfast included?", ko:"호텔 요금에 아침 식사가 포함인지 물어라."},
+    {cue:"The snorkeling trip is one hundred ringgit. Just bring a towel and sunscreen.", en:"Is snorkeling gear included?", ko:"투어에 스노클링 장비가 포함인지 물어라."},
     {cue:"The tour starts from your hotel area.", en:"Is hotel pickup included?", ko:"호텔 픽업이 투어 가격에 포함인지 물어라."},
-    {cue:"We'll stop at an island around noon.", en:"Is lunch included?", ko:"점심이 투어에 포함인지 물어라."},
-    {cue:"The price on the sign is one hundred ringgit.", en:"Is tax included?", ko:"세금이 표시 가격에 포함인지 물어라."}
+    {cue:"We'll stop at an island around noon and take a break for about an hour.", en:"Is lunch included?", ko:"점심이 투어에 포함인지 물어라."},
+    {cue:"The price on the sign is one hundred ringgit, but the final amount can be a little higher.", en:"Is tax included?", ko:"세금이 표시 가격에 포함인지 물어라."}
   ],
   "travel_how_much":[
     {cue:"This tour includes two islands and lunch.", en:"How much is this tour?", ko:"투어 가격을 물어라."},
@@ -15863,31 +15863,31 @@ const TRAVEL_REACT={
   ],
   "travel_can_i_leave":[
     {cue:"Check-out is now, but your flight is tonight.", en:"Can I leave my bags here?", ko:"체크아웃 후 짐을 호텔에 맡겨도 되는지 물어라."},
-    {cue:"You can stay in the lobby for a while.", en:"Can I leave my suitcase here for a while?", ko:"큰 여행가방 하나를 잠깐 맡겨도 되는지 물어라."},
+    {cue:"You're welcome to wait in the lobby, but that big suitcase is in the way.", en:"Can I leave my suitcase here for a while?", ko:"큰 여행가방 하나를 잠깐 맡겨도 되는지 물어라."},
     {cue:"There's a storage area behind the front desk.", en:"Can I leave my backpack here?", ko:"백팩을 프런트에 맡겨도 되는지 물어라."},
     {cue:"We'll be here until ten tonight.", en:"Can I leave my luggage here until this evening?", ko:"짐을 저녁까지 맡겨도 되는지 물어라."},
     {cue:"The equipment area will stay open for another hour.", en:"Can I leave my gear here for a bit?", ko:"젖은 장비를 이곳에 잠시 둬도 되는지 물어라."}
   ],
   "travel_problem_with":[
-    {cue:"How is everything in your room?", en:"There's a problem with the air conditioner.", ko:"객실 에어컨이 제대로 작동하지 않는다."},
+    {cue:"How is everything in your room? It gets quite warm in the afternoon.", en:"There's a problem with the air conditioner.", ko:"객실 에어컨이 제대로 작동하지 않는다."},
     {cue:"Was the shower okay?", en:"There's a problem with the shower.", ko:"샤워기 상태가 이상하다."},
     {cue:"Your key card should open the door.", en:"There's a problem with my key card.", ko:"객실 키카드가 작동하지 않는다."},
     {cue:"Here's your bill. Please check it before you pay.", en:"There's a problem with the bill.", ko:"계산서 금액이 이상하다."},
-    {cue:"I have you booked for one night in a twin room.", en:"There's a problem with my reservation.", ko:"예약 내용이 내가 신청한 것과 다르다."}
+    {cue:"I have you booked for one night in a twin room. Is that what you reserved?", en:"There's a problem with my reservation.", ko:"예약 내용이 내가 신청한 것과 다르다."}
   ],
   "travel_cant_find":[
-    {cue:"I'm waiting outside the main entrance.", en:"I can't find my driver.", ko:"Grab 기사를 못 찾고 있다."},
+    {cue:"This is your Grab driver. I'm waiting outside the main entrance.", en:"I can't find my driver.", ko:"Grab 기사를 못 찾고 있다."},
     {cue:"Boarding has started at your gate.", en:"I can't find my gate.", ko:"공항 게이트를 못 찾고 있다."},
     {cue:"May I see your passport, please?", en:"I can't find my passport.", ko:"여권이 보이지 않는다."},
     {cue:"Please tap your room key on the door.", en:"I can't find my room key.", ko:"객실 키를 어디 뒀는지 모르겠다."},
     {cue:"Everyone should be at the meeting point by eight.", en:"I can't find the meeting point.", ko:"투어 집결 장소를 못 찾고 있다."}
   ],
   "travel_think_i_left":[
-    {cue:"You get out of the taxi and realize your phone is missing.", en:"I think I left my phone in the taxi.", ko:"택시에서 내린 뒤 휴대폰이 없다."},
-    {cue:"You get off the boat and notice your bag is gone.", en:"I think I left my bag on the boat.", ko:"보트에서 내린 뒤 가방이 없다."},
-    {cue:"You leave the hotel and realize your passport isn't with you.", en:"I think I left my passport in the room.", ko:"호텔을 나온 뒤 여권이 없다."},
-    {cue:"You leave the restaurant and notice your wallet is missing.", en:"I think I left my wallet at the restaurant.", ko:"식당을 나온 뒤 지갑이 없다."},
-    {cue:"You walk away from the pool and realize your sunglasses are gone.", en:"I think I left my sunglasses by the pool.", ko:"수영장을 나온 뒤 선글라스가 없다."}
+    {cue:"You get out of the taxi and realize your phone is missing.", en:"I think I left my phone in the taxi.", ko:"택시에서 내린 뒤 휴대폰이 없다.", kind:"scene"},
+    {cue:"You get off the boat and notice your bag is gone.", en:"I think I left my bag on the boat.", ko:"보트에서 내린 뒤 가방이 없다.", kind:"scene"},
+    {cue:"You leave the hotel and realize your passport isn't with you.", en:"I think I left my passport in the room.", ko:"호텔을 나온 뒤 여권이 없다.", kind:"scene"},
+    {cue:"You leave the restaurant and notice your wallet is missing.", en:"I think I left my wallet at the restaurant.", ko:"식당을 나온 뒤 지갑이 없다.", kind:"scene"},
+    {cue:"You walk away from the pool and realize your sunglasses are gone.", en:"I think I left my sunglasses by the pool.", ko:"수영장을 나온 뒤 선글라스가 없다.", kind:"scene"}
   ],
   "travel_does_that_mean":[
     {cue:"Sorry, the kitchen is already closed.", en:"Does that mean I can't order?", ko:"마감시간이 지났다고 한다. 그럼 주문을 못 하는지 확인해라."},
@@ -15899,7 +15899,7 @@ const TRAVEL_REACT={
   "travel_say_again_slowly":[
     {cue:"The pickup point is beside the east entrance, opposite the café, at seven fifteen.", en:"Could you say that again, more slowly?", ko:"상대가 너무 빨리 말했다."},
     {cue:"Your room is twelve-oh-eight on the twelfth floor.", en:"Could you say the room number again, more slowly?", ko:"객실 번호를 너무 빨리 들었다."},
-    {cue:"Pickup is at six forty-five tomorrow morning.", en:"Could you say the pickup time again, more slowly?", ko:"픽업 시간을 제대로 못 들었다."},
+    {cue:"Your driver will call your room at six forty-five tomorrow morning.", en:"Could you say the pickup time again, more slowly?", ko:"픽업 시간을 제대로 못 들었다."},
     {cue:"Your guide's name is Daniel Rahman.", en:"Could you say the name again, more slowly?", ko:"사람 이름을 제대로 못 들었다."},
     {cue:"After lunch, go back to the pier and wait next to the blue sign.", en:"Could you say that last part again, more slowly?", ko:"마지막 설명 부분을 놓쳤다."}
   ],
@@ -15911,17 +15911,17 @@ const TRAVEL_REACT={
     {cue:"You only have one free day in Kota Kinabalu.", en:"What do you recommend for a day trip?", ko:"하루 일정으로 할 만한 것을 추천받고 싶다."}
   ],
   "travel_can_we_change":[
-    {cue:"Your island tour is booked for Tuesday.", en:"Can we change the date?", ko:"투어 날짜를 바꿀 수 있는지 물어라."},
+    {cue:"Your island tour is booked for Tuesday, but the forecast says rain that day.", en:"Can we change the date?", ko:"투어 날짜를 바꿀 수 있는지 물어라."},
     {cue:"Your room is on the street side.", en:"Can we change the room?", ko:"객실을 바꿀 수 있는지 물어라."},
     {cue:"Your pickup is scheduled for six in the morning.", en:"Can we change the pickup time?", ko:"픽업 시간을 바꿀 수 있는지 물어라."},
     {cue:"Your seats are eighteen B and eighteen C.", en:"Can we change our seats?", ko:"좌석을 바꿀 수 있는지 물어라."},
-    {cue:"I have your booking details here.", en:"Can we change the reservation?", ko:"예약 내용을 바꿀 수 있는지 물어라."}
+    {cue:"I have your booking details here. Is everything correct, or do you need anything adjusted?", en:"Can we change the reservation?", ko:"예약 내용을 바꿀 수 있는지 물어라."}
   ],
   "travel_is_this_right":[
     {cue:"This bus goes toward the airport area.", en:"Is this the right bus to the airport?", ko:"공항으로 가는 버스가 맞는지 확인해라."},
     {cue:"This boat is boarding now for Mengalum.", en:"Is this the right boat to Mengalum?", ko:"멍알룸으로 가는 배가 맞는지 확인해라."},
     {cue:"Check-in is at one of the lines over there.", en:"Is this the right line for check-in?", ko:"체크인 줄이 맞는지 확인해라."},
-    {cue:"You arrive at gate C twelve and want to make sure you're in the right place.", en:"Is this the right gate for my flight?", ko:"내 비행기 탑승 게이트가 맞는지 확인해라."},
+    {cue:"You arrive at gate C twelve and want to make sure you're in the right place.", en:"Is this the right gate for my flight?", ko:"내 비행기 탑승 게이트가 맞는지 확인해라.", kind:"scene"},
     {cue:"Boats to Gaya Island leave from this side of the jetty.", en:"Is this the right pier for Gaya Island?", ko:"가야섬으로 가는 선착장이 맞는지 확인해라."}
   ],
   "travel_where_meet":[
@@ -15941,13 +15941,13 @@ const TRAVEL_REACT={
   "travel_id_like_to":[
     {cue:"Welcome to the hotel. How can I help you?", en:"I'd like to check in.", ko:"호텔에 도착했다. 체크인하고 싶다고 말해라."},
     {cue:"We have several island tours available tomorrow.", en:"I'd like to book an island tour for tomorrow.", ko:"내일 섬 투어를 예약하고 싶다고 말해라."},
-    {cue:"Your pickup is currently set for six in the morning.", en:"I'd like to change the pickup time.", ko:"예약한 픽업 시간을 변경하고 싶다고 말해라."},
+    {cue:"Good morning. Your airport pickup is booked for five a.m. — quite early.", en:"I'd like to change the pickup time.", ko:"예약한 픽업 시간을 변경하고 싶다고 말해라."},
     {cue:"Masks, snorkels, and fins are available for rent.", en:"I'd like to rent snorkeling gear.", ko:"스노클링 장비를 빌리고 싶다고 말해라."},
     {cue:"Your reservation ends tomorrow morning.", en:"I'd like to extend my stay.", ko:"호텔에서 하루 더 머물고 싶다고 말해라."}
   ],
   "travel_is_there":[
     {cue:"You can get cash before heading to the islands.", en:"Is there an ATM nearby?", ko:"근처에 ATM이 있는지 물어라."},
-    {cue:"There are a few public facilities around this area.", en:"Is there a restroom near here?", ko:"이 근처에 화장실이 있는지 물어라."},
+    {cue:"We'll be walking for about an hour before the next stop.", en:"Is there a restroom near here?", ko:"이 근처에 화장실이 있는지 물어라."},
     {cue:"Late checkout is possible until two.", en:"Is there an extra charge for late checkout?", ko:"늦은 체크아웃에 추가요금이 있는지 물어라."},
     {cue:"There are several boats running today.", en:"Is there a ferry this afternoon?", ko:"오늘 오후 운항하는 페리가 있는지 물어라."},
     {cue:"Check-out is at noon, but you can stay in the lobby.", en:"Is there a place to leave our bags?", ko:"체크아웃 후 짐을 맡길 장소가 있는지 물어라."}
@@ -15974,11 +15974,6 @@ const TRAVEL_REACT={
     {cue:"There is a minimum spend of fifty ringgit per person.", en:"What does minimum spend mean?", ko:"minimum spend라는 표현의 뜻을 물어라."}
   ]
 };
-/* ===================== ⚡ 실전 반응 — 상대의 영어를 듣고 바로 답하기 =====================
-   여행 표현 반복과 같은 엔진(채점·점수·재출제·루틴)을 그대로 쓴다.
-   딱 하나만 다르다: 한글 상황 설명 대신 '상대가 실제로 하는 영어'를 들려주고,
-   그 말에 대한 대답을 목표 프레임으로 꺼내게 한다.
-   진행 기록은 여행팩과 따로 쌓는다 — 같은 프레임이라도 '보고 말하기'와 '듣고 답하기'는 다른 능력이다. */
 const REACT_KEY="speakingroom:travelreact";
 const RX_FRAMES=TRAVEL_FRAMES.filter(f=>Array.isArray(TRAVEL_REACT[f.id]) && TRAVEL_REACT[f.id].length);
 function rxAll(){ try{ return hGet(REACT_KEY,{})||{}; }catch(e){ return {}; } }
@@ -16058,7 +16053,7 @@ function rxBuildItems(count){
     return { _travel:true, _react:true, frame:f,
       block:{ id:f.id, block:f.frame, meaningKo:f.ko },
       ex:{ en:pick.en, ko:f.ko, situation:"⚡ "+f.purpose },
-      cue:pick.cue, cueKo:pick.ko,
+      cue:pick.cue, cueKo:pick.ko, kind:pick.kind||"say",
       limit:limits[0], rep:1, recall:false, discriminate:false };
   });
   rxSave(o);
@@ -16070,9 +16065,10 @@ function rxReadMs(it){
   const w=String((it&&it.cue)||"").trim().split(/\s+/).filter(Boolean).length;
   return Math.max(3500, Math.min(11000, Math.round(w*420)+2000));
 }
-/* 어떤 문항은 상대가 하는 말이고, 어떤 문항은 영어로 쓴 장면 설명이다 — 이름을 다르게 붙인다 */
+/* 어떤 문항은 상대가 하는 말이고, 어떤 문항은 지금 벌어진 일이다 — 데이터에 적힌 대로 이름 붙인다.
+   ("You can sit at any open table."처럼 You 로 시작해도 상대가 하는 말인 경우가 있어 문장 모양으로 추측하면 틀린다) */
 function rxCueKind(it){
-  return /^\s*you\b/i.test(String((it&&it.cue)||"")) ? "📍 지금 상황" : "🔊 상대의 말";
+  return (it&&it.kind==="scene") ? "📍 지금 상황" : "🔊 상대의 말";
 }
 function rxSpeak(text, rate){
   try{
