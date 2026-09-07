@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>3초영어 · 한글 뜻 먼저 · 30프레임 150상황 실전 쉐도잉</title>
+<style>
+:root {
+ --bg:#0e1714;--card:#17231f;--card2:#1d2d27;--line:#2a4239;
+ --text:#f3faf7;--muted:#91ac9f;--jade:#45d8ad;--amber:#ffc76a;
+}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0a110f,#101a16);
+color:var(--text);font-family:system-ui,-apple-system,"Segoe UI","Noto Sans KR",sans-serif}
+.wrap{max-width:820px;margin:auto;padding:18px 15px 100px}
+h1{font-size:22px;margin:4px 0 3px} .sub{font-size:13px;line-height:1.55;color:var(--muted);margin-bottom:14px}
+.player{position:sticky;top:6px;z-index:10;background:linear-gradient(160deg,#1b2c25,#111a17);
+border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.32)}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.badge{font-size:11px;font-weight:900;color:var(--jade);letter-spacing:.08em}
+.counter{font-size:12px;color:var(--muted)}
+.frame{font-size:29px;line-height:1.15;font-weight:900;margin:13px 0 5px}
+.purpose{font-size:13px;color:var(--muted);margin-bottom:15px}
+.sit{padding:12px 13px;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:13px;
+font-size:13px;color:#c6d8d0;line-height:1.45;min-height:48px}
+.en{font-size:22px;font-weight:850;line-height:1.35;margin:13px 0 15px;min-height:60px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button,select{font:inherit}button{border:0;border-radius:13px;padding:12px 14px;font-weight:850;cursor:pointer}
+.main{background:var(--jade);color:#08130f;flex:1;min-width:160px} .sec{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.ctrl{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 10px}
+.ctrl label{display:block;font-size:10px;color:var(--muted);font-weight:900;margin-bottom:5px}
+select{width:100%;background:#0d1512;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px}
+.voicebox{margin-top:9px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.voicebox label{display:block;font-size:10px;font-weight:900;color:var(--muted);margin-bottom:5px}
+.voicebox select{width:100%}
+.options{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12px;margin-top:10px}
+.status{font-size:12px;font-weight:850;color:var(--amber);margin-top:9px}
+.note{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+.list{display:grid;gap:7px;margin-top:16px}
+.item{display:grid;grid-template-columns:30px 1fr 54px;gap:8px;align-items:center;padding:10px 11px;border-radius:12px;border:1px solid transparent;color:#bfd1c9}
+.item.active{background:var(--card2);border-color:#396a58;color:#fff}
+.no{font-size:11px;color:#698b7d;text-align:right} .itf{font-weight:780;font-size:13px} .mini{font-size:10px;color:var(--muted);text-align:right}
+@media(max-width:560px){.frame{font-size:25px}.en{font-size:20px}.controls{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎧 30프레임 · 150상황 실전 쉐도잉</h1>
+<div class="sub">기본값으로 30개 프레임이 랜덤 순서로 섞여 나옵니다. 영어는 미국 영어(en-US) 목소리를 상황마다 바꿔서 재생합니다. 프레임 시작마다 한글 뜻을 먼저 듣고 → 머리에서 영어를 떠올린 뒤 → 영어 프레임으로 확인 → 실제 상황 5개를 쉐도잉합니다.</div>
+
+<section class="player">
+ <div class="top"><div class="badge" id="frameCount">FRAME 1 / 30</div><div class="counter" id="itemCount">상황 1 / 5</div></div>
+ <div class="frame" id="frame"></div>
+ <div class="purpose" id="purpose"></div>
+ <div id="introKo" style="font-size:13px;line-height:1.45;color:#d8e8e1;background:rgba(69,216,173,.07);border:1px solid rgba(69,216,173,.18);border-radius:11px;padding:9px 11px;margin:-4px 0 10px"></div>
+ <div class="sit" id="sit"></div>
+ <div class="en" id="en"></div>
+
+ <div class="row">
+   <button class="main" id="play">▶ 계속 재생</button>
+   <button class="sec" id="prev">← 이전</button>
+   <button class="sec" id="next">다음 →</button>
+   <button class="sec" id="test">🔊 현재 문장</button>
+ </div>
+
+ <div class="controls">
+   <div class="ctrl"><label>문장 반복</label><select id="reps">
+     <option value="1">1회</option><option value="2" selected>2회</option><option value="3">3회</option>
+   </select></div>
+   <div class="ctrl"><label>말하기 속도</label><select id="rate">
+     <option value="0.85">천천히 0.85</option><option value="0.92">연습 0.92</option>
+     <option value="0.97" selected>실전 0.97</option><option value="1">자연 1.00</option>
+   </select></div>
+   <div class="ctrl"><label>반복 사이</label><select id="gap">
+     <option value="350">0.35초</option><option value="650" selected>0.65초</option><option value="1000">1초</option>
+   </select></div>
+   <div class="ctrl"><label>따라 말할 여백</label><select id="shadowGap">
+     <option value="1200">1.2초</option><option value="1800">1.8초</option>
+     <option value="2400" selected>2.4초</option><option value="3200">3.2초</option>
+   </select></div>
+ </div>
+
+ <div class="voicebox">
+   <label>영어 음성 · 미국 영어(en-US) 여러 목소리 랜덤</label>
+   <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;color:var(--muted);font-size:12px">
+     <label style="margin:0"><input type="checkbox" id="randomVoice" checked> 상황마다 다른 미국 영어 목소리</label>
+   </div>
+   <select id="voice"></select>
+ </div>
+ <div class="voicebox">
+   <label>한글 음성 · Natural / SunHi / Yuna / Google 한국어가 있으면 우선 추천</label>
+   <select id="koVoice"></select>
+ </div>
+
+ <div class="options">
+   <label><input type="checkbox" id="introOn" checked> 한글 뜻 → 영어 프레임 1회</label>
+   <label><input type="checkbox" id="shuffleFrames" checked> 프레임 순서 섞기</label>
+   <label><input type="checkbox" id="shuffleItems"> 5상황 순서 섞기</label>
+   <label><input type="checkbox" id="loop" checked> 계속 반복</label>
+ </div>
+ <div class="status" id="status">대기 중</div>
+ <div class="note">※ 기본값은 <b>미국 영어(en-US) 화자 랜덤</b>입니다. 같은 상황의 반복 2회는 같은 목소리로 들려주고, 다음 상황에서 다른 목소리로 바뀝니다. 직전 화자는 연속으로 나오지 않게 했습니다. 브라우저에 Natural / Aria / Jenny / Google US English 계열이 있으면 더 자주 선택됩니다.</div>
+</section>
+
+<div class="list" id="list"></div>
+</div>
+
+<script>
+const DATA=[{"frame":"Can I get ~?","purpose":"받거나 주문하기","items":[["호텔 방에 수건이 부족하다. 하나 더 요청해라.","Can I get another towel?"],["선착장에서 표 두 장을 사고 싶다.","Can I get two tickets, please?"],["식당에서 물을 요청해라.","Can I get some water, please?"],["식사가 끝났다. 계산서를 요청해라.","Can I get the bill, please?"],["공항 체크인 중이다. 창가 좌석을 요청해라.","Can I get a window seat?"]],"introEn":"Can I get","introKo":"~ 줄 수 있나요?"},{"frame":"Can you ~?","purpose":"상대에게 행동 부탁","items":[["택시 기사에게 공항으로 가달라고 해라.","Can you take me to the airport?"],["상대가 너무 빨리 말한다. 천천히 말해달라고 해라.","Can you speak more slowly?"],["짐이 무겁다. 들어주는 것을 부탁해라.","Can you help me with this bag?"],["택시에서 내릴 곳에 도착했다.","Can you stop here, please?"],["길 설명이 어렵다. 지도에 보여달라고 해라.","Can you show me on the map?"]],"introEn":"Can you","introKo":"~ 해줄 수 있나요?"},{"frame":"Can I / Can we ~?","purpose":"허락·가능 여부","items":[["호텔에 일찍 도착했다. 지금 체크인 가능한지 물어라.","Can I check in now?"],["식당에 빈자리가 있다. 여기에 앉아도 되는지 물어라.","Can we sit here?"],["화장실을 사용해도 되는지 물어라.","Can I use the bathroom?"],["투어 출발이 얼마 안 남았다. 아직 참가 가능한지 물어라.","Can we still join the tour?"],["관광지에서 사진을 찍어도 되는지 물어라.","Can I take a photo here?"]],"introEn":"Can I. Can we.","introKo":"~ 해도 될까요?"},{"frame":"Do you have ~?","purpose":"상대가 가진 것·옵션 확인","items":[["예약 없이 호텔에 왔다. 빈방이 있는지 물어라.","Do you have a room available?"],["옷이 너무 크다. 더 작은 사이즈가 있는지 물어라.","Do you have a smaller size?"],["식당에서 채식 메뉴가 있는지 물어라.","Do you have any vegetarian options?"],["카페에서 와이파이가 있는지 물어라.","Do you have Wi-Fi?"],["큰 지폐밖에 없다. 잔돈이 있는지 물어라.","Do you have change for fifty?"]],"introEn":"Do you have","introKo":"~ 있어요?"},{"frame":"Where is ~?","purpose":"장소 찾기","items":[["화장실을 찾고 있다.","Where is the restroom?"],["공항에서 체크인할 곳을 찾고 있다.","Where is the check-in counter?"],["투어 차량을 타는 곳을 찾고 있다.","Where is the pickup point?"],["비행기에서 내렸다. 짐 찾는 곳을 찾고 있다.","Where is baggage claim?"],["현금이 필요하다. 가장 가까운 ATM 위치를 물어라.","Where is the nearest ATM?"]],"introEn":"Where is","introKo":"~ 어디예요?"},{"frame":"How do I get to ~?","purpose":"가는 방법 묻기","items":[["공항에서 호텔로 가는 방법을 물어라.","How do I get to the hotel?"],["섬으로 가기 위해 선착장 가는 방법을 물어라.","How do I get to the jetty?"],["호텔에서 공항 가는 방법을 물어라.","How do I get to the airport?"],["숙소에서 시내 중심가로 가는 방법을 물어라.","How do I get to the city center?"],["저녁에 야시장 가는 방법을 물어라.","How do I get to the night market?"]],"introEn":"How do I get to","introKo":"~ 어떻게 가요?"},{"frame":"How long does it take?","purpose":"총 소요 시간","items":[["호텔에서 공항까지 얼마나 걸리는지 물어라.","How long does it take to get to the airport?"],["배로 섬까지 가는 시간이 궁금하다.","How long does it take by boat?"],["호텔 체크인 절차 시간이 궁금하다.","How long does it take to check in?"],["목적지까지 걸어가는 시간이 궁금하다.","How long does it take to walk there?"],["이곳에서 섬까지 가는 시간이 궁금하다.","How long does it take to get to the island?"]],"introEn":"How long does it take?","introKo":"얼마나 걸려요?"},{"frame":"What time does ~ start/leave?","purpose":"시작·출발 시각","items":[["투어가 몇 시에 시작하는지 물어라.","What time does the tour start?"],["배가 몇 시에 출발하는지 물어라.","What time does the boat leave?"],["호텔 조식이 몇 시에 시작하는지 물어라.","What time does breakfast start?"],["마지막 페리가 몇 시에 출발하는지 물어라.","What time does the last ferry leave?"],["스노클링 일정이 몇 시에 시작하는지 물어라.","What time does snorkeling start?"]],"introEn":"What time does","introKo":"몇 시에 시작해요? 몇 시에 출발해요?"},{"frame":"What time do we need to ~?","purpose":"언제까지 해야 하는지","items":[["투어 픽업을 위해 로비에 몇 시까지 있어야 하는지 물어라.","What time do we need to be in the lobby?"],["공항에 가려면 호텔에서 몇 시에 출발해야 하는지 물어라.","What time do we need to leave the hotel?"],["체크아웃 시간이 궁금하다.","What time do we need to check out?"],["비행기 때문에 공항에 몇 시까지 가야 하는지 물어라.","What time do we need to be at the airport?"],["가이드를 몇 시에 만나야 하는지 물어라.","What time do we need to meet the guide?"]],"introEn":"What time do we need to","introKo":"몇 시까지 해야 해요?"},{"frame":"Do I need to ~?","purpose":"필요 여부","items":[["인기 투어다. 미리 예약해야 하는지 물어라.","Do I need to book in advance?"],["투어에 여권을 가져가야 하는지 물어라.","Do I need to bring my passport?"],["지금 바로 결제해야 하는지 물어라.","Do I need to pay now?"],["보트에서 구명조끼를 꼭 입어야 하는지 물어라.","Do I need to wear a life jacket?"],["전자표가 있다. 종이로 출력해야 하는지 물어라.","Do I need to print the ticket?"]],"introEn":"Do I need to","introKo":"~ 해야 하나요?"},{"frame":"Is ~ included?","purpose":"포함 여부","items":[["호텔 요금에 아침 식사가 포함인지 물어라.","Is breakfast included?"],["투어에 스노클링 장비가 포함인지 물어라.","Is snorkeling gear included?"],["호텔 픽업이 투어 가격에 포함인지 물어라.","Is hotel pickup included?"],["점심이 투어에 포함인지 물어라.","Is lunch included?"],["세금이 표시 가격에 포함인지 물어라.","Is tax included?"]],"introEn":"Is this included?","introKo":"~ 포함인가요?"},{"frame":"How much is ~?","purpose":"가격 묻기","items":[["투어 가격을 물어라.","How much is this tour?"],["배표 한 장 가격을 물어라.","How much is a boat ticket?"],["공항까지 택시비가 얼마인지 물어라.","How much is a taxi to the airport?"],["객실 1박 가격을 물어라.","How much is the room per night?"],["스노클링 장비 대여료를 물어라.","How much is the snorkeling gear rental?"]],"introEn":"How much is this?","introKo":"~ 얼마예요?"},{"frame":"Can I pay by card?","purpose":"카드 결제","items":[["식당에서 카드 결제가 되는지 물어라.","Can I pay by card?"],["투어 요금을 카드로 내도 되는지 물어라.","Can I pay for the tour by card?"],["택시비를 카드로 결제 가능한지 물어라.","Can I pay the taxi fare by card?"],["호텔 보증금을 카드로 내도 되는지 물어라.","Can I pay the deposit by card?"],["이 가게에서 카드로 결제 가능한지 물어라.","Can I pay by card here?"]],"introEn":"Can I pay by card?","introKo":"카드로 결제해도 되나요?"},{"frame":"I have a reservation.","purpose":"예약 알리기","items":[["호텔 프런트에 예약했다고 말해라.","I have a reservation."],["내 이름으로 객실 예약이 있다고 말해라.","I have a reservation under my name."],["오늘 섬 투어 예약이 있다고 말해라.","I have a reservation for the island tour today."],["저녁 식당 예약이 있다고 말해라.","I have a reservation for dinner."],["공항 픽업 예약이 있다고 말해라.","I have a reservation for an airport pickup."]],"introEn":"I have a reservation.","introKo":"예약했어요."},{"frame":"Can I leave ~ here?","purpose":"물건 맡기기","items":[["체크아웃 후 짐을 호텔에 맡겨도 되는지 물어라.","Can I leave my bags here?"],["큰 여행가방 하나를 잠깐 맡겨도 되는지 물어라.","Can I leave my suitcase here for a while?"],["백팩을 프런트에 맡겨도 되는지 물어라.","Can I leave my backpack here?"],["짐을 저녁까지 맡겨도 되는지 물어라.","Can I leave my luggage here until this evening?"],["젖은 장비를 이곳에 잠시 둬도 되는지 물어라.","Can I leave my gear here for a bit?"]],"introEn":"Can I leave this here?","introKo":"~ 여기 맡겨도 될까요?"},{"frame":"There's a problem with ~.","purpose":"문제 알리기","items":[["객실 에어컨이 제대로 작동하지 않는다.","There's a problem with the air conditioner."],["샤워기 상태가 이상하다.","There's a problem with the shower."],["객실 키카드가 작동하지 않는다.","There's a problem with my key card."],["계산서 금액이 이상하다.","There's a problem with the bill."],["예약 내용이 내가 신청한 것과 다르다.","There's a problem with my reservation."]],"introEn":"There's a problem with","introKo":"~에 문제가 있어요."},{"frame":"I can't find ~.","purpose":"못 찾음 알리기","items":[["Grab 기사를 못 찾고 있다.","I can't find my driver."],["공항 게이트를 못 찾고 있다.","I can't find my gate."],["여권이 보이지 않는다.","I can't find my passport."],["객실 키를 어디 뒀는지 모르겠다.","I can't find my room key."],["투어 집결 장소를 못 찾고 있다.","I can't find the meeting point."]],"introEn":"I can't find","introKo":"~를 못 찾겠어요."},{"frame":"I think I left ~.","purpose":"두고 온 것 같다고 말하기","items":[["택시에서 내린 뒤 휴대폰이 없다.","I think I left my phone in the taxi."],["보트에서 내린 뒤 가방이 없다.","I think I left my bag on the boat."],["호텔을 나온 뒤 여권이 없다.","I think I left my passport in the room."],["식당을 나온 뒤 지갑이 없다.","I think I left my wallet at the restaurant."],["수영장을 나온 뒤 선글라스가 없다.","I think I left my sunglasses by the pool."]],"introEn":"I think I left","introKo":"~를 두고 온 것 같아요."},{"frame":"Does that mean ~?","purpose":"설명의 결과 확인","items":[["마감시간이 지났다고 한다. 그럼 주문을 못 하는지 확인해라.","Does that mean I can't order?"],["날씨가 안 좋아 배를 못 띄운다고 한다. 투어가 취소라는 뜻인지 확인해라.","Does that mean the tour is canceled?"],["조식은 별도라고 한다. 포함이 아니라는 뜻인지 확인해라.","Does that mean breakfast isn't included?"],["방이 아직 준비 안 됐다고 한다. 기다려야 한다는 뜻인지 확인해라.","Does that mean we have to wait?"],["장비는 별도라고 한다. 추가로 돈을 내야 하는지 확인해라.","Does that mean I need to pay extra?"]],"introEn":"Does that mean","introKo":"그럼 ~라는 뜻이에요?"},{"frame":"Could you say that again, more slowly?","purpose":"다시 천천히 요청","items":[["상대가 너무 빨리 말했다.","Could you say that again, more slowly?"],["객실 번호를 너무 빨리 들었다.","Could you say the room number again, more slowly?"],["픽업 시간을 제대로 못 들었다.","Could you say the pickup time again, more slowly?"],["사람 이름을 제대로 못 들었다.","Could you say the name again, more slowly?"],["마지막 설명 부분을 놓쳤다.","Could you say that last part again, more slowly?"]],"introEn":"Could you say that again, more slowly?","introKo":"다시 천천히 말해 주실래요?"},{"frame":"What do you recommend?","purpose":"추천 요청","items":[["식당 메뉴가 너무 많다. 추천을 부탁해라.","What do you recommend?"],["저녁 메뉴 추천을 부탁해라.","What do you recommend for dinner?"],["스노클링 장소 추천을 부탁해라.","What do you recommend for snorkeling?"],["아이와 함께 할 만한 것을 추천받고 싶다.","What do you recommend for kids?"],["하루 일정으로 할 만한 것을 추천받고 싶다.","What do you recommend for a day trip?"]],"introEn":"What do you recommend?","introKo":"뭘 추천해요?"},{"frame":"Can we change ~?","purpose":"변경 요청","items":[["투어 날짜를 바꿀 수 있는지 물어라.","Can we change the date?"],["객실을 바꿀 수 있는지 물어라.","Can we change the room?"],["픽업 시간을 바꿀 수 있는지 물어라.","Can we change the pickup time?"],["좌석을 바꿀 수 있는지 물어라.","Can we change our seats?"],["예약 내용을 바꿀 수 있는지 물어라.","Can we change the reservation?"]],"introEn":"Can we change","introKo":"~ 바꿀 수 있을까요?"},{"frame":"Is this the right ~?","purpose":"맞는지 확인","items":[["공항으로 가는 버스가 맞는지 확인해라.","Is this the right bus to the airport?"],["멍알룸으로 가는 배가 맞는지 확인해라.","Is this the right boat to Mengalum?"],["체크인 줄이 맞는지 확인해라.","Is this the right line for check-in?"],["내 비행기 탑승 게이트가 맞는지 확인해라.","Is this the right gate for my flight?"],["가야섬으로 가는 선착장이 맞는지 확인해라.","Is this the right pier for Gaya Island?"]],"introEn":"Is this the right","introKo":"이거 맞나요?"},{"frame":"Where do we meet?","purpose":"집결 장소 확인","items":[["투어 사람들과 어디서 만나는지 물어라.","Where do we meet for the tour?"],["보트 투어 전에 어디서 모이는지 물어라.","Where do we meet for the boat trip?"],["내일 아침 집결 장소를 물어라.","Where do we meet tomorrow morning?"],["가이드를 어디서 만나는지 물어라.","Where do we meet the guide?"],["점심 후 다시 어디서 모이는지 물어라.","Where do we meet after lunch?"]],"introEn":"Where do we meet?","introKo":"어디서 모여요?"},{"frame":"What should I/we do?","purpose":"대처 방법 묻기","items":[["수하물이 나오지 않는다. 어떻게 해야 하는지 물어라.","What should I do if my luggage doesn't arrive?"],["날씨 때문에 투어가 취소될 수 있다. 그 경우 어떻게 하는지 물어라.","What should we do if the tour is canceled?"],["배를 놓치면 어떻게 해야 하는지 물어라.","What should I do if I miss the boat?"],["카드가 작동하지 않으면 어떻게 해야 하는지 물어라.","What should I do if my card doesn't work?"],["투어 날 비가 오면 어떻게 해야 하는지 물어라.","What should we do if it rains?"]],"introEn":"What should I do? What should we do?","introKo":"어떻게 해야 해요?"},{"frame":"I'd like to ~.","purpose":"하고 싶은 행동을 공손하게 말하기","items":[["호텔에 도착했다. 체크인하고 싶다고 말해라.","I'd like to check in."],["내일 섬 투어를 예약하고 싶다고 말해라.","I'd like to book an island tour for tomorrow."],["예약한 픽업 시간을 변경하고 싶다고 말해라.","I'd like to change the pickup time."],["스노클링 장비를 빌리고 싶다고 말해라.","I'd like to rent snorkeling gear."],["호텔에서 하루 더 머물고 싶다고 말해라.","I'd like to extend my stay."]],"introEn":"I'd like to","introKo":"~ 하고 싶어요."},{"frame":"Is there ~?","purpose":"장소·시설·서비스 존재 여부","items":[["근처에 ATM이 있는지 물어라.","Is there an ATM nearby?"],["이 근처에 화장실이 있는지 물어라.","Is there a restroom near here?"],["늦은 체크아웃에 추가요금이 있는지 물어라.","Is there an extra charge for late checkout?"],["오늘 오후 운항하는 페리가 있는지 물어라.","Is there a ferry this afternoon?"],["체크아웃 후 짐을 맡길 장소가 있는지 물어라.","Is there a place to leave our bags?"]],"introEn":"Is there","introKo":"~ 있나요?"},{"frame":"How much longer ~?","purpose":"이미 진행 중인 일의 남은 시간","items":[["이미 오래 기다렸다. 앞으로 얼마나 더 기다려야 하는지 물어라.","How much longer do we have to wait?"],["음식이 늦고 있다. 지금부터 얼마나 더 걸릴지 물어라.","How much longer will it take?"],["택시를 타고 한참 이동했다. 목적지까지 얼마나 더 남았는지 물어라.","How much longer until we get there?"],["게이트에서 기다리는 중이다. 탑승까지 얼마나 더 남았는지 물어라.","How much longer until boarding starts?"],["비가 계속 온다. 앞으로 얼마나 더 올지 물어라.","How much longer will the rain last?"]],"introEn":"How much longer","introKo":"앞으로 얼마나 더?"},{"frame":"What's the difference between ~ and ~?","purpose":"두 옵션의 차이 묻기","items":[["비슷한 투어 두 개의 차이를 물어라.","What's the difference between these two tours?"],["페리와 스피드보트의 차이를 물어라.","What's the difference between the ferry and the speedboat?"],["일반 객실과 프리미엄 객실의 차이를 물어라.","What's the difference between the standard and premium rooms?"],["편도표와 왕복표의 차이를 물어라.","What's the difference between a one-way ticket and a round-trip ticket?"],["합승 이동과 단독 이동의 차이를 물어라.","What's the difference between shared and private transfer?"]],"introEn":"What's the difference between","introKo":"~와 ~는 뭐가 달라요?"},{"frame":"What does ~ mean?","purpose":"모르는 영어 표현 뜻 묻기","items":[["non-refundable이라는 표현의 뜻을 물어라.","What does non-refundable mean?"],["service charge라는 표현의 뜻을 물어라.","What does service charge mean?"],["shared transfer라는 표현의 뜻을 물어라.","What does shared transfer mean?"],["공항의 last call이라는 표현 뜻을 물어라.","What does last call mean?"],["minimum spend라는 표현의 뜻을 물어라.","What does minimum spend mean?"]],"introEn":"What does this mean?","introKo":"~가 무슨 뜻이에요?"}];
+let frameOrder=[...Array(DATA.length).keys()];
+const ORIGINAL_FRAME_ORDER=[...frameOrder];
+let fi=0, ii=0, playing=false, seq=0, wake=null, itemOrder=[0,1,2,3,4];
+const $=x=>document.getElementById(x);
+
+function shuf(a){for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function curFrame(){return DATA[frameOrder[fi]]}
+function curItem(){return curFrame().items[itemOrder[ii]]}
+
+function renderList(){
+ $("list").innerHTML=DATA.map((f,i)=>`<div class="item" data-i="${i}"><div class="no">${String(i+1).padStart(2,"0")}</div><div class="itf">${f.frame}</div><div class="mini">5상황</div></div>`).join("");
+ $("list").querySelectorAll(".item").forEach(el=>el.onclick=()=>{
+   const idx=Number(el.dataset.i), p=frameOrder.indexOf(idx);
+   if(p>=0){fi=p;ii=0;itemOrder=[0,1,2,3,4]; if($("shuffleItems").checked) shuf(itemOrder);seq++;speechSynthesis.cancel();render();if(playing)run(seq);}
+ });
+}
+function render(){
+ const f=curFrame(), it=curItem();
+ $("frameCount").textContent=`FRAME ${fi+1} / ${DATA.length}`;
+ $("itemCount").textContent=`상황 ${ii+1} / 5`;
+ $("frame").textContent=f.frame;
+ $("purpose").textContent=f.purpose;
+ $("introKo").textContent="🇰🇷 "+f.introKo;
+ $("sit").textContent=it[0];
+ $("en").textContent=it[1];
+ $("list").querySelectorAll(".item").forEach(el=>el.classList.toggle("active",Number(el.dataset.i)===frameOrder[fi]));
+}
+
+let voices=[];
+let usVoices=[];
+let lastVoiceName='';
+let currentSituationVoice=null;
+function scoreVoice(v){
+ const n=(v.name||"").toLowerCase(), l=(v.lang||"").toLowerCase();
+ let s=0;
+ if(l==="en-us")s+=50; else if(l.startsWith("en"))s+=20;
+ if(/natural/.test(n))s+=60;
+ if(/aria|jenny|ava|emma|andrew|brian|sonia|guy|samantha/.test(n))s+=35;
+ if(/google us english/.test(n))s+=40;
+ if(/microsoft/.test(n))s+=10;
+ return s;
+}
+let koVoices=[];
+function scoreKoVoice(v){
+ const n=(v.name||"").toLowerCase(), l=(v.lang||"").toLowerCase();
+ let s=0;
+ if(l==="ko-kr")s+=50; else if(l.startsWith("ko"))s+=20;
+ if(/natural/.test(n))s+=70;
+ if(/sunhi|yuna|injoon|hyunsu|google|microsoft/.test(n))s+=35;
+ return s;
+}
+function loadVoices(){
+ const all=speechSynthesis.getVoices();
+ voices=all.filter(v=>/^en/i.test(v.lang)).sort((a,b)=>scoreVoice(b)-scoreVoice(a));
+ usVoices=all.filter(v=>/^en-US$/i.test(v.lang)).sort((a,b)=>scoreVoice(b)-scoreVoice(a));
+ if(!usVoices.length) usVoices=voices.filter(v=>/^en/i.test(v.lang));
+ koVoices=all.filter(v=>/^ko/i.test(v.lang)).sort((a,b)=>scoreKoVoice(b)-scoreKoVoice(a));
+
+ const sel=$("voice"), prev=sel.value;
+ sel.innerHTML=voices.map((v,i)=>`<option value="${i}">${i===0?"★ ":""}${v.name} · ${v.lang}</option>`).join("");
+ if(prev && Number(prev)<voices.length)sel.value=prev;
+
+ const ksel=$("koVoice"), kprev=ksel.value;
+ ksel.innerHTML=koVoices.length
+   ? koVoices.map((v,i)=>`<option value="${i}">${i===0?"★ ":""}${v.name} · ${v.lang}</option>`).join("")
+   : `<option value="">기기 기본 한국어 음성</option>`;
+ if(kprev && Number(kprev)<koVoices.length)ksel.value=kprev;
+}
+loadVoices(); speechSynthesis.onvoiceschanged=loadVoices;
+
+function selectedVoice(){const i=Number($("voice").value||0);return voices[i]||voices[0]||null}
+function pickRandomUSVoice(){
+ const pool=(usVoices&&usVoices.length?usVoices:voices)||[];
+ if(!pool.length) return selectedVoice();
+ let candidates=pool.filter(v=>v.name!==lastVoiceName);
+ if(!candidates.length) candidates=pool.slice();
+
+ // 자연스러운 보이스를 조금 더 자주 고르되, 항상 같은 보이스만 선택되지는 않게 한다.
+ const weighted=[];
+ candidates.forEach(v=>{
+   const n=(v.name||"").toLowerCase();
+   let w=1;
+   if(/natural/.test(n)) w=4;
+   else if(/aria|jenny|ava|emma|andrew|brian|guy|samantha|google us english/.test(n)) w=3;
+   else if(/microsoft|google/.test(n)) w=2;
+   for(let k=0;k<w;k++) weighted.push(v);
+ });
+ const v=weighted[(Math.random()*weighted.length)|0] || candidates[(Math.random()*candidates.length)|0] || selectedVoice();
+ if(v) lastVoiceName=v.name;
+ return v;
+}
+function chooseSituationVoice(){
+ currentSituationVoice = $("randomVoice") && $("randomVoice").checked ? pickRandomUSVoice() : selectedVoice();
+ return currentSituationVoice;
+}
+function selectedKoVoice(){const i=Number($("koVoice").value||0);return koVoices[i]||koVoices[0]||null}
+function sleep(ms,t){return new Promise(r=>setTimeout(()=>r(t===seq&&playing),ms))}
+
+function chooseKoVoice(){
+ return selectedKoVoice();
+}
+function speakKo(text,t){
+ return new Promise(resolve=>{
+   if(t!==seq||!playing)return resolve(false);
+   const u=new SpeechSynthesisUtterance(text);
+   const v=chooseKoVoice(); if(v)u.voice=v;
+   u.lang=(v&&v.lang)||"ko-KR"; u.rate=1.03; u.pitch=1; u.volume=1;
+   u.onend=()=>resolve(t===seq&&playing);
+   u.onerror=()=>resolve(t===seq&&playing);
+   speechSynthesis.speak(u);
+ });
+}
+async function speakFrameIntro(f,t){
+ if(!$("introOn").checked || ii!==0) return true;
+
+ // 1) 한글 의미를 먼저 듣는다.
+ $("status").textContent="한글 뜻 → 영어 프레임 떠올리기";
+ if(!(await speakKo(f.introKo,t))) return false;
+
+ // 한글을 듣고 '아, 이건 Can I get...' 하고 머리에서 꺼낼 짧은 여백
+ if(!(await sleep(900,t))) return false;
+
+ // 2) 그 다음 영어 프레임으로 정답 확인 — 여기서도 미국 영어 화자를 랜덤으로 바꾼다.
+ currentSituationVoice=null;
+ chooseSituationVoice();
+ $("status").textContent="영어 프레임 확인 · "+(currentSituationVoice?currentSituationVoice.name:"기본 음성");
+ if(!(await speak(f.introEn,t))) return false;
+
+ // 바로 한 번 따라 말할 시간
+ return await sleep(1100,t);
+}
+
+function speak(text,t,force=false){
+ return new Promise(resolve=>{
+   if(!force && (t!==seq||!playing))return resolve(false);
+   const u=new SpeechSynthesisUtterance(text);
+   let v=currentSituationVoice;
+   if(!v) v = ($("randomVoice")&&$("randomVoice").checked) ? pickRandomUSVoice() : selectedVoice();
+   if(v)u.voice=v;
+   u.lang=(v&&v.lang)||"en-US"; u.rate=Number($("rate").value); u.pitch=1; u.volume=1;
+   u.onend=()=>resolve(force?true:(t===seq&&playing));
+   u.onerror=()=>resolve(force?true:(t===seq&&playing));
+   speechSynthesis.speak(u);
+ });
+}
+
+async function run(t){
+ if(t!==seq||!playing)return;
+ render();
+ const f=curFrame();
+ if(ii===0){
+   if(!(await speakFrameIntro(f,t))) return;
+ }
+ currentSituationVoice=null;
+ chooseSituationVoice();
+ const text=curItem()[1], reps=Number($("reps").value), gap=Number($("gap").value);
+ $("status").textContent=`재생 중 · ${f.frame} · 상황 ${ii+1}/5 · ${currentSituationVoice?currentSituationVoice.name:"기본 음성"}`;
+ for(let r=0;r<reps;r++){if(!(await speak(text,t)))return;if(r<reps-1 && !(await sleep(gap,t)))return}
+ $("status").textContent="따라 말하세요";
+ if(!(await sleep(Number($("shadowGap").value),t)))return;
+ advance();
+ run(t);
+}
+function advance(){
+ ii++;
+ if(ii>=5){
+   ii=0; fi++;
+   if(fi>=frameOrder.length){
+     if(!$("loop").checked){stop();$("status").textContent="150상황 완료";return}
+     fi=0;if($("shuffleFrames").checked)shuf(frameOrder);
+   }
+   itemOrder=[0,1,2,3,4];if($("shuffleItems").checked)shuf(itemOrder);
+ }
+}
+function back(){
+ ii--; if(ii<0){fi=(fi-1+frameOrder.length)%frameOrder.length;ii=4;itemOrder=[0,1,2,3,4];if($("shuffleItems").checked)shuf(itemOrder)} 
+}
+async function start(){
+ if(playing)return stop();
+ playing=true;seq++;$("play").textContent="⏸ 멈춤";
+ try{if("wakeLock" in navigator)wake=await navigator.wakeLock.request("screen")}catch(e){}
+ run(seq);
+}
+function stop(){
+ playing=false;seq++;speechSynthesis.cancel();$("play").textContent="▶ 계속 재생";$("status").textContent="일시정지";
+ try{wake&&wake.release()}catch(e){}wake=null;
+}
+$("play").onclick=start;
+$("next").onclick=()=>{seq++;speechSynthesis.cancel();currentSituationVoice=null;advance();render();if(playing)run(seq)};
+$("prev").onclick=()=>{seq++;speechSynthesis.cancel();currentSituationVoice=null;back();render();if(playing)run(seq)};
+$("test").onclick=()=>{speechSynthesis.cancel();currentSituationVoice=null;chooseSituationVoice();speak(curItem()[1],seq,true)};
+$("randomVoice").onchange=()=>{currentSituationVoice=null;lastVoiceName="";};
+$("shuffleFrames").onchange=()=>{
+  if(!playing){
+    frameOrder=[...ORIGINAL_FRAME_ORDER];
+    if($("shuffleFrames").checked) shuf(frameOrder);
+    fi=0; ii=0;
+    itemOrder=[0,1,2,3,4];
+    if($("shuffleItems").checked) shuf(itemOrder);
+    render();
+  }
+};
+$("shuffleItems").onchange=()=>{if(!playing){itemOrder=[0,1,2,3,4];if($("shuffleItems").checked)shuf(itemOrder);ii=0;render()}};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&playing&&speechSynthesis.paused)speechSynthesis.resume()});
+
+if($("shuffleFrames").checked){
+  shuf(frameOrder);
+}
+if($("shuffleItems").checked){
+  shuf(itemOrder);
+}
+renderList();render();
+</script>
+</body></html>
