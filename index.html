@@ -1988,7 +1988,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.191";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.192";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -18244,6 +18244,22 @@ function loopSpeakStop(){
   try{ if(TTS) TTS.cancel(); }catch(e){}
   try{ document.querySelectorAll(".study-act.looping").forEach(b=>{ b.classList.remove("looping"); b.textContent="🔁 반복 듣기"; }); }catch(e){}
 }
+/* 한 번 재생하고, 끝나면 알려준다. 서버 음성이 안 되면 브라우저 TTS 로 같은 일을 한다. */
+function speakOnce(en, onEnd){
+  const done=()=>{ try{ onEnd&&onEnd(); }catch(e){} };
+  svSpeak(en, 0.95, done).then(ok=>{
+    if(ok) return;
+    if(!TTS||!SSU){ done(); return; }
+    try{ TTS.cancel(); }catch(e){}
+    setTimeout(()=>{
+      const u=new SSU(en); if(voiceA) u.voice=voiceA; u.lang="en-US"; u.rate=0.95;
+      let fired=false; const one=()=>{ if(fired) return; fired=true; done(); };
+      u.onend=one; u.onerror=one;
+      TTS.speak(u);
+      setTimeout(one, Math.max(2500, en.length*120));   // onend 가 안 오는 기기 대비
+    },130);
+  });
+}
 function loopSpeakStart(en, btn){
   loopSpeakStop();
   if(!en) return;
@@ -18279,6 +18295,7 @@ function studyPanelHtml(en, ko, id){
     <div class="study-acts">
       <button class="study-act" data-act="listen">🔊 다시 듣기</button>
       <button class="study-act" data-act="loop">🔁 반복 듣기</button>
+      <button class="study-act" data-act="shadow">🎙 다시 말하기</button>
       <button class="study-act" data-act="rec">🎤 발음 채점</button>
       <button class="study-act" data-act="pron">📊 강세 보기</button>
       <button class="study-act mic-last" data-act="mine">🗣 내 목소리</button>
@@ -18305,7 +18322,17 @@ function bindStudyPanel(panel){
     const act=b.getAttribute("data-act");
     if(act==="listen"){ loopSpeakStop(); try{ speakEn(en); }catch(e){} }
     else if(act==="loop"){ if(b.classList.contains("looping")) loopSpeakStop(); else loopSpeakStart(en, b); }
-    else if(act==="rec"){ if(extra) startPronPractice(en, b, extra); }
+    else if(act==="rec"){ loopSpeakStop(); if(extra) startPronPractice(en, b, extra); }
+    /* 🎙 다시 말하기 — 원어민 소리를 한 번 들려주고 끝나자마자 마이크를 연다.
+       듣고 바로 따라 하는 사이에 억양이 남아 있어야 비교가 된다. */
+    else if(act==="shadow"){
+      if(wpPronRec){ startPronPractice(en, b, extra); return; }   // 녹음 중이면 멈추기
+      loopSpeakStop();
+      if(!extra) return;
+      extra.innerHTML=`<div style="font-size:12.5px;color:#189E79;font-weight:800">🔊 잘 듣고, 끝나면 바로 따라 말하세요…</div>`;
+      b.textContent="🔊 듣는 중…";
+      speakOnce(en, ()=>{ if(!document.body.contains(b)) return; startPronPractice(en, b, extra); });
+    }
     else if(act==="pron"){ if(extra){ const showing=extra.querySelector(".pron-study-card"); extra.innerHTML = showing ? "" : pronStudyCardHtml(en,"강세·발음"); } }
     else if(act==="ai"){ studyAskAI(en, ko); }
     else if(act==="vocab"){ studySendToVocab(en, ko); }
