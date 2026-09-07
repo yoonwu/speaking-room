@@ -1648,6 +1648,10 @@ body{background:var(--paper)!important;color:var(--text)}
 .rx-cue-en{font-family:var(--serif);font-size:19.5px;line-height:1.4;color:#2F241F;font-weight:800}
 .rx-cue-btns{display:flex;gap:8px;margin-top:11px}
 .rx-cue-btn{flex:1;padding:10px 0;border:1.5px solid #C7E8DA;border-radius:12px;background:#fff;color:#189E79;font-size:13px;font-weight:900;cursor:pointer}
+.rx-goal{background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:16px;padding:12px 15px;margin:0 0 4px}
+.rx-goal-lbl{font-size:10.5px;font-weight:950;letter-spacing:.09em;color:#7FA396;margin-bottom:4px}
+.rx-goal-en{font-family:var(--serif);font-size:22px;line-height:1.2;color:#189E79;font-weight:850}
+.rx-goal-ko{font-size:11.5px;color:#7FA396;font-weight:700;margin-top:4px;line-height:1.45}
 .rx-ko{margin-top:11px;padding:10px 12px;background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px;font-size:13.5px;color:#3A2D27;font-weight:800;line-height:1.5}
 .auto-meta{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:9px 0 14px}
 .auto-chip{font-size:12px;font-weight:850;color:#8E766B;background:#fff;border:1px solid #C7E8DA;border-radius:99px;padding:5px 10px}
@@ -1995,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.198";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.199";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -16033,6 +16037,10 @@ function rxReadMs(it){
   const w=String((it&&it.cue)||"").trim().split(/\s+/).filter(Boolean).length;
   return Math.max(3500, Math.min(11000, Math.round(w*420)+2000));
 }
+/* 어떤 문항은 상대가 하는 말이고, 어떤 문항은 영어로 쓴 장면 설명이다 — 이름을 다르게 붙인다 */
+function rxCueKind(it){
+  return /^\s*you\b/i.test(String((it&&it.cue)||"")) ? "📍 지금 상황" : "🔊 상대의 말";
+}
 function rxSpeak(text, rate){
   try{
     svSpeak(text, rate||0.95).then(ok=>{ if(!ok) speakRate(text, rate||0.95); });
@@ -19063,21 +19071,26 @@ function autoDrillRender(recallMode){
       <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
     </div>
     <div class="auto-kicker">${it._react?"REACTION":(it._travel?"TRAVEL PACK":(it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"))}</div>
-    <div class="auto-block">${it._react?(it._intro?("⚡ "+escapeHtml(it.frame.frame)):"⚡ 뭐라고 답할까요?"):(it._travel?(it._intro?("✈️ "+escapeHtml(it.frame.frame)):"✈️ 상황을 보고 말해보세요"):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?"))}</div>
+    <div class="auto-block">${it._react?"⚡ 뭐라고 답할까요?":(it._travel?(it._intro?("✈️ "+escapeHtml(it.frame.frame)):"✈️ 상황을 보고 말해보세요"):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?"))}</div>
     ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${it._intro?escapeHtml(it.frame.ko)+" · ":""}${it._react?`실전 반응 ${rxSeenCount()} / ${RX_FRAMES.length}`:`여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}`}</div>`:""}
-    ${(it._travel&&it._intro)?`<div style="background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span></div>`:""}
+    ${(it._travel&&it._intro)?`<div style="background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">${it._react?`이 표현은 처음이에요 — <span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`:`처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`}</div>`:""}
     <div class="auto-meta">
       <span class="auto-chip">${it._react?`듣고 ${it.limit}초 안 시작`:(it._travel?`상황 읽고 ${it.limit}초 안 시작`:`시작 지연 ${it.limit}초 안`)}</span>
       <span class="auto-chip">말 길이 제외</span>
       <span class="auto-chip">${escapeHtml(bleContextLabel(it.ex))}</span>
     </div>
     ${it._react?`<div class="rx-cue" id="rxCue">
-      <div class="rx-cue-lbl">🔊 상대의 말</div>
+      <div class="rx-cue-lbl">${rxCueKind(it)}</div>
       <div class="rx-cue-en">${escapeHtml(it.cue)}</div>
       <div class="rx-cue-btns"><button class="rx-cue-btn" id="rxReplay">🔁 다시 듣기</button><button class="rx-cue-btn" id="rxSlow">🐢 천천히</button></div>
+    </div>
+    <div class="rx-goal">
+      <div class="rx-goal-lbl">🎯 이 표현으로 답하기</div>
+      <div class="rx-goal-en">${escapeHtml(it.frame.frame)}</div>
+      <div class="rx-goal-ko">${escapeHtml(it.frame.ko)} · 뒤에 붙는 말은 상황에 맞게 바꿔도 정답이에요</div>
     </div>`:`<div class="auto-ko">${escapeHtml(adPromptKo(it))}</div>`}
     ${answerHtml}
-    <div class="auto-stat" id="autoStat">${it._react?"상대의 말을 <b>듣고</b> 바로 답해보세요. 듣는 시간은 빼고 재요.":(it._travel?"상황을 <b>먼저 읽고</b>, 머릿속에 그려지면 말해보세요. 읽는 시간은 빼고 재요.":"상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.")}</div>
+    <div class="auto-stat" id="autoStat">${it._react?"<b>듣고</b> 나서 아래 표현으로 바로 답해보세요. 듣는 시간은 빼고 재요.":(it._travel?"상황을 <b>먼저 읽고</b>, 머릿속에 그려지면 말해보세요. 읽는 시간은 빼고 재요.":"상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.")}</div>
     <div class="auto-actions">
       <div class="auto-row">
         <button class="auto-mic" id="autoMic">🎤 터치해서 말하기</button>
