@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.199";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.200";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15693,7 +15693,7 @@ function travelGuideShow(onStart){
 
      ${step(3,"정답은 하나가 아니에요","핵심 표현만 제대로 쓰면 맞아요. 뒤는 상황에 맞게 바꿔도 됩니다.<br><span style=\"color:#19a06b;font-weight:800\">Can I get a towel? / Can I get one more towel?</span> 둘 다 정답.")}
      ${step(4,"천천히 읽고 말해도 돼요","상황을 읽는 시간은 빼고 재요. 급하게 안 해도 됩니다.")}
-     ${step(5,"맞히면 "+TRAVEL_PT+"점 · "+TRAVEL_DAY_GOAL+"문제면 오늘 끝","하루 "+(TRAVEL_DAY_GOAL*TRAVEL_PT)+"점이 목표예요. 한 판이 10문제 정도라 "+Math.ceil(TRAVEL_DAY_GOAL/10)+"판이면 끝나요.")}
+     ${step(5,"맞히면 "+TRAVEL_PT+"점 · "+TRAVEL_DAY_GOAL+"문제면 오늘 끝","하루 "+(TRAVEL_DAY_GOAL*TRAVEL_PT)+"점이 목표예요. 한 판은 <b>10·15·20문제</b> 중에 고를 수 있어요.")}
 
      <button class="routine-main" id="tvGuideGo" style="margin-top:6px">${done?"이어서 시작 →":"시작하기 →"}</button>
      <button class="auto-sub" id="tvGuideClose" style="width:100%;margin-top:9px">나중에</button>
@@ -15714,10 +15714,43 @@ function travelOtherFrameOf(heard, exceptId){
     return f?f.frame:"";
   }catch(e){ return ""; }
 }
-function startTravelDrill(count, skipGuide){
+/* ✈️ 몇 문제 할지 — 10·15·20 중에서. 마지막 선택을 기억한다.
+   '입에 붙이기'(7/10/15)와는 다른 키를 써서 서로 안 흔들리게 한다. */
+const TRAVEL_COUNT_KEY="speakingroom:travel_count";
+const TRAVEL_COUNTS=[10,15,20];
+function travelCountGet(){
+  let v; try{ v=+hGet(TRAVEL_COUNT_KEY,10)||10; }catch(e){ v=10; }
+  return TRAVEL_COUNTS.indexOf(v)>=0 ? v : 10;
+}
+function travelCountPick(onPick){
+  const last=travelCountGet();
+  const today=(()=>{ try{ return rtCount("travel", rtGet()); }catch(e){ return 0; } })();
+  const left=Math.max(0, TRAVEL_DAY_GOAL-today);
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="tvCountOv";
+  const btn=(n)=>`<button class="tvCntBtn" data-n="${n}" style="flex:1;padding:17px 0;border-radius:15px;border:2px solid ${n===last?'#189E79':'#C7E8DA'};background:${n===last?'linear-gradient(135deg,#ECF7F2,#DDF2E9)':'#fff'};cursor:pointer">
+     <b style="display:block;font-size:25px;color:${n===last?'#189E79':'#3A2D27'}">${n}</b>
+     <span style="font-size:11px;color:#A28A7F">문제 · ${n*TRAVEL_PT}점</span></button>`;
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet" style="background:#EAE3DD">
+     <div class="hub-grab"></div>
+     <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">✈️ 여행 표현 — 몇 문제 할까요?</div>
+     <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">${left>0?`오늘 ${today} / ${TRAVEL_DAY_GOAL}문제 · ${left}문제 남았어요.`:`오늘 목표 ${TRAVEL_DAY_GOAL}문제는 이미 끝냈어요. 더 해도 좋아요.`}<br>틀린 문제는 뒤에 다시 나와서 실제로는 조금 더 나올 수 있어요.</div>
+     <div style="display:flex;gap:9px">${TRAVEL_COUNTS.map(btn).join("")}</div>
+   </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector(".hub-bg").onclick=()=>ov.remove();
+  ov.querySelectorAll(".tvCntBtn").forEach(b=>{ b.onclick=()=>{
+    const n=parseInt(b.getAttribute("data-n"),10)||10;
+    try{ hSet(TRAVEL_COUNT_KEY,n); }catch(e){}
+    ov.remove(); try{ onPick&&onPick(n); }catch(e){}
+  }; });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function startTravelDrill(count, skipGuide, skipPick){
   /* 처음 오는 사람은 규칙부터 알고 시작해야 한다 — 답이 보이는 이유를 모르면 오해한다 */
-  if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true)); return; }
-  const n=Math.max(3, Math.min(30, count||hGet("speakingroom:ad_count",10)||10));
+  if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true, skipPick)); return; }
+  if(count==null && !skipPick){ travelCountPick(n=>startTravelDrill(n, true, true)); return; }
+  const n=Math.max(3, Math.min(30, count||travelCountGet()));
   try{ ttStart("drill"); }catch(e){}
   autoDrill={items:travelBuildItems(n), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true};
   try{ xpSessionStart(); }catch(e){}
@@ -16153,7 +16186,7 @@ function startAutoDrill(focusIds){
   ov.querySelectorAll(".adCntBtn").forEach(b=>{ b.onclick=()=>go(parseInt(b.getAttribute("data-n"),10)); });
   try{ const tp=ov.querySelector("#adTvProg"); if(tp) tp.textContent=travelSeenCount()+" / "+TRAVEL_FRAMES.length; }catch(e){}
   const tv=ov.querySelector("#adCntTravel");
-  if(tv) tv.onclick=()=>{ closeOv(); startTravelDrill(hGet("speakingroom:ad_count",10)||10); };
+  if(tv) tv.onclick=()=>{ closeOv(); startTravelDrill(); };
   const inp=ov.querySelector("#adCntIn");
   ov.querySelector("#adCntGo").onclick=()=>go(inp.value?parseInt(inp.value,10):last);
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); go(parseInt(inp.value,10)||last); } });
