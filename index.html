@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.201";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.202";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12827,6 +12827,11 @@ function openSpeakHub(){
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
+     <button class="hub-opt" data-go="study">
+       <span class="hub-emo">⭐</span>
+       <span class="hub-tx"><b>골라서 연습</b><i>입에 안 붙는 표현만 체크 — 그것만 문제로 나와요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="react">
        <span class="hub-emo">🎧</span>
        <span class="hub-tx"><b>실전 반응</b><i>한글 없이 — 상대의 영어를 듣고 바로 답해요</i></span>
@@ -12836,7 +12841,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -15560,18 +15565,19 @@ function travelSeedNew(o){
    그래서 25개가 한 바퀴 다 나오기 전에는 같은 프레임이 두 번 나올 수 없다.
    묶음 안 순서는 매번 섞는다 — 고정 순서면 문장이 아니라 순서를 외워버린다.
    약한 프레임(틀린 적 많음)은 같은 묶음 안에서 조금 더 자주 뽑히게만 한다. */
-function travelPickFrames(n){
+function travelPickFrames(n, pool){
+  const FR=(pool&&pool.length)?pool:TRAVEL_FRAMES;   // 골라서 연습이면 그 표현들만
   const o=travelAll();
   /* 새로 추가된 프레임의 출발선을 먼저 맞추고 저장한다.
      기록이 만들어진 뒤에 심으면 늦어서 cost 0 으로 굳어버린다. */
   try{ if(travelSeedNew(o)) travelSave(o); }catch(e){}
   const out=[], bump={};
-  let remain=TRAVEL_FRAMES.slice();       // 이번 세션에 아직 안 쓴 프레임
+  let remain=FR.slice();                  // 이번 세션에 아직 안 쓴 프레임
   /* 고를 때: 비용이 낮은 것부터. 자동화된 프레임은 비용이 빨리 쌓여 뒤로 밀린다.
      난수(±0.45)는 비용이 비슷한 것들 사이에서만 순서를 흔든다 —
      차이가 분명하면 난수로 뒤집히지 않는다. */
   while(out.length<n){
-    if(!remain.length) remain=TRAVEL_FRAMES.slice();   // 25개를 다 썼다 — 그때만 다시 돈다
+    if(!remain.length) remain=FR.slice();   // 범위를 한 바퀴 다 썼다 — 그때만 다시 돈다
     const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeight(o[f.id]) + Math.random()*0.45;
     let best=remain[0], bv=eff(best);
     remain.forEach(f=>{ const v=eff(f); if(v<bv){ bv=v; best=f; } });
@@ -15612,9 +15618,9 @@ function travelPickItem(f, o){
   used.push(pick.ko); st.used=used; st.lastKo=pick.ko;
   return pick;
 }
-function travelBuildItems(count){
+function travelBuildItems(count, pool){
   const limits=adLimits();
-  const frames=travelPickFrames(count);
+  const frames=travelPickFrames(count, pool);
   const o=travelAll();
   const out=frames.map(f=>{
     const pick=travelPickItem(f, o);
@@ -15746,13 +15752,99 @@ function travelCountPick(onPick){
   }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
-function startTravelDrill(count, skipGuide, skipPick){
+/* ⭐ 골라서 연습 — 입에 잘 안 붙는 표현만 체크해서 그것들만 출제한다.
+   체크 목록은 여행 표현 반복과 실전 반응이 같이 쓴다. */
+const TRAVEL_STUDY_KEY="speakingroom:travel_study";
+function travelStudyGet(){
+  try{ const v=hGet(TRAVEL_STUDY_KEY,[]); return Array.isArray(v)?v.filter(id=>TRAVEL_BY_ID[id]):[]; }
+  catch(e){ return []; }
+}
+function travelStudySet(a){ try{ hSet(TRAVEL_STUDY_KEY, (a||[]).slice()); }catch(e){} }
+/* 넘겨받은 id 목록을 실제 프레임 배열로. 비어 있으면 null(=전체) */
+function travelPoolOf(ids, react){
+  if(!ids||!ids.length) return null;
+  const base=react?RX_FRAMES:TRAVEL_FRAMES;
+  const pool=base.filter(f=>ids.indexOf(f.id)>=0);
+  return pool.length?pool:null;
+}
+/* 얼마나 붙었는지 — 무엇을 골라야 할지 스스로 판단할 수 있게 상태를 보여준다 */
+function travelMastery(id, react){
+  const st=(react?rxStat(id):travelStat(id))||{};
+  const seen=st.seen||0, ok=st.ok||0, miss=st.miss||0, streak=st.streak||0;
+  if(!seen)       return {k:"new",  t:"아직 안 함", c:"#8A6F62", bg:"#F1EBE5", weak:true};
+  if(miss>ok)     return {k:"weak", t:"약함",       c:"#C0392B", bg:"#FBEAE7", weak:true};
+  if(streak>=3)   return {k:"good", t:"붙었어요",   c:"#189E79", bg:"#E6F5EE", weak:false};
+  return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
+}
+function openTravelStudyPicker(){
+  let sel=new Set(travelStudyGet());
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="tvStudyOv";
+  const row=(f)=>{
+    const m=travelMastery(f.id), st=travelStat(f.id)||{}, on=sel.has(f.id);
+    return `<button class="chk-row tvStudyRow" data-id="${f.id}" data-no-pronko style="background:${on?'#E6F5EE':'#F4FBF8'};border-color:${on?'#189E79':'var(--line)'}">
+      <span style="flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:13px;font-weight:900;background:${on?'#189E79':'#fff'};color:#fff;border:1.5px solid ${on?'#189E79':'#C7E8DA'}">${on?"✓":""}</span>
+      <span class="chk-main">
+        <span class="chk-en" data-no-pronko>${escapeHtml(f.frame)}</span>
+        <span class="chk-ko">${escapeHtml(f.ko)}</span>
+      </span>
+      <span class="chk-side">
+        <span style="font-size:10.5px;font-weight:900;color:${m.c};background:${m.bg};border-radius:99px;padding:2px 8px">${m.t}</span>
+        <i>${(st.seen||0)}회 · 정답 ${(st.ok||0)}</i>
+      </span>
+    </button>`;
+  };
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall">
+     <div class="hub-grab"></div>
+     <div class="hub-title">⭐ 골라서 연습</div>
+     <div class="hub-sub">입에 잘 안 붙는 표현만 체크하세요.<br>체크한 것만 문제로 나와요.</div>
+     <div style="display:flex;gap:7px;margin:0 0 10px">
+       <button id="tvStudyWeak" style="flex:1;padding:10px 0;border:1.5px solid #189E79;border-radius:12px;background:#fff;color:#189E79;font-size:12.5px;font-weight:900;cursor:pointer">약한 것만 고르기</button>
+       <button id="tvStudyAll" style="flex:none;padding:10px 14px;border:1.5px solid #C7E8DA;border-radius:12px;background:#fff;color:#8A6F62;font-size:12.5px;font-weight:900;cursor:pointer">전체</button>
+       <button id="tvStudyNone" style="flex:none;padding:10px 14px;border:1.5px solid #C7E8DA;border-radius:12px;background:#fff;color:#8A6F62;font-size:12.5px;font-weight:900;cursor:pointer">해제</button>
+     </div>
+     <div class="chk-list" id="tvStudyList">${TRAVEL_FRAMES.map(row).join("")}</div>
+     <div id="tvStudyFoot" style="padding-top:11px;border-top:1px solid #D9CEC6;margin-top:9px"></div>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  const list=ov.querySelector("#tvStudyList"), foot=ov.querySelector("#tvStudyFoot");
+  const paint=()=>{
+    list.innerHTML=TRAVEL_FRAMES.map(row).join("");
+    list.querySelectorAll(".tvStudyRow").forEach(b=>{ b.onclick=()=>{
+      const id=b.getAttribute("data-id");
+      if(sel.has(id)) sel.delete(id); else sel.add(id);
+      travelStudySet([...sel]); paint();
+    }; });
+    const n=sel.size;
+    foot.innerHTML = n
+      ? `<div style="font-size:12px;color:#8A6F62;margin:0 2px 9px"><b style="color:#189E79">${n}개</b> 선택 — 이 표현들만 문제로 나와요.</div>
+         <button id="tvStudyGoKo" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">✈️ 한글 상황 보고 말하기 →</button>
+         <button id="tvStudyGoEn" style="width:100%;padding:13px;border:2px solid #189E79;border-radius:14px;background:#fff;color:#189E79;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px">⚡ 영어 듣고 답하기 →</button>`
+      : `<div style="font-size:12.5px;color:#8A6F62;text-align:center;padding:6px 0 2px">연습할 표현을 하나 이상 체크하세요.</div>`;
+    const ko=foot.querySelector("#tvStudyGoKo");
+    if(ko) ko.onclick=()=>{ const ids=[...sel]; close(); travelCountPick(n2=>startTravelDrill(n2, true, true, ids)); };
+    const en=foot.querySelector("#tvStudyGoEn");
+    if(en) en.onclick=()=>{ const ids=[...sel]; close(); startReactDrill(undefined, false, ids); };
+  };
+  ov.querySelector("#tvStudyWeak").onclick=()=>{
+    sel=new Set(TRAVEL_FRAMES.filter(f=>travelMastery(f.id).weak).map(f=>f.id));
+    travelStudySet([...sel]); paint();
+  };
+  ov.querySelector("#tvStudyAll").onclick=()=>{ sel=new Set(TRAVEL_FRAMES.map(f=>f.id)); travelStudySet([...sel]); paint(); };
+  ov.querySelector("#tvStudyNone").onclick=()=>{ sel=new Set(); travelStudySet([]); paint(); };
+  paint();
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+function startTravelDrill(count, skipGuide, skipPick, onlyIds){
   /* 처음 오는 사람은 규칙부터 알고 시작해야 한다 — 답이 보이는 이유를 모르면 오해한다 */
-  if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true, skipPick)); return; }
-  if(count==null && !skipPick){ travelCountPick(n=>startTravelDrill(n, true, true)); return; }
+  if(!skipGuide && !travelGuideSeen()){ travelGuideShow(()=>startTravelDrill(count, true, skipPick, onlyIds)); return; }
+  if(count==null && !skipPick){ travelCountPick(n=>startTravelDrill(n, true, true, onlyIds)); return; }
   const n=Math.max(3, Math.min(30, count||travelCountGet()));
   try{ ttStart("drill"); }catch(e){}
-  autoDrill={items:travelBuildItems(n), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true};
+  const pool=travelPoolOf(onlyIds);
+  autoDrill={items:travelBuildItems(n, pool), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true, onlyIds:(pool?onlyIds.slice():null)};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -16002,13 +16094,14 @@ function rxSeedNew(o){
 }
 /* 뽑기 규칙도 여행팩과 같다 — 비용이 낮은 것부터, 한 바퀴 돌기 전엔 같은 프레임이 두 번 안 나온다.
    자동화된 프레임(연속 성공)은 비용이 빨리 쌓여 뒤로 밀린다. */
-function rxPickFrames(n){
+function rxPickFrames(n, pool){
+  const FR=(pool&&pool.length)?pool:RX_FRAMES;
   const o=rxAll();
   try{ if(rxSeedNew(o)) rxSave(o); }catch(e){}
   const out=[], bump={};
-  let remain=RX_FRAMES.slice();
+  let remain=FR.slice();
   while(out.length<n){
-    if(!remain.length) remain=RX_FRAMES.slice();
+    if(!remain.length) remain=FR.slice();
     const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeight(o[f.id]) + Math.random()*0.45;
     let best=remain[0], bv=eff(best);
     remain.forEach(f=>{ const v=eff(f); if(v<bv){ bv=v; best=f; } });
@@ -16044,9 +16137,9 @@ function rxPickItem(f, o){
   used.push(pick.cue); st.usedCue=used; st.lastCue=pick.cue;
   return pick;
 }
-function rxBuildItems(count){
+function rxBuildItems(count, pool){
   const limits=adLimits();
-  const frames=rxPickFrames(count);
+  const frames=rxPickFrames(count, pool);
   const o=rxAll();
   const out=frames.map(f=>{
     const pick=rxPickItem(f, o);
@@ -16124,11 +16217,13 @@ function rxGuideShow(onStart){
   ov.querySelector("#rxGuideGo").onclick=()=>{ try{ hSet(REACT_GUIDE_KEY,true); }catch(e){} close(); try{ onStart&&onStart(); }catch(e){} };
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
-function startReactDrill(count, skipGuide){
-  if(!skipGuide && !rxGuideSeen()){ rxGuideShow(()=>startReactDrill(count, true)); return; }
-  const n=Math.max(3, Math.min(30, count||hGet("speakingroom:ad_count",10)||10));
+function startReactDrill(count, skipGuide, onlyIds){
+  if(!skipGuide && !rxGuideSeen()){ rxGuideShow(()=>startReactDrill(count, true, onlyIds)); return; }
+  if(count==null){ travelCountPick(n=>startReactDrill(n, true, onlyIds)); return; }
+  const n=Math.max(3, Math.min(30, count||travelCountGet()));
   try{ ttStart("drill"); }catch(e){}
-  autoDrill={items:rxBuildItems(n), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true, react:true};
+  const pool=travelPoolOf(onlyIds, true);
+  autoDrill={items:rxBuildItems(n, pool), blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true, react:true, onlyIds:(pool?onlyIds.slice():null)};
   try{ xpSessionStart(); }catch(e){}
   setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
   $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
@@ -19391,13 +19486,18 @@ function autoDrillDone(){
     ${blockListHtml}
     ${xpSum}
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
-      <button class="routine-main" id="autoAgain" style="margin:0">${isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"}</button>
+      <button class="routine-main" id="autoAgain" style="margin:0">${autoDrill.onlyIds?"⭐ 고른 표현 한 번 더 →":(autoDrill.react?"⚡ 실전 반응 한 번 더 →":(isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"))}</button>
       <button class="auto-sub" id="autoOther">${isTravel?"일반 반복학습 하기":"✈️ 여행 표현 하기"}</button>
       ${isTravel?`<button class="auto-sub" id="autoTvGuide" style="font-size:12.5px">✈️ 여행팩 안내 다시 보기</button>`:""}
       <button class="auto-sub" id="autoHome">홈으로</button>
     </div>
   </div>`;
-  $("#autoAgain").onclick=()=>{ autoDrill=null; if(isTravel) startTravelDrill(); else startAutoDrill(); };
+  const keepIds=(autoDrill&&autoDrill.onlyIds)?autoDrill.onlyIds.slice():null;
+  const wasReact=!!(autoDrill&&autoDrill.react);
+  $("#autoAgain").onclick=()=>{ autoDrill=null;
+    if(wasReact) startReactDrill(undefined, true, keepIds);
+    else if(isTravel) startTravelDrill(undefined, undefined, undefined, keepIds);
+    else startAutoDrill(); };
   $("#autoOther").onclick=()=>{ autoDrill=null; if(isTravel) startAutoDrill(); else startTravelDrill(); };
   if($("#autoTvGuide")) $("#autoTvGuide").onclick=()=>travelGuideShow(()=>{ autoDrill=null; startTravelDrill(undefined,true); });
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
