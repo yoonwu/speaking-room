@@ -1519,7 +1519,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .hub-ov{position:fixed;inset:0;z-index:140;display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s}
 .hub-ov.show{opacity:1}
 .hub-bg{position:absolute;inset:0;background:rgba(60,30,20,.45)}
-.hub-sheet{position:relative;z-index:1;width:100%;max-width:480px;background:var(--paper);border-radius:26px 26px 0 0;border-top:1px solid var(--line);padding:10px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -16px 44px -16px rgba(120,70,40,.45);transform:translateY(18px);transition:transform .22s cubic-bezier(.22,1,.36,1)}
+.hub-sheet{position:relative;z-index:1;width:100%;max-width:480px;background:var(--paper);border-radius:26px 26px 0 0;border-top:1px solid var(--line);padding:10px 18px calc(26px + env(safe-area-inset-bottom));box-shadow:0 -16px 44px -16px rgba(120,70,40,.45);transform:translateY(18px);transition:transform .22s cubic-bezier(.22,1,.36,1);max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .hub-ov.show .hub-sheet{transform:translateY(0)}
 .hub-grab{width:42px;height:5px;border-radius:99px;background:var(--line);margin:6px auto 14px}
 .hub-title{font-size:20px;font-weight:900;color:var(--text);text-align:center}
@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.204";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.205";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12797,6 +12797,11 @@ function openSpeakHub(){
      <div class="hub-grab"></div>
      <div class="hub-title">⚔️ 스피킹 훈련장</div>
      <div class="hub-sub">배운 블록을 말로 써봐요</div>
+     <button class="hub-opt" data-go="kk" style="background:linear-gradient(135deg,#F4A24C,#E0722F);border:none;box-shadow:0 12px 26px -12px rgba(224,114,47,.55)">
+       <span class="hub-emo" style="background:rgba(255,255,255,.22)">🇲🇾</span>
+       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">말레이시아 10문장 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.95);background:rgba(255,255,255,.2);border-radius:99px;padding:2px 8px;margin-left:4px">이벤트</i></b><i style="color:rgba(255,255,255,.9)">가서 매일 쓰는 것만 열 개 — 이것만 외워 가요</i></span>
+       <span class="hub-ar" style="background:#fff;color:#E0722F">›</span>
+     </button>
      <button class="hub-opt" data-go="real" style="background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)">
        <span class="hub-emo" style="background:rgba(255,255,255,.2)">🌎</span>
        <span class="hub-tx"><b style="color:#fff;font-size:16.5px">실전회화 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.18);border-radius:99px;padding:2px 8px;margin-left:4px">★ 최종 목표</i></b><i style="color:rgba(255,255,255,.85)">배운 블록을 AI와 실제 상황처럼 — 여기서 진짜 내 것이 돼요</i></span>
@@ -12841,7 +12846,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -15513,12 +15518,122 @@ const TRAVEL_FRAMES=[
       {ko:"메뉴 아래에 'minimum spend'라는 말이 있다. 금액을 묻지 말고 그 표현이 무슨 뜻인지 물어라.", en:"What does \"minimum spend\" mean?"}
     ]}
 ];
+/* ===================== 🇲🇾 말레이시아 10문장 — 여행 직전 이벤트 팩 =====================
+   30개 여행 표현과 별개다. 코타키나발루에서 '매일 실제로 쓰는' 것만 열 개.
+   이것만 입에 붙이면 밥 먹고, 이동하고, 표 사고, 사진 찍는 건 된다.
+   채점·점수·재출제는 여행 표현 반복과 똑같은 엔진을 쓴다. */
+const KK_FRAMES=[
+  { id:"kk_not_spicy", frame:"Not too spicy, please.", tf:"not too spicy", ko:"안 맵게 해주세요.", purpose:"음식 주문",
+    my:"Tak pedas — 딱 뻐다스", re:"\\bnot (too )?spicy\\b",
+    items:[
+      {ko:"아이가 매운 걸 못 먹는다. 볶음면을 시키며 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
+      {ko:"나시고렝을 주문하면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
+      {ko:"종업원이 맵기를 어느 정도로 할지 묻는다. 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
+      {ko:"아이 몫을 따로 시키면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
+      {ko:"커리를 주문하면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
+      {ko:"락사가 맵다고 한다. 그래도 시키면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."}
+    ]},
+  { id:"kk_no_ice", frame:"No ice, please.", tf:"no ice", ko:"얼음은 빼주세요.", purpose:"음료 주문",
+    my:"Tak nak ais — 딱 낙 아이스", re:"\\b(no ice|without ice)\\b",
+    items:[
+      {ko:"배탈이 걱정된다. 주스를 시키며 얼음을 빼달라고 해라.", en:"No ice, please."},
+      {ko:"아이 음료에 얼음을 넣지 말아 달라고 해라.", en:"No ice, please."},
+      {ko:"식당에서 물을 시키며 얼음 없이 달라고 해라.", en:"No ice, please."},
+      {ko:"노점에서 음료를 사면서 얼음을 빼달라고 해라.", en:"No ice, please."},
+      {ko:"종업원이 컵에 얼음을 넣으려 한다. 빼달라고 해라.", en:"No ice, please."},
+      {ko:"아이스커피를 시키면서 얼음은 넣지 말라고 해라.", en:"No ice, please."}
+    ]},
+  { id:"kk_takeaway", frame:"Takeaway, please.", tf:"takeaway", ko:"포장해 주세요.", purpose:"포장",
+    my:"Bungkus — 붕꾸스", re:"\\b(takeaway|take away|to go)\\b",
+    items:[
+      {ko:"호텔에 가서 먹으려 한다. 포장해 달라고 해라.", en:"Takeaway, please."},
+      {ko:"종업원이 여기서 먹을지 묻는다. 포장이라고 답해라.", en:"Takeaway, please."},
+      {ko:"야시장에서 사서 들고 가려 한다. 포장이라고 말해라.", en:"Takeaway, please."},
+      {ko:"아이가 잠들었다. 포장해 가겠다고 해라.", en:"Takeaway, please."},
+      {ko:"카페에서 커피를 시키면서 포장이라고 해라.", en:"Takeaway, please."},
+      {ko:"음식이 남았다. 싸달라고 해라.", en:"Takeaway, please."}
+    ]},
+  { id:"kk_two_and_two", frame:"Two adults and two kids.", tf:"two adults and two kids", ko:"어른 둘, 아이 둘이요.", purpose:"인원 말하기",
+    my:"", re:"\\badults?\\b.*\\b(kids?|child|children)\\b",
+    items:[
+      {ko:"섬 투어 표를 산다. 인원을 말해라.", en:"Two adults and two kids."},
+      {ko:"식당에 들어가며 인원을 말해라.", en:"Two adults and two kids."},
+      {ko:"입장권을 사면서 인원을 말해라.", en:"Two adults and two kids."},
+      {ko:"보트 표를 사면서 인원을 말해라.", en:"Two adults and two kids."},
+      {ko:"호텔 조식 인원을 말해라.", en:"Two adults and two kids."},
+      {ko:"택시를 잡으며 몇 명인지 말해라.", en:"Two adults and two kids."}
+    ]},
+  { id:"kk_photo", frame:"Could you take a photo of us?", tf:"take a photo", ko:"사진 좀 찍어 주실래요?", purpose:"사진 부탁",
+    my:"", re:"\\btake a (photo|picture)\\b",
+    items:[
+      {ko:"가족 사진을 찍고 싶다. 지나가는 사람에게 부탁해라.", en:"Could you take a photo of us?"},
+      {ko:"노을을 배경으로 사진을 부탁해라.", en:"Could you take a photo of us?"},
+      {ko:"섬에서 다 같이 나온 사진을 부탁해라.", en:"Could you take a photo of us?"},
+      {ko:"전망대에서 사진을 부탁해라.", en:"Could you take a photo of us?"},
+      {ko:"식당 직원에게 사진을 부탁해라.", en:"Could you take a photo of us?"},
+      {ko:"호텔 로비에서 사진을 부탁해라.", en:"Could you take a photo of us?"}
+    ]},
+  { id:"kk_grab", frame:"Are you my Grab driver?", tf:"my grab driver", ko:"제 그랩 기사님이세요?", purpose:"그랩 확인",
+    my:"", re:"\\b(my grab|grab (driver|car))\\b",
+    items:[
+      {ko:"공항 앞에 차가 섰다. 내가 부른 그랩인지 확인해라.", en:"Are you my Grab driver?"},
+      {ko:"호텔 앞에 차 한 대가 기다린다. 확인해라.", en:"Are you my Grab driver?"},
+      {ko:"번호판이 비슷한 차가 왔다. 확인해라.", en:"Are you my Grab driver?"},
+      {ko:"야시장 앞에서 차를 만났다. 확인해라.", en:"Are you my Grab driver?"},
+      {ko:"차가 여러 대 서 있다. 내 차가 맞는지 확인해라.", en:"Are you my Grab driver?"},
+      {ko:"기사가 창문을 내린다. 내 그랩인지 확인해라.", en:"Are you my Grab driver?"}
+    ]},
+  { id:"kk_ringgit", frame:"How much in ringgit?", tf:"how much in ringgit", ko:"링깃으로 얼마예요?", purpose:"가격 확인",
+    my:"Berapa ringgit — 버라빠 링깃", re:"\\bin ringgit\\b|\\bhow much\\b.*\\bringgit\\b",
+    items:[
+      {ko:"기념품 가격을 링깃으로 물어라.", en:"How much in ringgit?"},
+      {ko:"노점에서 과일 가격을 링깃으로 물어라.", en:"How much in ringgit?"},
+      {ko:"달러로 가격을 말해줬다. 링깃으로 물어라.", en:"How much in ringgit?"},
+      {ko:"투어 가격을 링깃으로 물어라.", en:"How much in ringgit?"},
+      {ko:"택시비를 링깃으로 물어라.", en:"How much in ringgit?"},
+      {ko:"마사지 가격을 링깃으로 물어라.", en:"How much in ringgit?"}
+    ]},
+  { id:"kk_toilet", frame:"Where's the toilet?", tf:"where is the toilet", ko:"화장실 어디예요?", purpose:"화장실 찾기",
+    my:"Tandas — 딴다스", re:"\\btoilet\\b",
+    items:[
+      {ko:"아이가 급하다. 화장실을 물어라.", en:"Where's the toilet?"},
+      {ko:"식당에서 화장실 위치를 물어라.", en:"Where's the toilet?"},
+      {ko:"쇼핑몰에서 화장실을 물어라.", en:"Where's the toilet?"},
+      {ko:"선착장에서 화장실을 물어라.", en:"Where's the toilet?"},
+      {ko:"야시장에서 화장실을 물어라.", en:"Where's the toilet?"},
+      {ko:"호텔 로비에서 화장실을 물어라.", en:"Where's the toilet?"}
+    ]},
+  { id:"kk_aircon", frame:"Can you turn up the aircon?", tf:"turn up the aircon", ko:"에어컨 좀 세게 해주실래요?", purpose:"더울 때",
+    my:"", re:"\\b(aircon|air con|air conditioning|air conditioner)\\b",
+    items:[
+      {ko:"택시 안이 덥다. 에어컨을 세게 해달라고 해라.", en:"Can you turn up the aircon?"},
+      {ko:"객실이 덥다. 에어컨을 세게 해달라고 해라.", en:"Can you turn up the aircon?"},
+      {ko:"투어 차량이 덥다. 에어컨을 부탁해라.", en:"Can you turn up the aircon?"},
+      {ko:"아이가 더워한다. 에어컨을 부탁해라.", en:"Can you turn up the aircon?"},
+      {ko:"식당이 덥다. 에어컨을 부탁해라.", en:"Can you turn up the aircon?"},
+      {ko:"버스 안이 덥다. 에어컨을 부탁해라.", en:"Can you turn up the aircon?"}
+    ]},
+  { id:"kk_boat_going", frame:"Is the boat still going today?", tf:"is the boat still going", ko:"오늘 배 뜨나요?", purpose:"섬 투어 운항",
+    my:"", re:"\\bboat\\b.*\\b(still|going|running)\\b|\\bstill (going|running)\\b",
+    items:[
+      {ko:"비가 온다. 오늘 배가 뜨는지 물어라.", en:"Is the boat still going today?"},
+      {ko:"바람이 세다. 배가 운항하는지 물어라.", en:"Is the boat still going today?"},
+      {ko:"아침부터 흐리다. 오늘 배가 가는지 물어라.", en:"Is the boat still going today?"},
+      {ko:"파도가 있어 보인다. 배가 뜨는지 물어라.", en:"Is the boat still going today?"},
+      {ko:"투어 예약이 있다. 오늘 배가 가는지 확인해라.", en:"Is the boat still going today?"},
+      {ko:"선착장에서 오늘 운항 여부를 물어라.", en:"Is the boat still going today?"}
+    ]}
+];
+const KK_IDS=KK_FRAMES.map(f=>f.id);
 const TRAVEL_KEY="speakingroom:travelrepeat";
 /* 하루 목표 — 맞힌 문제 수. 점수는 문제당 10점이라 목표 점수는 이것의 10배다.
    화면 문구가 어긋나지 않도록 숫자는 전부 여기서 끌어다 쓴다. */
 const TRAVEL_DAY_GOAL=30;
 const TRAVEL_PT=10;
-const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
+/* 색인은 이벤트 팩까지 포함한다 — 채점·기록·골라서 연습이 id 로 찾는다.
+   출제 기본 범위(TRAVEL_FRAMES 30개)는 그대로다. */
+const TRAVEL_ALL_FRAMES=TRAVEL_FRAMES.concat(KK_FRAMES);
+const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 function travelAll(){ try{ return hGet(TRAVEL_KEY,{})||{}; }catch(e){ return {}; } }
 function travelSave(o){ try{ hSet(TRAVEL_KEY,o); }catch(e){} }
 function travelStat(id){ const o=travelAll(); return o[id]||{seen:0, ok:0, miss:0, lastT:0, introduced:false}; }
@@ -15803,7 +15918,7 @@ function travelStudySet(a){ try{ hSet(TRAVEL_STUDY_KEY, (a||[]).slice()); }catch
 /* 넘겨받은 id 목록을 실제 프레임 배열로. 비어 있으면 null(=전체) */
 function travelPoolOf(ids, react){
   if(!ids||!ids.length) return null;
-  const base=react?RX_FRAMES:TRAVEL_FRAMES;
+  const base=react?RX_FRAMES:TRAVEL_ALL_FRAMES;
   const pool=base.filter(f=>ids.indexOf(f.id)>=0);
   return pool.length?pool:null;
 }
@@ -15815,6 +15930,40 @@ function travelMastery(id, react){
   if(miss>ok)     return {k:"weak", t:"약함",       c:"#C0392B", bg:"#FBEAE7", weak:true};
   if(streak>=3)   return {k:"good", t:"붙었어요",   c:"#189E79", bg:"#E6F5EE", weak:false};
   return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
+}
+const KK_GUIDE_KEY="speakingroom:kk_guide_seen";
+function kkOpen(){
+  const done=(()=>{ try{ const o=travelAll(); return KK_FRAMES.filter(f=>o[f.id]&&o[f.id].seen>0).length; }catch(e){ return 0; } })();
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="kkOv";
+  const rows=KK_FRAMES.map((f,i)=>{
+    const st=travelStat(f.id)||{}, m=travelMastery(f.id);
+    return `<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #E9F4EE">
+      <span style="flex:none;width:21px;height:21px;border-radius:50%;background:#189E79;color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;margin-top:2px">${i+1}</span>
+      <span style="flex:1;min-width:0">
+        <b style="display:block;font-family:var(--serif);font-size:16px;color:#189E79" data-no-pronko>${escapeHtml(f.frame)}</b>
+        <span style="display:block;font-size:12px;color:#3A2D27;font-weight:700;margin-top:1px">${escapeHtml(f.ko)}</span>
+        ${f.my?`<span style="display:block;font-size:11px;color:#C08763;font-weight:800;margin-top:2px">🇲🇾 ${escapeHtml(f.my)}</span>`:""}
+      </span>
+      <span style="flex:none;font-size:10.5px;font-weight:900;color:${m.c};background:${m.bg};border-radius:99px;padding:2px 8px;margin-top:2px">${(st.seen||0)?m.t:"새로"}</span>
+    </div>`;
+  }).join("");
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
+     <div class="hub-grab"></div>
+     <div class="hub-title">🇲🇾 말레이시아 10문장</div>
+     <div class="hub-sub">코타키나발루에서 <b>매일 쓰는 것</b>만 열 개예요.<br>이것만 입에 붙이면 밥 먹고, 타고, 표 사고, 사진 찍는 건 됩니다.</div>
+     <div class="chk-list" style="max-height:46vh;overflow-y:auto;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:2px 14px 10px">${rows}</div>
+     <div style="font-size:12px;color:#8A6F62;margin:11px 2px 10px">공부 방식은 여행 표현 반복과 같아요 — 한글 상황을 보고 영어로 말하면 채점하고, 맞히면 ${TRAVEL_PT}점.<br>${done?`지금까지 ${done} / ${KK_FRAMES.length}개 연습했어요.`:"열 개 전부 처음이에요."}</div>
+     <button class="routine-main" id="kkGo" style="margin:0">${done?"이어서 연습하기 →":"열 문장 외우러 가기 →"}</button>
+     <button class="auto-sub" id="kkClose" style="width:100%;margin-top:9px">나중에</button>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  ov.querySelector("#kkClose").onclick=close;
+  ov.querySelector("#kkGo").onclick=()=>{ try{ hSet(KK_GUIDE_KEY,true); }catch(e){} close();
+    travelCountPick(n=>startTravelDrill(n, true, true, KK_IDS)); };
+  requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openTravelStudyPicker(){
   let sel=new Set(travelStudyGet());
@@ -15843,7 +15992,7 @@ function openTravelStudyPicker(){
        <button id="tvStudyAll" style="flex:none;padding:10px 14px;border:1.5px solid #C7E8DA;border-radius:12px;background:#fff;color:#8A6F62;font-size:12.5px;font-weight:900;cursor:pointer">전체</button>
        <button id="tvStudyNone" style="flex:none;padding:10px 14px;border:1.5px solid #C7E8DA;border-radius:12px;background:#fff;color:#8A6F62;font-size:12.5px;font-weight:900;cursor:pointer">해제</button>
      </div>
-     <div class="chk-list" id="tvStudyList">${TRAVEL_FRAMES.map(row).join("")}</div>
+     <div class="chk-list" id="tvStudyList">${TRAVEL_ALL_FRAMES.map(row).join("")}</div>
      <div id="tvStudyFoot" style="padding-top:11px;border-top:1px solid #D9CEC6;margin-top:9px"></div>
    </div>`;
   document.body.appendChild(ov);
@@ -15851,7 +16000,7 @@ function openTravelStudyPicker(){
   ov.querySelector(".hub-bg").onclick=close;
   const list=ov.querySelector("#tvStudyList"), foot=ov.querySelector("#tvStudyFoot");
   const paint=()=>{
-    list.innerHTML=TRAVEL_FRAMES.map(row).join("");
+    list.innerHTML=TRAVEL_ALL_FRAMES.map(row).join("");
     list.querySelectorAll(".tvStudyRow").forEach(b=>{ b.onclick=()=>{
       const id=b.getAttribute("data-id");
       if(sel.has(id)) sel.delete(id); else sel.add(id);
@@ -15861,7 +16010,7 @@ function openTravelStudyPicker(){
     foot.innerHTML = n
       ? `<div style="font-size:12px;color:#8A6F62;margin:0 2px 9px"><b style="color:#189E79">${n}개</b> 선택 — 이 표현들만 문제로 나와요.</div>
          <button id="tvStudyGoKo" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#2BBD94,#189E79);color:#fff;font-size:15px;font-weight:950;cursor:pointer">✈️ 한글 상황 보고 말하기 →</button>
-         <button id="tvStudyGoEn" style="width:100%;padding:13px;border:2px solid #189E79;border-radius:14px;background:#fff;color:#189E79;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px">⚡ 영어 듣고 답하기 →</button>`
+         ${[...sel].some(id=>TRAVEL_REACT[id])?`<button id="tvStudyGoEn" style="width:100%;padding:13px;border:2px solid #189E79;border-radius:14px;background:#fff;color:#189E79;font-size:14px;font-weight:900;cursor:pointer;margin-top:8px">⚡ 영어 듣고 답하기 →</button>`:`<div style="font-size:11.5px;color:#8A6F62;text-align:center;margin-top:9px">🇲🇾 이벤트 문장은 '영어 듣고 답하기'가 아직 없어요.</div>`}`
       : `<div style="font-size:12.5px;color:#8A6F62;text-align:center;padding:6px 0 2px">연습할 표현을 하나 이상 체크하세요.</div>`;
     const ko=foot.querySelector("#tvStudyGoKo");
     if(ko) ko.onclick=()=>{ const ids=[...sel]; close(); travelCountPick(n2=>startTravelDrill(n2, true, true, ids)); };
@@ -15869,10 +16018,10 @@ function openTravelStudyPicker(){
     if(en) en.onclick=()=>{ const ids=[...sel]; close(); startReactDrill(undefined, false, ids); };
   };
   ov.querySelector("#tvStudyWeak").onclick=()=>{
-    sel=new Set(TRAVEL_FRAMES.filter(f=>travelMastery(f.id).weak).map(f=>f.id));
+    sel=new Set(TRAVEL_ALL_FRAMES.filter(f=>travelMastery(f.id).weak).map(f=>f.id));
     travelStudySet([...sel]); paint();
   };
-  ov.querySelector("#tvStudyAll").onclick=()=>{ sel=new Set(TRAVEL_FRAMES.map(f=>f.id)); travelStudySet([...sel]); paint(); };
+  ov.querySelector("#tvStudyAll").onclick=()=>{ sel=new Set(TRAVEL_ALL_FRAMES.map(f=>f.id)); travelStudySet([...sel]); paint(); };
   ov.querySelector("#tvStudyNone").onclick=()=>{ sel=new Set(); travelStudySet([]); paint(); };
   paint();
   requestAnimationFrame(()=>ov.classList.add("show"));
@@ -19428,7 +19577,9 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
   const K=it._travel?travelKeyOf(it):null;
   const note = it._travel
     ? `<div style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">표현은 <b>${escapeHtml(it.frame.frame)}</b>${(K&&K.needKey&&K.key.length)?` · <span style="color:#189E79">${travelKeyText(K.key)}</span> 는 꼭 들어가야 해요`:""} — 나머지는 상황에 맞게 바꿔도 돼요.</div>` : "";
-  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
+  const myTip=(it._travel && it.frame && it.frame.my)
+    ? `<div style="margin-top:7px;font-size:12.5px;color:#C08763;font-weight:800">🇲🇾 현지에서는 이렇게도 해요 — ${escapeHtml(it.frame.my)}</div>` : "";
+  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
   bindStudyPanel(ans.querySelector(".study-panel"));
