@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.205";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.206";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12799,7 +12799,7 @@ function openSpeakHub(){
      <div class="hub-sub">배운 블록을 말로 써봐요</div>
      <button class="hub-opt" data-go="kk" style="background:linear-gradient(135deg,#F4A24C,#E0722F);border:none;box-shadow:0 12px 26px -12px rgba(224,114,47,.55)">
        <span class="hub-emo" style="background:rgba(255,255,255,.22)">🇲🇾</span>
-       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">말레이시아 10문장 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.95);background:rgba(255,255,255,.2);border-radius:99px;padding:2px 8px;margin-left:4px">이벤트</i></b><i style="color:rgba(255,255,255,.9)">가서 매일 쓰는 것만 열 개 — 이것만 외워 가요</i></span>
+       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">말레이시아 10마디 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.95);background:rgba(255,255,255,.2);border-radius:99px;padding:2px 8px;margin-left:4px">이벤트</i></b><i style="color:rgba(255,255,255,.9)">안녕하세요 · 얼마예요 · 깎아주세요 — 이것만 외워 가요</i></span>
        <span class="hub-ar" style="background:#fff;color:#E0722F">›</span>
      </button>
      <button class="hub-opt" data-go="real" style="background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)">
@@ -15522,7 +15522,122 @@ const TRAVEL_FRAMES=[
    30개 여행 표현과 별개다. 코타키나발루에서 '매일 실제로 쓰는' 것만 열 개.
    이것만 입에 붙이면 밥 먹고, 이동하고, 표 사고, 사진 찍는 건 된다.
    채점·점수·재출제는 여행 표현 반복과 똑같은 엔진을 쓴다. */
-const KK_FRAMES=[
+/* ── ① 기본 10마디 — 인사·사과·흥정. 가장 많이 쓰고 가장 빨리 외워지는 것들 ── */
+const KK_BASIC_FRAMES=[
+  { id:"kkb_hello", frame:"Hello.", tf:"hello", ko:"안녕하세요.", purpose:"인사",
+    my:"Selamat pagi — 슬라맛 빠기 (아침) / Selamat petang — 슬라맛 쁘땅 (오후)",
+    re:"\\b(hello|hi|good (morning|afternoon|evening|day))\\b",
+    items:[
+      {ko:"가게에 들어가면서 인사해라.", en:"Hello."},
+      {ko:"아침에 호텔 직원과 마주쳤다. 인사해라.", en:"Good morning."},
+      {ko:"택시에 타면서 기사에게 인사해라.", en:"Hello."},
+      {ko:"오후에 가이드를 처음 만났다. 인사해라.", en:"Good afternoon."},
+      {ko:"식당에 들어서며 종업원에게 인사해라.", en:"Hello."},
+      {ko:"노점 주인과 눈이 마주쳤다. 인사해라.", en:"Hi."}
+    ]},
+  { id:"kkb_thanks", frame:"Thank you.", tf:"thank you", ko:"감사합니다.", purpose:"감사",
+    my:"Terima kasih — 뜨리마 까시",
+    re:"\\b(thank|thanks)\\b",
+    items:[
+      {ko:"음식을 가져다줬다. 고맙다고 해라.", en:"Thank you."},
+      {ko:"길을 알려줬다. 고맙다고 해라.", en:"Thank you."},
+      {ko:"사진을 찍어줬다. 고맙다고 해라.", en:"Thank you so much."},
+      {ko:"짐을 들어줬다. 고맙다고 해라.", en:"Thank you."},
+      {ko:"택시에서 내리면서 기사에게 고맙다고 해라.", en:"Thanks."},
+      {ko:"거스름돈을 받았다. 고맙다고 해라.", en:"Thank you."}
+    ]},
+  { id:"kkb_sorry", frame:"Sorry.", tf:"sorry", ko:"죄송합니다.", purpose:"사과",
+    my:"Maaf — 마아프",
+    re:"\\b(sorry|apologize|apologies)\\b",
+    items:[
+      {ko:"지나가다 사람과 부딪혔다. 사과해라.", en:"Sorry."},
+      {ko:"아이가 소리를 질렀다. 옆 사람에게 사과해라.", en:"I'm sorry."},
+      {ko:"약속 시간에 늦었다. 사과해라.", en:"Sorry I'm late."},
+      {ko:"컵을 쏟았다. 사과해라.", en:"I'm so sorry."},
+      {ko:"잘못 알아듣고 엉뚱하게 답했다. 사과해라.", en:"Sorry."},
+      {ko:"줄을 잘못 섰다. 사과해라.", en:"Sorry."}
+    ]},
+  { id:"kkb_excuse", frame:"Excuse me.", tf:"excuse me", ko:"실례합니다.", purpose:"말 걸기·비켜 달라기",
+    my:"Tumpang lalu — 뚬빵 랄루 (지나갈게요)",
+    re:"\\bexcuse me\\b",
+    items:[
+      {ko:"직원에게 말을 걸어야 한다. 먼저 이렇게 불러라.", en:"Excuse me."},
+      {ko:"사람들 사이를 지나가야 한다. 양해를 구해라.", en:"Excuse me."},
+      {ko:"길을 물으려고 지나가는 사람을 불러라.", en:"Excuse me."},
+      {ko:"주문을 하려고 종업원을 불러라.", en:"Excuse me."},
+      {ko:"버스에서 내리려는데 앞이 막혔다. 양해를 구해라.", en:"Excuse me."},
+      {ko:"카운터에 사람이 없다. 안쪽을 향해 불러라.", en:"Excuse me."}
+    ]},
+  { id:"kkb_howmuch", frame:"How much is this?", tf:"how much is this", ko:"이거 얼마예요?", purpose:"가격 묻기",
+    my:"Berapa ini — 브라빠 이니",
+    re:"\\bhow much\\b",
+    items:[
+      {ko:"기념품을 집어 들었다. 가격을 물어라.", en:"How much is this?"},
+      {ko:"노점에서 과일 가격을 물어라.", en:"How much is this?"},
+      {ko:"티셔츠 가격을 물어라.", en:"How much is this?"},
+      {ko:"자석 두 개를 들고 가격을 물어라.", en:"How much are these?"},
+      {ko:"마사지 가격을 물어라.", en:"How much is it?"},
+      {ko:"야시장에서 꼬치 가격을 물어라.", en:"How much is this?"}
+    ]},
+  { id:"kkb_expensive", frame:"That's too expensive.", tf:"too expensive", ko:"너무 비싸요.", purpose:"흥정 시작",
+    my:"Mahal sangat — 마할 상앗",
+    re:"\\bexpensive\\b",
+    items:[
+      {ko:"가격을 듣고 너무 비싸다고 말해라.", en:"That's too expensive."},
+      {ko:"기념품 값이 생각보다 높다. 비싸다고 말해라.", en:"That's too expensive."},
+      {ko:"택시 기사가 부른 값이 너무 높다. 비싸다고 말해라.", en:"That's too expensive."},
+      {ko:"투어 가격이 예상보다 비싸다. 그렇게 말해라.", en:"That's too expensive."},
+      {ko:"옷 가격을 듣고 비싸다고 말해라.", en:"That's a bit expensive."},
+      {ko:"마사지 값이 비싸다. 그렇게 말해라.", en:"That's too expensive."}
+    ]},
+  { id:"kkb_discount", frame:"Can you give me a discount?", tf:"give me a discount", ko:"좀 깎아 주세요.", purpose:"흥정",
+    my:"Boleh kurang? — 볼레 꾸랑?",
+    re:"\\b(discount|cheaper|lower the price|better price)\\b",
+    items:[
+      {ko:"기념품을 여러 개 산다. 깎아 달라고 해라.", en:"Can you give me a discount?"},
+      {ko:"야시장에서 가격을 깎아 달라고 해라.", en:"Can you give me a discount?"},
+      {ko:"현금으로 낸다고 하며 깎아 달라고 해라.", en:"Can you make it cheaper?"},
+      {ko:"두 개를 같이 사면서 깎아 달라고 해라.", en:"Can you give me a discount for two?"},
+      {ko:"투어 가격을 깎아 달라고 해라.", en:"Can you give me a better price?"},
+      {ko:"옷값을 조금만 깎아 달라고 해라.", en:"Can you make it a bit cheaper?"}
+    ]},
+  { id:"kkb_looking", frame:"Just looking, thank you.", tf:"just looking", ko:"구경만 할게요.", purpose:"부담 없이 거절",
+    my:"Tengok saja — 뜽옥 사자",
+    re:"\\bjust (looking|browsing)\\b",
+    items:[
+      {ko:"가게 주인이 자꾸 권한다. 구경만 하겠다고 해라.", en:"Just looking, thank you."},
+      {ko:"노점 주인이 다가온다. 구경만 하겠다고 해라.", en:"Just looking, thank you."},
+      {ko:"뭘 찾느냐고 묻는다. 구경만 하겠다고 답해라.", en:"Just looking, thank you."},
+      {ko:"옷가게에서 직원이 따라온다. 구경만 하겠다고 해라.", en:"Just looking, thanks."},
+      {ko:"살 생각은 없다. 구경만 하겠다고 해라.", en:"Just looking, thank you."},
+      {ko:"기념품 가게에서 권유를 받았다. 구경만 하겠다고 해라.", en:"Just looking, thank you."}
+    ]},
+  { id:"kkb_take_it", frame:"I'll take it.", tf:"ill take it", ko:"이걸로 할게요.", purpose:"사겠다고 말하기",
+    my:"Saya ambil ini — 사야 암빌 이니",
+    re:"\\bill take (it|this|that|two|these)\\b",
+    items:[
+      {ko:"가격이 맞았다. 사겠다고 말해라.", en:"I'll take it."},
+      {ko:"깎아줬다. 사겠다고 말해라.", en:"I'll take it."},
+      {ko:"고른 티셔츠를 사겠다고 말해라.", en:"I'll take this."},
+      {ko:"두 개를 사겠다고 말해라.", en:"I'll take two."},
+      {ko:"보여준 물건이 마음에 든다. 사겠다고 말해라.", en:"I'll take it."},
+      {ko:"투어를 예약하겠다고 말해라.", en:"I'll take this one."}
+    ]},
+  { id:"kkb_delicious", frame:"It's delicious.", tf:"delicious", ko:"맛있어요.", purpose:"칭찬",
+    my:"Sedap — 스답",
+    re:"\\b(delicious|so good|tastes good|really good)\\b",
+    items:[
+      {ko:"음식이 맛있다. 종업원에게 말해라.", en:"It's delicious."},
+      {ko:"주인이 맛이 어떠냐고 묻는다. 맛있다고 답해라.", en:"It's delicious."},
+      {ko:"야시장 꼬치가 맛있다. 그렇게 말해라.", en:"It's delicious."},
+      {ko:"아이가 잘 먹는다. 맛있다고 말해라.", en:"It's really good."},
+      {ko:"처음 먹어본 음식이 맛있다. 그렇게 말해라.", en:"It's delicious."},
+      {ko:"음식을 다 먹고 맛있었다고 말해라.", en:"It was delicious."}
+    ]}
+];
+const KK_BASIC_IDS=KK_BASIC_FRAMES.map(f=>f.id);
+/* ── ② 생활 10문장 — 밥·이동·표·사진. 현장에서 바로 쓰는 문장들 ── */
+const KK_LIFE_FRAMES=[
   { id:"kk_not_spicy", frame:"Not too spicy, please.", tf:"not too spicy", ko:"안 맵게 해주세요.", purpose:"음식 주문",
     my:"Tak pedas — 딱 뻐다스", re:"\\bnot (too )?spicy\\b",
     items:[
@@ -15624,7 +15739,14 @@ const KK_FRAMES=[
       {ko:"선착장에서 오늘 운항 여부를 물어라.", en:"Is the boat still going today?"}
     ]}
 ];
+const KK_LIFE_IDS=KK_LIFE_FRAMES.map(f=>f.id);
+const KK_FRAMES=KK_BASIC_FRAMES.concat(KK_LIFE_FRAMES);
 const KK_IDS=KK_FRAMES.map(f=>f.id);
+/* 이벤트 팩은 두 묶음이다 — 시트에서 골라 시작한다 */
+const KK_SETS=[
+  {key:"basic", emo:"🙌", t:"기본 10마디", sub:"인사 · 감사 · 사과 · 흥정", frames:KK_BASIC_FRAMES, ids:KK_BASIC_IDS},
+  {key:"life",  emo:"🍜", t:"생활 10문장", sub:"밥 · 이동 · 표 · 사진",    frames:KK_LIFE_FRAMES,  ids:KK_LIFE_IDS}
+];
 const TRAVEL_KEY="speakingroom:travelrepeat";
 /* 하루 목표 — 맞힌 문제 수. 점수는 문제당 10점이라 목표 점수는 이것의 10배다.
    화면 문구가 어긋나지 않도록 숫자는 전부 여기서 끌어다 쓴다. */
@@ -15932,10 +16054,11 @@ function travelMastery(id, react){
   return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
 }
 const KK_GUIDE_KEY="speakingroom:kk_guide_seen";
+const KK_LAST_SET="speakingroom:kk_set";
 function kkOpen(){
-  const done=(()=>{ try{ const o=travelAll(); return KK_FRAMES.filter(f=>o[f.id]&&o[f.id].seen>0).length; }catch(e){ return 0; } })();
+  let cur=(()=>{ try{ const v=hGet(KK_LAST_SET,"basic"); return KK_SETS.some(s=>s.key===v)?v:"basic"; }catch(e){ return "basic"; } })();
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="kkOv";
-  const rows=KK_FRAMES.map((f,i)=>{
+  const rowsOf=(set)=>set.frames.map((f,i)=>{
     const st=travelStat(f.id)||{}, m=travelMastery(f.id);
     return `<div style="display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #E9F4EE">
       <span style="flex:none;width:21px;height:21px;border-radius:50%;background:#189E79;color:#fff;font-size:11px;font-weight:900;display:grid;place-items:center;margin-top:2px">${i+1}</span>
@@ -15947,22 +16070,38 @@ function kkOpen(){
       <span style="flex:none;font-size:10.5px;font-weight:900;color:${m.c};background:${m.bg};border-radius:99px;padding:2px 8px;margin-top:2px">${(st.seen||0)?m.t:"새로"}</span>
     </div>`;
   }).join("");
+  const tabs=()=>KK_SETS.map(s=>`<button class="kkTab" data-k="${s.key}" style="flex:1;padding:10px 0;border-radius:12px;border:2px solid ${s.key===cur?'#E0722F':'#DCD1C8'};background:${s.key===cur?'#FFF1E6':'#fff'};color:${s.key===cur?'#E0722F':'#8A6F62'};font-size:13px;font-weight:900;cursor:pointer">${s.emo} ${s.t}</button>`).join("");
+  const body=()=>{
+    const set=KK_SETS.find(s=>s.key===cur);
+    const done=(()=>{ try{ const o=travelAll(); return set.frames.filter(f=>o[f.id]&&o[f.id].seen>0).length; }catch(e){ return 0; } })();
+    return `<div style="display:flex;gap:8px;margin:0 0 11px">${tabs()}</div>
+     <div style="font-size:12.5px;color:#8A6F62;text-align:center;margin:0 2px 10px">${escapeHtml(set.sub)}</div>
+     <div class="chk-list" style="max-height:44vh;overflow-y:auto;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:2px 14px 10px">${rowsOf(set)}</div>
+     <div style="font-size:12px;color:#8A6F62;margin:11px 2px 10px">공부 방식은 여행 표현 반복과 같아요 — 한글 상황을 보고 영어로 말하면 채점하고, 맞히면 ${TRAVEL_PT}점.<br>${done?`이 묶음은 ${done} / ${set.frames.length}개 연습했어요.`:"열 개 전부 처음이에요."}</div>
+     <button class="routine-main" id="kkGo" style="margin:0">${done?"이어서 연습하기 →":set.t+" 외우러 가기 →"}</button>
+     <button class="auto-sub" id="kkClose" style="width:100%;margin-top:9px">나중에</button>`;
+  };
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
      <div class="hub-grab"></div>
-     <div class="hub-title">🇲🇾 말레이시아 10문장</div>
-     <div class="hub-sub">코타키나발루에서 <b>매일 쓰는 것</b>만 열 개예요.<br>이것만 입에 붙이면 밥 먹고, 타고, 표 사고, 사진 찍는 건 됩니다.</div>
-     <div class="chk-list" style="max-height:46vh;overflow-y:auto;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:2px 14px 10px">${rows}</div>
-     <div style="font-size:12px;color:#8A6F62;margin:11px 2px 10px">공부 방식은 여행 표현 반복과 같아요 — 한글 상황을 보고 영어로 말하면 채점하고, 맞히면 ${TRAVEL_PT}점.<br>${done?`지금까지 ${done} / ${KK_FRAMES.length}개 연습했어요.`:"열 개 전부 처음이에요."}</div>
-     <button class="routine-main" id="kkGo" style="margin:0">${done?"이어서 연습하기 →":"열 문장 외우러 가기 →"}</button>
-     <button class="auto-sub" id="kkClose" style="width:100%;margin-top:9px">나중에</button>
+     <div class="hub-title">🇲🇾 말레이시아 10마디</div>
+     <div class="hub-sub">코타키나발루에서 <b>매일 쓰는 것</b>만 골랐어요.<br>두 묶음, 각각 열 개입니다.</div>
+     <div id="kkBody"></div>
    </div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelector("#kkClose").onclick=close;
-  ov.querySelector("#kkGo").onclick=()=>{ try{ hSet(KK_GUIDE_KEY,true); }catch(e){} close();
-    travelCountPick(n=>startTravelDrill(n, true, true, KK_IDS)); };
+  const paint=()=>{
+    ov.querySelector("#kkBody").innerHTML=body();
+    ov.querySelectorAll(".kkTab").forEach(b=>{ b.onclick=()=>{ cur=b.getAttribute("data-k"); try{ hSet(KK_LAST_SET,cur); }catch(e){} paint(); }; });
+    ov.querySelector("#kkClose").onclick=close;
+    ov.querySelector("#kkGo").onclick=()=>{
+      const set=KK_SETS.find(s=>s.key===cur);
+      try{ hSet(KK_GUIDE_KEY,true); }catch(e){} close();
+      travelCountPick(n=>startTravelDrill(n, true, true, set.ids));
+    };
+  };
+  paint();
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openTravelStudyPicker(){
