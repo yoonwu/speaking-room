@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.203";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.204";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15644,6 +15644,42 @@ function travelReadMs(it){
 /* 채점 — 뜻 판정은 기존 문장 채점(wrGrade)을 그대로 쓰고,
    그 위에 '이번 팩의 목표 프레임을 실제로 썼는가'만 더 본다.
    뜻만 맞고 다른 표현을 쓴 경우는 틀린 영어가 아니라 '이번 연습 대상이 아님'으로 안내한다. */
+/* 이 문항에서 '무엇에 대한 말인지'를 정하는 낱말.
+   예문에서 프레임(Can I get ~ 등)과 기능어·인사말을 걷어내고 남은 것.
+   towel / breakfast / airport 처럼 이게 빠지면 다른 말이 되어버리는 낱말들이다. */
+const TRAVEL_SKIP_WORDS=new Set(("a an the some my our your is are was to it its do does did i we you he she they this that "
+  +"of in on at for and or with here there be been am not no me him her us them mine yours "
+  +"if when while until than then so but as "
+  /* 조동사·부정형은 '무엇에 대한 말인지'를 정하지 않는다 —
+     "Does that mean I can't order?" 에서 order 를 다른 말로 바꿔도 cant 가 겹쳐 정답이 되던 문제 */
+  +"can cant cannot could couldnt would wouldnt should shouldnt will wont must may might "
+  +"dont doesnt didnt isnt arent wasnt werent havent hasnt hadnt").split(" ").filter(Boolean));
+const TRAVEL_FILLER_WORDS=new Set("please thanks thank sorry hello hi excuse okay ok yes yeah sir madam maam".split(" "));
+/* '무엇에 대한 말인지'를 정하지 못하는 흔한 동사들 — airport 를 downtown 으로 바꿔 말해도
+   take/me 가 겹쳐서 정답이 되던 문제를 막는다. 이걸 빼서 아무것도 안 남으면 그때는 다시 쓴다. */
+const TRAVEL_LIGHT_VERBS=new Set(("get go come take have make give put keep let know see want need like "
+  +"use help show tell say speak stop bring").split(" "));
+function travelKeyText(key){
+  const k=(key||[]).filter(Boolean);
+  if(!k.length) return "";
+  return k.length===1 ? `<b>${escapeHtml(k[0])}</b>` : `<b>${escapeHtml(k.join(", "))}</b> 중 하나`;
+}
+function travelKeyOf(it){
+  const frameWords=new Set(adWords(String((it.frame&&it.frame.frame)||"").replace(/[~?]/g," ")));
+  const want=adWords((it.ex&&it.ex.en)||"").filter(w=>!frameWords.has(w)&&!TRAVEL_SKIP_WORDS.has(w));
+  const solid=want.filter(w=>!TRAVEL_FILLER_WORDS.has(w));
+  const strong=solid.filter(w=>!TRAVEL_LIGHT_VERBS.has(w));
+  const key=strong.length?strong:solid;
+  /* 실전 반응은 '상대의 말'이 유일한 단서다.
+     거기에 안 나온 낱말까지 요구하면 알 방법이 없는 문제가 된다 —
+     상대가 말한 낱말일 때만 필수로 본다. */
+  let needKey = key.length>0;
+  if(needKey && it._react){
+    const cue=adNorm(it.cue||"").split(" ").filter(Boolean);
+    needKey = key.some(w=>cue.some(x=>x===w||adLooseWordEq(x,w)));
+  }
+  return {frameWords, want, key, needKey};
+}
 function travelGrade(it, heard){
   const h=adNorm(heard), hw=h.split(" ").filter(Boolean);
   /* 1순위 — 목표 프레임을 실제로 썼는가. 여기는 엄격하게 본다. */
@@ -15652,17 +15688,21 @@ function travelGrade(it, heard){
   /* 2·3순위 — 예시 정답과 낱말이 같은지는 결정적이지 않다.
      building 을 hotel 로, another 를 one more 로 바꿔 말해도 그 프레임을 연습한 것이다.
      낱말 비교는 기존 것을 그대로 쓴다: adLooseWordEq(활용형) + phWordEq(한국식 발음). */
-  const frameWords=new Set(adWords(String(it.frame.frame||"").replace(/[~?]/g," ")));
-  const SKIP=new Set(("a an the some my our your is are was to it its do does did i we you he she they this that "
-    +"of in on at for and or with here there be been am not no").split(" "));
-  const want=adWords(it.ex.en).filter(w=>!frameWords.has(w)&&!SKIP.has(w));
+  const K=travelKeyOf(it);
+  const frameWords=K.frameWords, want=K.want;
   const hasW=(w)=>hw.some(x=>x===w||adLooseWordEq(x,w)||(function(){ try{ return phWordEq(x,w); }catch(e){ return false; } })());
   const missing=want.filter(w=>!hasW(w));
   const sameWords = !want.length || missing.length<want.length;      // 예시와 겹치는 낱말이 하나라도 있는가
   const extra = hw.filter(w=>!frameWords.has(w)).length;             // 프레임 말고 실제 내용이 있는가
-  const ok = frameOk && (extra>0 || !want.length);
+  /* 핵심 낱말 — 하나라도 들어가야 정답.
+     전부를 요구하지는 않는다: "another towel" 을 "one more towel" 로 바꿔 말한 건 맞는 답이다.
+     하지만 towel 자리에 fork 를 넣으면 다른 말이라 오답이다. */
+  const keyMissing=K.key.filter(w=>!hasW(w));
+  const keyHit = !K.key.length || keyMissing.length<K.key.length;
+  const ok = frameOk && (K.needKey ? keyHit : (extra>0 || !want.length));
   return { ok, blockHit:frameOk, slotHit:true, slot:missing, hit:want.length-missing.length,
-           heardNorm:h, altBlock:null,
+           heardNorm:h, altBlock:null, key:K.key, keyMissing, needKey:K.needKey,
+           keyMiss:(frameOk && K.needKey && !keyHit),  // 프레임은 맞는데 핵심 낱말이 없음
            meaningOnly:(!frameOk && sameWords),      // 뜻은 통하는데 이번 프레임을 안 씀
            otherWords:(ok && !sameWords) };          // 프레임은 맞고 예시와 다른 낱말로 말함
 }
@@ -15697,7 +15737,7 @@ function travelGuideShow(onStart){
        <div style="font-size:12.5px;color:#3A2D27;font-weight:800;margin-top:5px">호텔 방에 수건이 부족하다. 하나 더 요청해라.</div>
      </div>
 
-     ${step(3,"정답은 하나가 아니에요","핵심 표현만 제대로 쓰면 맞아요. 뒤는 상황에 맞게 바꿔도 됩니다.<br><span style=\"color:#19a06b;font-weight:800\">Can I get a towel? / Can I get one more towel?</span> 둘 다 정답.")}
+     ${step(3,"표현 + 핵심 낱말이 맞으면 정답","말하는 방식은 자유지만 <b>무엇에 대한 말인지</b>는 맞아야 해요.<br><span style=\"color:#19a06b;font-weight:800\">Can I get a towel? / Can I get one more towel?</span> 둘 다 정답 — <span style=\"color:#e0533f;font-weight:800\">Can I get a fork?</span> 는 오답.")}
      ${step(4,"천천히 읽고 말해도 돼요","상황을 읽는 시간은 빼고 재요. 급하게 안 해도 됩니다.")}
      ${step(5,"맞히면 "+TRAVEL_PT+"점 · "+TRAVEL_DAY_GOAL+"문제면 오늘 끝","하루 "+(TRAVEL_DAY_GOAL*TRAVEL_PT)+"점이 목표예요. 한 판은 <b>10·15·20문제</b> 중에 고를 수 있어요.")}
 
@@ -19211,7 +19251,7 @@ function autoDrillRender(recallMode){
     <div class="rx-goal">
       <div class="rx-goal-lbl">🎯 이 표현으로 답하기</div>
       <div class="rx-goal-en">${escapeHtml(it.frame.frame)}</div>
-      <div class="rx-goal-ko">${escapeHtml(it.frame.ko)} · 뒤에 붙는 말은 상황에 맞게 바꿔도 정답이에요</div>
+      <div class="rx-goal-ko">${escapeHtml(it.frame.ko)} · ${travelKeyOf(it).needKey?"상대가 말한 <b>핵심 낱말</b>을 꼭 넣어서 답해요":"뒤에 붙는 말은 상황에 맞게 바꿔도 정답이에요"}</div>
     </div>`:`<div class="auto-ko">${escapeHtml(adPromptKo(it))}</div>`}
     ${answerHtml}
     <div class="auto-stat" id="autoStat">${it._react?"<b>듣고</b> 나서 아래 표현으로 바로 답해보세요. 듣는 시간은 빼고 재요.":(it._travel?"상황을 <b>먼저 읽고</b>, 머릿속에 그려지면 말해보세요. 읽는 시간은 빼고 재요.":"상황을 보는 순간 바로 영어를 시작해보세요. 정답까지 걸린 시간이 아니라 <b>말 시작</b> 시간이 기준이에요.")}</div>
@@ -19355,9 +19395,11 @@ function autoDrillFinish(heard, meta){
         +(travelOtherFrameOf(heard, it.frame.id) ? `<br><span style="font-size:12px;color:#8A6F62">(${escapeHtml(travelOtherFrameOf(heard, it.frame.id))} 도 이 여행팩에 있어요 — 다음에 나와요)</span>` : ``);
     }else{
       const why = it._travel
-        ? (!g.blockHit?`이번 목표 표현 <b>${escapeHtml(it.frame.frame)}</b> 을 넣어서 말해봐요.`:`상황에 맞는 낱말이 부족했어요.`)
+        ? (!g.blockHit?`이번 목표 표현 <b>${escapeHtml(it.frame.frame)}</b> 을 넣어서 말해봐요.`
+           :(g.keyMiss?`무엇에 대한 말인지가 빠졌어요 — ${travelKeyText(g.key)} 는 꼭 들어가야 해요.`
+             :`상황에 맞는 낱말이 부족했어요.`))
         : (!g.blockHit?`목표 블록 <b>${escapeHtml(it.block.block)}</b> 시작이 빠졌어요.`:`슬롯 단어 <b>${escapeHtml(g.slot.join(", ")||"핵심어")}</b>가 부족했어요.`);
-      if(stat) stat.innerHTML=`<b style="color:#e0533f">아직 자동화 전</b><br>${why}`;
+      if(stat) stat.innerHTML=`<b style="color:${g.keyMiss?'#E0A300':'#e0533f'}">${g.keyMiss?"표현은 맞았어요":"아직 자동화 전"}</b><br>${why}`;
     }
     autoDrillShowResult(it, true, false);
   }
@@ -19383,8 +19425,9 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
   const head = it._travel
     ? `<div style="font-size:11px;color:#7FA396;font-weight:900;margin-bottom:5px">이렇게 말하면 돼요</div>`
     : `<div style="font-size:11px;color:#7FA396;font-weight:900;margin-bottom:5px">정답</div>`;
+  const K=it._travel?travelKeyOf(it):null;
   const note = it._travel
-    ? `<div style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">핵심은 <b>${escapeHtml(it.frame.frame)}</b> — 뒤는 상황에 맞게 바꿔도 돼요.</div>` : "";
+    ? `<div style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">표현은 <b>${escapeHtml(it.frame.frame)}</b>${(K&&K.needKey&&K.key.length)?` · <span style="color:#189E79">${travelKeyText(K.key)}</span> 는 꼭 들어가야 해요`:""} — 나머지는 상황에 맞게 바꿔도 돼요.</div>` : "";
   ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
