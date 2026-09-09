@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.206";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.207";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15525,7 +15525,7 @@ const TRAVEL_FRAMES=[
 /* ── ① 기본 10마디 — 인사·사과·흥정. 가장 많이 쓰고 가장 빨리 외워지는 것들 ── */
 const KK_BASIC_FRAMES=[
   { id:"kkb_hello", frame:"Hello.", tf:"hello", ko:"안녕하세요.", purpose:"인사",
-    my:"Selamat pagi — 슬라맛 빠기 (아침) / Selamat petang — 슬라맛 쁘땅 (오후)",
+    myKo:"슬라맛 빠기 (아침) · 슬라맛 쁘땅 (오후)", myRo:"Selamat pagi / Selamat petang",
     re:"\\b(hello|hi|good (morning|afternoon|evening|day))\\b",
     items:[
       {ko:"가게에 들어가면서 인사해라.", en:"Hello."},
@@ -15536,7 +15536,7 @@ const KK_BASIC_FRAMES=[
       {ko:"노점 주인과 눈이 마주쳤다. 인사해라.", en:"Hi."}
     ]},
   { id:"kkb_thanks", frame:"Thank you.", tf:"thank you", ko:"감사합니다.", purpose:"감사",
-    my:"Terima kasih — 뜨리마 까시",
+    myKo:"뜨리마 까시", myRo:"Terima kasih",
     re:"\\b(thank|thanks)\\b",
     items:[
       {ko:"음식을 가져다줬다. 고맙다고 해라.", en:"Thank you."},
@@ -15547,7 +15547,7 @@ const KK_BASIC_FRAMES=[
       {ko:"거스름돈을 받았다. 고맙다고 해라.", en:"Thank you."}
     ]},
   { id:"kkb_sorry", frame:"Sorry.", tf:"sorry", ko:"죄송합니다.", purpose:"사과",
-    my:"Maaf — 마아프",
+    myKo:"마아프", myRo:"Maaf",
     re:"\\b(sorry|apologize|apologies)\\b",
     items:[
       {ko:"지나가다 사람과 부딪혔다. 사과해라.", en:"Sorry."},
@@ -15558,7 +15558,7 @@ const KK_BASIC_FRAMES=[
       {ko:"줄을 잘못 섰다. 사과해라.", en:"Sorry."}
     ]},
   { id:"kkb_excuse", frame:"Excuse me.", tf:"excuse me", ko:"실례합니다.", purpose:"말 걸기·비켜 달라기",
-    my:"Tumpang lalu — 뚬빵 랄루 (지나갈게요)",
+    myKo:"뚬빵 랄루 (지나갈게요)", myRo:"Tumpang lalu",
     re:"\\bexcuse me\\b",
     items:[
       {ko:"직원에게 말을 걸어야 한다. 먼저 이렇게 불러라.", en:"Excuse me."},
@@ -15569,7 +15569,7 @@ const KK_BASIC_FRAMES=[
       {ko:"카운터에 사람이 없다. 안쪽을 향해 불러라.", en:"Excuse me."}
     ]},
   { id:"kkb_howmuch", frame:"How much is this?", tf:"how much is this", ko:"이거 얼마예요?", purpose:"가격 묻기",
-    my:"Berapa ini — 브라빠 이니",
+    myKo:"버라빠 이니", myRo:"Berapa ini",
     re:"\\bhow much\\b",
     items:[
       {ko:"기념품을 집어 들었다. 가격을 물어라.", en:"How much is this?"},
@@ -15580,7 +15580,7 @@ const KK_BASIC_FRAMES=[
       {ko:"야시장에서 꼬치 가격을 물어라.", en:"How much is this?"}
     ]},
   { id:"kkb_expensive", frame:"That's too expensive.", tf:"too expensive", ko:"너무 비싸요.", purpose:"흥정 시작",
-    my:"Mahal sangat — 마할 상앗",
+    myKo:"마할 상앗", myRo:"Mahal sangat",
     re:"\\bexpensive\\b",
     items:[
       {ko:"가격을 듣고 너무 비싸다고 말해라.", en:"That's too expensive."},
@@ -15591,7 +15591,7 @@ const KK_BASIC_FRAMES=[
       {ko:"마사지 값이 비싸다. 그렇게 말해라.", en:"That's too expensive."}
     ]},
   { id:"kkb_discount", frame:"Can you give me a discount?", tf:"give me a discount", ko:"좀 깎아 주세요.", purpose:"흥정",
-    my:"Boleh kurang? — 볼레 꾸랑?",
+    myKo:"볼레 꾸랑?", myRo:"Boleh kurang?",
     re:"\\b(discount|cheaper|lower the price|better price)\\b",
     items:[
       {ko:"기념품을 여러 개 산다. 깎아 달라고 해라.", en:"Can you give me a discount?"},
@@ -15602,7 +15602,7 @@ const KK_BASIC_FRAMES=[
       {ko:"옷값을 조금만 깎아 달라고 해라.", en:"Can you make it a bit cheaper?"}
     ]},
   { id:"kkb_looking", frame:"Just looking, thank you.", tf:"just looking", ko:"구경만 할게요.", purpose:"부담 없이 거절",
-    my:"Tengok saja — 뜽옥 사자",
+    myKo:"뜽옥 사자", myRo:"Tengok saja",
     re:"\\bjust (looking|browsing)\\b",
     items:[
       {ko:"가게 주인이 자꾸 권한다. 구경만 하겠다고 해라.", en:"Just looking, thank you."},
@@ -15613,7 +15613,7 @@ const KK_BASIC_FRAMES=[
       {ko:"기념품 가게에서 권유를 받았다. 구경만 하겠다고 해라.", en:"Just looking, thank you."}
     ]},
   { id:"kkb_take_it", frame:"I'll take it.", tf:"ill take it", ko:"이걸로 할게요.", purpose:"사겠다고 말하기",
-    my:"Saya ambil ini — 사야 암빌 이니",
+    myKo:"사야 암빌 이니", myRo:"Saya ambil ini",
     re:"\\bill take (it|this|that|two|these)\\b",
     items:[
       {ko:"가격이 맞았다. 사겠다고 말해라.", en:"I'll take it."},
@@ -15624,7 +15624,7 @@ const KK_BASIC_FRAMES=[
       {ko:"투어를 예약하겠다고 말해라.", en:"I'll take this one."}
     ]},
   { id:"kkb_delicious", frame:"It's delicious.", tf:"delicious", ko:"맛있어요.", purpose:"칭찬",
-    my:"Sedap — 스답",
+    myKo:"스답", myRo:"Sedap",
     re:"\\b(delicious|so good|tastes good|really good)\\b",
     items:[
       {ko:"음식이 맛있다. 종업원에게 말해라.", en:"It's delicious."},
@@ -15639,7 +15639,7 @@ const KK_BASIC_IDS=KK_BASIC_FRAMES.map(f=>f.id);
 /* ── ② 생활 10문장 — 밥·이동·표·사진. 현장에서 바로 쓰는 문장들 ── */
 const KK_LIFE_FRAMES=[
   { id:"kk_not_spicy", frame:"Not too spicy, please.", tf:"not too spicy", ko:"안 맵게 해주세요.", purpose:"음식 주문",
-    my:"Tak pedas — 딱 뻐다스", re:"\\bnot (too )?spicy\\b",
+    myKo:"딱 뻐다스", myRo:"Tak pedas", re:"\\bnot (too )?spicy\\b",
     items:[
       {ko:"아이가 매운 걸 못 먹는다. 볶음면을 시키며 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
       {ko:"나시고렝을 주문하면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."},
@@ -15649,7 +15649,7 @@ const KK_LIFE_FRAMES=[
       {ko:"락사가 맵다고 한다. 그래도 시키면서 안 맵게 해달라고 해라.", en:"Not too spicy, please."}
     ]},
   { id:"kk_no_ice", frame:"No ice, please.", tf:"no ice", ko:"얼음은 빼주세요.", purpose:"음료 주문",
-    my:"Tak nak ais — 딱 낙 아이스", re:"\\b(no ice|without ice)\\b",
+    myKo:"딱 낙 아이스", myRo:"Tak nak ais", re:"\\b(no ice|without ice)\\b",
     items:[
       {ko:"배탈이 걱정된다. 주스를 시키며 얼음을 빼달라고 해라.", en:"No ice, please."},
       {ko:"아이 음료에 얼음을 넣지 말아 달라고 해라.", en:"No ice, please."},
@@ -15659,7 +15659,7 @@ const KK_LIFE_FRAMES=[
       {ko:"아이스커피를 시키면서 얼음은 넣지 말라고 해라.", en:"No ice, please."}
     ]},
   { id:"kk_takeaway", frame:"Takeaway, please.", tf:"takeaway", ko:"포장해 주세요.", purpose:"포장",
-    my:"Bungkus — 붕꾸스", re:"\\b(takeaway|take away|to go)\\b",
+    myKo:"붕꾸스", myRo:"Bungkus", re:"\\b(takeaway|take away|to go)\\b",
     items:[
       {ko:"호텔에 가서 먹으려 한다. 포장해 달라고 해라.", en:"Takeaway, please."},
       {ko:"종업원이 여기서 먹을지 묻는다. 포장이라고 답해라.", en:"Takeaway, please."},
@@ -15669,7 +15669,7 @@ const KK_LIFE_FRAMES=[
       {ko:"음식이 남았다. 싸달라고 해라.", en:"Takeaway, please."}
     ]},
   { id:"kk_two_and_two", frame:"Two adults and two kids.", tf:"two adults and two kids", ko:"어른 둘, 아이 둘이요.", purpose:"인원 말하기",
-    my:"", re:"\\badults?\\b.*\\b(kids?|child|children)\\b",
+    myKo:"두아 데와사, 두아 까낙까낙", myRo:"Dua dewasa, dua kanak-kanak", re:"\\badults?\\b.*\\b(kids?|child|children)\\b",
     items:[
       {ko:"섬 투어 표를 산다. 인원을 말해라.", en:"Two adults and two kids."},
       {ko:"식당에 들어가며 인원을 말해라.", en:"Two adults and two kids."},
@@ -15679,7 +15679,7 @@ const KK_LIFE_FRAMES=[
       {ko:"택시를 잡으며 몇 명인지 말해라.", en:"Two adults and two kids."}
     ]},
   { id:"kk_photo", frame:"Could you take a photo of us?", tf:"take a photo", ko:"사진 좀 찍어 주실래요?", purpose:"사진 부탁",
-    my:"", re:"\\btake a (photo|picture)\\b",
+    myKo:"볼레 똘롱 암빌 감바르?", myRo:"Boleh tolong ambil gambar?", re:"\\btake a (photo|picture)\\b",
     items:[
       {ko:"가족 사진을 찍고 싶다. 지나가는 사람에게 부탁해라.", en:"Could you take a photo of us?"},
       {ko:"노을을 배경으로 사진을 부탁해라.", en:"Could you take a photo of us?"},
@@ -15689,7 +15689,7 @@ const KK_LIFE_FRAMES=[
       {ko:"호텔 로비에서 사진을 부탁해라.", en:"Could you take a photo of us?"}
     ]},
   { id:"kk_grab", frame:"Are you my Grab driver?", tf:"my grab driver", ko:"제 그랩 기사님이세요?", purpose:"그랩 확인",
-    my:"", re:"\\b(my grab|grab (driver|car))\\b",
+    myKo:"이니 그랩 사야?", myRo:"Ini Grab saya?", re:"\\b(my grab|grab (driver|car))\\b",
     items:[
       {ko:"공항 앞에 차가 섰다. 내가 부른 그랩인지 확인해라.", en:"Are you my Grab driver?"},
       {ko:"호텔 앞에 차 한 대가 기다린다. 확인해라.", en:"Are you my Grab driver?"},
@@ -15699,7 +15699,7 @@ const KK_LIFE_FRAMES=[
       {ko:"기사가 창문을 내린다. 내 그랩인지 확인해라.", en:"Are you my Grab driver?"}
     ]},
   { id:"kk_ringgit", frame:"How much in ringgit?", tf:"how much in ringgit", ko:"링깃으로 얼마예요?", purpose:"가격 확인",
-    my:"Berapa ringgit — 버라빠 링깃", re:"\\bin ringgit\\b|\\bhow much\\b.*\\bringgit\\b",
+    myKo:"버라빠 링깃", myRo:"Berapa ringgit", re:"\\bin ringgit\\b|\\bhow much\\b.*\\bringgit\\b",
     items:[
       {ko:"기념품 가격을 링깃으로 물어라.", en:"How much in ringgit?"},
       {ko:"노점에서 과일 가격을 링깃으로 물어라.", en:"How much in ringgit?"},
@@ -15709,7 +15709,7 @@ const KK_LIFE_FRAMES=[
       {ko:"마사지 가격을 링깃으로 물어라.", en:"How much in ringgit?"}
     ]},
   { id:"kk_toilet", frame:"Where's the toilet?", tf:"where is the toilet", ko:"화장실 어디예요?", purpose:"화장실 찾기",
-    my:"Tandas — 딴다스", re:"\\btoilet\\b",
+    myKo:"딴다스", myRo:"Tandas", re:"\\btoilet\\b",
     items:[
       {ko:"아이가 급하다. 화장실을 물어라.", en:"Where's the toilet?"},
       {ko:"식당에서 화장실 위치를 물어라.", en:"Where's the toilet?"},
@@ -15719,7 +15719,7 @@ const KK_LIFE_FRAMES=[
       {ko:"호텔 로비에서 화장실을 물어라.", en:"Where's the toilet?"}
     ]},
   { id:"kk_aircon", frame:"Can you turn up the aircon?", tf:"turn up the aircon", ko:"에어컨 좀 세게 해주실래요?", purpose:"더울 때",
-    my:"", re:"\\b(aircon|air con|air conditioning|air conditioner)\\b",
+    myKo:"볼레 꾸앗깐 에어콘?", myRo:"Boleh kuatkan aircond?", re:"\\b(aircon|air con|air conditioning|air conditioner)\\b",
     items:[
       {ko:"택시 안이 덥다. 에어컨을 세게 해달라고 해라.", en:"Can you turn up the aircon?"},
       {ko:"객실이 덥다. 에어컨을 세게 해달라고 해라.", en:"Can you turn up the aircon?"},
@@ -15729,7 +15729,7 @@ const KK_LIFE_FRAMES=[
       {ko:"버스 안이 덥다. 에어컨을 부탁해라.", en:"Can you turn up the aircon?"}
     ]},
   { id:"kk_boat_going", frame:"Is the boat still going today?", tf:"is the boat still going", ko:"오늘 배 뜨나요?", purpose:"섬 투어 운항",
-    my:"", re:"\\bboat\\b.*\\b(still|going|running)\\b|\\bstill (going|running)\\b",
+    myKo:"봇 잘란 하리 이니?", myRo:"Bot jalan hari ini?", re:"\\bboat\\b.*\\b(still|going|running)\\b|\\bstill (going|running)\\b",
     items:[
       {ko:"비가 온다. 오늘 배가 뜨는지 물어라.", en:"Is the boat still going today?"},
       {ko:"바람이 세다. 배가 운항하는지 물어라.", en:"Is the boat still going today?"},
@@ -16054,6 +16054,9 @@ function travelMastery(id, react){
   return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
 }
 const KK_GUIDE_KEY="speakingroom:kk_guide_seen";
+function kkIsEvent(it){ try{ return !!(it && it.frame && KK_IDS.indexOf(it.frame.id)>=0); }catch(e){ return false; } }
+function kkSetOf(it){ try{ return KK_SETS.find(s=>s.ids.indexOf(it.frame.id)>=0)||null; }catch(e){ return null; } }
+function kkSeenCount(set){ try{ const o=travelAll(); return (set?set.frames:KK_FRAMES).filter(f=>o[f.id]&&o[f.id].seen>0).length; }catch(e){ return 0; } }
 const KK_LAST_SET="speakingroom:kk_set";
 function kkOpen(){
   let cur=(()=>{ try{ const v=hGet(KK_LAST_SET,"basic"); return KK_SETS.some(s=>s.key===v)?v:"basic"; }catch(e){ return "basic"; } })();
@@ -16065,7 +16068,7 @@ function kkOpen(){
       <span style="flex:1;min-width:0">
         <b style="display:block;font-family:var(--serif);font-size:16px;color:#189E79" data-no-pronko>${escapeHtml(f.frame)}</b>
         <span style="display:block;font-size:12px;color:#3A2D27;font-weight:700;margin-top:1px">${escapeHtml(f.ko)}</span>
-        ${f.my?`<span style="display:block;font-size:11px;color:#C08763;font-weight:800;margin-top:2px">🇲🇾 ${escapeHtml(f.my)}</span>`:""}
+        ${f.myKo?`<span style="display:block;font-size:12.5px;color:#C08763;font-weight:900;margin-top:3px">🇲🇾 ${escapeHtml(f.myKo)}</span>${f.myRo?`<span style="display:block;font-size:10.5px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(f.myRo)}</span>`:""}`:""}
       </span>
       <span style="flex:none;font-size:10.5px;font-weight:900;color:${m.c};background:${m.bg};border-radius:99px;padding:2px 8px;margin-top:2px">${(st.seen||0)?m.t:"새로"}</span>
     </div>`;
@@ -19522,9 +19525,9 @@ function autoDrillRender(recallMode){
       <div class="auto-prog"><i style="width:${prog}%"></i></div>
       <div class="auto-count">${autoDrill.idx+1}/${autoDrill.items.length}</div>
     </div>
-    <div class="auto-kicker">${it._react?"REACTION":(it._travel?"TRAVEL PACK":(it.recall?"HIDDEN RECALL":"AUTOMATION DRILL"))}</div>
-    <div class="auto-block">${it._react?"⚡ 뭐라고 답할까요?":(it._travel?(it._intro?("✈️ "+escapeHtml(it.frame.frame)):"✈️ 상황을 보고 말해보세요"):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?"))}</div>
-    ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${it._intro?escapeHtml(it.frame.ko)+" · ":""}${it._react?`실전 반응 ${rxSeenCount()} / ${RX_FRAMES.length}`:`여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}`}</div>`:""}
+    <div class="auto-kicker">${it._react?"REACTION":(kkIsEvent(it)?"MALAYSIA PACK":(it._travel?"TRAVEL PACK":(it.recall?"HIDDEN RECALL":"AUTOMATION DRILL")))}</div>
+    <div class="auto-block">${it._react?"⚡ 뭐라고 답할까요?":(kkIsEvent(it)?(it._intro?("🇲🇾 "+escapeHtml(it.frame.frame)):"🇲🇾 상황을 보고 말해보세요"):(it._travel?(it._intro?("✈️ "+escapeHtml(it.frame.frame)):"✈️ 상황을 보고 말해보세요"):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?")))}</div>
+    ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${it._intro?escapeHtml(it.frame.ko)+" · ":""}${it._react?`실전 반응 ${rxSeenCount()} / ${RX_FRAMES.length}`:(kkIsEvent(it)?(function(){ const s=kkSetOf(it); return (s?s.t:"말레이시아")+" "+kkSeenCount(s)+" / "+(s?s.frames.length:KK_FRAMES.length); })():`여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}`)}</div>`:""}
     ${(it._travel&&it._intro)?`<div style="background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">${it._react?`이 표현은 처음이에요 — <span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`:`처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`}</div>`:""}
     <div class="auto-meta">
       <span class="auto-chip">${it._react?`듣고 ${it.limit}초 안 시작`:(it._travel?`상황 읽고 ${it.limit}초 안 시작`:`시작 지연 ${it.limit}초 안`)}</span>
@@ -19716,8 +19719,12 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
   const K=it._travel?travelKeyOf(it):null;
   const note = it._travel
     ? `<div style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">표현은 <b>${escapeHtml(it.frame.frame)}</b>${(K&&K.needKey&&K.key.length)?` · <span style="color:#189E79">${travelKeyText(K.key)}</span> 는 꼭 들어가야 해요`:""} — 나머지는 상황에 맞게 바꿔도 돼요.</div>` : "";
-  const myTip=(it._travel && it.frame && it.frame.my)
-    ? `<div style="margin-top:7px;font-size:12.5px;color:#C08763;font-weight:800">🇲🇾 현지에서는 이렇게도 해요 — ${escapeHtml(it.frame.my)}</div>` : "";
+  const myTip=(it._travel && it.frame && it.frame.myKo)
+    ? `<div style="margin-top:8px;padding:9px 11px;background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px">
+         <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C08763">🇲🇾 현지어로는</span>
+         <b style="display:block;font-size:16px;color:#3A2D27;margin-top:2px">${escapeHtml(it.frame.myKo)}</b>
+         ${it.frame.myRo?`<span style="display:block;font-size:11px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(it.frame.myRo)}</span>`:""}
+       </div>` : "";
   ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
