@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.207";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.208";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -5519,15 +5519,16 @@ function svStop(){ try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); _
 // 기존 코드의 TTS.cancel() 호출 전부가 서버 오디오도 같이 멈추게 래핑
 if(typeof TTS!=="undefined" && TTS && TTS.cancel){ try{ const _c=TTS.cancel.bind(TTS); TTS.cancel=function(){ svStop(); _c(); }; }catch(e){} }
 let _svDead=false;   // /tts 미배포(404)면 세션 동안 재시도 안 함
-async function svSpeak(text, rate, onEnd){
+async function svSpeak(text, rate, onEnd, voice){
   text=String(text||"").trim();
   if(!text || _svDead || /[\uac00-\ud7a3]/.test(text)) return false;
+  const vc=voice||SV_TTS_VOICE;                       // 말레이어 등 다른 언어를 읽을 때만 바뀐다
   const r100=Math.max(0.4, Math.min(1.4, Number(rate)||1));
-  const key=SV_TTS_VOICE+"|"+r100.toFixed(2)+"|"+text;
+  const key=vc+"|"+r100.toFixed(2)+"|"+text;
   try{
     let url=_svCache.get(key);
     if(!url){
-      const res=await fetch(PROXY_URL+"/tts?voice="+encodeURIComponent(SV_TTS_VOICE)+"&rate="+r100.toFixed(2)+"&text="+encodeURIComponent(text));
+      const res=await fetch(PROXY_URL+"/tts?voice="+encodeURIComponent(vc)+"&rate="+r100.toFixed(2)+"&text="+encodeURIComponent(text));
       if(res.status===404){ _svDead=true; return false; }   // 워커에 /tts 없음 → 이번 세션은 폴백 고정
       if(!res.ok) return false;
       if((res.headers.get("Content-Type")||"").indexOf("audio")<0) return false;
@@ -5541,6 +5542,36 @@ async function svSpeak(text, rate, onEnd){
     await a.play();   // 자동재생 차단 등 실패 시 catch → 폴백
     return true;
   }catch(e){ return false; }
+}
+const MY_TTS_VOICE="ms-MY-YasminNeural";
+async function speakMalay(text){
+  const s=String(text||"").trim(); if(!s) return false;
+  try{ if(await svSpeak(s, 0.9, null, MY_TTS_VOICE)) return true; }catch(e){}
+  /* 폰에 말레이 음성이 깔려 있으면 그걸로 — 없으면 아무 소리도 안 내고 false */
+  try{
+    if(TTS && SSU){
+      const v=(TTS.getVoices()||[]).find(x=>/^ms([-_]|$)/i.test(String(x.lang||"")));
+      if(v){ TTS.cancel(); setTimeout(()=>{ const u=new SSU(s); u.voice=v; u.lang=v.lang; u.rate=0.9; TTS.speak(u); },120); return true; }
+    }
+  }catch(e){}
+  return false;
+}
+/* 버튼 하나를 현지어 재생에 물린다 — 실패하면 조용히 죽지 않고 이유를 말한다 */
+function bindMalayPlay(btn, romanized){
+  if(!btn) return;
+  btn.onclick=async(e)=>{
+    e.preventDefault(); e.stopPropagation();
+    const old=btn.textContent; btn.disabled=true; btn.textContent="🔊 …";
+    const ok=await speakMalay(String(romanized||"").replace(/\s*\/\s*/g, ", "));
+    btn.disabled=false; btn.textContent=old;
+    if(!ok){
+      let m=btn.parentNode&&btn.parentNode.querySelector(".my-fail");
+      if(!m){ m=document.createElement("span"); m.className="my-fail";
+        m.style.cssText="display:block;font-size:11px;color:#B4645A;font-weight:700;margin-top:5px";
+        btn.parentNode.appendChild(m); }
+      m.textContent="현지어 음성은 아직 안 나와요 — 글자만 보고 따라 읽어 주세요.";
+    }
+  };
 }
 function speakEn(text){
   if(/[\uac00-\ud7a3]/.test(text)){ speakSmart(text); return; } // 한글 포함이면 한·영 자동 분리
@@ -16068,7 +16099,7 @@ function kkOpen(){
       <span style="flex:1;min-width:0">
         <b style="display:block;font-family:var(--serif);font-size:16px;color:#189E79" data-no-pronko>${escapeHtml(f.frame)}</b>
         <span style="display:block;font-size:12px;color:#3A2D27;font-weight:700;margin-top:1px">${escapeHtml(f.ko)}</span>
-        ${f.myKo?`<span style="display:block;font-size:12.5px;color:#C08763;font-weight:900;margin-top:3px">🇲🇾 ${escapeHtml(f.myKo)}</span>${f.myRo?`<span style="display:block;font-size:10.5px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(f.myRo)}</span>`:""}`:""}
+        ${f.myKo?`<span style="display:flex;align-items:center;gap:7px;margin-top:3px"><span style="font-size:12.5px;color:#C08763;font-weight:900">🇲🇾 ${escapeHtml(f.myKo)}</span>${f.myRo?`<button class="my-play" data-my-play="${escapeHtml(f.myRo)}" style="flex:none;padding:3px 9px;border:1.5px solid #E0C6AE;border-radius:9px;background:#fff;color:#C08763;font-size:11px;font-weight:900;cursor:pointer">🔊</button>`:""}</span>${f.myRo?`<span style="display:block;font-size:10.5px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(f.myRo)}</span>`:""}`:""}
       </span>
       <span style="flex:none;font-size:10.5px;font-weight:900;color:${m.c};background:${m.bg};border-radius:99px;padding:2px 8px;margin-top:2px">${(st.seen||0)?m.t:"새로"}</span>
     </div>`;
@@ -16097,6 +16128,7 @@ function kkOpen(){
   const paint=()=>{
     ov.querySelector("#kkBody").innerHTML=body();
     ov.querySelectorAll(".kkTab").forEach(b=>{ b.onclick=()=>{ cur=b.getAttribute("data-k"); try{ hSet(KK_LAST_SET,cur); }catch(e){} paint(); }; });
+    ov.querySelectorAll("[data-my-play]").forEach(mb=>bindMalayPlay(mb, mb.getAttribute("data-my-play")));
     ov.querySelector("#kkClose").onclick=close;
     ov.querySelector("#kkGo").onclick=()=>{
       const set=KK_SETS.find(s=>s.key===cur);
@@ -19723,12 +19755,14 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
     ? `<div style="margin-top:8px;padding:9px 11px;background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px">
          <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C08763">🇲🇾 현지어로는</span>
          <b style="display:block;font-size:16px;color:#3A2D27;margin-top:2px">${escapeHtml(it.frame.myKo)}</b>
-         ${it.frame.myRo?`<span style="display:block;font-size:11px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(it.frame.myRo)}</span>`:""}
+         ${it.frame.myRo?`<span style="display:block;font-size:11px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(it.frame.myRo)}</span>
+         <button class="my-play" data-my-play="${escapeHtml(it.frame.myRo)}" style="margin-top:7px;padding:7px 13px;border:1.5px solid #E0C6AE;border-radius:11px;background:#fff;color:#C08763;font-size:12px;font-weight:900;cursor:pointer">🔊 현지어 듣기</button>`:""}
        </div>` : "";
   ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
   bindStudyPanel(ans.querySelector(".study-panel"));
+  (function(){ const mb=ans.querySelector("[data-my-play]"); if(mb) bindMalayPlay(mb, mb.getAttribute("data-my-play")); })();
   const actions=card.querySelector(".auto-actions");
   if(actions){
     const last=autoDrill.idx+1>=autoDrill.items.length;
