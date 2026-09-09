@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.208";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.209";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -16031,7 +16031,7 @@ function travelOtherFrameOf(heard, exceptId){
 /* ✈️ 몇 문제 할지 — 10·15·20 중에서. 마지막 선택을 기억한다.
    '입에 붙이기'(7/10/15)와는 다른 키를 써서 서로 안 흔들리게 한다. */
 const TRAVEL_COUNT_KEY="speakingroom:travel_count";
-const TRAVEL_COUNTS=[10,15,20];
+const TRAVEL_COUNTS=[5,10,15,20];
 function travelCountGet(){
   let v; try{ v=+hGet(TRAVEL_COUNT_KEY,10)||10; }catch(e){ v=10; }
   return TRAVEL_COUNTS.indexOf(v)>=0 ? v : 10;
@@ -16041,15 +16041,15 @@ function travelCountPick(onPick){
   const today=(()=>{ try{ return rtCount("travel", rtGet()); }catch(e){ return 0; } })();
   const left=Math.max(0, TRAVEL_DAY_GOAL-today);
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="tvCountOv";
-  const btn=(n)=>`<button class="tvCntBtn" data-n="${n}" style="flex:1;padding:17px 0;border-radius:15px;border:2px solid ${n===last?'#189E79':'#C7E8DA'};background:${n===last?'linear-gradient(135deg,#ECF7F2,#DDF2E9)':'#fff'};cursor:pointer">
-     <b style="display:block;font-size:25px;color:${n===last?'#189E79':'#3A2D27'}">${n}</b>
-     <span style="font-size:11px;color:#A28A7F">문제 · ${n*TRAVEL_PT}점</span></button>`;
+  const btn=(n)=>`<button class="tvCntBtn" data-n="${n}" style="flex:1;min-width:0;padding:15px 0;border-radius:14px;border:2px solid ${n===last?'#189E79':'#C7E8DA'};background:${n===last?'linear-gradient(135deg,#ECF7F2,#DDF2E9)':'#fff'};cursor:pointer">
+     <b style="display:block;font-size:22px;color:${n===last?'#189E79':'#3A2D27'}">${n}</b>
+     <span style="display:block;font-size:10px;color:#A28A7F;white-space:nowrap">문제 · ${n*TRAVEL_PT}점</span></button>`;
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet" style="background:#EAE3DD">
      <div class="hub-grab"></div>
      <div style="font-size:17px;font-weight:950;color:#3A2D27;margin:2px 2px 4px">✈️ 여행 표현 — 몇 문제 할까요?</div>
      <div style="font-size:12px;color:#8A6F62;margin:0 2px 14px">${left>0?`오늘 ${today} / ${TRAVEL_DAY_GOAL}문제 · ${left}문제 남았어요.`:`오늘 목표 ${TRAVEL_DAY_GOAL}문제는 이미 끝냈어요. 더 해도 좋아요.`}<br>틀린 문제는 뒤에 다시 나와서 실제로는 조금 더 나올 수 있어요.</div>
-     <div style="display:flex;gap:9px">${TRAVEL_COUNTS.map(btn).join("")}</div>
+     <div style="display:flex;gap:7px">${TRAVEL_COUNTS.map(btn).join("")}</div>
    </div>`;
   document.body.appendChild(ov);
   ov.querySelector(".hub-bg").onclick=()=>ov.remove();
