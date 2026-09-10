@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.212";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.213";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15895,7 +15895,7 @@ function travelBuildItems(count, pool){
     const pick=travelPickItem(f, o);
     return { _travel:true, frame:f,
       block:{ id:f.id, block:f.frame, meaningKo:f.ko },
-      ex:{ en:pick.en, ko:pick.ko, situation:"✈️ "+f.purpose },
+      ex:{ en:pick.en, ko:pick.ko, situation:(KK_IDS.indexOf(f.id)>=0?"🇲🇾 ":"✈️ ")+f.purpose },
       limit:limits[0], rep:1, recall:false, discriminate:false };
   });
   travelSave(o);                                  // 상황 사용 기록
@@ -19622,6 +19622,12 @@ function autoDrillRender(recallMode){
   inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); const v=inp.value.trim(); if(v){ inp.disabled=true; autoDrillFinish(v,{speechStartAt:autoDrill.typedAt||Date.now(), typed:true}); } } });
   $("#autoShow").onclick=()=>{ if(autoDrill.hintTimer){ clearTimeout(autoDrill.hintTimer); autoDrill.hintTimer=null; } const cur=autoDrill.items[autoDrill.idx]; if(cur){ cur._hintUsed=true; autoDrillShowResult(cur, true, false); } };
   $("#autoWord").onclick=()=>{ if(it._react) rxShowKo(); else autoDrillShowWord(); };
+  /* 말레이시아 이벤트 팩은 열 마디를 외우는 게 목적이라, 답을 기다리게 할 이유가 없다.
+     정답 보기를 처음부터 띄운다. (여행 표현·실전 반응은 지금까지대로 7초 뒤) */
+  if(kkIsEvent(it)){
+    const row=document.getElementById("autoHintRow"); if(row) row.style.display="flex";
+    const wb0=document.getElementById("autoWord"); if(wb0) wb0.style.display = adWordHint(it) ? "" : "none";
+  }
   // 힌트(단어/정답 보기)는 7초 뒤에만 등장 — 끝까지 스스로 풀 기회 보장
   autoDrill.hintTimer=setTimeout(()=>{
     const r=document.getElementById("autoHintRow"); if(r) r.style.display="flex";
