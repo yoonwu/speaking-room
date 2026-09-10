@@ -1658,6 +1658,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-answer{margin:12px 0;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:13px;text-align:center}
 .auto-answer b{font-family:var(--serif);font-size:22px;color:#3A2D27}
 .auto-answer.hide b{filter:blur(7px);user-select:none}
+.auto-answer .use-tip b,.auto-answer .my-tipbox b,.auto-answer .ans-note b{font-family:inherit;font-size:inherit;color:inherit;font-weight:900}
 .auto-stat{min-height:44px;text-align:center;font-size:13.5px;color:#8A6F62;line-height:1.55;margin:10px 0}
 .auto-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .auto-actions button{border:none;border-radius:15px;padding:13px 16px;font-size:15px;font-weight:950;cursor:pointer}
@@ -1999,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.210";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.211";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14878,7 +14879,7 @@ function renderDailyRoomCard(){
 }
 
 const TRAVEL_FRAMES=[
-  { id:"travel_can_i_get", frame:"Can I get ~?", tf:"can i get", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", re:"\\bcan i get\\b",
+  { id:"travel_can_i_get", frame:"Can I get ~?", tf:"can i get", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", tip:"<b>내가 받을 물건</b>을 달라고 할 때예요.<br>수건 하나 더 → <b>Can I get another towel?</b><br>상대가 해줄 행동은 → Can you ~?", re:"\\bcan i get\\b",
     items:[
       {ko:"호텔 방에 수건이 부족하다. 수건을 하나 더 달라고 해라.", en:"Can I get another towel?"},
       {ko:"식당 테이블에 물이 없다. 물 좀 달라고 해라.", en:"Can I get some water?"},
@@ -14901,7 +14902,7 @@ const TRAVEL_FRAMES=[
       {ko:"시장에서 여러 개를 샀다. 할인을 받을 수 있는지 물어라.", en:"Can I get a discount?"},
       {ko:"밥을 다 먹었다. 계산서를 달라고 해라.", en:"Can I get the check?"}
     ]},
-  { id:"travel_can_you", frame:"Can you ~?", tf:"can you", ko:"~해 주실 수 있어요?", purpose:"행동 요청", re:"\\bcan you\\b",
+  { id:"travel_can_you", frame:"Can you ~?", tf:"can you", ko:"~해 주실 수 있어요?", purpose:"행동 요청", tip:"<b>상대가 해줄 행동</b>을 부탁할 때예요.<br>천천히 말해 주세요 → <b>Can you speak more slowly?</b><br>물건을 달라고 하면 → Can I get ~?", re:"\\bcan you\\b",
     items:[
       {ko:"Grab에 탔다. 기사에게 공항으로 가달라고 해라.", en:"Can you take me to the airport?"},
       {ko:"화장실에 다녀와야 한다. 짐을 좀 봐달라고 부탁해라.", en:"Can you watch my bags for a minute?"},
@@ -14952,7 +14953,7 @@ const TRAVEL_FRAMES=[
       {ko:"체크아웃 시간이 지났다. 그래도 방을 조금 더 써도 되는지 물어라.", en:"Can we still use the room?"},
       {ko:"배표 판매 마감이 가깝다. 그래도 오늘 표를 사도 되는지 물어라.", en:"Can I still buy a ticket for today?"}
     ]},
-  { id:"travel_do_you_have", frame:"Do you have ~?", tf:"do you have", ko:"~ 있어요?", purpose:"보유 여부", re:"\\bdo you have\\b",
+  { id:"travel_do_you_have", frame:"Do you have ~?", tf:"do you have", ko:"(당신에게) ~ 있어요?", purpose:"보유 여부", tip:"<b>상대가 가지고 있는지</b>예요.<br>더 작은 사이즈 있어요 → <b>Do you have a smaller size?</b><br>근처에 있는지는 → Is there ~?", re:"\\bdo you have\\b",
     items:[
       {ko:"아이가 매운 걸 못 먹는다. 안 매운 메뉴가 있는지 물어라.", en:"Do you have anything not spicy?"},
       {ko:"예약 없이 호텔에 들어왔다. 빈방이 있는지 물어라.", en:"Do you have a room available?"},
@@ -15021,7 +15022,7 @@ const TRAVEL_FRAMES=[
       {ko:"바닷가 산책로에 가고 싶다. 거기까지 어떻게 가는지 물어라.", en:"How do I get to the waterfront?"},
       {ko:"아이들이 동물원에 가고 싶어 한다. 거기까지 어떻게 가는지 물어라.", en:"How do I get to the zoo?"}
     ]},
-  { id:"travel_how_long", frame:"How long does it take?", tf:"how long does it take", ko:"얼마나 걸려요?", purpose:"소요 시간", re:"\\bhow long does it take\\b",
+  { id:"travel_how_long", frame:"How long does it take?", tf:"how long does it take", ko:"(시작 전) 전체 얼마나 걸려요?", purpose:"소요 시간", tip:"<b>전체로 걸리는 시간</b>이에요.<br>타기 전 · 시키기 전 · 맡기기 전 → <b>How long does it take?</b><br>이미 기다리는 중이면 → How much longer?", re:"\\bhow long does it take\\b",
     items:[
       {ko:"택시를 탔다. 호텔까지 얼마나 걸리는지 물어라.", en:"How long does it take to get to the hotel?"},
       {ko:"배를 타기 전이다. 섬까지 얼마나 걸리는지 물어라.", en:"How long does it take to get to the island?"},
@@ -15297,7 +15298,7 @@ const TRAVEL_FRAMES=[
       {ko:"옷을 갈아입고 나오니 안경이 없다. 탈의실에 두고 온 것 같다고 말해라.", en:"I think I left my glasses in the fitting room."},
       {ko:"푸드코트에서 나오니 핸드폰이 없다. 두고 온 것 같다고 말해라.", en:"I think I left my phone at the food court."}
     ]},
-  { id:"travel_does_that_mean", frame:"Does that mean ~?", tf:"does that mean", ko:"그럼 ~라는 뜻이에요?", purpose:"의미 확인", re:"\\bdoes that mean\\b",
+  { id:"travel_does_that_mean", frame:"Does that mean ~?", tf:"does that mean", ko:"그럼 ~라는 뜻이에요?", purpose:"의미 확인", tip:"상대 말을 듣고 <b>결론을 확인</b>하는 거예요.<br>주방 닫았다고 하면 → <b>Does that mean I can't order?</b><br>단어 뜻을 묻는 건 → What does ~ mean?", re:"\\bdoes that mean\\b",
     items:[
       {ko:"마감시간이 지났다고 한다. 그럼 주문을 못 한다는 뜻이냐고 되물어라.", en:"Does that mean I can't order?"},
       {ko:"날씨가 안 좋다고 한다. 그럼 투어가 취소라는 뜻이냐고 되물어라.", en:"Does that mean the tour is canceled?"},
@@ -15476,7 +15477,7 @@ const TRAVEL_FRAMES=[
       {ko:"투어를 안 가기로 했다. 예약을 취소하고 싶다고 말해라.", en:"I'd like to cancel my reservation."},
       {ko:"말이 안 통해 문제가 안 풀린다. 책임자와 이야기하고 싶다고 말해라.", en:"I'd like to speak to the manager."}
     ]},
-  { id:"travel_is_there", frame:"Is there ~?", tf:"is there", ko:"~ 있어요?", purpose:"존재 확인", re:"\\bis there\\b",
+  { id:"travel_is_there", frame:"Is there ~?", tf:"is there", ko:"(근처에) ~ 있나요?", purpose:"존재 확인", tip:"그 <b>장소·시설이 있는지</b>예요.<br>근처에 ATM 있나요 → <b>Is there an ATM?</b><br>상대가 물건을 가졌는지는 → Do you have ~?", re:"\\bis there\\b",
     items:[
       {ko:"현금이 필요하다. 이 근처에 ATM이 있는지 확인해라.", en:"Is there an ATM nearby?"},
       {ko:"아이가 아프다. 근처에 병원이 있는지 확인해라.", en:"Is there a clinic nearby?"},
@@ -15494,7 +15495,7 @@ const TRAVEL_FRAMES=[
       {ko:"식당 결제 조건을 알아보고 있다. 최소 주문금액 규정이 있는지 확인해라.", en:"Is there a minimum charge?"},
       {ko:"아이와 수영장에 가려 한다. 어린이 구역이 따로 있는지 확인해라.", en:"Is there a kids' area in the pool?"}
     ]},
-  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"앞으로 얼마나 더요?", purpose:"남은 시간", re:"\\bhow much longer\\b",
+  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간", tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?", re:"\\bhow much longer\\b",
     items:[
       {ko:"방이 아직 준비가 안 돼 한참 기다렸다. 앞으로 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait?"},
       {ko:"음식을 시킨 지 한참 됐다. 지금부터 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?"},
@@ -15530,7 +15531,7 @@ const TRAVEL_FRAMES=[
       {ko:"호텔 예약 옵션 두 개의 값이 다르다. 두 옵션이 뭐가 다른지 물어라.", en:"What's the difference between these two options?"},
       {ko:"보트에 좌석이 두 종류다. 두 자리가 뭐가 다른지 물어라.", en:"What's the difference between these two seats?"}
     ]},
-  { id:"travel_what_does_mean", frame:"What does ~ mean?", tf:"what does mean", ko:"~는 무슨 뜻이에요?", purpose:"표현 뜻 묻기", re:"\\bwhat does\\b.*\\bmean\\b",
+  { id:"travel_what_does_mean", frame:"What does ~ mean?", tf:"what does mean", ko:"~가 무슨 뜻이에요?", purpose:"표현 뜻 묻기", tip:"<b>영어 단어·표시</b>의 뜻을 묻는 거예요.<br>간판에 cash only → <b>What does cash only mean?</b><br>상대 말의 결론을 되묻는 건 → Does that mean ~?", re:"\\bwhat does\\b.*\\bmean\\b",
     items:[
       {ko:"예약 화면에서 'non-refundable'이라는 말을 봤다. 그 표현이 무슨 뜻인지 물어라.", en:"What does \"non-refundable\" mean?"},
       {ko:"투어 설명에 'shared transfer'라고 적혀 있다. 그 표현이 무슨 뜻인지 물어라.", en:"What does \"shared transfer\" mean?"},
@@ -19570,7 +19571,7 @@ function autoDrillRender(recallMode){
     <div class="auto-kicker">${it._react?"REACTION":(kkIsEvent(it)?"MALAYSIA PACK":(it._travel?"TRAVEL PACK":(it.recall?"HIDDEN RECALL":"AUTOMATION DRILL")))}</div>
     <div class="auto-block">${it._react?"⚡ 뭐라고 답할까요?":(kkIsEvent(it)?(it._intro?("🇲🇾 "+escapeHtml(it.frame.frame)):"🇲🇾 상황을 보고 말해보세요"):(it._travel?(it._intro?("✈️ "+escapeHtml(it.frame.frame)):"✈️ 상황을 보고 말해보세요"):(it.recall?"❓ 어떤 표현이었죠?":"🗣️ 어떤 표현일까요?")))}</div>
     ${it._travel?`<div style="font-size:12px;color:#8A6F62;font-weight:800;margin:-2px 0 8px">${it._intro?escapeHtml(it.frame.ko)+" · ":""}${it._react?`실전 반응 ${rxSeenCount()} / ${RX_FRAMES.length}`:(kkIsEvent(it)?(function(){ const s=kkSetOf(it); return (s?s.t:"말레이시아")+" "+kkSeenCount(s)+" / "+(s?s.frames.length:KK_FRAMES.length); })():`여행 표현 ${travelSeenCount()} / ${TRAVEL_FRAMES.length}`)}</div>`:""}
-    ${(it._travel&&it._intro)?`<div style="background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">${it._react?`이 표현은 처음이에요 — <span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`:`처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`}</div>`:""}
+    ${(it._travel&&it._intro)?`<div style="background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px;padding:10px 12px;margin-bottom:9px;font-size:12.5px;color:#3A2D27;line-height:1.5">${it._react?`이 표현은 처음이에요 — <span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`:`처음 나오는 표현이에요 — <b>${escapeHtml(it.frame.frame)}</b> (${escapeHtml(it.frame.ko)})<br><span style="color:#7FA396">예: ${escapeHtml(it.frame.items[0].en)}</span>`}${it.frame.tip?`<div style="margin-top:7px;padding-top:7px;border-top:1px solid #EADFD2;font-size:12px;line-height:1.6;color:#5A6B80">🧭 ${it.frame.tip}</div>`:""}</div>`:""}
     <div class="auto-meta">
       <span class="auto-chip">${it._react?`듣고 ${it.limit}초 안 시작`:(it._travel?`상황 읽고 ${it.limit}초 안 시작`:`시작 지연 ${it.limit}초 안`)}</span>
       <span class="auto-chip">말 길이 제외</span>
@@ -19760,15 +19761,20 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
     : `<div style="font-size:11px;color:#7FA396;font-weight:900;margin-bottom:5px">정답</div>`;
   const K=it._travel?travelKeyOf(it):null;
   const note = it._travel
-    ? `<div style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">표현은 <b>${escapeHtml(it.frame.frame)}</b>${(K&&K.needKey&&K.key.length)?` · <span style="color:#189E79">${travelKeyText(K.key)}</span> 는 꼭 들어가야 해요`:""} — 나머지는 상황에 맞게 바꿔도 돼요.</div>` : "";
+    ? `<div class="ans-note" style="font-size:12px;color:#8A6F62;margin-top:5px;line-height:1.5">표현은 <b>${escapeHtml(it.frame.frame)}</b>${(K&&K.needKey&&K.key.length)?` · <span style="color:#189E79">${travelKeyText(K.key)}</span> 는 꼭 들어가야 해요`:""} — 나머지는 상황에 맞게 바꿔도 돼요.</div>` : "";
   const myTip=(it._travel && it.frame && it.frame.myKo)
-    ? `<div style="margin-top:8px;padding:9px 11px;background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px">
+    ? `<div class="my-tipbox" style="margin-top:8px;padding:9px 11px;background:#FFF6EE;border:1.5px solid #F0DCC8;border-radius:12px">
          <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C08763">🇲🇾 현지어로는</span>
          <b style="display:block;font-size:16px;color:#3A2D27;margin-top:2px">${escapeHtml(it.frame.myKo)}</b>
          ${it.frame.myRo?`<span style="display:block;font-size:11px;color:#B49C8D;font-weight:600;margin-top:1px">${escapeHtml(it.frame.myRo)}</span>
          <button class="my-play" data-my-play="${escapeHtml(it.frame.myRo)}" style="margin-top:7px;padding:7px 13px;border:1.5px solid #E0C6AE;border-radius:11px;background:#fff;color:#C08763;font-size:12px;font-weight:900;cursor:pointer">🔊 현지어 듣기</button>`:""}
        </div>` : "";
-  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
+  const useTip=(it._travel && it.frame && it.frame.tip)
+    ? `<div class="use-tip" style="margin-top:8px;padding:10px 12px;background:#F1F7FF;border:1.5px solid #CFE0F5;border-radius:12px;font-size:12.5px;color:#334;line-height:1.6;text-align:left">
+         <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#6C8BB5;margin-bottom:3px">🧭 언제 쓰는 표현이냐면</span>
+         ${it.frame.tip}
+       </div>` : "";
+  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+note+useTip+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
   bindStudyPanel(ans.querySelector(".study-panel"));
