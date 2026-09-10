@@ -1999,7 +1999,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.209";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.210";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15261,7 +15261,7 @@ const TRAVEL_FRAMES=[
       {ko:"예약 확인 메일을 보여줘야 한다. 메일을 못 찾겠다고 말해라.", en:"I can't find my booking email."},
       {ko:"사람이 많아 가족을 놓쳤다. 못 찾겠다고 말해라.", en:"I can't find my family."},
       {ko:"방 앞에 왔는데 카드키가 안 보인다. 못 찾겠다고 말해라.", en:"I can't find my room key."},
-      {ko:"정류장이 여기라는데 안 보인다. 못 찾겠다고 말해라.", en:"I can't find the bus stop."},
+      {ko:"버스 정류장이 여기라는데 안 보인다. 못 찾겠다고 말해라.", en:"I can't find the bus stop."},
       {ko:"공연장에 들어왔다. 내 자리를 못 찾겠다고 말해라.", en:"I can't find my seat."},
       {ko:"개찰구 앞인데 표가 안 보인다. 못 찾겠다고 말해라.", en:"I can't find my ticket."},
       {ko:"전화를 하려는데 핸드폰이 안 보인다. 못 찾겠다고 말해라.", en:"I can't find my phone."},
@@ -15426,7 +15426,7 @@ const TRAVEL_FRAMES=[
       {ko:"공항에서 픽업을 받기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet at the airport?"},
       {ko:"투어가 끝나면 각자 간다고 한다. 끝나고 어디서 만나는지 물어라.", en:"Where do we meet after the tour?"},
       {ko:"호텔에서 픽업한다고 한다. 호텔 어디서 만나는지 물어라.", en:"Where do we meet in the hotel?"},
-      {ko:"배가 다른 곳에서 뜬다고 한다. 어디서 만나는지 물어라.", en:"Where do we meet the boat?"},
+      {ko:"배가 다른 곳에서 뜬다고 한다. 배를 어디서 만나는지 물어라.", en:"Where do we meet the boat?"},
       {ko:"사람이 많은 곳에 간다. 헤어지면 어디서 만날지 정해라.", en:"Where do we meet if we get separated?"},
       {ko:"저녁은 같이 먹기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet for dinner?"},
       {ko:"각자 쇼핑하기로 했다. 끝나고 어디서 만나는지 물어라.", en:"Where do we meet after shopping?"},
@@ -15441,7 +15441,7 @@ const TRAVEL_FRAMES=[
       {ko:"비가 와서 투어가 취소됐다. 이제 어떻게 할지 물어라.", en:"What should we do now?"},
       {ko:"표를 잃어버렸다. 어떻게 해야 하는지 물어라.", en:"What should I do about my ticket?"},
       {ko:"배가 늦는다. 기다리는 동안 뭘 할지 물어라.", en:"What should we do while we wait?"},
-      {ko:"투어 시간과 픽업 시간이 겹쳤다. 어떻게 해야 할지 물어라.", en:"What should we do about the schedule?"},
+      {ko:"투어 일정과 픽업 시간이 겹쳤다. 일정을 어떻게 해야 할지 물어라.", en:"What should we do about the schedule?"},
       {ko:"카드가 안 된다. 그럼 어떻게 해야 하는지 물어라.", en:"What should I do then?"},
       {ko:"여권을 잃어버렸다. 먼저 뭘 해야 하는지 물어라.", en:"What should I do first?"},
       {ko:"야외 투어를 예약했다. 비가 오면 어떻게 하는지 물어라.", en:"What should I do if it rains?"},
@@ -15921,7 +15921,8 @@ const TRAVEL_SKIP_WORDS=new Set(("a an the some my our your is are was to it its
   /* 조동사·부정형은 '무엇에 대한 말인지'를 정하지 않는다 —
      "Does that mean I can't order?" 에서 order 를 다른 말로 바꿔도 cant 가 겹쳐 정답이 되던 문제 */
   +"can cant cannot could couldnt would wouldnt should shouldnt will wont must may might "
-  +"dont doesnt didnt isnt arent wasnt werent havent hasnt hadnt").split(" ").filter(Boolean));
+  +"dont doesnt didnt isnt arent wasnt werent havent hasnt hadnt "
+  +"much very really quite bit these those one ones just too also good im").split(" ").filter(Boolean));
 const TRAVEL_FILLER_WORDS=new Set("please thanks thank sorry hello hi excuse okay ok yes yeah sir madam maam".split(" "));
 /* '무엇에 대한 말인지'를 정하지 못하는 흔한 동사들 — airport 를 downtown 으로 바꿔 말해도
    take/me 가 겹쳐서 정답이 되던 문제를 막는다. 이걸 빼서 아무것도 안 남으면 그때는 다시 쓴다. */
@@ -15932,12 +15933,18 @@ function travelKeyText(key){
   if(!k.length) return "";
   return k.length===1 ? `<b>${escapeHtml(k[0])}</b>` : `<b>${escapeHtml(k.join(", "))}</b> 중 하나`;
 }
+function travelReWords(f){
+  try{
+    const src=String((f&&f.re)||"").replace(/\\[bB]/g," ").replace(/[^A-Za-z]+/g," ");
+    return adWords(src);
+  }catch(e){ return []; }
+}
 function travelKeyOf(it){
   const frameWords=new Set(adWords(String((it.frame&&it.frame.frame)||"").replace(/[~?]/g," ")));
+  travelReWords(it.frame).forEach(w=>frameWords.add(w));
   const want=adWords((it.ex&&it.ex.en)||"").filter(w=>!frameWords.has(w)&&!TRAVEL_SKIP_WORDS.has(w));
   const solid=want.filter(w=>!TRAVEL_FILLER_WORDS.has(w));
-  const strong=solid.filter(w=>!TRAVEL_LIGHT_VERBS.has(w));
-  const key=strong.length?strong:solid;
+  const key=solid.filter(w=>!TRAVEL_LIGHT_VERBS.has(w));
   /* 실전 반응은 '상대의 말'이 유일한 단서다.
      거기에 안 나온 낱말까지 요구하면 알 방법이 없는 문제가 된다 —
      상대가 말한 낱말일 때만 필수로 본다. */
@@ -15967,7 +15974,10 @@ function travelGrade(it, heard){
      하지만 towel 자리에 fork 를 넣으면 다른 말이라 오답이다. */
   const keyMissing=K.key.filter(w=>!hasW(w));
   const keyHit = !K.key.length || keyMissing.length<K.key.length;
-  const ok = frameOk && (K.needKey ? keyHit : (extra>0 || !want.length));
+  /* 프레임에 ~ 가 있으면 뒤에 뭔가는 붙여야 한다(Can I get ~?).
+     문장 자체가 프레임이면(Hello. / How long does it take?) 그대로 말해도 정답이다. */
+  const openFrame=/~/.test(String((it.frame&&it.frame.frame)||""));
+  const ok = frameOk && ((K.needKey && K.key.length) ? keyHit : (openFrame ? extra>0 : true));
   return { ok, blockHit:frameOk, slotHit:true, slot:missing, hit:want.length-missing.length,
            heardNorm:h, altBlock:null, key:K.key, keyMissing, needKey:K.needKey,
            keyMiss:(frameOk && K.needKey && !keyHit),  // 프레임은 맞는데 핵심 낱말이 없음
