@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.215";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.216";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -16290,10 +16290,126 @@ const TRAVEL_FILLER_WORDS=new Set("please thanks thank sorry hello hi excuse oka
    take/me 가 겹쳐서 정답이 되던 문제를 막는다. 이걸 빼서 아무것도 안 남으면 그때는 다시 쓴다. */
 const TRAVEL_LIGHT_VERBS=new Set(("get go come take have make give put keep let know see want need like "
   +"use help show tell say speak stop bring").split(" "));
+/* 같은 것을 가리키는 낱말들 — 한쪽을 요구했다고 다른 쪽을 틀렸다고 하면 안 된다.
+   "겉옷"이 jacket 이기도 coat 이기도 하고, "배"가 boat 이기도 ferry 이기도 하다. */
+const TRAVEL_SYN_GROUPS=[
+  ["boat","ferry","ship","speedboat"],
+  ["taxi","cab"],
+  ["plane","flight","airplane"],
+  ["car","vehicle"],
+  ["jacket","jackets","coat","coats"],
+  ["shoes","shoe","sneakers"],
+  ["hat","cap"],
+  ["bag","bags","luggage","baggage","suitcase","backpack"],
+  ["wallet","purse"],
+  ["restroom","toilet","bathroom","washroom","lavatory"],
+  ["pier","jetty","dock","wharf"],
+  ["desk","counter","reception"],
+  ["store","shop","shops","stores"],
+  ["elevator","lift"],
+  ["stairs","staircase"],
+  ["clinic","hospital"],
+  ["laundry","laundromat"],
+  ["pharmacy","drugstore"],
+  ["supermarket","grocery","mart"],
+  ["cafe","coffeeshop"],
+  ["parking","lot","garage"],
+  ["dish","dishes","food","meal","meals"],
+  ["drink","drinks","beverage","beverages"],
+  ["bill","check","tab"],
+  ["cup","glass","mug"],
+  ["napkins","napkin","tissue","tissues"],
+  ["ice","iced"],
+  ["refill","refills"],
+  ["leftovers","rest"],
+  ["towel","towels"],
+  ["key","keys","keycard"],
+  ["phone","cellphone","mobile","smartphone"],
+  ["laptop","computer"],
+  ["ticket","tickets"],
+  ["money","cash"],
+  ["paper","papers"],
+  ["gift","present"],
+  ["souvenir","souvenirs"],
+  ["adapter","plug"],
+  ["locker","lockers"],
+  ["gear","equipment"],
+  ["snorkel","snorkeling"],
+  ["bike","bicycle"],
+  ["message","note","memo"],
+  ["reservation","booking","appointment"],
+  ["schedule","plan","plans"],
+  ["problem","issue","trouble"],
+  ["size","sizes"],
+  ["color","colors","colour","colours"],
+  ["kid","kids","child","children"],
+  ["adult","adults","people","person","persons"],
+  ["group","others"],
+  ["seat","seats","chair"],
+  ["table","tables"],
+  ["room","rooms"],
+  ["area","space","place","spot"],
+  ["way","route","direction"],
+  ["line","queue"],
+  ["delivery","shipping"],
+  ["cleaning","clean"],
+  ["battery","batteries"],
+  ["material","materials"],
+  ["class","classes","lesson","course"],
+  ["movie","film"],
+  ["price","cost","rate","rates","fare","fee","charge","prices"],
+  ["discount","sale"],
+  ["total","amount","sum"],
+  ["email","mail"],
+  ["wifi","internet"],
+  ["heater","heat","heating"],
+  ["light","lamp"],
+  ["tv","television"],
+  ["air","aircon","aircond","conditioner","conditioning"],
+  ["rain","rains","rainy"],
+  ["evening","night","tonight"],
+  ["start","starts","begin","begins"],
+  ["close","closes","closed","closing"],
+  ["open","opens","opening"],
+  ["finish","finishes","end","ends"],
+  ["arrive","arrives","arrival"],
+  ["photo","photos","picture","pictures"],
+  ["coffee","coffees"],
+  ["tour","tours"],
+  ["package","packages"],
+  ["option","options"],
+  ["phone","phones"],
+  ["glasses","spectacles"],
+  ["notebook","notepad"],
+  ["button","switch"],
+  ["id","identification","passport"]
+];
+const TRAVEL_SYN=(function(){
+  const m={};
+  TRAVEL_SYN_GROUPS.forEach((g,i)=>g.forEach(w=>{ (m[w]=m[w]||[]).push(i); }));
+  return m;
+})();
+/* 같은 묶음에 있으면 같은 말로 본다. 단순 복수(-s)도 같이 본다. */
+function travelSynEq(a,b){
+  if(!a||!b) return false;
+  if(a===b) return true;
+  if(a===b+"s" || b===a+"s" || a===b+"es" || b===a+"es") return true;
+  const A=TRAVEL_SYN[a], B=TRAVEL_SYN[b];
+  if(!A||!B) return false;
+  return A.some(i=>B.indexOf(i)>=0);
+}
+function travelSynOf(w){
+  const g=TRAVEL_SYN[w]; if(!g) return [];
+  const out=[];
+  g.forEach(i=>TRAVEL_SYN_GROUPS[i].forEach(x=>{ if(x!==w && out.indexOf(x)<0) out.push(x); }));
+  return out.slice(0,3);
+}
 function travelKeyText(key){
   const k=(key||[]).filter(Boolean);
   if(!k.length) return "";
-  return k.length===1 ? `<b>${escapeHtml(k[0])}</b>` : `<b>${escapeHtml(k.join(", "))}</b> 중 하나`;
+  const one=(w)=>{ const s=travelSynOf(w);
+    return `<b>${escapeHtml(w)}</b>`+(s.length?`<span style="font-weight:700;opacity:.75"> (또는 ${escapeHtml(s.join(", "))})</span>`:""); };
+  return k.length===1 ? one(k[0]) : k.map(one).join(", ")+" 중 하나";
 }
 function travelReWords(f){
   try{
@@ -16331,7 +16447,7 @@ function travelGrade(it, heard){
      낱말 비교는 기존 것을 그대로 쓴다: adLooseWordEq(활용형) + phWordEq(한국식 발음). */
   const K=travelKeyOf(it);
   const frameWords=K.frameWords, want=K.want;
-  const hasW=(w)=>hw.some(x=>x===w||adLooseWordEq(x,w)||(function(){ try{ return phWordEq(x,w); }catch(e){ return false; } })());
+  const hasW=(w)=>hw.some(x=>x===w||travelSynEq(x,w)||adLooseWordEq(x,w)||(function(){ try{ return phWordEq(x,w); }catch(e){ return false; } })());
   const missing=want.filter(w=>!hasW(w));
   const sameWords = !want.length || missing.length<want.length;      // 예시와 겹치는 낱말이 하나라도 있는가
   const extra = hw.filter(w=>!frameWords.has(w)).length;             // 프레임 말고 실제 내용이 있는가
