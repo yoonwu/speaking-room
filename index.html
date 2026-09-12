@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.217";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.218";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12864,6 +12864,11 @@ function openSpeakHub(){
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
+     <button class="hub-opt" data-go="talk">
+       <span class="hub-emo">🎭</span>
+       <span class="hub-tx"><b>상황극</b><i>주고받고 두 번 — 틀려도 그대로 넘어가요</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="growth">
        <span class="hub-emo">📈</span>
        <span class="hub-tx"><b>내 실력</b><i>늘고 있는지 숫자로 — 정답률 · 말 시작 속도 · 붙은 표현</i></span>
@@ -12883,7 +12888,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="growth") openGrowth(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="growth") openGrowth(); else if(g==="talk") openTalkPicker(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -16583,6 +16588,280 @@ function travelMastery(id, react){
   if(streak>=3)   return {k:"good", t:"붙었어요",   c:"#189E79", bg:"#E6F5EE", weak:false};
   return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
 }
+/* ===================== 🎭 상황극 — 주고받고 두 번 =====================
+   앞대가리만 유도로 주고, 내가 두 번 말한다.
+   채점은 없다. 뭐라고 말했든(넘겨도) 상대의 다음 대사는 그대로 나온다.
+   대화가 끊기지 않는 게 목적이다 — 실제로 말이 오가는 감각을 익히는 것. */
+const TALK_SCENES=[
+  { id:"tk_checkin", emo:"🏨", t:"호텔 체크인", where:"호텔 프런트",
+    turns:[
+      {w:"them", en:"Good afternoon. Are you checking in?", ko:"안녕하세요. 체크인하시나요?"},
+      {w:"me", goal:"예약했다고 말해요", head:"I have a ~", ex:"I have a reservation."},
+      {w:"them", en:"Yes, I have you here. One night in a twin room.", ko:"네, 확인됐어요. 트윈룸 1박이요."},
+      {w:"me", goal:"조식이 포함인지 물어요", head:"Is ~ included?", ex:"Is breakfast included?"},
+      {w:"them", en:"Yes, breakfast is included. It starts at seven.", ko:"네, 조식 포함이에요. 7시부터예요."}
+    ]},
+  { id:"tk_taxi", emo:"🚕", t:"택시 타기", where:"공항 앞",
+    turns:[
+      {w:"them", en:"Taxi? Where would you like to go?", ko:"택시요? 어디로 가시나요?"},
+      {w:"me", goal:"공항으로 가 달라고 해요", head:"Can you take me to ~?", ex:"Can you take me to the airport?"},
+      {w:"them", en:"Sure, hop in. Traffic is light today.", ko:"네, 타세요. 오늘은 길이 한가해요."},
+      {w:"me", goal:"얼마나 걸리는지 물어요", head:"How long does it take?", ex:"How long does it take?"},
+      {w:"them", en:"About thirty minutes. We'll be there soon.", ko:"30분쯤이요. 금방 도착해요."}
+    ]},
+  { id:"tk_order", emo:"🍜", t:"식당 주문", where:"현지 식당",
+    turns:[
+      {w:"them", en:"Here's your table. Are you ready to order?", ko:"자리 안내했어요. 주문하시겠어요?"},
+      {w:"me", goal:"물을 달라고 해요", head:"Can I get ~?", ex:"Can I get some water, please?"},
+      {w:"them", en:"Of course. Anything else?", ko:"네. 더 필요한 건요?"},
+      {w:"me", goal:"안 맵게 해 달라고 해요", head:"Not too spicy ~", ex:"Not too spicy, please."},
+      {w:"them", en:"No problem, I'll tell the kitchen.", ko:"알겠어요, 주방에 말해둘게요."}
+    ]},
+  { id:"tk_market", emo:"🛍️", t:"야시장 흥정", where:"야시장",
+    turns:[
+      {w:"them", en:"Hello! This one is handmade. Very popular.", ko:"안녕하세요! 이거 수공예예요. 인기 많아요."},
+      {w:"me", goal:"얼마인지 물어요", head:"How much is ~?", ex:"How much is this?"},
+      {w:"them", en:"Eighty ringgit for this one.", ko:"이건 80링깃이에요."},
+      {w:"me", goal:"깎아 달라고 해요", head:"Can you give me a ~?", ex:"Can you give me a discount?"},
+      {w:"them", en:"Okay, seventy for you. Final price.", ko:"좋아요, 70에 드려요. 이게 마지막이에요."}
+    ]},
+  { id:"tk_tour", emo:"🐠", t:"섬 투어 예약", where:"투어 데스크",
+    turns:[
+      {w:"them", en:"Good morning. How can I help you?", ko:"안녕하세요. 뭘 도와드릴까요?"},
+      {w:"me", goal:"내일 섬 투어를 예약하고 싶다고 말해요", head:"I'd like to ~", ex:"I'd like to book an island tour for tomorrow."},
+      {w:"them", en:"We have two boats tomorrow, morning and afternoon.", ko:"내일 배가 두 편 있어요, 오전과 오후요."},
+      {w:"me", goal:"몇 시에 시작하는지 물어요", head:"What time does ~ start?", ex:"What time does the tour start?"},
+      {w:"them", en:"The morning one starts at eight thirty.", ko:"오전 편은 8시 30분에 시작해요."}
+    ]},
+  { id:"tk_meet", emo:"📍", t:"투어 집결", where:"호텔 로비",
+    turns:[
+      {w:"them", en:"Your island tour is tomorrow. The driver will pick you up.", ko:"섬 투어가 내일이에요. 기사가 데리러 옵니다."},
+      {w:"me", goal:"어디서 만나는지 물어요", head:"Where do we meet?", ex:"Where do we meet?"},
+      {w:"them", en:"Right here in the lobby, by the main door.", ko:"바로 여기 로비, 정문 쪽이에요."},
+      {w:"me", goal:"몇 시까지 나와 있어야 하는지 물어요", head:"What time do we need to ~?", ex:"What time do we need to be in the lobby?"},
+      {w:"them", en:"Please be here by seven forty-five.", ko:"7시 45분까지 나와 주세요."}
+    ]},
+  { id:"tk_ask_way", emo:"🗺️", t:"길 묻기", where:"길거리",
+    turns:[
+      {w:"them", en:"You look lost. Do you need help?", ko:"길을 잃으신 것 같네요. 도와드릴까요?"},
+      {w:"me", goal:"화장실이 어디인지 물어요", head:"Where is ~?", ex:"Where is the toilet?"},
+      {w:"them", en:"There's one inside that building, on the first floor.", ko:"저 건물 안 1층에 있어요."},
+      {w:"me", goal:"시내 중심가는 어떻게 가는지 물어요", head:"How do I get to ~?", ex:"How do I get to the city center?"},
+      {w:"them", en:"Take the blue bus from that stop. Ten minutes.", ko:"저 정류장에서 파란 버스를 타세요. 10분이요."}
+    ]},
+  { id:"tk_room", emo:"🔧", t:"방 문제", where:"호텔 프런트",
+    turns:[
+      {w:"them", en:"Good evening. Is everything okay with your room?", ko:"안녕하세요. 객실은 괜찮으세요?"},
+      {w:"me", goal:"에어컨에 문제가 있다고 말해요", head:"There's a problem with ~", ex:"There's a problem with the air conditioner."},
+      {w:"them", en:"I'm sorry. Our staff can look at it in an hour.", ko:"죄송합니다. 한 시간 뒤에 직원이 봐 드릴 수 있어요."},
+      {w:"me", goal:"그때까지 어떻게 해야 하는지 물어요", head:"What should I do?", ex:"What should I do until then?"},
+      {w:"them", en:"We can move you to another room tonight.", ko:"오늘 밤은 다른 방으로 옮겨드릴 수 있어요."}
+    ]},
+  { id:"tk_bags", emo:"🧳", t:"짐 맡기기", where:"호텔 프런트",
+    turns:[
+      {w:"them", en:"You're checked out. Your flight is tonight, right?", ko:"체크아웃 됐어요. 비행기가 오늘 밤이죠?"},
+      {w:"me", goal:"짐을 여기 맡겨도 되는지 물어요", head:"Can I leave ~ here?", ex:"Can I leave my bags here?"},
+      {w:"them", en:"Of course. We'll keep them behind the desk.", ko:"네. 데스크 뒤에 보관해 드려요."},
+      {w:"me", goal:"몇 시까지 찾아가야 하는지 물어요", head:"What time do we need to ~?", ex:"What time do we need to pick them up?"},
+      {w:"them", en:"Anytime before ten tonight.", ko:"오늘 밤 10시 전에는 아무 때나요."}
+    ]},
+  { id:"tk_lost", emo:"😰", t:"물건 분실", where:"식당 앞",
+    turns:[
+      {w:"them", en:"You came back. Did you forget something?", ko:"다시 오셨네요. 뭘 잊으셨나요?"},
+      {w:"me", goal:"휴대폰을 두고 온 것 같다고 말해요", head:"I think I left ~", ex:"I think I left my phone at the table."},
+      {w:"them", en:"Let me check. Which table were you at?", ko:"확인해 볼게요. 어느 자리였나요?"},
+      {w:"me", goal:"찾지 못하면 어떻게 해야 하는지 물어요", head:"What should I do?", ex:"What should I do if you can't find it?"},
+      {w:"them", en:"Leave your number and we'll call you.", ko:"번호 남겨 주시면 연락드릴게요."}
+    ]},
+  { id:"tk_ticket", emo:"🎫", t:"표 사기", where:"선착장 매표소",
+    turns:[
+      {w:"them", en:"Next boat leaves at two. How many tickets?", ko:"다음 배는 2시예요. 표 몇 장이요?"},
+      {w:"me", goal:"어른 둘, 아이 둘이라고 말해요", head:"Two adults and ~", ex:"Two adults and two kids."},
+      {w:"them", en:"That's one hundred and twenty ringgit total.", ko:"전부 120링깃이에요."},
+      {w:"me", goal:"카드로 낼 수 있는지 물어요", head:"Can I pay by ~?", ex:"Can I pay by card?"},
+      {w:"them", en:"Yes, we take cards. Tap here, please.", ko:"네, 카드 받아요. 여기 대주세요."}
+    ]},
+  { id:"tk_again", emo:"👂", t:"못 알아들었을 때", where:"투어 버스",
+    turns:[
+      {w:"them", en:"After lunch, go back to the pier and wait next to the blue sign at three fifteen.", ko:"점심 후에 선착장으로 돌아가서 3시 15분에 파란 표지판 옆에서 기다리세요."},
+      {w:"me", goal:"다시 천천히 말해 달라고 해요", head:"Could you say that again ~", ex:"Could you say that again, more slowly?"},
+      {w:"them", en:"Sure. Back to the pier. Blue sign. Three fifteen.", ko:"네. 선착장으로. 파란 표지판. 3시 15분이요."},
+      {w:"me", goal:"그럼 3시 15분에 모이는 거냐고 확인해요", head:"Does that mean ~?", ex:"Does that mean we meet at three fifteen?"},
+      {w:"them", en:"Exactly. Don't be late, the boat won't wait.", ko:"맞아요. 늦지 마세요, 배는 안 기다려요."}
+    ]}
+];
+
+/* 🎭 상황극 진행 — 채점하지 않는다. 말했든 넘겼든 다음 대사로 간다. */
+const TALK_KEY="speakingroom:talk";
+let talkState=null;
+function talkAll(){ try{ return hGet(TALK_KEY,{})||{}; }catch(e){ return {}; } }
+function talkDoneCount(id){ const o=talkAll(); return (o[id]&&o[id].done)||0; }
+function talkMarkDone(id){
+  try{ const o=talkAll(); o[id]={done:((o[id]&&o[id].done)||0)+1, lastT:Date.now()}; hSet(TALK_KEY,o); }catch(e){}
+}
+function talkStart(idx){
+  const sc=TALK_SCENES[idx]; if(!sc) return;
+  talkState={sc, i:0, said:[]};
+  try{ ttStart("drill"); }catch(e){}
+  autoDrill=null;
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint");
+  try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  talkRender();
+}
+/* 내 차례가 몇 번째인지 (유도 칸의 ①②) */
+function talkMyNo(sc, upto){
+  let n=0; for(let k=0;k<=upto;k++) if(sc.turns[k].w==="me") n++;
+  return n;
+}
+function talkMyTotal(sc){ return sc.turns.filter(t=>t.w==="me").length; }
+function talkRender(){
+  if(!talkState) return goToSetup();
+  const {sc,i,said}=talkState;
+  const total=talkMyTotal(sc);
+  const last=sc.turns.length-1;
+  const cur0=sc.turns[i];
+  /* 상대 차례면 그 대사까지 보여준다. 내 차례면 그 앞까지만. */
+  const upto = cur0 ? (cur0.w==="them" ? i : i-1) : last;
+  const finished = !cur0 || (cur0.w==="them" && i===last);
+  const bubbles=[];
+  for(let k=0;k<=upto;k++){
+    const t=sc.turns[k];
+    if(t.w==="them"){
+      bubbles.push(`<div style="display:flex;gap:8px;margin-bottom:11px">
+        <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#E7DFD8;display:grid;place-items:center;font-size:15px">🧑</span>
+        <span style="flex:1;min-width:0;background:#fff;border:1px solid #E2D9D1;border-radius:4px 15px 15px 15px;padding:10px 13px">
+          <b style="display:block;font-family:var(--serif);font-size:16.5px;color:#2F241F;line-height:1.4" data-no-pronko>${escapeHtml(t.en)}</b>
+          <span style="display:block;font-size:12px;color:#8A6F62;margin-top:3px">${escapeHtml(t.ko)}</span>
+          <button class="talkPlay" data-en="${escapeHtml(t.en)}" style="margin-top:7px;padding:5px 11px;border:1.5px solid #DCD1C8;border-radius:9px;background:#FBF7F3;color:#8A6F62;font-size:11px;font-weight:900;cursor:pointer">🔊 다시 듣기</button>
+        </span></div>`);
+    }else{
+      const mine=said[talkMyNo(sc,k)-1];
+      bubbles.push(`<div style="display:flex;gap:8px;margin-bottom:11px;flex-direction:row-reverse">
+        <span style="flex:none;width:30px;height:30px;border-radius:50%;background:#D2EEE3;display:grid;place-items:center;font-size:15px">🙋</span>
+        <span style="flex:1;min-width:0;background:#E6F5EE;border:1px solid #C7E8DA;border-radius:15px 4px 15px 15px;padding:10px 13px;text-align:right">
+          ${mine&&mine.text
+            ? `<b style="display:block;font-family:var(--serif);font-size:16px;color:#176B52;line-height:1.4" data-no-pronko>${escapeHtml(mine.text)}</b>`
+            : `<span style="display:block;font-size:13px;color:#7FA396;font-weight:800">(넘어갔어요)</span>`}
+          <span style="display:block;font-size:11.5px;color:#7FA396;margin-top:3px">${escapeHtml(t.goal)}</span>
+          <details style="margin-top:5px"><summary style="font-size:11px;color:#189E79;font-weight:900;cursor:pointer;list-style:none">이렇게도 말해요</summary>
+            <span style="display:block;font-size:13px;color:#3A2D27;font-weight:800;margin-top:4px" data-no-pronko>${escapeHtml(t.ex)}</span></details>
+        </span></div>`);
+    }
+  }
+  const cur=cur0;
+  let panel="";
+  if(finished){
+    panel=`<div style="background:#fff;border:1.5px solid #C7E8DA;border-radius:16px;padding:16px;text-align:center">
+      <div style="font-size:15.5px;font-weight:950;color:#189E79">✅ 두 마디로 끝냈어요</div>
+      <div style="font-size:12.5px;color:#8A6F62;margin-top:5px;line-height:1.55">틀려도 괜찮아요. 말이 오가는 흐름을 익히는 게 목적이에요.</div>
+      <button class="routine-main" id="talkAgain" style="margin-top:13px">🔄 한 번 더</button>
+      <button class="auto-sub" id="talkOther" style="width:100%;margin-top:8px">다른 상황 고르기</button>
+    </div>`;
+  }else if(cur && cur.w==="me"){
+    panel=`<div style="background:#fff;border:2px solid #189E79;border-radius:16px;padding:14px">
+      <div style="font-size:10.5px;font-weight:900;letter-spacing:.08em;color:#7FA396">🙋 내 차례 ${talkMyNo(sc,i)} / ${total}</div>
+      <div style="font-size:15px;font-weight:900;color:#3A2D27;margin-top:5px;line-height:1.45">${escapeHtml(cur.goal)}</div>
+      <div style="margin-top:9px;padding:10px 12px;background:#ECF7F2;border:1.5px solid #C7E8DA;border-radius:12px">
+        <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#7FA396">🎯 이렇게 시작해요</span>
+        <b style="display:block;font-family:var(--serif);font-size:21px;color:#189E79;margin-top:2px" data-no-pronko>${escapeHtml(cur.head)}</b>
+      </div>
+      <div class="auto-row" style="margin-top:11px">
+        <button class="auto-mic" id="talkMic">🎤 터치해서 말하기</button>
+        <button class="auto-sub" id="talkType">⌨️ 입력</button>
+      </div>
+      <button class="auto-sub" id="talkSkip" style="width:100%;margin-top:8px;font-size:12.5px">그냥 넘어가기 →</button>
+      <input id="talkInput" class="auto-input" autocomplete="off" placeholder="영어로 입력 후 Enter">
+      <div style="font-size:11.5px;color:#A28A7F;margin-top:9px;line-height:1.5">틀려도 그대로 넘어가요. 채점하지 않아요.</div>
+    </div>`;
+  }else{
+    panel=`<div style="text-align:center;padding:6px 0"><button class="routine-main" id="talkNext" style="margin:0">다음 →</button></div>`;
+  }
+
+  $("#sprintScroll").style.background="#EAE3DD";
+  $("#sprintScroll").innerHTML=`<div class="auto-card" style="text-align:left">
+    <div class="auto-top">
+      <button class="auto-exit" id="talkExit">‹ 끝내기</button>
+      <div class="auto-prog"><i style="width:${Math.round(i/sc.turns.length*100)}%"></i></div>
+      <div class="auto-count">${sc.emo}</div>
+    </div>
+    <div class="auto-kicker">ROLE PLAY</div>
+    <div style="text-align:center;margin:2px 0 4px">
+      <b style="font-family:var(--serif);font-size:23px;color:#189E79">${escapeHtml(sc.t)}</b>
+      <span style="display:block;font-size:12px;color:#8A6F62;font-weight:800;margin-top:2px">${escapeHtml(sc.where)} · 내가 ${total}번 말해요</span>
+    </div>
+    <div style="margin:13px 0 11px">${bubbles.join("")}</div>
+    ${panel}
+  </div>`;
+  $("#sprintScroll").scrollTop=$("#sprintScroll").scrollHeight;
+
+  $("#talkExit").onclick=()=>{ talkState=null; goToSetup(); };
+  document.querySelectorAll(".talkPlay").forEach(b=>{ b.onclick=()=>{ try{ speakEn(b.getAttribute("data-en")); }catch(e){} }; });
+  /* 상대 대사는 새로 나올 때 한 번 읽어준다 */
+  if(cur0 && cur0.w==="them" && talkState._spoke!==i){
+    talkState._spoke=i; try{ speakEn(cur0.en); }catch(e){}
+  }
+  const nx=$("#talkNext"); if(nx) nx.onclick=()=>{ talkState.i++; talkRender(); };
+  const sk=$("#talkSkip"); if(sk) sk.onclick=()=>talkSay("");
+  const mic=$("#talkMic");
+  if(mic) mic.onclick=function(){
+    if(qzRecording){ if(qzMR&&qzMR.state!=="inactive") qzMR.stop(); return; }
+    this.classList.add("live"); this.textContent="듣고 있어요…";
+    micFillCb((txt)=>{ talkSay(String(txt||"")); }, "", {pron:false});
+  };
+  const ty=$("#talkType"); if(ty) ty.onclick=()=>{ const inp=$("#talkInput"); inp.style.display="block"; inp.focus(); };
+  const inp=$("#talkInput");
+  if(inp) inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); talkSay(inp.value.trim()); } });
+
+  if(finished){
+    if(!talkState._done){ talkState._done=true; try{ talkFinish(); }catch(e){} }
+    $("#talkAgain").onclick=()=>{ const k=TALK_SCENES.indexOf(sc); talkState=null; talkStart(k); };
+    $("#talkOther").onclick=()=>{ talkState=null; goToSetup(); openTalkPicker(); };
+  }
+}
+/* 내가 말했다 — 맞았는지 보지 않는다. 기록해두고 다음 대사로. */
+function talkSay(text){
+  if(!talkState) return;
+  const curT=talkState.sc.turns[talkState.i];
+  if(!curT || curT.w!=="me") return;
+  talkState.said.push({text:String(text||"").trim()});
+  talkState.i++;
+  talkRender();
+}
+function talkFinish(){
+  if(!talkState) return;
+  try{ talkMarkDone(talkState.sc.id); }catch(e){}
+  try{ awardXP("output", 25, "🎭 상황극", "talk:"+talkState.sc.id+":"+DAYN()); }catch(e){}
+}
+function openTalkPicker(){
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="talkOv";
+  const row=(sc,k)=>{
+    const n=talkDoneCount(sc.id);
+    return `<button class="chk-row talkRow" data-k="${k}" data-no-pronko>
+      <span style="flex:none;font-size:19px">${sc.emo}</span>
+      <span class="chk-main">
+        <span style="font-size:14.5px;font-weight:900;color:#3A2D27">${escapeHtml(sc.t)}</span>
+        <span class="chk-ko">${escapeHtml(sc.where)} · ${escapeHtml(sc.turns.filter(t=>t.w==="me").map(t=>t.head).join(" → "))}</span>
+      </span>
+      <span class="chk-side">${n?`<span style="font-size:10.5px;font-weight:900;color:#189E79;background:#E6F5EE;border-radius:99px;padding:2px 8px">${n}번 해봄</span>`:`<span style="font-size:10.5px;font-weight:900;color:#8A6F62;background:#F1EBE5;border-radius:99px;padding:2px 8px">새로</span>`}</span>
+      <span class="chk-ar">›</span>
+    </button>`;
+  };
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall">
+     <div class="hub-grab"></div>
+     <div class="hub-title">🎭 상황극</div>
+     <div class="hub-sub">배운 앞대가리로 <b>주고받고 두 번</b>.<br>틀려도 그대로 넘어가요 — 채점하지 않아요.</div>
+     <div class="chk-list">${TALK_SCENES.map(row).join("")}</div>
+   </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector(".hub-bg").onclick=()=>ov.remove();
+  ov.querySelectorAll(".talkRow").forEach(b=>{ b.onclick=()=>{ const k=+b.getAttribute("data-k"); ov.remove(); talkStart(k); }; });
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
+
 /* ===== 📈 내 실력 — 늘고 있는지 숫자로 보여준다 =====
    날마다 몇 문제를 풀었고, 몇 개를 맞혔고, 말 시작까지 몇 초 걸렸는지만 쌓는다.
    60일치만 보관한다. 문항 내용은 저장하지 않는다. */
