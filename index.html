@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.216";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.217";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12864,6 +12864,11 @@ function openSpeakHub(){
        <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
        <span class="hub-ar">›</span>
      </button>
+     <button class="hub-opt" data-go="growth">
+       <span class="hub-emo">📈</span>
+       <span class="hub-tx"><b>내 실력</b><i>늘고 있는지 숫자로 — 정답률 · 말 시작 속도 · 붙은 표현</i></span>
+       <span class="hub-ar">›</span>
+     </button>
      <button class="hub-opt" data-go="study">
        <span class="hub-emo">⭐</span>
        <span class="hub-tx"><b>골라서 연습</b><i>입에 안 붙는 표현만 체크 — 그것만 문제로 나와요</i></span>
@@ -12878,7 +12883,7 @@ function openSpeakHub(){
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="growth") openGrowth(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
@@ -16578,6 +16583,151 @@ function travelMastery(id, react){
   if(streak>=3)   return {k:"good", t:"붙었어요",   c:"#189E79", bg:"#E6F5EE", weak:false};
   return            {k:"mid",  t:"연습 중",    c:"#C08763", bg:"#FFF3E8", weak:true};
 }
+/* ===== 📈 내 실력 — 늘고 있는지 숫자로 보여준다 =====
+   날마다 몇 문제를 풀었고, 몇 개를 맞혔고, 말 시작까지 몇 초 걸렸는지만 쌓는다.
+   60일치만 보관한다. 문항 내용은 저장하지 않는다. */
+const GROWTH_KEY="speakingroom:growth";
+function growthGet(){ try{ return hGet(GROWTH_KEY,{})||{}; }catch(e){ return {}; } }
+function growthLog(it, ok, initMs){
+  try{
+    const g=growthGet(), d=String(DAYN());
+    const r=g[d]||{n:0,ok:0,ms:0,msN:0,tv:0,rx:0,kk:0};
+    r.n++; if(ok) r.ok++;
+    if(initMs>0 && initMs<60000){ r.ms+=initMs; r.msN++; }
+    if(it._react) r.rx++; else if(kkIsEvent(it)) r.kk++; else r.tv++;
+    g[d]=r;
+    const keys=Object.keys(g).sort(); while(keys.length>60){ delete g[keys.shift()]; }
+    hSet(GROWTH_KEY,g);
+  }catch(e){}
+}
+/* 오늘부터 거꾸로 n일치 — 안 한 날은 0으로 채운다 */
+function growthDays(n){
+  const g=growthGet(), out=[], now=new Date();
+  for(let i=n-1;i>=0;i--){
+    const x=new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+    const k=String(x.getFullYear()*10000+(x.getMonth()+1)*100+x.getDate());
+    const r=g[k]||{n:0,ok:0,ms:0,msN:0};
+    out.push({key:k, label:["일","월","화","수","목","금","토"][x.getDay()], date:x.getDate(), ...r});
+  }
+  return out;
+}
+function growthSum(a){
+  return a.reduce((s,r)=>({n:s.n+r.n, ok:s.ok+r.ok, ms:s.ms+r.ms, msN:s.msN+r.msN}), {n:0,ok:0,ms:0,msN:0});
+}
+/* 표현별 상태 — 연속 3회 이상 맞히면 '붙었다'고 본다 */
+function growthMastery(frames, react){
+  const o=react?rxAll():travelAll();
+  let done=0, mid=0, weak=0, fresh=0, ok=0, miss=0;
+  frames.forEach(f=>{
+    const s=o[f.id]||{};
+    ok+=s.ok||0; miss+=s.miss||0;
+    if(!(s.seen>0)) fresh++;
+    else if((s.streak||0)>=3) done++;
+    else if((s.miss||0)>(s.ok||0)) weak++;
+    else mid++;
+  });
+  return {done, mid, weak, fresh, ok, miss, total:frames.length};
+}
+function openGrowth(){
+  const d7=growthDays(7), d14=growthDays(14);
+  const cur=growthSum(d14.slice(7)), prev=growthSum(d14.slice(0,7));
+  const tv=growthMastery(TRAVEL_FRAMES), rx=growthMastery(RX_FRAMES,true), kk=growthMastery(KK_FRAMES);
+  const pct=(a,b)=>b?Math.round(a/b*100):0;
+  const sec=(s)=>s.msN?(s.ms/s.msN/1000):0;
+  const accCur=pct(cur.ok,cur.n), accPrev=pct(prev.ok,prev.n);
+  const secCur=sec(cur), secPrev=sec(prev);
+  const maxN=Math.max(1,...d7.map(r=>r.n));
+
+  const bar=(r)=>{
+    const h=Math.round(r.n/maxN*70);
+    const a=pct(r.ok,r.n);
+    return `<span style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <span style="font-size:9.5px;color:#8A6F62;font-weight:800;height:12px">${r.n?a+"%":""}</span>
+      <span style="width:76%;height:${Math.max(3,h)}px;border-radius:6px 6px 0 0;background:${r.n?(a>=80?"#2BBD94":a>=60?"#F0A05A":"#E08A7A"):"#E2DAD3"}"></span>
+      <span style="font-size:10px;color:#A28A7F;font-weight:800">${r.label}</span>
+      <span style="font-size:9.5px;color:#C0AFA4">${r.n||""}</span>
+    </span>`;
+  };
+  const delta=(now,before,unit,goodIsUp)=>{
+    if(!before) return `<span style="font-size:11px;color:#A28A7F">지난주 기록 없음</span>`;
+    const diff=now-before, up=diff>0, good=goodIsUp?up:!up;
+    if(Math.abs(diff)<(unit==="초"?0.15:1)) return `<span style="font-size:11px;color:#A28A7F">지난주와 비슷</span>`;
+    return `<span style="font-size:11.5px;font-weight:900;color:${good?"#189E79":"#C0755F"}">${up?"▲":"▼"} ${Math.abs(unit==="초"?diff.toFixed(1):Math.round(diff))}${unit} ${good?"좋아졌어요":"떨어졌어요"}</span>`;
+  };
+  const packRow=(emo,name,m)=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid #EFE7E0">
+     <span style="flex:none;font-size:16px">${emo}</span>
+     <span style="flex:1;min-width:0">
+       <b style="display:block;font-size:13px;color:#3A2D27">${name}</b>
+       <span style="display:block;height:7px;border-radius:99px;background:#EDE5DE;margin-top:4px;overflow:hidden">
+         <span style="display:block;height:100%;width:${pct(m.done,m.total)}%;background:linear-gradient(90deg,#2BBD94,#189E79)"></span></span>
+     </span>
+     <span style="flex:none;text-align:right">
+       <b style="font-size:15px;color:#189E79">${m.done}</b><span style="font-size:11px;color:#A28A7F"> / ${m.total}</span>
+       <span style="display:block;font-size:10px;color:#A28A7F">정답률 ${pct(m.ok,m.ok+m.miss)}%</span>
+     </span>
+   </div>`;
+
+  // 가장 약한 표현 / 가장 잘하는 표현
+  const o=travelAll();
+  const done=TRAVEL_FRAMES.filter(f=>(o[f.id]||{}).seen>0);
+  const weakest=done.slice().sort((a,bb)=>{
+    const A=o[a.id],B=o[bb.id];
+    return (A.ok||0)/((A.ok||0)+(A.miss||0)+.01) - (B.ok||0)/((B.ok||0)+(B.miss||0)+.01);
+  }).slice(0,5);
+  const best=done.slice().sort((a,bb)=>((o[bb.id].streak||0)-(o[a.id].streak||0))).slice(0,5);
+  const li=(f,right)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #F0EAE4">
+      <span style="font-family:var(--serif);font-size:13.5px;color:#3A2D27;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-no-pronko>${escapeHtml(f.frame)}</span>
+      <span style="flex:none;font-size:11.5px;font-weight:800;color:#8A6F62">${right}</span></div>`;
+
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="growthOv";
+  ov.innerHTML=`<div class="hub-bg"></div>
+   <div class="hub-sheet hub-sheet-tall" style="background:#EAE3DD">
+     <div class="hub-grab"></div>
+     <div class="hub-title">📈 내 실력</div>
+     <div class="hub-sub">느낌 말고 숫자로 — 지난주와 이번 주를 비교해요.</div>
+
+     <div style="display:flex;gap:9px;margin-bottom:12px">
+       <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:12px 10px;text-align:center">
+         <div style="font-size:10.5px;color:#A28A7F;font-weight:900">이번 주 정답률</div>
+         <div style="font-size:26px;font-weight:950;color:#189E79;line-height:1.1;margin:2px 0">${accCur}<span style="font-size:14px">%</span></div>
+         ${delta(accCur,accPrev,"%p",true)}
+       </div>
+       <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:12px 10px;text-align:center">
+         <div style="font-size:10.5px;color:#A28A7F;font-weight:900">말 시작까지</div>
+         <div style="font-size:26px;font-weight:950;color:#189E79;line-height:1.1;margin:2px 0">${secCur?secCur.toFixed(1):"–"}<span style="font-size:14px">초</span></div>
+         ${delta(secCur,secPrev,"초",false)}
+       </div>
+     </div>
+
+     <div style="background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:13px 13px 10px;margin-bottom:12px">
+       <div style="font-size:11px;color:#C08763;font-weight:900;margin-bottom:9px">최근 7일 — 막대는 푼 문제 수, 위 숫자는 정답률</div>
+       <div style="display:flex;align-items:flex-end;gap:5px;height:110px">${d7.map(bar).join("")}</div>
+     </div>
+
+     <div style="background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:11px 13px;margin-bottom:12px">
+       <div style="font-size:11px;color:#C08763;font-weight:900">입에 붙은 표현 — 연속 3번 맞히면 붙은 걸로 봐요</div>
+       ${packRow("✈️","여행 표현",tv)}${packRow("⚡","실전 반응",rx)}${packRow("🇲🇾","말레이시아",kk)}
+     </div>
+
+     ${done.length?`<div style="display:flex;gap:9px;margin-bottom:6px">
+       <div style="flex:1;background:#fff;border:1px solid #F0DCC8;border-radius:15px;padding:11px 12px">
+         <div style="font-size:11px;color:#C0755F;font-weight:900;margin-bottom:2px">아직 약한 것</div>
+         ${weakest.map(f=>li(f, Math.round((o[f.id].ok||0)/((o[f.id].ok||0)+(o[f.id].miss||0)||1)*100)+"%")).join("")}
+       </div>
+       <div style="flex:1;background:#fff;border:1px solid #C7E8DA;border-radius:15px;padding:11px 12px">
+         <div style="font-size:11px;color:#189E79;font-weight:900;margin-bottom:2px">잘 붙은 것</div>
+         ${best.map(f=>li(f,"연속 "+(o[f.id].streak||0))).join("")}
+       </div>
+     </div>`:`<div style="font-size:12.5px;color:#8A6F62;text-align:center;padding:10px 0">아직 기록이 없어요. 몇 판 하고 다시 와요.</div>`}
+
+     <button class="auto-sub" id="growthClose" style="width:100%;margin-top:10px">닫기</button>
+   </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  ov.querySelector(".hub-bg").onclick=close;
+  ov.querySelector("#growthClose").onclick=close;
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
 const KK_GUIDE_KEY="speakingroom:kk_guide_seen";
 function kkIsEvent(it){ try{ return !!(it && it.frame && KK_IDS.indexOf(it.frame.id)>=0); }catch(e){ return false; } }
 function kkSetOf(it){ try{ return KK_SETS.find(s=>s.ids.indexOf(it.frame.id)>=0)||null; }catch(e){ return null; } }
@@ -20173,6 +20323,7 @@ function autoDrillFinish(heard, meta){
   if(!it._travel) bleRecord(it.block.id, {result, communicationSuccess:g.ok, targetBlockSuccess:g.ok, fast, situation:bleContextLabel(it.ex), contextKey:bleContextKey(it.ex), ms:initMs, mixed:true, hidden:!!it.recall, speedAttempt:true, deep:true, source:"auto_drill", userAnswer:heard, suggestedAnswer:it.ex.en, naturalAnswer:it.ex.en});
   autoDrill.results.push({id:it.block.id, ok:g.ok, fast, perfect, initMs, heard, en:it.ex.en, ko:it.ex.ko, block:it.block.block, recall:!!it.recall});
   if(!it._travel){ try{ reuseAdd(it.ex.en, it.ex.ko||it.block.meaningKo||"", "auto-drill", bleContextKey(it.ex)); reuseRecord(it.ex.en, it.ex.ko||"", bleContextKey(it.ex), perfect); }catch(e){} }
+  if(it._travel){ try{ growthLog(it, g.ok, initMs); }catch(e){} }   // 📈 내 실력 — 날짜별 기록
   if(it._react){ try{ rxRecord(it.frame.id, g.ok); }catch(e){} }
   else if(it._travel){ try{ travelRecord(it.frame.id, g.ok); }catch(e){} }
   // 🎯 자동 레벨 기록 — block(인출 정확도)·speed(3초 시작)는 완전히 독립
@@ -20375,6 +20526,7 @@ function autoDrillDone(){
     <div style="display:flex;flex-direction:column;gap:9px;max-width:340px;margin:0 auto">
       <button class="routine-main" id="autoAgain" style="margin:0">${autoDrill.onlyIds?"⭐ 고른 표현 한 번 더 →":(autoDrill.react?"⚡ 실전 반응 한 번 더 →":(isTravel?"✈️ 여행 표현 한 번 더 →":"한 번 더 자동화 →"))}</button>
       <button class="auto-sub" id="autoOther">${isTravel?"일반 반복학습 하기":"✈️ 여행 표현 하기"}</button>
+      <button class="auto-sub" id="autoGrowth" style="font-size:12.5px">📈 내 실력 보기</button>
       ${isTravel?`<button class="auto-sub" id="autoTvGuide" style="font-size:12.5px">✈️ 여행팩 안내 다시 보기</button>`:""}
       <button class="auto-sub" id="autoHome">홈으로</button>
     </div>
@@ -20386,6 +20538,7 @@ function autoDrillDone(){
     else if(isTravel) startTravelDrill(undefined, undefined, undefined, keepIds);
     else startAutoDrill(); };
   $("#autoOther").onclick=()=>{ autoDrill=null; if(isTravel) startAutoDrill(); else startTravelDrill(); };
+  if($("#autoGrowth")) $("#autoGrowth").onclick=()=>openGrowth();
   if($("#autoTvGuide")) $("#autoTvGuide").onclick=()=>travelGuideShow(()=>{ autoDrill=null; startTravelDrill(undefined,true); });
   $("#autoHome").onclick=()=>{ autoDrill=null; goToSetup(); };
 }
