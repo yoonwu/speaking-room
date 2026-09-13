@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.218";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.219";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12822,73 +12822,57 @@ function spDone(){
 }
 // ===== CHUNK MASTERY TRAINING — 약점 블록 집중(10문제, 7/10 → 마스터) =====
 let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0, ctPhrase=null, ctHintTimer=null;
+/* ⚔️ 스피킹 훈련장 — 보여줄 것만 여기서 정한다.
+   지운 게 아니라 감춘 것이다. HUB_SHOW 에 키를 다시 넣으면 그대로 돌아온다.
+   감춘 것들도 다른 길로는 들어갈 수 있다:
+     여행 표현  → 홈 '오늘 루틴' 카드의 GO
+     실전 반응  → 골라서 연습에서 '⚡ 영어 듣고 답하기'
+     내 실력    → 한 판 끝낸 결과 화면의 '📈 내 실력 보기'
+     말레이시아 → 골라서 연습 목록에 그 문장들이 그대로 있다 */
+const HUB_SHOW=["auto","verb","talk","study"];
+const HUB_OPTS=[
+  {k:"kk", emo:"🇲🇾", t:"말레이시아 10마디", d:"안녕하세요 · 얼마예요 · 깎아주세요 — 이것만 외워 가요",
+   tag:"이벤트", css:"background:linear-gradient(135deg,#F4A24C,#E0722F);border:none;box-shadow:0 12px 26px -12px rgba(224,114,47,.55)", fg:"#E0722F", go:()=>kkOpen()},
+  {k:"real", emo:"🌎", t:"실전회화", d:"배운 블록을 AI와 실제 상황처럼 — 여기서 진짜 내 것이 돼요",
+   tag:"★ 최종 목표", css:"background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)", fg:"#189E79", go:()=>openSurvival()},
+  {k:"auto", emo:"🔥", t:"입에 붙이기", d:"배운 표현을 빠르게 반복해 자동으로 나오게", go:()=>startAutoDrill()},
+  {k:"verb", emo:"🧱", t:"기본동사", d:"get·have·take… 동사 하나로 말이 확 늘어요", go:()=>openVerbPicker()},
+  {k:"talk", emo:"🎭", t:"상황극", d:"주고받고 두 번 — 틀려도 그대로 넘어가요", go:()=>openTalkPicker()},
+  {k:"study", emo:"⭐", t:"골라서 연습", d:"입에 안 붙는 표현만 체크 — 그것만 문제로 나와요", go:()=>openTravelStudyPicker()},
+  {k:"out", emo:"⚔️", t:"영어로 꺼내기", d:"상황을 보고 배운 블록으로 말해요", go:()=>startOutputEngine()},
+  {k:"write", emo:"✍️", t:"문장 만들기", d:"한국어를 보고 3초 안에 영어로 말해보세요", go:()=>startWriting()},
+  {k:"sprint", emo:"⚡", t:"스피드런", d:"제한시간 안에 빠르게 말해요", go:()=>openSprintPicker()},
+  {k:"react", emo:"🎧", t:"실전 반응", d:"한글 없이 — 상대의 영어를 듣고 바로 답해요", go:()=>startReactDrill()},
+  {k:"growth", emo:"📈", t:"내 실력", d:"늘고 있는지 숫자로 — 정답률 · 말 시작 속도 · 붙은 표현", go:()=>openGrowth()}
+];
 function openSpeakHub(){
+  const list=HUB_SHOW.map(k=>HUB_OPTS.find(o=>o.k===k)).filter(Boolean);
+  const row=(o)=>o.css
+    ? `<button class="hub-opt" data-go="${o.k}" data-no-pronko style="${o.css}">
+        <span class="hub-emo" style="background:rgba(255,255,255,.2)">${o.emo}</span>
+        <span class="hub-tx"><b style="color:#fff;font-size:16.5px">${escapeHtml(o.t)}${o.tag?` <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.92);background:rgba(255,255,255,.2);border-radius:99px;padding:2px 8px;margin-left:4px">${escapeHtml(o.tag)}</i>`:""}</b><i style="color:rgba(255,255,255,.88)">${escapeHtml(o.d)}</i></span>
+        <span class="hub-ar" style="background:#fff;color:${o.fg||"#189E79"}">›</span>
+      </button>`
+    : `<button class="hub-opt" data-go="${o.k}" data-no-pronko>
+        <span class="hub-emo">${o.emo}</span>
+        <span class="hub-tx"><b>${escapeHtml(o.t)}</b><i>${escapeHtml(o.d)}</i></span>
+        <span class="hub-ar">›</span>
+      </button>`;
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="speakHub";
   ov.innerHTML=`<div class="hub-bg"></div>
    <div class="hub-sheet">
      <div class="hub-grab"></div>
      <div class="hub-title">⚔️ 스피킹 훈련장</div>
      <div class="hub-sub">배운 블록을 말로 써봐요</div>
-     <button class="hub-opt" data-go="kk" style="background:linear-gradient(135deg,#F4A24C,#E0722F);border:none;box-shadow:0 12px 26px -12px rgba(224,114,47,.55)">
-       <span class="hub-emo" style="background:rgba(255,255,255,.22)">🇲🇾</span>
-       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">말레이시아 10마디 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.95);background:rgba(255,255,255,.2);border-radius:99px;padding:2px 8px;margin-left:4px">이벤트</i></b><i style="color:rgba(255,255,255,.9)">안녕하세요 · 얼마예요 · 깎아주세요 — 이것만 외워 가요</i></span>
-       <span class="hub-ar" style="background:#fff;color:#E0722F">›</span>
-     </button>
-     <button class="hub-opt" data-go="real" style="background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)">
-       <span class="hub-emo" style="background:rgba(255,255,255,.2)">🌎</span>
-       <span class="hub-tx"><b style="color:#fff;font-size:16.5px">실전회화 <i style="font-style:normal;font-size:11px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.18);border-radius:99px;padding:2px 8px;margin-left:4px">★ 최종 목표</i></b><i style="color:rgba(255,255,255,.85)">배운 블록을 AI와 실제 상황처럼 — 여기서 진짜 내 것이 돼요</i></span>
-       <span class="hub-ar" style="background:#fff;color:#189E79">›</span>
-     </button>
-     <button class="hub-opt" data-go="auto">
-       <span class="hub-emo">🔥</span>
-       <span class="hub-tx"><b>입에 붙이기</b><i>배운 표현을 빠르게 반복해 자동으로 나오게</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="out">
-       <span class="hub-emo">⚔️</span>
-       <span class="hub-tx"><b>영어로 꺼내기</b><i>상황을 보고 배운 블록으로 말해요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="write">
-       <span class="hub-emo">✍️</span>
-       <span class="hub-tx"><b>문장 만들기</b><i>한국어를 보고 3초 안에 영어로 말해보세요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="verb">
-       <span class="hub-emo">🧱</span>
-       <span class="hub-tx"><b>기본동사</b><i>get·have·take… 동사 하나로 말이 확 늘어요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="sprint">
-       <span class="hub-emo">⚡</span>
-       <span class="hub-tx"><b>스피드런</b><i>제한시간 안에 빠르게 말해요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="talk">
-       <span class="hub-emo">🎭</span>
-       <span class="hub-tx"><b>상황극</b><i>주고받고 두 번 — 틀려도 그대로 넘어가요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="growth">
-       <span class="hub-emo">📈</span>
-       <span class="hub-tx"><b>내 실력</b><i>늘고 있는지 숫자로 — 정답률 · 말 시작 속도 · 붙은 표현</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="study">
-       <span class="hub-emo">⭐</span>
-       <span class="hub-tx"><b>골라서 연습</b><i>입에 안 붙는 표현만 체크 — 그것만 문제로 나와요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
-     <button class="hub-opt" data-go="react">
-       <span class="hub-emo">🎧</span>
-       <span class="hub-tx"><b>실전 반응</b><i>한글 없이 — 상대의 영어를 듣고 바로 답해요</i></span>
-       <span class="hub-ar">›</span>
-     </button>
+     ${list.map(row).join("")}
    </div>`;
   document.body.appendChild(ov);
   const close=()=>ov.remove();
   ov.querySelector(".hub-bg").onclick=close;
-  ov.querySelectorAll(".hub-opt").forEach(b=>{ b.onclick=()=>{ const g=b.dataset.go; close(); if(g==="auto") startAutoDrill(); else if(g==="out") startOutputEngine(); else if(g==="write") startWriting(); else if(g==="verb") openVerbPicker(); else if(g==="sprint") openSprintPicker(); else if(g==="react") startReactDrill(); else if(g==="study") openTravelStudyPicker(); else if(g==="growth") openGrowth(); else if(g==="talk") openTalkPicker(); else if(g==="kk") kkOpen(); else openSurvival(); }; });
+  ov.querySelectorAll(".hub-opt").forEach(bt=>{ bt.onclick=()=>{
+    const o=HUB_OPTS.find(x=>x.k===bt.dataset.go); close();
+    try{ o&&o.go(); }catch(e){}
+  }; });
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
 function openListenHub(){
