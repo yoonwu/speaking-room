@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.219";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.220";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15053,7 +15053,7 @@ const TRAVEL_FRAMES=[
       {ko:"가방을 어디 뒀는지 모르겠다. 어디 있는지 물어라.", en:"Where is my bag?"},
       {ko:"사람을 만나러 왔다. 사무실이 어디인지 물어라.", en:"Where is the office?"}
     ]},
-  { id:"travel_how_do_i_get_to", frame:"How do I get to ~?", tf:"how do i get to", ko:"~ 어떻게 가요?", purpose:"가는 방법", re:"\\bhow do (i|we) get to\\b",
+  { id:"travel_how_do_i_get_to", frame:"How do I get to ~?", tf:"how do i get to", ko:"~ 어떻게 가요?", purpose:"가는 방법", tip:"<b>장소 가는 길</b>만 이걸 써요.<br>호텔 어떻게 가요 → <b>How do I get to the hotel?</b><br>그 밖의 방법(쓰는 법·내는 법)은 → How do I ~?", parts:[["How do I get to","어떻게 가요"],["the hotel?","호텔에"]], pnote:"뒤에는 <b>장소</b>만 붙어요. 사용법을 물으면 get to 를 빼고 How do I 로 시작해요.", re:"\\bhow (do|can) (i|we) get to\\b",
     items:[
       {ko:"공항에 내렸다. 호텔까지 어떻게 가는지 물어라.", en:"How do I get to the hotel?"},
       {ko:"호텔 프런트다. 시내까지 가는 방법을 물어라.", en:"How do I get to downtown?"},
@@ -15902,6 +15902,44 @@ const TRAVEL_FRAMES=[
       {ko:"메뉴판에 'take out'이라고 쓰여 있다. 그 표현이 무슨 뜻인지 물어라.", en:"What does \"take out\" mean?"},
       {ko:"안내에 'self service'라고 적혀 있다. 그 표현이 무슨 뜻인지 물어라.", en:"What does \"self service\" mean?"},
       {ko:"테이블에 'reserved'라고 놓여 있다. 그 말이 무슨 뜻인지 물어라.", en:"What does \"reserved\" mean?"}
+    ]}
+,
+  { id:"travel_how_do_i", frame:"How do I ~?", tf:"how do i", ko:"~ 어떻게 해요?", purpose:"방법 묻기",
+    tip:"<b>하는 방법</b>을 물어요 — 쓰는 법 · 사는 법 · 내는 법.<br>이거 어떻게 써요 → <b>How do I use this?</b><br><b>How can I ~?</b> 도 같은 뜻이라 둘 다 정답이에요.<br>장소 가는 길은 → How do I get to ~?",
+    parts:[["How do I","어떻게 해요"],["use this?","이걸 쓰는지"]],
+    pnote:"주어는 <b>I</b>. 뒤에는 <b>하고 싶은 동작</b>이 붙어요 — use this · buy a ticket · pay.",
+    re:"\\bhow (do|can) (i|we)\\b(?!\\s+get to\\b)",
+    items:[
+      {ko:"자판기 앞에 섰다. 표 사는 방법을 물어라.", en:"How do I buy a ticket?"},
+      {ko:"버스에 탔다. 요금 내는 방법을 물어라.", en:"How do I pay for the bus?"},
+      {ko:"방이 덥다. 에어컨 켜는 방법을 물어라.", en:"How do I turn on the air conditioner?"},
+      {ko:"인터넷을 쓰고 싶다. 와이파이 연결하는 방법을 물어라.", en:"How do I connect to the Wi-Fi?"},
+      {ko:"귀중품을 넣으려 한다. 금고 쓰는 방법을 물어라.", en:"How do I use the safe?"},
+      {ko:"장비를 처음 써본다. 스노클 쓰는 방법을 물어라.", en:"How do I use this snorkel?"},
+      {ko:"빨래를 해야 한다. 세탁기 쓰는 방법을 물어라.", en:"How do I use the washing machine?"},
+      {ko:"처음 보는 기계다. 쓰는 방법을 물어라.", en:"How do I use this machine?"},
+      {ko:"산 물건이 마음에 안 든다. 환불받는 방법을 물어라.", en:"How can I get a refund?"},
+      {ko:"일정이 바뀌었다. 예약 취소하는 방법을 물어라.", en:"How can I cancel my booking?"},
+      {ko:"짐을 부쳐야 한다. 부치는 방법을 물어라.", en:"How do I check in my bags?"},
+      {ko:"현지 유심을 샀다. 설정하는 방법을 물어라.", en:"How do I set up this SIM card?"},
+      {ko:"카드키가 안 먹는다. 문 여는 방법을 물어라.", en:"How do I open the door?"},
+      {ko:"엘리베이터가 낯설다. 쓰는 방법을 물어라.", en:"How do I use the elevator?"},
+      {ko:"차가 필요하다. 택시 부르는 방법을 물어라.", en:"How do I call a taxi?"},
+      {ko:"앱으로 차를 부르려 한다. 그랩 부르는 방법을 물어라.", en:"How do I order a Grab?"},
+      {ko:"팁을 줘야 할 것 같다. 주는 방법을 물어라.", en:"How do I pay the tip?"},
+      {ko:"계산하려는데 방식을 모르겠다. 내는 방법을 물어라.", en:"How do I pay?"},
+      {ko:"카운터에서 시켜야 하는지 모르겠다. 주문하는 방법을 물어라.", en:"How do I order?"},
+      {ko:"인터넷으로 예약하려 한다. 방법을 물어라.", en:"How do I book online?"},
+      {ko:"빌린 카메라가 낯설다. 사진 찍는 방법을 물어라.", en:"How do I take a photo with this?"},
+      {ko:"차를 마시려 한다. 물 끓이는 방법을 물어라.", en:"How do I boil water?"},
+      {ko:"객실 티비를 못 켜겠다. 켜는 방법을 물어라.", en:"How do I turn on the TV?"},
+      {ko:"자려는데 불이 안 꺼진다. 끄는 방법을 물어라.", en:"How do I turn off the light?"},
+      {ko:"답답하다. 창문 여는 방법을 물어라.", en:"How do I open the window?"},
+      {ko:"배터리가 없다. 충전하는 방법을 물어라.", en:"How do I charge this?"},
+      {ko:"보안이 걱정된다. 비밀번호 바꾸는 방법을 물어라.", en:"How can I change my password?"},
+      {ko:"나중에 연락해야 한다. 연락하는 방법을 물어라.", en:"How can I contact you?"},
+      {ko:"혼자서는 안 된다. 도움받는 방법을 물어라.", en:"How can I get help?"},
+      {ko:"앱을 처음 깔았다. 쓰는 방법을 물어라.", en:"How do I use this app?"}
     ]}
 ];
 /* ===================== 🇲🇾 말레이시아 10문장 — 여행 직전 이벤트 팩 =====================
