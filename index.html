@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.222";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.223";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15939,7 +15939,27 @@ const TRAVEL_FRAMES=[
       {ko:"보안이 걱정된다. 비밀번호 바꾸는 방법을 물어라.", en:"How can I change my password?"},
       {ko:"나중에 연락해야 한다. 연락하는 방법을 물어라.", en:"How can I contact you?"},
       {ko:"혼자서는 안 된다. 도움받는 방법을 물어라.", en:"How can I get help?"},
-      {ko:"앱을 처음 깔았다. 쓰는 방법을 물어라.", en:"How do I use this app?"}
+      {ko:"앱을 처음 깔았다. 쓰는 방법을 물어라.", en:"How do I use this app?"},
+      {ko:"셀프 반납기계 앞이다. 책 반납하는 방법을 물어라.", en:"How do I return this book?"},
+      {ko:"물이 안 뜨겁다. 온수 나오게 하는 방법을 물어라.", en:"How do I turn on the hot water?"},
+      {ko:"샤워기가 낯설다. 쓰는 방법을 물어라.", en:"How do I use the shower?"},
+      {ko:"나갈 때 문을 잠가야 한다. 잠그는 방법을 물어라.", en:"How do I lock the door?"},
+      {ko:"변기 물 내리는 버튼이 안 보인다. 내리는 방법을 물어라.", en:"How do I flush the toilet?"},
+      {ko:"영수증이 필요하다. 받는 방법을 물어라.", en:"How do I get a receipt?"},
+      {ko:"QR 코드로 결제하란다. 찍는 방법을 물어라.", en:"How do I scan the QR code?"},
+      {ko:"지갑을 안 가져왔다. 폰으로 내는 방법을 물어라.", en:"How do I pay with my phone?"},
+      {ko:"여럿이 먹었다. 따로 계산하는 방법을 물어라.", en:"How do I split the bill?"},
+      {ko:"교통카드 잔액이 없다. 충전하는 방법을 물어라.", en:"How do I top up this card?"},
+      {ko:"호텔을 나가려 한다. 체크아웃하는 방법을 물어라.", en:"How do I check out?"},
+      {ko:"하루 더 묵고 싶다. 연장하는 방법을 물어라.", en:"How can I extend my stay?"},
+      {ko:"짐이 안 나왔다. 분실 신고하는 방법을 물어라.", en:"How do I report a lost bag?"},
+      {ko:"탑승구를 못 찾겠다. 찾는 방법을 물어라.", en:"How do I find my gate?"},
+      {ko:"식당에 자리가 없다. 예약하는 방법을 물어라.", en:"How do I reserve a table?"},
+      {ko:"자리가 불편하다. 자리 바꾸는 방법을 물어라.", en:"How can I change my seat?"},
+      {ko:"조금 깎고 싶다. 할인받는 방법을 물어라.", en:"How can I get a discount?"},
+      {ko:"서류를 뽑아야 한다. 출력하는 방법을 물어라.", en:"How do I print this?"},
+      {ko:"소리가 너무 작다. 키우는 방법을 물어라.", en:"How do I turn up the volume?"},
+      {ko:"회원 가입을 해야 한다. 가입하는 방법을 물어라.", en:"How do I sign up?"}
     ]}
 ];
 /* ===================== 🇲🇾 말레이시아 10문장 — 여행 직전 이벤트 팩 =====================
@@ -16208,6 +16228,10 @@ function travelWeight(st){
   return 1.0;                    // 기본
 }
 /* 예전 기록에는 cost 가 없다 — shown 을 그대로 옮겨 이어서 센다 */
+/* 자주 내고 싶은 프레임 — 비용이 그만큼 천천히 쌓여 차례가 빨리 돌아온다.
+   2 면 다른 프레임보다 두 배쯤 자주 나온다. */
+const TRAVEL_FREQ={ travel_how_do_i:2 };
+function travelWeightFor(id, st){ return travelWeight(st)/(TRAVEL_FREQ[id]||1); }
 function travelCost(st){ st=st||{}; return (st.cost==null) ? (st.shown||0) : st.cost; }
 /* 프레임을 새로 추가하면 그것들만 cost 0 이라 한동안 출제를 독점한다.
    (측정: 9문제 중 5개가 새 프레임으로 20세션 가까이 고정)
@@ -16239,7 +16263,7 @@ function travelPickFrames(n, pool){
      차이가 분명하면 난수로 뒤집히지 않는다. */
   while(out.length<n){
     if(!remain.length) remain=FR.slice();   // 범위를 한 바퀴 다 썼다 — 그때만 다시 돈다
-    const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeight(o[f.id]) + Math.random()*0.45;
+    const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeightFor(f.id,o[f.id]) + Math.random()*0.45;
     let best=remain[0], bv=eff(best);
     remain.forEach(f=>{ const v=eff(f); if(v<bv){ bv=v; best=f; } });
     out.push(best); bump[best.id]=(bump[best.id]||0)+1;
@@ -16263,7 +16287,7 @@ function travelMarkShown(ids){
   (ids||[]).forEach(id=>{
     const st=o[id]||{seen:0,ok:0,miss:0,lastT:0};
     st.shown=(st.shown||0)+1;
-    st.cost=travelCost(st)+travelWeight(st);   // 잘하는 프레임일수록 비용이 크게 쌓인다
+    st.cost=travelCost(st)+travelWeightFor(id,st);   // 잘하는 프레임일수록 비용이 크게 쌓인다
     o[id]=st;
   });
   travelSave(o);
