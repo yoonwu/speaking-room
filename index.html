@@ -1747,8 +1747,8 @@ body{background:var(--paper)!important;color:var(--text)}
         <div class="hero" id="heroZone" title="내 프로필"></div>
         <!-- 📋 오늘 루틴 — 홈 메인 -->
         <div id="routineCard" style="margin:2px 0 14px"></div>
-        <!-- 🧱 오늘의 영어 블록 — 루틴 아래 (루틴의 '새 블록'과 별개인 오늘의 표현) -->
-        <div id="dailyCard"></div>
+        <!-- 🧱 오늘의 영어 블록 — 메인에서 제거됨, 숨김 (questBox 와 같은 방식) -->
+        <div id="dailyCard" style="display:none"></div>
         <div id="acqStats" style="margin:2px 0 14px"></div>
         <!-- 난이도 (자동 조절 — 조작 UI 아님, 상태 안내) -->
         <div class="difcard" style="border-radius:14px;padding:10px 14px;margin-bottom:13px">
@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.220";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.221";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
