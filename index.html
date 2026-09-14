@@ -2000,7 +2000,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.221";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.222";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12837,7 +12837,7 @@ const HUB_OPTS=[
    tag:"★ 최종 목표", css:"background:linear-gradient(135deg,#2BBD94,#189E79);border:none;box-shadow:0 12px 26px -12px rgba(24,158,121,.6)", fg:"#189E79", go:()=>openSurvival()},
   {k:"auto", emo:"🔥", t:"입에 붙이기", d:"배운 표현을 빠르게 반복해 자동으로 나오게", go:()=>startAutoDrill()},
   {k:"verb", emo:"🧱", t:"기본동사", d:"get·have·take… 동사 하나로 말이 확 늘어요", go:()=>openVerbPicker()},
-  {k:"talk", emo:"🎭", t:"상황극", d:"주고받고 두 번 — 틀려도 그대로 넘어가요", go:()=>openTalkPicker()},
+  {k:"talk", emo:"🎭", t:"상황극", d:"주고받고 두 번 — 상황은 자동으로 나와요", go:()=>talkStartRandom()},
   {k:"study", emo:"⭐", t:"골라서 연습", d:"입에 안 붙는 표현만 체크 — 그것만 문제로 나와요", go:()=>openTravelStudyPicker()},
   {k:"out", emo:"⚔️", t:"영어로 꺼내기", d:"상황을 보고 배운 블록으로 말해요", go:()=>startOutputEngine()},
   {k:"write", emo:"✍️", t:"문장 만들기", d:"한국어를 보고 3초 안에 영어로 말해보세요", go:()=>startWriting()},
@@ -16721,6 +16721,15 @@ function talkDoneCount(id){ const o=talkAll(); return (o[id]&&o[id].done)||0; }
 function talkMarkDone(id){
   try{ const o=talkAll(); o[id]={done:((o[id]&&o[id].done)||0)+1, lastT:Date.now()}; hSet(TALK_KEY,o); }catch(e){}
 }
+function talkPickRandom(exceptId){
+  const o=talkAll();
+  let pool=TALK_SCENES.map((sc,i)=>({i, id:sc.id, n:(o[sc.id]&&o[sc.id].done)||0}));
+  if(exceptId && pool.length>1){ const rest=pool.filter(x=>x.id!==exceptId); if(rest.length) pool=rest; }
+  const lo=Math.min.apply(null, pool.map(x=>x.n));
+  const cand=pool.filter(x=>x.n===lo);
+  return cand[Math.floor(Math.random()*cand.length)].i;
+}
+function talkStartRandom(exceptId){ talkStart(talkPickRandom(exceptId)); }
 function talkStart(idx){
   const sc=TALK_SCENES[idx]; if(!sc) return;
   talkState={sc, i:0, said:[]};
@@ -16779,8 +16788,8 @@ function talkRender(){
     panel=`<div style="background:#fff;border:1.5px solid #C7E8DA;border-radius:16px;padding:16px;text-align:center">
       <div style="font-size:15.5px;font-weight:950;color:#189E79">✅ 두 마디로 끝냈어요</div>
       <div style="font-size:12.5px;color:#8A6F62;margin-top:5px;line-height:1.55">틀려도 괜찮아요. 말이 오가는 흐름을 익히는 게 목적이에요.</div>
-      <button class="routine-main" id="talkAgain" style="margin-top:13px">🔄 한 번 더</button>
-      <button class="auto-sub" id="talkOther" style="width:100%;margin-top:8px">다른 상황 고르기</button>
+      <button class="routine-main" id="talkOther" style="margin-top:13px">🎲 다른 상황 →</button>
+      <button class="auto-sub" id="talkAgain" style="width:100%;margin-top:8px">🔄 이 상황 한 번 더</button>
     </div>`;
   }else if(cur && cur.w==="me"){
     panel=`<div style="background:#fff;border:2px solid #189E79;border-radius:16px;padding:14px">
@@ -16840,7 +16849,7 @@ function talkRender(){
   if(finished){
     if(!talkState._done){ talkState._done=true; try{ talkFinish(); }catch(e){} }
     $("#talkAgain").onclick=()=>{ const k=TALK_SCENES.indexOf(sc); talkState=null; talkStart(k); };
-    $("#talkOther").onclick=()=>{ talkState=null; goToSetup(); openTalkPicker(); };
+    $("#talkOther").onclick=()=>{ const id=sc.id; talkState=null; talkStartRandom(id); };
   }
 }
 /* 내가 말했다 — 맞았는지 보지 않는다. 기록해두고 다음 대사로. */
