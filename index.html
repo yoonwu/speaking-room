@@ -1243,6 +1243,9 @@ body{background:var(--paper)!important;color:var(--text)}
 .engrid.enghero .eng-core-chunk .eng-emo{background:#E2D5FA!important}
 .engrid.enghero .eng.eng-core-speak{background:linear-gradient(135deg,#DEF8EE,#EEFBF5)!important;border:1.5px solid #B5E4D2!important;box-shadow:0 10px 22px -12px rgba(40,175,130,.32)!important}
 .engrid.enghero .eng-core-speak .eng-emo{background:#CCEEDF!important}
+.engrid.enghero .eng.eng-core-study{background:linear-gradient(135deg,#FFF1DA,#FFF9EF)!important;border:1.5px solid #F0D7A8!important;box-shadow:0 10px 22px -12px rgba(200,150,50,.32)!important}
+.engrid.enghero .eng-core-study .eng-emo{background:#FBE7C2!important}
+.engrid.enghero .eng-core-study .eng-ar{background:#FBE7C2!important;color:#C08763!important}
 /* 보조 카드: 기존 크림 톤다운 + 살짝 작게 (부가 느낌) */
 .engrid.engsub .eng.eng-side{background:#F2FAF6!important;border:1px solid #EEE2D8!important;box-shadow:0 6px 14px -12px rgba(150,120,95,.25)!important}
 .engsub .eng-side .eng-tx b{font-size:15px;color:#5C4D44!important}
@@ -1745,6 +1748,20 @@ body{background:var(--paper)!important;color:var(--text)}
       <div class="home" id="homeCard">
         <!-- 🎮 HERO ZONE -->
         <div class="hero" id="heroZone" title="내 프로필"></div>
+        <!-- ⚔️ 말하기 진입 — 루틴 카드가 길어서 아래 두면 스크롤해야 보인다. 첫 화면에 둔다 -->
+        <div class="engrid enghero" style="grid-template-columns:1fr">
+        <button class="eng eng-out eng-core eng-core-speak" id="engOut">
+          <span class="help-q" data-tut="output">?</span>
+          <span class="eng-emo">⚔️</span>
+          <span class="eng-tx"><b>스피킹 훈련장</b><i>🌎 실전회화 — 배운 블록을 진짜 대화에서!</i></span>
+          <span class="eng-ar">›</span>
+        </button>
+        <button class="eng eng-out eng-core eng-core-study" id="engStudy">
+          <span class="eng-emo">⭐</span>
+          <span class="eng-tx"><b>골라서 연습</b><i id="engStudySub">입에 안 붙는 표현만 체크 — 그것만 문제로 나와요</i></span>
+          <span class="eng-ar">›</span>
+        </button>
+        </div>
         <!-- 📋 오늘 루틴 — 홈 메인 -->
         <div id="routineCard" style="margin:2px 0 14px"></div>
         <!-- 🧱 오늘의 영어 블록 — 메인에서 제거됨, 숨김 (questBox 와 같은 방식) -->
@@ -1758,16 +1775,7 @@ body{background:var(--paper)!important;color:var(--text)}
           </div>
           <div id="autoLvlSub" style="font-size:10.5px;color:var(--muted);margin-top:4px">문제를 풀수록 더 정확해져요</div>
         </div>
-        <!-- 🗺️ 모험 지도 -->
-        <!-- 루틴과 중복되는 카드(블록영어/단어/듣기)는 제거 — 루틴 칸이 진입점. 루틴에 없는 스피킹 훈련장만 유지 -->
-        <div class="engrid enghero" style="grid-template-columns:1fr">
-        <button class="eng eng-out eng-core eng-core-speak" id="engOut">
-          <span class="help-q" data-tut="output">?</span>
-          <span class="eng-emo">⚔️</span>
-          <span class="eng-tx"><b>스피킹 훈련장</b><i>🌎 실전회화 — 배운 블록을 진짜 대화에서!</i></span>
-          <span class="eng-ar">›</span>
-        </button>
-        </div>
+        <!-- 🗺️ 모험 지도 — 스피킹 카드는 루틴 위로 올렸다 -->
         <button id="rankHomeBtn" style="width:100%;margin:0 0 13px;padding:13px 15px;display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--text);font-size:14.5px;font-weight:800;cursor:pointer;text-align:left">
           <span style="font-size:19px">🏆</span>
           <span style="flex:1">랭킹 보기<span style="display:block;font-size:11.5px;font-weight:600;color:var(--muted);margin-top:2px">이번 주 · 연속 학습 · 블록 · 레벨 · 훈련 시간</span></span>
@@ -2000,7 +2008,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.223";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.224";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -12826,10 +12834,11 @@ let ctItems=[], ctIdx=0, ctPass=0, ctPid=null, ctChunk="", ctT0=0, ctSpoke=0, ct
    지운 게 아니라 감춘 것이다. HUB_SHOW 에 키를 다시 넣으면 그대로 돌아온다.
    감춘 것들도 다른 길로는 들어갈 수 있다:
      여행 표현  → 홈 '오늘 루틴' 카드의 GO
+     골라서 연습 → 홈 화면 '⭐ 골라서 연습' 카드 (훈련장 밖으로 뺐다)
      실전 반응  → 골라서 연습에서 '⚡ 영어 듣고 답하기'
      내 실력    → 한 판 끝낸 결과 화면의 '📈 내 실력 보기'
      말레이시아 → 골라서 연습 목록에 그 문장들이 그대로 있다 */
-const HUB_SHOW=["auto","verb","talk","study"];
+const HUB_SHOW=["auto","verb","talk"];
 const HUB_OPTS=[
   {k:"kk", emo:"🇲🇾", t:"말레이시아 10마디", d:"안녕하세요 · 얼마예요 · 깎아주세요 — 이것만 외워 가요",
    tag:"이벤트", css:"background:linear-gradient(135deg,#F4A24C,#E0722F);border:none;box-shadow:0 12px 26px -12px rgba(224,114,47,.55)", fg:"#E0722F", go:()=>kkOpen()},
@@ -21304,6 +21313,14 @@ function applyAgeUI(){
   const setTit=(id,t)=>{ const el=$(id); if(el){ const b=el.querySelector(".eng-tx b"); if(b) b.textContent=t; } };
   setTit("#engListen","듣기 훈련장"); setSub("#engListen","상황 듣기 · 연음 부스터");
   setTit("#engOut","스피킹 훈련장"); setSub("#engOut","영어로 꺼내기 · 스피드런 · 실전회화");
+  try{
+    const sub=$("#engStudySub");
+    if(sub){
+      const n=travelStudyGet().length;
+      sub.textContent = n ? ("⭐ "+n+"개 골라뒀어요 — 탭하면 그것만 연습")
+                          : "입에 안 붙는 표현만 체크 — 그것만 문제로 나와요";
+    }
+  }catch(e){}
   if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="발음 교정 아카데미"; }
 }
 function setAge(a){ state.age=a; hSet("speakingroom:age",a); applyAgeUI(); }
@@ -22513,6 +22530,7 @@ async function checkForUpdate(){
   }catch(e){}
 }
 { const e1=$("#engOut"); if(e1) e1.onclick=openSpeakHub; }
+{ const e2=$("#engStudy"); if(e2) e2.onclick=openTravelStudyPicker; }
 { const e2=$("#engListen"); if(e2) e2.onclick=openListenHub; }
 { const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
 { const ck=$("#chunkCard"); if(ck) ck.onclick=bleOpenHub; }
