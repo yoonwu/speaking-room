@@ -2008,7 +2008,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.225";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.226";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15310,25 +15310,25 @@ const TRAVEL_FRAMES=[
   { id:"travel_pay_by_card", frame:"Can I pay by card?", tf:"can i pay by card", ko:"카드로 결제되나요?", purpose:"카드 결제", re:"\\bcan (i|we) pay\\b.{0,40}\\bby card\\b",
     items:[
       {ko:"식당에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"야시장에서 물건을 골랐다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"투어 데스크에서 결제하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"택시에서 내리기 전이다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"호텔에서 보증금을 요구한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"현금이 모자란다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"편의점에서 물과 간식을 샀다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"약국에서 약을 샀다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"선착장에서 배표를 사려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"기념품 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"빵집에서 아침거리를 샀다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"주유소에서 기름을 넣었다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"입장권을 사려고 줄을 섰다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"세탁 요금을 내려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"카페에서 커피를 시켰다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"옷 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"과일 가게에서 값을 치르려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"푸드코트에서 주문했다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"호텔 식당에서 계산한다. 카드가 되는지 물어라.", en:"Can I pay by card?"},
-      {ko:"마사지 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay by card?"}
+      {ko:"야시장에서 물건을 골랐다. 카드가 되는지 물어라.", en:"Can I pay for these by card?"},
+      {ko:"투어 데스크에서 결제하려 한다. 카드가 되는지 물어라.", en:"Can I pay for the tour by card?"},
+      {ko:"택시에서 내리기 전이다. 카드가 되는지 물어라.", en:"Can I pay the fare by card?"},
+      {ko:"호텔에서 보증금을 요구한다. 카드가 되는지 물어라.", en:"Can I pay the deposit by card?"},
+      {ko:"현금이 모자란다. 카드가 되는지 물어라.", en:"Can I pay part of it by card?"},
+      {ko:"편의점에서 물과 간식을 샀다. 카드가 되는지 물어라.", en:"Can I pay for the snacks by card?"},
+      {ko:"약국에서 약을 샀다. 카드가 되는지 물어라.", en:"Can I pay for the medicine by card?"},
+      {ko:"선착장에서 배표를 사려 한다. 카드가 되는지 물어라.", en:"Can I pay for the boat ticket by card?"},
+      {ko:"기념품 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay for the souvenirs by card?"},
+      {ko:"빵집에서 아침거리를 샀다. 카드가 되는지 물어라.", en:"Can I pay for the bread by card?"},
+      {ko:"주유소에서 기름을 넣었다. 카드가 되는지 물어라.", en:"Can I pay for the gas by card?"},
+      {ko:"입장권을 사려고 줄을 섰다. 카드가 되는지 물어라.", en:"Can I pay for the entrance fee by card?"},
+      {ko:"세탁 요금을 내려 한다. 카드가 되는지 물어라.", en:"Can I pay for the laundry by card?"},
+      {ko:"카페에서 커피를 시켰다. 카드가 되는지 물어라.", en:"Can I pay for the coffee by card?"},
+      {ko:"옷 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay for the clothes by card?"},
+      {ko:"과일 가게에서 값을 치르려 한다. 카드가 되는지 물어라.", en:"Can I pay for the fruit by card?"},
+      {ko:"푸드코트에서 주문했다. 카드가 되는지 물어라.", en:"Can I pay for my order by card?"},
+      {ko:"호텔 식당에서 계산한다. 카드가 되는지 물어라.", en:"Can I pay for dinner by card?"},
+      {ko:"마사지 가게에서 계산하려 한다. 카드가 되는지 물어라.", en:"Can I pay for the massage by card?"}
     ,
       /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
       {ko:"계산서를 받았다. 카드로 내도 되는지 물어라.", en:"Can I pay the bill by card?"},
@@ -15555,25 +15555,25 @@ const TRAVEL_FRAMES=[
   { id:"travel_say_again_slowly", frame:"Could you say that again, more slowly?", tf:"could you say that again", ko:"다시 천천히 말해 주실래요?", purpose:"다시 요청", re:"\\bcould you say\\b.{0,40}\\bagain\\b",
     items:[
       {ko:"직원이 너무 빨리 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"공항 안내 방송을 놓쳤다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"가이드가 빠르게 설명하고 지나갔다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"전화 목소리가 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"길을 물었는데 설명이 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"가격을 말했는데 숫자를 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"기사가 요금을 말했는데 못 알아들었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"약 먹이는 방법을 너무 빨리 설명한다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"체크인 규정을 빠르게 설명하고 넘어갔다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"투어 집합 장소를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"버스 기사가 내릴 곳을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"병원에서 접수 안내를 빠르게 했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"식당에서 오늘의 메뉴를 빠르게 읊었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"면세점 직원이 규정을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"조식 시간을 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"점원이 할인 조건을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"오늘 안 되는 메뉴를 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"계산대에서 금액을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"환불 절차를 빠르게 설명했다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"},
-      {ko:"배송 날짜를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say that again, more slowly?"}
+      {ko:"공항 안내 방송을 놓쳤다. 천천히 다시 말해달라고 해라.", en:"Could you say the announcement again, more slowly?"},
+      {ko:"가이드가 빠르게 설명하고 지나갔다. 천천히 다시 말해달라고 해라.", en:"Could you say the plan again, more slowly?"},
+      {ko:"전화 목소리가 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say it again, more slowly?"},
+      {ko:"길을 물었는데 설명이 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say the directions again, more slowly?"},
+      {ko:"가격을 말했는데 숫자를 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the amount again, more slowly?"},
+      {ko:"기사가 요금을 말했는데 못 알아들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the fare again, more slowly?"},
+      {ko:"약 먹이는 방법을 너무 빨리 설명한다. 천천히 다시 말해달라고 해라.", en:"Could you say the instructions again, more slowly?"},
+      {ko:"체크인 규정을 빠르게 설명하고 넘어갔다. 천천히 다시 말해달라고 해라.", en:"Could you say the check-in rules again, more slowly?"},
+      {ko:"투어 집합 장소를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the meeting point again, more slowly?"},
+      {ko:"버스 기사가 내릴 곳을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the stop again, more slowly?"},
+      {ko:"병원에서 접수 안내를 빠르게 했다. 천천히 다시 말해달라고 해라.", en:"Could you say the process again, more slowly?"},
+      {ko:"식당에서 오늘의 메뉴를 빠르게 읊었다. 천천히 다시 말해달라고 해라.", en:"Could you say the menu again, more slowly?"},
+      {ko:"면세점 직원이 규정을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the rules again, more slowly?"},
+      {ko:"조식 시간을 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the breakfast hours again, more slowly?"},
+      {ko:"점원이 할인 조건을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the discount again, more slowly?"},
+      {ko:"오늘 안 되는 메뉴를 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the sold-out items again, more slowly?"},
+      {ko:"계산대에서 금액을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the total again, more slowly?"},
+      {ko:"환불 절차를 빠르게 설명했다. 천천히 다시 말해달라고 해라.", en:"Could you say the refund steps again, more slowly?"},
+      {ko:"배송 날짜를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the delivery day again, more slowly?"}
     ,
       /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
       {ko:"주소를 너무 빨리 들었다. 다시 천천히 말해 달라고 해라.", en:"Could you say the address again, more slowly?"},
