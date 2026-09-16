@@ -2008,7 +2008,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.226";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.227";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15969,6 +15969,24 @@ const TRAVEL_FRAMES=[
       {ko:"서류를 뽑아야 한다. 출력하는 방법을 물어라.", en:"How do I print this?"},
       {ko:"소리가 너무 작다. 키우는 방법을 물어라.", en:"How do I turn up the volume?"},
       {ko:"회원 가입을 해야 한다. 가입하는 방법을 물어라.", en:"How do I sign up?"}
+    ]}
+,
+  { id:"travel_can_i_ask", frame:"Can I ask ~?", tf:"can i ask", ko:"~ 물어봐도 돼요?", purpose:"물어보기 전 한마디",
+    tip:"<b>묻기 전에 먼저 까는 말</b>이에요.<br>낯선 사람한테 바로 질문하면 부담스러운데, 이 한마디를 앞에 붙이면 훨씬 부드러워요.<br>Excuse me, <b>can I ask you something?</b> 로 시작하면 거의 다 들어줘요.",
+    parts:[["Can I ask","물어봐도 돼요"],["you something?","뭐 좀"]],
+    pnote:"주어는 <b>I</b>. 뒤에는 <b>물어볼 것</b>이 붙어요 — you something · a question · for directions.",
+    re:"\\bcan (i|we) ask\\b",
+    items:[
+      {ko:"길에서 낯선 사람에게 말을 걸려 한다. 뭐 좀 물어봐도 되는지 물어라.", en:"Can I ask you something?"},
+      {ko:"직원에게 질문이 하나 있다. 질문해도 되는지 물어라.", en:"Can I ask a question?"},
+      {ko:"길을 잃었다. 길을 물어봐도 되는지 물어라.", en:"Can I ask for directions?"},
+      {ko:"혼자서는 안 되겠다. 도움을 청해도 되는지 물어라.", en:"Can I ask for help?"},
+      {ko:"가격표가 안 보인다. 가격을 물어봐도 되는지 물어라.", en:"Can I ask the price?"},
+      {ko:"가이드와 인사했다. 이름을 물어봐도 되는지 물어라.", en:"Can I ask your name?"},
+      {ko:"설명을 다 들었는데 하나가 더 궁금하다. 하나만 더 물어도 되는지 물어라.", en:"Can I ask one more thing?"},
+      {ko:"뭘 시킬지 모르겠다. 추천을 물어봐도 되는지 물어라.", en:"Can I ask for a recommendation?"},
+      {ko:"이유가 궁금하다. 왜 그런지 물어봐도 되는지 물어라.", en:"Can I ask why?"},
+      {ko:"이 사람은 모르는 눈치다. 다른 사람한테 물어봐도 되는지 물어라.", en:"Can I ask someone else?"}
     ]}
 ];
 /* ===================== 🇲🇾 말레이시아 10문장 — 여행 직전 이벤트 팩 =====================
