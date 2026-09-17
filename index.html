@@ -1246,6 +1246,9 @@ body{background:var(--paper)!important;color:var(--text)}
 .engrid.enghero .eng.eng-core-study{background:linear-gradient(135deg,#FFF1DA,#FFF9EF)!important;border:1.5px solid #F0D7A8!important;box-shadow:0 10px 22px -12px rgba(200,150,50,.32)!important}
 .engrid.enghero .eng-core-study .eng-emo{background:#FBE7C2!important}
 .engrid.enghero .eng-core-study .eng-ar{background:#FBE7C2!important;color:#C08763!important}
+.engrid.enghero .eng.eng-core-miss{background:linear-gradient(135deg,#FDEDE8,#FFF6F3)!important;border:1.5px solid #F0C9BB!important;box-shadow:0 10px 22px -12px rgba(190,80,50,.30)!important}
+.engrid.enghero .eng-core-miss .eng-emo{background:#FBDACE!important}
+.engrid.enghero .eng-core-miss .eng-ar{background:#FBDACE!important;color:#C0653A!important}
 /* 보조 카드: 기존 크림 톤다운 + 살짝 작게 (부가 느낌) */
 .engrid.engsub .eng.eng-side{background:#F2FAF6!important;border:1px solid #EEE2D8!important;box-shadow:0 6px 14px -12px rgba(150,120,95,.25)!important}
 .engsub .eng-side .eng-tx b{font-size:15px;color:#5C4D44!important}
@@ -1761,6 +1764,11 @@ body{background:var(--paper)!important;color:var(--text)}
           <span class="eng-tx"><b>골라서 연습</b><i id="engStudySub">입에 안 붙는 표현만 체크 — 그것만 문제로 나와요</i></span>
           <span class="eng-ar">›</span>
         </button>
+        <button class="eng eng-out eng-core eng-core-miss" id="engMiss">
+          <span class="eng-emo">🔁</span>
+          <span class="eng-tx"><b>자주 틀리는 문장</b><i id="engMissSub">틀린 문장만 모아서 반복해요</i></span>
+          <span class="eng-ar">›</span>
+        </button>
         </div>
         <!-- 📋 오늘 루틴 — 홈 메인 -->
         <div id="routineCard" style="margin:2px 0 14px"></div>
@@ -2008,7 +2016,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.228";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.229";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -18209,6 +18217,133 @@ function kkOpen(){
   paint();
   requestAnimationFrame(()=>ov.classList.add("show"));
 }
+/* ===================== 🔁 자주 틀리는 문장 =====================
+   지금까지는 '틀(프레임)' 단위로만 기록했다. 틀은 맞는데 그 안의 특정 문장만
+   계속 막히는 경우를 잡지 못했다. 여기서는 문장 하나하나를 센다.
+   - 틀린 적 있는 문장만 저장한다 (맞히기만 한 문장은 기록조차 안 남는다)
+   - 3번 연속 맞히면 목록에서 빠진다 = 졸업
+   - 반응 모드 문장은 상대 대사(cue)까지 같이 저장해야 다시 낼 수 있다 */
+const MISS_KEY="speakingroom:travel_miss";
+function missAll(){ try{ const v=hGet(MISS_KEY,{}); return (v&&typeof v==="object")?v:{}; }catch(e){ return {}; } }
+function missSave(o){ try{ hSet(MISS_KEY,o); }catch(e){} }
+const MISS_GRADUATE=3;
+function missRecord(it, ok){
+  try{
+    if(!it||!it._travel) return;
+    const en=String((it.ex&&it.ex.en)||"").trim(); if(!en) return;
+    const o=missAll(); const had=!!o[en];
+    if(ok && !had) return;                       // 틀린 적 없는 문장은 아예 안 쌓는다
+    const s=o[en]||{miss:0, ok:0, streak:0};
+    s.fid=(it.frame&&it.frame.id)||s.fid||"";
+    s.ko=(it.ex&&it.ex.ko)||s.ko||"";
+    s.sit=(it.ex&&it.ex.situation)||s.sit||"";
+    if(it._react){ s.react=1; s.cue=it.cue||s.cue||""; s.cueKo=it.cueKo||s.cueKo||""; s.kind=it.kind||s.kind||"say"; }
+    if(ok){ s.ok=(s.ok||0)+1; s.streak=(s.streak||0)+1; }
+    else  { s.miss=(s.miss||0)+1; s.streak=0; }
+    s.lastT=Date.now();
+    if(s.streak>=MISS_GRADUATE) delete o[en];    // 3연속 정답 → 졸업
+    else o[en]=s;
+    missSave(o);
+  }catch(e){}
+}
+/* 많이 틀린 것부터, 같으면 최근에 틀린 것부터 */
+function missList(){
+  const o=missAll();
+  return Object.keys(o)
+    .filter(en=>(o[en].miss||0)>0 && TRAVEL_BY_ID[o[en].fid])
+    .map(en=>Object.assign({en:en}, o[en]))
+    .sort((a,b)=> (b.miss-a.miss) || ((b.lastT||0)-(a.lastT||0)));
+}
+function missCount(){ try{ return missList().length; }catch(e){ return 0; } }
+function missForget(en){ const o=missAll(); delete o[en]; missSave(o); }
+function missForgetAll(){ missSave({}); }
+/* 저장해 둔 것만으로 문항을 다시 만든다 — 프레임에서 새로 뽑지 않는다 */
+function missBuildItems(list){
+  const limits=adLimits();
+  return (list||[]).map(m=>{
+    const f=TRAVEL_BY_ID[m.fid]; if(!f) return null;
+    const base={ _travel:true, _miss:true, frame:f,
+      block:{ id:f.id, block:f.frame, meaningKo:f.ko },
+      limit:limits[0], rep:1, recall:false, discriminate:false };
+    if(m.react){
+      return Object.assign(base, { _react:true,
+        ex:{ en:m.en, ko:f.ko, situation:m.sit||("⚡ "+f.purpose) },
+        cue:m.cue||"", cueKo:m.cueKo||"", kind:m.kind||"say" });
+    }
+    return Object.assign(base, {
+      ex:{ en:m.en, ko:m.ko||"", situation:m.sit||((KK_IDS.indexOf(f.id)>=0?"🇲🇾 ":"✈️ ")+f.purpose) } });
+  }).filter(Boolean);
+}
+function startMissDrill(list){
+  const items=missBuildItems(list&&list.length?list:missList());
+  if(!items.length){ try{ bleShowHintToast("아직 자주 틀리는 문장이 없어요."); }catch(e){} return; }
+  /* 섞어서 낸다 — 목록 순서 그대로면 순서를 외운다 */
+  for(let i=items.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const x=items[i]; items[i]=items[j]; items[j]=x; }
+  try{ ttStart("drill"); }catch(e){}
+  autoDrill={items:items, blocks:[], idx:0, results:[], t0:0, typedAt:null, speechStartAt:null, travel:true, miss:true};
+  try{ xpSessionStart(); }catch(e){}
+  setup.style.display="none"; stage.style.display="none"; $("#listen").style.display="none";
+  $("#review").style.display="none"; $("#block").style.display="none"; $("#vocab").style.display="none";
+  if($("#phonics")) $("#phonics").style.display="none";
+  $("#sprint").style.display="flex"; pushScreen("sprint"); try{updateLevelBadges();}catch(e){} $("#ctxBar").style.display="none";
+  autoDrillRender();
+}
+/* 🔁 자주 틀리는 문장 탭 */
+function paintMissBtn(){
+  const sub=document.getElementById("engMissSub"); if(!sub) return;
+  const n=missCount();
+  sub.textContent = n ? ("🔁 "+n+"문장 쌓였어요 — 탭하면 이것만 반복")
+                      : "틀린 문장이 여기 모여요 — 3번 연속 맞히면 빠져요";
+}
+function openMissPicker(){
+  const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="missOv";
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  const paint=()=>{
+    const L=missList();
+    const rows=L.map(m=>{
+      const f=TRAVEL_BY_ID[m.fid]||{};
+      const kr=(function(){ try{ return travelKrOf(m.en); }catch(e){ return ""; } })();
+      return `<div class="chk-row missRow" data-no-pronko style="background:#FFF6EE;border-color:#F0DCC8;align-items:flex-start">
+        <span class="chk-main">
+          <span class="chk-en" data-no-pronko>${escapeHtml(m.en)}</span>
+          ${kr?`<span class="chk-ko">${escapeHtml(kr)}</span>`:""}
+          <span style="display:block;font-size:10.5px;color:#B49C8D;font-weight:700;margin-top:3px">${m.react?"⚡ 듣고 답하기":"✈️"} ${escapeHtml(f.frame||"")}</span>
+        </span>
+        <span class="chk-side" style="align-items:flex-end">
+          <span style="font-size:10.5px;font-weight:900;color:#C0392B;background:#FBEAE7;border-radius:99px;padding:2px 8px">${m.miss}번 틀림</span>
+          <button class="missDel" data-en="${escapeHtml(m.en)}" style="margin-top:6px;padding:4px 9px;border:1px solid #E0C6AE;border-radius:9px;background:#fff;color:#B49C8D;font-size:11px;font-weight:800;cursor:pointer">다 외웠어요</button>
+        </span>
+      </div>`;
+    }).join("");
+    ov.innerHTML=`<div class="hub-bg"></div>
+     <div class="hub-sheet hub-sheet-tall">
+       <div class="hub-grab"></div>
+       <div class="hub-title">🔁 자주 틀리는 문장</div>
+       <div class="hub-sub">${L.length
+         ? "틀린 문장이 여기 모여요.<br><b>3번 연속 맞히면</b> 목록에서 빠져요."
+         : "아직 없어요.<br>문제를 풀다 틀리면 그 문장이 여기 모입니다."}</div>
+       ${L.length?`<div class="chk-list" id="missList">${rows}</div>
+       <div style="padding-top:11px;border-top:1px solid #D9CEC6;margin-top:9px">
+         <div style="font-size:12px;color:#8A6F62;margin:0 2px 9px"><b style="color:#C0392B">${L.length}문장</b> — 이것만 반복해요.</div>
+         <button id="missGo" style="width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#F0A868,#D9722F);color:#fff;font-size:15px;font-weight:950;cursor:pointer">🔁 ${Math.min(L.length,30)}문장 반복하기 →</button>
+         <button id="missClear" style="width:100%;margin-top:8px;padding:11px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--muted);font-size:12.5px;font-weight:800;cursor:pointer">목록 비우기</button>
+       </div>`:`<div style="text-align:center;padding:26px 10px 10px">
+         <div style="font-size:40px">🎯</div>
+         <div style="font-size:13px;color:#8A6F62;line-height:1.6;margin-top:10px">여행 표현이나 실전 반응을 풀어보세요.<br>틀린 문장만 자동으로 여기 쌓여요.</div>
+       </div>`}
+     </div>`;
+    ov.querySelector(".hub-bg").onclick=close;
+    const go=ov.querySelector("#missGo");
+    if(go) go.onclick=()=>{ const L2=missList().slice(0,30); close(); startMissDrill(L2); };
+    const cl=ov.querySelector("#missClear");
+    if(cl) cl.onclick=()=>{ if(confirm("자주 틀리는 문장 목록을 다 지울까요?")){ missForgetAll(); paint(); try{ paintMissBtn(); }catch(e){} } };
+    ov.querySelectorAll(".missDel").forEach(b=>{ b.onclick=()=>{
+      missForget(b.getAttribute("data-en")); paint(); try{ paintMissBtn(); }catch(e){} }; });
+  };
+  paint();
+  requestAnimationFrame(()=>ov.classList.add("show"));
+}
 function openTravelStudyPicker(){
   let sel=new Set(travelStudyGet());
   const ov=document.createElement("div"); ov.className="hub-ov"; ov.id="tvStudyOv";
@@ -21752,6 +21887,7 @@ function autoDrillFinish(heard, meta){
   if(it._travel){ try{ growthLog(it, g.ok, initMs); }catch(e){} }   // 📈 내 실력 — 날짜별 기록
   if(it._react){ try{ rxRecord(it.frame.id, g.ok); }catch(e){} }
   else if(it._travel){ try{ travelRecord(it.frame.id, g.ok); }catch(e){} }
+  try{ missRecord(it, g.ok); }catch(e){}   // 🔁 자주 틀리는 문장 — 문장 하나하나를 센다
   // 🎯 자동 레벨 기록 — block(인출 정확도)·speed(3초 시작)는 완전히 독립
   /* 여행팩은 기존 자동 레벨(블록·속도)에 영향을 주지 않는다 — 3주짜리 별도 덱이라 레벨을 흔들면 안 된다 */
   if(!it._travel){
@@ -22410,6 +22546,7 @@ function applyAgeUI(){
                           : "입에 안 붙는 표현만 체크 — 그것만 문제로 나와요";
     }
   }catch(e){}
+  try{ paintMissBtn(); }catch(e){}
   if(kc){ const b=kc.querySelector(".kt b"); if(b) b.textContent="발음 교정 아카데미"; }
 }
 function setAge(a){ state.age=a; hSet("speakingroom:age",a); applyAgeUI(); }
@@ -23620,6 +23757,7 @@ async function checkForUpdate(){
 }
 { const e1=$("#engOut"); if(e1) e1.onclick=openSpeakHub; }
 { const e2=$("#engStudy"); if(e2) e2.onclick=openTravelStudyPicker; }
+{ const e3=$("#engMiss"); if(e3) e3.onclick=openMissPicker; }
 { const e2=$("#engListen"); if(e2) e2.onclick=openListenHub; }
 { const e3=$("#engReal"); if(e3) e3.onclick=openSurvival; }
 { const ck=$("#chunkCard"); if(ck) ck.onclick=bleOpenHub; }
