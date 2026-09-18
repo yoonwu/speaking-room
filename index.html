@@ -2016,7 +2016,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.229";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.230";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -14890,7 +14890,7 @@ function renderDailyRoomCard(){
 }
 
 const TRAVEL_FRAMES=[
-  { id:"travel_can_i_get", frame:"Can I get ~?", tf:"can i get", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", tip:"<b>내가 받을 물건</b>을 달라고 할 때예요.<br>수건 하나 더 → <b>Can I get another towel?</b><br>상대가 해줄 행동은 → Can you ~?", parts:[["Can I get","~ 주실 수 있어요?"],["another towel?","수건 하나 더"]], pnote:"주어는 <b>I</b>. '제가 받을 수 있을까요'라서 받을 물건을 뒤에 붙여요.", re:"\\bcan i get\\b",
+  { id:"travel_can_i_get", frame:"Can I get ~?", tf:"can i get", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", tip:"<b>내가 받을 물건</b>을 달라고 할 때예요.<br>수건 하나 더 → <b>Can I get another towel?</b><br>상대가 해줄 행동은 → Can you ~?", parts:[["Can I get","~ 주실 수 있어요?"],["another towel?","수건 하나 더"]], pnote:"주어는 <b>I</b>. '제가 받을 수 있을까요'라서 받을 물건을 뒤에 붙여요.", re:"\\bcan (i|we) get\\b",
     items:[
       {ko:"호텔 방에 수건이 부족하다. 수건을 하나 더 달라고 해라.", en:"Can I get another towel?"},
       {ko:"식당 테이블에 물이 없다. 물 좀 달라고 해라.", en:"Can I get some water?"},
@@ -15455,7 +15455,7 @@ const TRAVEL_FRAMES=[
       {ko:"창문이 안 닫힌다. 문제가 있다고 말해라.", en:"There's a problem with the window."},
       {ko:"테이블이 흔들린다. 문제가 있다고 말해라.", en:"There's a problem with the table."}
     ]},
-  { id:"travel_cant_find", frame:"I can't find ~.", tf:"i cannot find", ko:"~를 못 찾겠어요.", purpose:"못 찾음", re:"\\bi cant find\\b",
+  { id:"travel_cant_find", frame:"I can't find ~.", tf:"i cannot find", ko:"~를 못 찾겠어요.", purpose:"못 찾음", re:"\\b(i|we) cant find\\b",
     items:[
       {ko:"Grab을 불렀는데 기사가 어디 있는지 모르겠다. 못 찾겠다고 말해라.", en:"I can't find my driver."},
       {ko:"탑승 시간이 다 됐다. 게이트를 못 찾겠다고 말해라.", en:"I can't find my gate."},
@@ -15490,7 +15490,7 @@ const TRAVEL_FRAMES=[
       {ko:"건물 안에서 헤맨다. 사무실을 못 찾겠다고 말해라.", en:"I can't find your office."},
       {ko:"필기할 공책이 없다. 못 찾겠다고 말해라.", en:"I can't find my notebook."}
     ]},
-  { id:"travel_think_i_left", frame:"I think I left ~.", tf:"i think i left", ko:"~를 두고 온 것 같아요.", purpose:"두고 옴", re:"\\bi think i left\\b",
+  { id:"travel_think_i_left", frame:"I think I left ~.", tf:"i think i left", ko:"~를 두고 온 것 같아요.", purpose:"두고 옴", re:"\\b(i|we) think (i|we) left\\b",
     items:[
       {ko:"택시에서 내렸는데 핸드폰이 없다. 두고 온 것 같다고 말해라.", en:"I think I left my phone in the taxi."},
       {ko:"체크아웃하고 나오니 충전기가 없다. 두고 온 것 같다고 말해라.", en:"I think I left my charger in the room."},
@@ -15770,7 +15770,7 @@ const TRAVEL_FRAMES=[
       {ko:"할 일이 여럿이다. 뭐부터 해야 하는지 물어라.", en:"What should we do first?"},
       {ko:"새 폰을 샀다. 쓰던 폰을 어떻게 해야 하는지 물어라.", en:"What should I do with my old phone?"}
     ]},
-  { id:"travel_id_like_to", frame:"I'd like to ~.", tf:"id like to", ko:"~하고 싶어요.", purpose:"의사 표현", re:"\\bid like to\\b",
+  { id:"travel_id_like_to", frame:"I'd like to ~.", tf:"id like to", ko:"~하고 싶어요.", purpose:"의사 표현", re:"\\b(id|we ?d) like to\\b",
     items:[
       {ko:"호텔에 도착했다. 직원에게 지금 체크인하고 싶다고 말해라.", en:"I'd like to check in."},
       {ko:"내일 섬 투어를 하려 한다. 예약하고 싶다고 말해라.", en:"I'd like to book an island tour for tomorrow."},
