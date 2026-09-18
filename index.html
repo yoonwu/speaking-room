@@ -2016,7 +2016,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.230";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.231";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15266,10 +15266,8 @@ const TRAVEL_FRAMES=[
       {ko:"곁들임 음식이 따로 나왔다. 그게 포함인지 물어라.", en:"Is the side dish included?"},
       {ko:"옷을 샀다. 봉투가 포함인지 물어라.", en:"Is the bag included?"},
       {ko:"큰 물건을 샀다. 배송이 포함인지 물어라.", en:"Is delivery included?"},
-      {ko:"세트를 시켰다. 후식이 포함인지 물어라.", en:"Is the dessert included?"}
-    ,
+      {ko:"세트를 시켰다. 후식이 포함인지 물어라.", en:"Is the dessert included?"},
       /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
-      {ko:"온라인 주문 중이다. 배송비가 포함인지 물어라.", en:"Is shipping included?"},
       {ko:"아침 세트를 시켰다. 커피가 포함인지 물어라.", en:"Is coffee included?"},
       {ko:"음료를 시켰다. 리필이 포함인지 물어라.", en:"Are refills included?"},
       {ko:"촬영이 있는 수업이다. 사진이 포함인지 물어라.", en:"Are photos included?"},
@@ -15301,10 +15299,8 @@ const TRAVEL_FRAMES=[
       {ko:"단품과 세트가 있다. 세트가 얼마인지 물어라.", en:"How much is the set menu?"},
       {ko:"큰 물건을 샀다. 배송비가 얼마인지 물어라.", en:"How much is delivery?"},
       {ko:"할인이 된다고 한다. 할인하면 얼마인지 물어라.", en:"How much is it with the discount?"},
-      {ko:"제일 작은 걸 사려 한다. 그게 얼마인지 물어라.", en:"How much is the smallest one?"}
-    ,
+      {ko:"제일 작은 걸 사려 한다. 그게 얼마인지 물어라.", en:"How much is the smallest one?"},
       /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
-      {ko:"온라인으로 주문한다. 배송비가 얼마인지 물어라.", en:"How much is shipping?"},
       {ko:"낱개로 사려 한다. 한 개에 얼마인지 물어라.", en:"How much is one?"},
       {ko:"카페에 들어왔다. 커피가 얼마인지 물어라.", en:"How much is a coffee?"},
       {ko:"여러 개를 담았다. 다 해서 얼마인지 물어라.", en:"How much is the total?"},
@@ -15347,8 +15343,7 @@ const TRAVEL_FRAMES=[
       {ko:"금액이 크다. 절반을 카드로 내도 되는지 물어라.", en:"Can I pay half by card?"},
       {ko:"음식값을 계산한다. 카드로 내도 되는지 물어라.", en:"Can I pay for the food by card?"},
       {ko:"주차비를 내야 한다. 카드로 내도 되는지 물어라.", en:"Can I pay for parking by card?"},
-      {ko:"인터넷으로 신청했다. 온라인에서 카드로 내도 되는지 물어라.", en:"Can I pay online by card?"},
-      {ko:"수수료가 따로 있다. 그걸 카드로 내도 되는지 물어라.", en:"Can I pay the fee by card?"}
+      {ko:"인터넷으로 신청했다. 온라인에서 카드로 내도 되는지 물어라.", en:"Can I pay online by card?"}
     ]},
   { id:"travel_have_reservation", frame:"I have a reservation.", tf:"i have a reservation", ko:"예약했어요.", purpose:"예약 알리기", re:"\\b(i|we) have a reservation\\b",
     items:[
@@ -15405,8 +15400,7 @@ const TRAVEL_FRAMES=[
       {ko:"쇼핑백이 많다. 여기 맡겨도 되는지 물어라.", en:"Can I leave my shopping bags here?"},
       {ko:"비가 왔다. 우산을 입구에 둬도 되는지 물어라.", en:"Can I leave my umbrella at the door?"},
       {ko:"더 둘러보려 한다. 이걸 맡겨 두고 나중에 찾아가도 되는지 물어라.", en:"Can I leave this and pick it up later?"},
-      {ko:"화장실에 다녀와야 한다. 그동안 짐을 자리에 둬도 되는지 물어라.", en:"Can I leave my things at the table?"},
-      {ko:"식당이 덥다. 겉옷을 여기 둬도 되는지 물어라.", en:"Can I leave my coat here?"}
+      {ko:"화장실에 다녀와야 한다. 그동안 짐을 자리에 둬도 되는지 물어라.", en:"Can I leave my things at the table?"}
     ,
       /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
       {ko:"연락을 받아야 한다. 전화번호를 남겨도 되는지 물어라.", en:"Can I leave my phone number?"},
@@ -15415,8 +15409,6 @@ const TRAVEL_FRAMES=[
       {ko:"담당자가 없다. 이름과 번호를 남겨도 되는지 물어라.", en:"Can I leave my name and number?"},
       {ko:"몸이 안 좋다. 일찍 나가도 되는지 물어라.", en:"Can I leave work early?"},
       {ko:"잠깐 나갔다 온다. 노트북을 두고 가도 되는지 물어라.", en:"Can I leave my laptop here?"},
-      {ko:"짐이 많다. 가방을 맡겨도 되는지 물어라.", en:"Can I leave my bag with you?"},
-      {ko:"사람이 자리에 없다. 쪽지를 남겨도 되는지 물어라.", en:"Can I leave a note?"},
       {ko:"다시 올 거다. 주문을 걸어두고 가도 되는지 물어라.", en:"Can I leave my order here?"},
       {ko:"일이 끝났다. 지금 가도 되는지 물어라.", en:"Can I leave now?"}
     ]},
@@ -15568,7 +15560,6 @@ const TRAVEL_FRAMES=[
       {ko:"전화 목소리가 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say it again, more slowly?"},
       {ko:"길을 물었는데 설명이 너무 빨랐다. 천천히 다시 말해달라고 해라.", en:"Could you say the directions again, more slowly?"},
       {ko:"가격을 말했는데 숫자를 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the amount again, more slowly?"},
-      {ko:"기사가 요금을 말했는데 못 알아들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the fare again, more slowly?"},
       {ko:"약 먹이는 방법을 너무 빨리 설명한다. 천천히 다시 말해달라고 해라.", en:"Could you say the instructions again, more slowly?"},
       {ko:"체크인 규정을 빠르게 설명하고 넘어갔다. 천천히 다시 말해달라고 해라.", en:"Could you say the check-in rules again, more slowly?"},
       {ko:"투어 집합 장소를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the meeting point again, more slowly?"},
@@ -15579,7 +15570,6 @@ const TRAVEL_FRAMES=[
       {ko:"조식 시간을 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the breakfast hours again, more slowly?"},
       {ko:"점원이 할인 조건을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the discount again, more slowly?"},
       {ko:"오늘 안 되는 메뉴를 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the sold-out items again, more slowly?"},
-      {ko:"계산대에서 금액을 빠르게 말했다. 천천히 다시 말해달라고 해라.", en:"Could you say the total again, more slowly?"},
       {ko:"환불 절차를 빠르게 설명했다. 천천히 다시 말해달라고 해라.", en:"Could you say the refund steps again, more slowly?"},
       {ko:"배송 날짜를 말해줬는데 못 들었다. 천천히 다시 말해달라고 해라.", en:"Could you say the delivery day again, more slowly?"}
     ,
@@ -15710,7 +15700,6 @@ const TRAVEL_FRAMES=[
       {ko:"스노클링을 하러 간다. 끝나고 어디서 모이는지 물어라.", en:"Where do we meet after snorkeling?"},
       {ko:"일행과 따로 다니기로 했다. 나중에 어디서 만날지 정해라.", en:"Where do we meet later?"},
       {ko:"일행과 떨어졌다. 어디서 다시 모이는지 물어라.", en:"Where do we meet the group?"},
-      {ko:"배 시간이 다 됐다. 어디서 모이는지 물어라.", en:"Where do we meet for the boat?"},
       {ko:"공항에서 픽업을 받기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet at the airport?"},
       {ko:"투어가 끝나면 각자 간다고 한다. 끝나고 어디서 만나는지 물어라.", en:"Where do we meet after the tour?"},
       {ko:"호텔에서 픽업한다고 한다. 호텔 어디서 만나는지 물어라.", en:"Where do we meet in the hotel?"},
@@ -15730,7 +15719,6 @@ const TRAVEL_FRAMES=[
       {ko:"퇴근하고 보기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet after work?"},
       {ko:"커피 한잔하기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet for coffee?"},
       {ko:"다음에 또 보기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet next time?"},
-      {ko:"다른 사람들도 온다. 어디서 만나는지 물어라.", en:"Where do we meet the others?"},
       {ko:"역에서 보기로 했다. 역 어디서 만나는지 물어라.", en:"Where do we meet at the station?"},
       {ko:"주말에 보기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet this weekend?"},
       {ko:"수업이 끝나고 보기로 했다. 어디서 만나는지 물어라.", en:"Where do we meet after class?"}
@@ -15765,9 +15753,7 @@ const TRAVEL_FRAMES=[
       {ko:"서류가 쌓였다. 이걸 어떻게 해야 하는지 물어라.", en:"What should I do with these papers?"},
       {ko:"길이 막힌다. 늦으면 어떻게 해야 하는지 물어라.", en:"What should I do if I'm late?"},
       {ko:"옆집이 시끄럽다. 어떻게 해야 하는지 물어라.", en:"What should we do about the noise?"},
-      {ko:"음식이 남았다. 나머지를 어떻게 해야 하는지 물어라.", en:"What should I do with the rest?"},
       {ko:"물건이 약해 보인다. 고장 나면 어떻게 해야 하는지 물어라.", en:"What should I do if it breaks?"},
-      {ko:"할 일이 여럿이다. 뭐부터 해야 하는지 물어라.", en:"What should we do first?"},
       {ko:"새 폰을 샀다. 쓰던 폰을 어떻게 해야 하는지 물어라.", en:"What should I do with my old phone?"}
     ]},
   { id:"travel_id_like_to", frame:"I'd like to ~.", tf:"id like to", ko:"~하고 싶어요.", purpose:"의사 표현", re:"\\b(id|we ?d) like to\\b",
@@ -15857,8 +15843,7 @@ const TRAVEL_FRAMES=[
       {ko:"회의가 길어진다. 얼마나 더 걸리는지 물어라.", en:"How much longer will the meeting take?"},
       {ko:"광고가 계속 나온다. 영화 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until the movie starts?"},
       {ko:"대기실에 앉아 있다. 얼마나 더 있어야 하는지 물어라.", en:"How much longer do I have to stay?"},
-      {ko:"일이 거의 끝나간다. 끝날 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until we finish?"},
-      {ko:"아까부터 기다린다. 앞으로 얼마나 더 걸릴지 물어라.", en:"How much longer will it be?"}
+      {ko:"일이 거의 끝나간다. 끝날 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until we finish?"}
     ]},
   { id:"travel_whats_difference", frame:"What's the difference between ~ and ~?", tf:"what s the difference between", ko:"~와 ~는 뭐가 달라요?", purpose:"차이 묻기", re:"\\bwhat ?(s|is)? ?the difference between\\b",
     items:[
@@ -16305,13 +16290,13 @@ const TRAVEL_KR={
   "Can I get your business card?":"명함 한 장 주실래요?",
   "Can I get your number?":"전화번호 좀 알려주실래요?",
   "Can I leave a message for him?":"그분께 메시지 좀 남겨도 될까요?",
-  "Can I leave a note?":"쪽지 좀 남겨도 될까요?",
+
   "Can I leave my backpack here?":"여기 배낭 좀 맡겨도 될까요?",
-  "Can I leave my bag with you?":"가방 좀 맡아주실 수 있어요?",
+
   "Can I leave my bags here until evening?":"저녁까지 여기 가방 좀 맡겨도 될까요?",
   "Can I leave my bags here?":"여기 가방 좀 맡겨도 될까요?",
   "Can I leave my bike here?":"여기 자전거 세워둬도 될까요?",
-  "Can I leave my coat here?":"여기 코트 좀 맡겨도 될까요?",
+
   "Can I leave my gear here for a bit?":"여기 장비 잠깐 둬도 될까요?",
   "Can I leave my jacket here?":"여기 겉옷 좀 맡겨도 될까요?",
   "Can I leave my laptop here?":"여기 노트북 좀 둬도 될까요?",
@@ -16365,7 +16350,7 @@ const TRAVEL_KR={
   "Can I pay the bill by card?":"계산서 카드로 결제돼요?",
   "Can I pay the deposit by card?":"보증금 카드로 결제돼요?",
   "Can I pay the fare by card?":"요금 카드로 결제돼요?",
-  "Can I pay the fee by card?":"수수료 카드로 결제돼요?",
+
   "Can I pay the rest by card?":"나머지 카드로 결제돼요?",
   "Can I pay the taxi fare by card?":"택시 요금 카드로 결제돼요?",
   "Can I return this?":"이거 반품해도 될까요?",
@@ -16386,7 +16371,7 @@ const TRAVEL_KR={
   "Can we change our seats?":"자리 바꿀 수 있어요?",
   "Can we change rooms?":"방 바꿀 수 있어요?",
   "Can we change seats?":"자리 바꿀 수 있어요?",
-  "Can we change tables?":"자리 바꿀 수 있어요?",
+  "Can we change tables?":"테이블 바꿀 수 있어요?",
   "Can we change the check-out time?":"체크아웃 시간 바꿀 수 있어요?",
   "Can we change the date?":"날짜 바꿀 수 있어요?",
   "Can we change the day?":"날 바꿀 수 있어요?",
@@ -16477,7 +16462,7 @@ const TRAVEL_KR={
   "Could you say the delivery day again, more slowly?":"배송 날짜 다시 천천히 말씀해 주실래요?",
   "Could you say the directions again, more slowly?":"길 다시 천천히 말씀해 주실래요?",
   "Could you say the discount again, more slowly?":"할인 조건 다시 천천히 말씀해 주실래요?",
-  "Could you say the fare again, more slowly?":"요금 다시 천천히 말씀해 주실래요?",
+
   "Could you say the instructions again, more slowly?":"방법 다시 천천히 말씀해 주실래요?",
   "Could you say the last part again, more slowly?":"마지막 부분 다시 천천히 말씀해 주실래요?",
   "Could you say the meeting point again, more slowly?":"집합 장소 다시 천천히 말씀해 주실래요?",
@@ -16494,7 +16479,7 @@ const TRAVEL_KR={
   "Could you say the sold-out items again, more slowly?":"품절된 게 뭔지 다시 천천히 말씀해 주실래요?",
   "Could you say the stop again, more slowly?":"내릴 곳 다시 천천히 말씀해 주실래요?",
   "Could you say the time again, more slowly?":"시간 다시 천천히 말씀해 주실래요?",
-  "Could you say the total again, more slowly?":"합계 다시 천천히 말씀해 주실래요?",
+
   "Could you say the word again, more slowly?":"그 단어 다시 천천히 말씀해 주실래요?",
   "Could you say your email again, more slowly?":"이메일 주소 다시 천천히 말씀해 주실래요?",
   "Could you take a photo of us?":"저희 사진 좀 찍어주실래요?",
@@ -16731,7 +16716,7 @@ const TRAVEL_KR={
   "How much is one more night?":"하루 더 묵으면 얼마예요?",
   "How much is one?":"하나에 얼마예요?",
   "How much is parking?":"주차비 얼마예요?",
-  "How much is shipping?":"배송비 얼마예요?",
+
   "How much is the airport pickup?":"공항 픽업 얼마예요?",
   "How much is the class?":"수업료 얼마예요?",
   "How much is the deposit?":"보증금 얼마예요?",
@@ -16767,7 +16752,7 @@ const TRAVEL_KR={
   "How much longer until we get there?":"도착하려면 얼마나 더 남았어요?",
   "How much longer until we leave?":"출발까지 얼마나 더 남았어요?",
   "How much longer will check-in take?":"체크인 얼마나 더 걸려요?",
-  "How much longer will it be?":"얼마나 더 걸려요?",
+
   "How much longer will it take from here?":"여기서 얼마나 더 걸려요?",
   "How much longer will it take?":"얼마나 더 걸려요?",
   "How much longer will the driver take?":"기사님 오시려면 얼마나 더 걸려요?",
@@ -16913,7 +16898,7 @@ const TRAVEL_KR={
   "Is parking included?":"주차 포함이에요?",
   "Is pickup included?":"픽업 포함이에요?",
   "Is rice included?":"밥 포함이에요?",
-  "Is shipping included?":"배송비 포함이에요?",
+
   "Is snorkeling gear included?":"스노클 장비 포함이에요?",
   "Is tax included?":"세금 포함이에요?",
   "Is the bag included?":"가방도 포함이에요?",
@@ -17118,7 +17103,7 @@ const TRAVEL_KR={
   "What should I do to get a refund?":"환불받으려면 어떻게 해야 해요?",
   "What should I do with my old phone?":"쓰던 휴대폰은 어떻게 해야 해요?",
   "What should I do with the key?":"열쇠는 어떻게 해야 해요?",
-  "What should I do with the rest?":"나머지는 어떻게 해야 해요?",
+
   "What should I do with the tray?":"쟁반은 어떻게 해야 해요?",
   "What should I do with these papers?":"이 서류들은 어떻게 해야 해요?",
   "What should I do with this form?":"이 서류는 어떻게 해야 해요?",
@@ -17127,7 +17112,7 @@ const TRAVEL_KR={
   "What should we do about the noise?":"소음은 어떻게 해야 해요?",
   "What should we do about the schedule?":"일정은 어떻게 해야 해요?",
   "What should we do about the wait?":"기다리는 건 어떻게 해야 해요?",
-  "What should we do first?":"먼저 뭘 할까요?",
+
   "What should we do if it rains?":"비 오면 어떻게 해야 해요?",
   "What should we do if the boat is canceled?":"배가 취소되면 어떻게 해야 해요?",
   "What should we do if the tour is canceled?":"투어가 취소되면 어떻게 해야 해요?",
@@ -17177,9 +17162,9 @@ const TRAVEL_KR={
   "What time does the delivery come?":"배송 몇 시에 와요?",
   "What time does the first boat leave?":"첫 배 몇 시에 떠나요?",
   "What time does the kitchen close?":"주방 몇 시에 닫아요?",
-  "What time does the last bus leave?":"막차 몇 시에 떠나요?",
+  "What time does the last bus leave?":"버스 막차 몇 시에 떠나요?",
   "What time does the last ferry leave?":"막배 몇 시에 떠나요?",
-  "What time does the last train leave?":"막차 몇 시에 떠나요?",
+  "What time does the last train leave?":"기차 막차 몇 시에 떠나요?",
   "What time does the library close?":"도서관 몇 시에 닫아요?",
   "What time does the mall open?":"쇼핑몰 몇 시에 열어요?",
   "What time does the market close?":"시장 몇 시에 닫아요?",
@@ -17242,7 +17227,7 @@ const TRAVEL_KR={
   "Where do we meet for dinner?":"저녁 먹으러 어디서 만나요?",
   "Where do we meet for lunch?":"점심 먹으러 어디서 만나요?",
   "Where do we meet for the boat trip?":"배 타는 건 어디서 만나요?",
-  "Where do we meet for the boat?":"배 타려면 어디서 만나요?",
+
   "Where do we meet for the tour?":"투어는 어디서 만나요?",
   "Where do we meet if we get separated?":"떨어지면 어디서 만나요?",
   "Where do we meet in the hotel?":"호텔 어디서 만나요?",
@@ -17254,7 +17239,7 @@ const TRAVEL_KR={
   "Where do we meet the driver?":"기사님은 어디서 만나요?",
   "Where do we meet the group?":"일행은 어디서 만나요?",
   "Where do we meet the guide?":"가이드는 어디서 만나요?",
-  "Where do we meet the others?":"나머지 사람들은 어디서 만나요?",
+
   "Where do we meet the taxi?":"택시는 어디서 타요?",
   "Where do we meet the teacher?":"선생님은 어디서 만나요?",
   "Where do we meet this weekend?":"이번 주말에 어디서 만나요?",
