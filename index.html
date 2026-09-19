@@ -1664,7 +1664,8 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-answer{margin:12px 0;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:13px;text-align:center}
 .auto-answer b{font-family:var(--serif);font-size:22px;color:#3A2D27}
 .auto-answer.hide b{filter:blur(7px);user-select:none}
-.auto-answer .use-tip b,.auto-answer .my-tipbox b,.auto-answer .ans-note b{font-family:inherit;font-size:inherit;color:inherit;font-weight:900}
+.auto-answer .use-tip b,.auto-answer .my-tipbox b,.auto-answer .ans-note b,.auto-answer .prep-box b{font-family:inherit;font-size:inherit;color:inherit;font-weight:900}
+.auto-answer .prep-box b[style*="6B4FA0"]{color:#6B4FA0!important}
 .auto-stat{min-height:44px;text-align:center;font-size:13.5px;color:#8A6F62;line-height:1.55;margin:10px 0}
 .auto-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
 .auto-actions button{border:none;border-radius:15px;padding:13px 16px;font-size:15px;font-weight:950;cursor:pointer}
@@ -2016,7 +2017,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.232";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.234";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -17252,6 +17253,118 @@ const TRAVEL_KR={
   "Where is the water fountain?":"정수기가 어디예요?",
   "Where's the toilet?":"화장실이 어디예요?"
 };
+
+/* ===================== 🔤 전치사 설명 =====================
+   같은 to·for 라도 뒤에 뭐가 오느냐에 따라 뜻이 달라진다.
+   낱말만 보고 "to 는 ~로" 라고 외우면 반드시 헷갈린다.
+   그래서 '전치사 + 뒤에 오는 말'을 함께 보고 설명을 고른다. */
+const PREP_VERB=/^(get|go|check|walk|be|leave|come|pay|book|order|see|rent|try|return|ask|take|make|learn|send|cancel|confirm|extend|speak|open|change|reserve|drink|watch|read|buy|wait|sign|pick|meet|eat|use|stay|finish|start|sleep|call|arrive|do|fix|clean|cook|dry|charge|deliver|weigh|print|bring|wear|keep|show|tell|turn|flush|lock|scan|split|top|report|find|connect|set|boil|save|spell|answer|hold|carry|heat|put|close|wrap|help|drop|write)$/;
+const PREP_TIMEUNIT=/^(minute|minutes|hour|hours|day|days|night|nights|week|weeks|month|months|year|years|second|seconds|while|bit|moment|days?)$/;
+const PREP_NUM=/^(a|an|one|two|three|four|five|six|seven|eight|nine|ten|fifteen|twenty|thirty|fifty|\d+)$/;
+const PREP_PERSON=/^(me|us|you|him|her|them|kids|children|adults|someone|everyone|myself)$/;
+const PREP_RIDE=/^(taxi|bus|train|car|boat|ferry|plane|subway|speedboat)$/;
+const PREP_WAY=/^(card|cash|mail|phone|email|hand)$/;
+const PREP_BESIDE=/^(window|pool|door|entrance|sea|beach|counter|river)$/;
+const PREP_CLOCK=/^(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|noon|midnight|\d{1,2}(:\d\d)?)$/;
+const PREP_ONRIDE=/^(boat|bus|train|plane|ferry|tour)$/;
+const PREP_DAY=/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday|weekend)$/;
+const PREP_WHEN=/^(morning|afternoon|evening|night)$/;
+/* 동사에 붙어 통째로 한 뜻이 되는 것들. 여기서 in·on·up 은 전치사가 아니다.
+   "check in 의 in 이 왜 '안에'냐"고 헷갈리는 걸 막으려고 따로 뺀다. */
+const PREP_PHRASAL={
+  "check in":"체크인하다", "check out":"체크아웃하다", "come in":"들어오다", "come back":"돌아오다",
+  "turn on":"켜다", "turn off":"끄다", "turn up":"(소리·세기를) 올리다", "try on":"입어보다",
+  "get on":"(배·버스에) 타다", "get up":"일어나다", "get through":"통과하다",
+  "top up":"충전하다", "sign up":"가입하다", "set up":"설정하다", "take off":"벗다",
+  "pick up":"찾아가다", "put on":"입다", "wait for":"~을 기다리다", "look for":"~을 찾다", "pay for":"~의 값을 내다"
+};
+const PREP_SEP=/^(try|turn|pick|top|put|take)$/;   /* try this on 처럼 사이에 낱말이 끼는 것 */
+/* 앞에 관사·소유격이 오면 그다음 낱말이 진짜 알맹이다 */
+function prepHead(ws, i){
+  let j=i+1;
+  while(j<ws.length && /^(the|a|an|my|our|your|his|her|their|this|that|these|those|next|last|first|other|another|nearest|whole)$/.test(ws[j])) j++;
+  return {head:(ws[j]||""), first:(ws[i+1]||"")};
+}
+const PREP_DUR=/^(a|an|one|two|three|four|five|six|seven|eight|ten|fifteen|twenty|thirty|\d+)?\s*(minute|hour|day|night|week|month|year|second|while|bit|moment)s?\b/;
+const PREP_WHENFOR=/^(today|tomorrow|tonight|now|later|monday|tuesday|wednesday|thursday|friday|saturday|sunday|the weekend|the night|this (weekend|morning|afternoon|evening|week|month))\b/;
+const PREP_WHOFOR=/^(me|us|you|him|her|them|kids|children|adult|adults|people|person|someone|everyone|one|two|three|four|five|six|a family|a child|a kid|a beginner|a small|my wife|a person)\b/;
+function prepNotes(en){
+  const raw=String(en||"");
+  const ws=raw.replace(/[?.,!"']/g," ").split(/\s+/).filter(Boolean).map(w=>w.toLowerCase());
+  const out=[], seen={}, used={};
+  const add=(w,t,d)=>{ const k=w+"|"+t; if(seen[k]) return; seen[k]=1; out.push({w:w,t:t,d:d}); };
+  /* 먼저 구동사부터 — 여기 걸린 자리는 전치사로 설명하지 않는다 */
+  ws.forEach((w,i)=>{
+    if(i===0) return;
+    let pv=ws[i-1]+" "+w;
+    if(!PREP_PHRASAL[pv] && i>=2 && PREP_SEP.test(ws[i-2])) pv=ws[i-2]+" "+w;   /* try this on */
+    const ko=PREP_PHRASAL[pv];
+    if(!ko) return;
+    if(pv==="wait for" && PREP_DUR.test(ws.slice(i+1,i+4).join(" "))) return;    /* wait for 5 minutes 는 기간 */
+    used[i]=1;
+    add(pv, "동사에 붙은 말", "여기서 <b>"+w+"</b> 는 전치사가 <b>아니에요</b>. <b>"+pv+"</b> 가 통째로 '"+ko+"' 예요.");
+  });
+  ws.forEach((w,i)=>{
+    if(used[i]) return;
+    const H=prepHead(ws,i), head=H.head, nx=H.first;
+    const prev2=(ws[i-2]||"")+" "+(ws[i-1]||"");
+    switch(w){
+      case "to":
+        if(PREP_VERB.test(nx)) add("to","동사 앞의 to","전치사가 <b>아니에요</b>. 동사 앞에 붙어서 <b>~하는 것 · ~하려고</b> 를 만들어요. (to get = 가는 것)");
+        else add("to","도착점","<b>~까지 · ~에게</b>. 가는 곳이나 주는 상대가 뒤에 와요.");
+        break;
+      case "for": {
+        const af=ws.slice(i+1,i+4).join(" ");
+        if(PREP_DUR.test(af))          add("for","얼마 동안","<b>~동안</b>. 시간 <b>길이</b>가 뒤에 와요. (for five minutes = 5분 동안)");
+        else if(PREP_WHENFOR.test(af)) add("for","언제 쓸 건지","<b>~에 쓸 · ~날짜로</b>. 언제인지가 뒤에 와요. (for tomorrow = 내일 걸로)");
+        else if(PREP_WHOFOR.test(af))  add("for","누구 주려고","<b>~에게 · ~용</b>. 받는 사람이나 인원이 뒤에 와요.");
+        else                           add("for","무슨 용도","<b>~용 · ~하려고</b>. 쓸 곳이나 목적이 뒤에 와요.");
+        break; }
+      case "by":
+        if(PREP_RIDE.test(head)&&!/^(the|a|an|my|our)$/.test(nx)) add("by","타고 가는 수단","<b>~로 (타고)</b>. 교통수단이 뒤에 와요. 이때는 <b>the 를 안 붙여요</b> — by taxi (○) by the taxi (✕)");
+        else if(PREP_WAY.test(head)&&!/^(the|a|an|my|our)$/.test(nx)) add("by","내는 방법","<b>~로</b>. 결제·전달 방법이 뒤에 와요. 여기도 <b>the 없이</b> by card.");
+        else if(PREP_BESIDE.test(head)) add("by","바로 옆","<b>~옆에</b>. 딱 붙어 있는 자리예요. (by the window = 창가)");
+        else add("by","수단·방법","<b>~로</b>. 어떻게 하는지가 뒤에 와요.");
+        break;
+      case "at":
+        if(PREP_CLOCK.test(nx)) add("at","몇 시에","<b>~시에</b>. 시각은 항상 at 이에요. (at seven = 7시에)");
+        else add("at","콕 집은 지점","<b>~에서</b>. 넓은 공간이 아니라 <b>한 지점</b>이에요 — 카운터 앞, 프런트, 문 앞.");
+        break;
+      case "in":
+        if(head==="cash") add("in","현금으로","<b>in cash = 현금으로</b>. 통째로 외우세요. 카드는 by card 인데 현금만 in cash 예요.");
+        else if(/^(advance|stock|total|line|person)$/.test(head)) add("in","통째로 외우는 말","<b>in "+head+"</b> 로 붙어다녀요. 낱말 뜻으로 쪼개지 마세요.");
+        else if(/^(english|korean|ringgit|blue|red|black|white)$/.test(head)) add("in","어떤 형태로","<b>~로</b>. 언어·색·화폐가 뒤에 와요. (in English = 영어로)");
+        else if(PREP_WHEN.test(head)) add("in","하루 중 언제","<b>~에</b>. 아침·오후·저녁은 in 을 써요. (in the morning)");
+        else add("in","둘러싸인 안","<b>~안에</b>. 사방이 막힌 공간이에요. 택시·방·상자는 in.");
+        break;
+      case "on":
+        if(head==="foot") add("on","걸어서","<b>on foot = 걸어서</b>. 통째로 외우세요.");
+        else if(/^(sale|budget|time|purpose)$/.test(head)) add("on","통째로 외우는 말","<b>on "+head+"</b> 로 붙어다녀요.");
+        else if(PREP_DAY.test(head)) add("on","무슨 요일에","<b>~요일에</b>. 날짜·요일은 on 이에요.");
+        else if(PREP_ONRIDE.test(head)) add("on","타고 있는","<b>~에 (타고)</b>. 배·버스·비행기는 <b>on</b>, 택시·승용차는 <b>in</b> 이에요. 서서 걸어다닐 수 있으면 on.");
+        else add("on","표면 위","<b>~위에</b>. 바닥이나 면에 닿아 있어요.");
+        break;
+      case "with":
+        if(/problem/.test(prev2)) add("with","무엇에 문제가","<b>~에 (문제가 있다)</b>. a problem with ~ 로 붙어다녀요.");
+        else if(/help/.test(prev2)) add("with","무엇을 도와줘","<b>~을 (도와줘)</b>. help me with ~ 로 붙어다녀요.");
+        else if(PREP_PERSON.test(nx)) add("with","누구와 함께","<b>~와 같이</b>.");
+        else add("with","무엇을 가지고","<b>~로 · ~을 가지고</b>. 쓰는 도구나 같이 있는 것이 뒤에 와요.");
+        break;
+      case "between": add("between","둘 중에","<b>A와 B 사이</b>. 반드시 <b>between A <u>and</u> B</b> 로 and 와 짝을 지어요."); break;
+      case "until":   add("until","그때까지 쭉","<b>~까지</b>. 계속 이어지다 끝나는 시점이에요."); break;
+      case "about":   add("about","무엇에 대해","<b>~에 대해</b>. 이야기 주제가 뒤에 와요."); break;
+      case "of":      add("of","~의","앞말과 뒷말을 묶어줘요. (a glass of water = 물 한 잔)"); break;
+      case "after":   add("after","~한 뒤에","<b>~후에</b>. 먼저 끝나는 일이 뒤에 와요."); break;
+      case "before":  add("before","~하기 전에","<b>~전에</b>."); break;
+      case "per":     add("per","하나당","<b>~당 · ~마다</b>. (per night = 1박당)"); break;
+      case "near": case "around": add(w,"근처에","<b>~근처에</b>. 딱 붙어 있진 않아요."); break;
+      case "from":    add("from","출발점","<b>~에서부터</b>. 시작하는 곳이에요."); break;
+      case "inside":  add("inside","안으로","<b>안에 · 안으로</b>."); break;
+      case "instead": add("instead","대신에","<b>대신에</b>. instead of ~ 로도 써요."); break;
+    }
+  });
+  return out;
+}
 function travelKrOf(en){
   if(!en) return "";
   const s=String(en).trim();
@@ -21945,7 +22058,17 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
        </div>` : "";
   const krLine=(function(){ const k=travelKrOf(it.ex.en);
     return k?`<div class="ans-kr" style="font-size:15px;color:#5A463C;font-weight:700;margin-top:6px;line-height:1.45">${escapeHtml(k)}</div>`:""; })();
-  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+krLine+note+useTip+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
+  const prepBox=(function(){
+    let ps=[]; try{ ps=prepNotes(it.ex.en); }catch(e){ ps=[]; }
+    if(!ps.length) return "";
+    return `<div class="prep-box" style="margin-top:8px;padding:10px 12px;background:#F6F1FB;border:1.5px solid #DCCFEE;border-radius:12px;text-align:left">
+      <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#8B72B5;margin-bottom:5px">🔤 왜 이 전치사냐면</span>
+      ${ps.map(x=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-top:5px">
+        <b style="flex:none;min-width:52px;font-size:14px;color:#6B4FA0;font-family:var(--serif)">${escapeHtml(x.w)}</b>
+        <span style="flex:1;font-size:12.5px;color:#443;line-height:1.55"><b style="color:#6B4FA0">${escapeHtml(x.t)}</b> — ${x.d}</span>
+      </div>`).join("")}
+    </div>`; })();
+  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+krLine+note+prepBox+useTip+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
   bindStudyPanel(ans.querySelector(".study-panel"));
