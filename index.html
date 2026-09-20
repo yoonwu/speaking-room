@@ -1664,7 +1664,7 @@ body{background:var(--paper)!important;color:var(--text)}
 .auto-answer{margin:12px 0;background:#fff;border:1px solid #C7E8DA;border-radius:16px;padding:13px;text-align:center}
 .auto-answer b{font-family:var(--serif);font-size:22px;color:#3A2D27}
 .auto-answer.hide b{filter:blur(7px);user-select:none}
-.auto-answer .use-tip b,.auto-answer .my-tipbox b,.auto-answer .ans-note b,.auto-answer .prep-box b{font-family:inherit;font-size:inherit;color:inherit;font-weight:900}
+.auto-answer .use-tip b,.auto-answer .my-tipbox b,.auto-answer .ans-note b,.auto-answer .prep-box b,.auto-answer .br-box b{font-family:inherit;font-size:inherit;color:inherit;font-weight:900}
 .auto-answer .prep-box b[style*="6B4FA0"]{color:#6B4FA0!important}
 .auto-stat{min-height:44px;text-align:center;font-size:13.5px;color:#8A6F62;line-height:1.55;margin:10px 0}
 .auto-actions{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:12px}
@@ -2017,7 +2017,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.238";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.240";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15794,33 +15794,40 @@ const TRAVEL_FRAMES=[
       ,
       {ko:"뭘 좀 사야 한다. 근처에 가게가 있는지 물어라.", en:"Is there a store nearby?"}
     ]},
-  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간", tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?<br><br><b style=\"color:#C0653A\">뒤에 오는 건 딱 3가지예요.</b><br>① <b>do</b> ~ → How much longer <b>do I have to wait?</b><br>② <b>will</b> ~ → How much longer <b>will it take?</b><br>③ <b>until</b> ~ → How much longer <b>until dinner?</b><br><br><b style=\"color:#189E79\">하나만 외운다면 ②번이에요.</b><br><b>How much longer will it be?</b> — 18문장 중 <b>17개</b>에 그대로 쓸 수 있어요.<br>짐 기다릴 때도, 택시 타고 갈 때도, 투어 중에도 다 통해요.<br><br>①번은 <b>기다리는 대상이 분명할 때</b> 써요 — 짐 · 자리 · 기사처럼요.<br>'내가 이만큼 기다렸다'는 <b>재촉하는 느낌</b>이 살짝 들어가요.<br>투어 중에 'do I have to wait?' 는 이상해요 — 기다리는 대상이 없으니까요.", parts:[["How much longer","얼마나 더"],["do I have to wait?","기다려야 해요?"]], pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리일 뿐이라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ until <b>dinner</b>?<br>③ until 뒤에는 <b>기다리는 대상</b>이 와요 — 사람·일이면 문장으로(until we get there), 그냥 일이면 낱말로(until dinner).<br><br><b>세 개의 진짜 차이는 '무엇을 재느냐'예요.</b><br>· do <b>I</b> have to wait? — <b>내가</b> 더 견딜 시간<br>· will <b>it</b> take/be? — <b>그 일이</b> 끝나기까지<br>· until <b>dinner</b>? — <b>그때까지</b> 남은 시간<br>재는 대상이 다를 뿐, 셋 다 '이미 시작된 일'을 전제해요.", re:"\\bhow much longer\\b",
+  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간",
+    tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?",
+    /* 뒤에 오는 건 딱 3가지. 상황을 보고 고르는 회로를 만드는 게 이 틀의 목적이다.
+       셋은 재는 대상이 다를 뿐 셋 다 '이미 진행 중'을 전제한다. */
+    branches:[
+      ["do","내가 더 기다려야 하는 시간","do I/we have to wait?"],
+      ["will","그 일이 끝나는 데 걸리는 시간","will it take?"],
+      ["until","특정 시점·도착점까지 남은 시간","until ~?"]
+    ],
+    parts:[["How much longer","얼마나 더"],["do I have to wait?","기다려야 해요?"]],
+    pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ until <b>dinner</b>?",
+    re:"\\bhow much longer\\b",
     items:[
-      {ko:"방이 아직 준비가 안 돼 한참 기다렸다. 앞으로 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait?"},
-      {ko:"음식을 시킨 지 한참 됐다. 지금부터 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?"},
-      {ko:"배에 탔는데 출발을 안 하고 계속 서 있다. 앞으로 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait to leave?"},
-      {ko:"입국심사 줄에서 이미 오래 서 있다. 여기서부터 얼마나 더 걸릴지 물어라.", en:"How much longer will it take from here?"},
-      {ko:"수하물 벨트 앞에서 계속 기다리는 중이다. 짐이 나올 때까지 얼마나 더 걸리는지 물어라.", en:"How much longer do I have to wait for my bags?"},
-      {ko:"Grab 기사를 한참 기다렸는데 아직 안 왔다. 앞으로 얼마나 더 걸릴지 물어라.", en:"How much longer will the driver take?"},
-      {ko:"택시를 타고 한참 왔다. 목적지까지 얼마나 더 남았는지 물어라.", en:"How much longer until we get there?"}
-      ,
-      {ko:"투어가 예상보다 길어지고 있다. 끝날 때까지 얼마나 더 걸릴지 물어라.", en:"How much longer will the tour take?"},
-      {ko:"비가 아까부터 계속 온다. 앞으로 얼마나 더 올지 물어라.", en:"How much longer will the rain last?"}
-      ,
-      {ko:"게이트 앞에서 탑승을 기다리고 있다. 탑승 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until boarding starts?"},
-      {ko:"체크인 수속이 시작됐는데 오래 걸린다. 끝날 때까지 얼마나 더 걸릴지 물어라.", en:"How much longer will check-in take?"},
-      {ko:"식당 앞에서 이미 오래 기다렸다. 자리 날 때까지 얼마나 더 걸리는지 물어라.", en:"How much longer do we have to wait for a table?"},
-      {ko:"픽업 차를 약속 시간부터 계속 기다리고 있다. 앞으로 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for the pickup?"}
-    ,
-      /* + 자주 쓰는 낱말로 10개 더 (여행 밖 상황) */
-      {ko:"상대를 기다리는 중이다. 얼마나 더 걸리는지 물어라.", en:"How much longer will you be?"},
-      {ko:"배가 고프다. 저녁까지 얼마나 더 남았는지 물어라.", en:"How much longer until dinner?"},
-      {ko:"시간이 얼마 없어 보인다. 우리에게 얼마나 더 남았는지 물어라.", en:"How much longer do we have?"},
-      {ko:"준비 중이라고 한다. 될 때까지 얼마나 더 걸리는지 물어라.", en:"How much longer until it's ready?"}
-      
-      
-      ,
-      {ko:"일이 거의 끝나간다. 끝날 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until we finish?"}
+      /* ① do — 내가 기다리는 시간. 기다리는 대상이 분명할 때만 쓸 수 있다 */
+      {ko:"수하물 벨트 앞이다. 짐이 안 나와 계속 서 있다. 내가 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for my bags?", br:"do", alt:["How much longer will it be?"]},
+      {ko:"식당 앞 대기 명단에 이름을 올렸다. 자리가 안 난다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for a table?", br:"do", alt:["How much longer will it be?"]},
+      {ko:"픽업 차가 약속 시간이 지나도 안 온다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for the pickup?", br:"do", alt:["How much longer will it be?"]},
+      {ko:"방이 준비가 안 돼 로비에서 기다리는 중이다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for the room?", br:"do", alt:["How much longer will it take?"]},
+      {ko:"배에 탔는데 출발을 안 하고 서 있다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait to leave?", br:"do", alt:["How much longer until we leave?"]},
+      {ko:"Grab 기사를 한참 기다렸는데 안 온다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for the driver?", br:"do", alt:["How much longer will the driver take?"]},
+      /* ② will — 그 일이 끝나는 데 걸리는 시간. 내가 기다리든 아니든 쓸 수 있다 */
+      {ko:"방 청소가 아직 안 끝났다고 한다. 그 일이 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?", br:"will", alt:["How much longer until the room is ready?"]},
+      {ko:"음식을 시킨 지 한참 됐다. 음식 나오는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the food take?", br:"will", alt:["How much longer until the food comes?"]},
+      {ko:"투어가 예상보다 길어지고 있다. 투어가 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the tour take?", br:"will", alt:["How much longer until the tour ends?"]},
+      {ko:"체크인 수속이 시작됐는데 오래 걸린다. 수속이 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will check-in take?", br:"will", alt:["How much longer until we finish?"]},
+      {ko:"세탁을 맡겼는데 아직 안 됐다. 세탁이 되는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the laundry take?", br:"will", alt:["How much longer until it's ready?"]},
+      {ko:"비가 아까부터 계속 온다. 비가 얼마나 더 올지 물어라.", en:"How much longer will the rain last?", br:"will", alt:["How much longer until the rain stops?"]},
+      /* ③ until — 어떤 시점·도착점까지 남은 시간 */
+      {ko:"배를 타고 섬으로 가는 중이다. 도착까지 얼마나 더 남았는지 물어라.", en:"How much longer until we get there?", br:"until", alt:["How much longer will it take?"]},
+      {ko:"게이트 앞이다. 탑승 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until boarding starts?", br:"until", alt:["How much longer will it be?"]},
+      {ko:"배가 고프다. 저녁까지 얼마나 더 남았는지 물어라.", en:"How much longer until dinner?", br:"until", alt:["How much longer will it be?"]},
+      {ko:"택시를 타고 공항으로 가는 중이다. 공항까지 얼마나 더 남았는지 물어라.", en:"How much longer until we get to the airport?", br:"until", alt:["How much longer will it take?"]},
+      {ko:"투어 집합 장소에 미리 와 있다. 투어 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until the tour starts?", br:"until", alt:["How much longer will it be?"]},
+      {ko:"가게에서 구경 중이다. 문 닫을 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until you close?", br:"until", alt:["How much longer will you be open?"]}
     ]},
   { id:"travel_whats_difference", frame:"What's the difference between ~ and ~?", tf:"what s the difference between", ko:"~와 ~는 뭐가 달라요?", purpose:"차이 묻기", re:"\\bwhat ?(s|is)? ?the difference between\\b",
     items:[
@@ -16657,20 +16664,14 @@ const TRAVEL_KR={
   "How much longer do we have to wait for the pickup?":"픽업 오려면 얼마나 더 기다려야 해요?",
   "How much longer do we have to wait to leave?":"출발하려면 얼마나 더 기다려야 해요?",
   "How much longer do we have to wait?":"얼마나 더 기다려야 해요?",
-  "How much longer do we have?":"시간이 얼마나 더 남았어요?",
   "How much longer until boarding starts?":"탑승 시작까지 얼마나 더 남았어요?",
   "How much longer until dinner?":"저녁까지 얼마나 더 남았어요?",
-  "How much longer until it's ready?":"준비되려면 얼마나 더 남았어요?",
-  "How much longer until we finish?":"끝나려면 얼마나 더 남았어요?",
   "How much longer until we get there?":"도착하려면 얼마나 더 남았어요?",
   "How much longer will check-in take?":"체크인 얼마나 더 걸려요?",
 
-  "How much longer will it take from here?":"여기서 얼마나 더 걸려요?",
   "How much longer will it take?":"얼마나 더 걸려요?",
-  "How much longer will the driver take?":"기사님 오시려면 얼마나 더 걸려요?",
   "How much longer will the rain last?":"비 얼마나 더 와요?",
   "How much longer will the tour take?":"투어 얼마나 더 걸려요?",
-  "How much longer will you be?":"얼마나 더 걸리세요?",
   "I can't find my booking email.":"예약 메일을 못 찾겠어요.",
   "I can't find my charger.":"충전기를 못 찾겠어요.",
   "I can't find my driver.":"기사님을 못 찾겠어요.",
@@ -17108,7 +17109,14 @@ const TRAVEL_KR={
   "Where is the taxi stand?":"택시 타는 곳이 어디예요?",
   "Where is the trash can?":"쓰레기통이 어디예요?",
   "Where is the water fountain?":"정수기가 어디예요?",
-  "Where's the toilet?":"화장실이 어디예요?"
+  "Where's the toilet?":"화장실이 어디예요?",
+  "How much longer do we have to wait for the room?":"방 나오려면 얼마나 더 기다려야 해요?",
+  "How much longer do I have to wait for the driver?":"기사님 오시려면 얼마나 더 기다려야 해요?",
+  "How much longer will the food take?":"음식 나오는 데 얼마나 더 걸려요?",
+  "How much longer will the laundry take?":"세탁 되는 데 얼마나 더 걸려요?",
+  "How much longer until we get to the airport?":"공항까지 얼마나 더 남았어요?",
+  "How much longer until the tour starts?":"투어 시작까지 얼마나 더 남았어요?",
+  "How much longer until you close?":"문 닫을 때까지 얼마나 더 남았어요?"
 };
 /* ===================== 🔤 전치사 설명 =====================
    같은 to·for 라도 뒤에 뭐가 오느냐에 따라 뜻이 달라진다.
@@ -17543,9 +17551,19 @@ function travelGrade(it, heard){
   /* 프레임에 ~ 가 있으면 뒤에 뭔가는 붙여야 한다(Can I get ~?).
      문장 자체가 프레임이면(Hello. / How long does it take?) 그대로 말해도 정답이다. */
   const openFrame=/~/.test(String((it.frame&&it.frame.frame)||""));
-  const ok = myOk ? true
+  let ok = myOk ? true
            : frameOk && ((K.needKey && K.key.length) ? keyHit : (openFrame ? extra>0 : true));
-  return { ok, blockHit:frameOk, slotHit:true, slot:missing, hit:want.length-missing.length,
+  /* 같은 상황을 다르게 말해도 맞는 경우가 있다 (짐 기다릴 때 will it be? 도 자연스러움).
+     예문 하나만 정답으로 보면 맞는 영어를 틀렸다고 가르치게 된다. */
+  let altUsed=null;
+  if(!ok && it.alt && it.alt.length){
+    for(let ai=0; ai<it.alt.length; ai++){
+      const sub=Object.assign({}, it, {ex:Object.assign({}, it.ex, {en:it.alt[ai]}), alt:null});
+      let r=null; try{ r=travelGrade(sub, heard); }catch(e){ r=null; }
+      if(r && r.ok){ ok=true; altUsed=it.alt[ai]; break; }
+    }
+  }
+  return { ok, altUsed, blockHit:frameOk, slotHit:true, slot:missing, hit:want.length-missing.length,
            heardNorm:h, altBlock:null, key:K.key, keyMissing, needKey:K.needKey,
            myOk,                                       // 현지어로 말해서 맞음
            keyMiss:(frameOk && !myOk && K.needKey && !keyHit),  // 프레임은 맞는데 핵심 낱말이 없음
@@ -21914,6 +21932,28 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
        </div>` : "";
   const krLine=(function(){ const k=travelKrOf(it.ex.en);
     return k?`<div class="ans-kr" style="font-size:15px;color:#5A463C;font-weight:700;margin-top:6px;line-height:1.45">${escapeHtml(k)}</div>`:""; })();
+  const brBox=(function(){
+    const B=it.frame && it.frame.branches;
+    if(!B || !B.length) return "";
+    const cur=it.br||"";
+    const LAB={do:"①",will:"②",until:"③"};
+    return `<div class="br-box" style="margin-top:8px;padding:10px 12px;background:#FFF7EC;border:1.5px solid #F0D9B5;border-radius:12px;text-align:left">
+      <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C0863A;margin-bottom:6px">🔀 뒤에 오는 건 딱 3가지</span>
+      ${B.map(([k,ko,en])=>{
+        const on=(k===cur);
+        return `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:5px;padding:${on?"5px 7px":"0 7px"};background:${on?"#FFEBCF":"transparent"};border-radius:8px">
+          <b style="flex:none;font-size:13px;color:${on?"#B0602A":"#C9A984"}">${LAB[k]||"·"}</b>
+          <span style="flex:1;min-width:0">
+            <b style="display:block;font-size:12.5px;color:${on?"#7A4B1E":"#9C8A78"};font-weight:800">${escapeHtml(ko)}</b>
+            <span style="display:block;font-size:13px;color:${on?"#B0602A":"#B59B80"};font-family:var(--serif);margin-top:1px">${escapeHtml(en)}</span>
+          </span>
+          ${on?`<span style="flex:none;font-size:10.5px;font-weight:900;color:#fff;background:#C0863A;border-radius:99px;padding:2px 8px">지금 이것</span>`:""}
+        </div>`;
+      }).join("")}
+    </div>`; })();
+  const altBox=(function(){
+    if(!it.alt || !it.alt.length) return "";
+    return `<div style="margin-top:7px;font-size:12.5px;color:#19a06b;font-weight:800;line-height:1.5">👍 이렇게 말해도 맞아요 — ${it.alt.map(a=>'"'+escapeHtml(a)+'"').join(" · ")}</div>`; })();
   const prepBox=(function(){
     let ps=[]; try{ ps=prepNotes(it.ex.en); }catch(e){ ps=[]; }
     if(!ps.length) return "";
@@ -21924,7 +21964,7 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
         <span style="flex:1;font-size:12.5px;color:#443;line-height:1.55"><b style="color:#6B4FA0">${escapeHtml(x.t)}</b> — ${x.d}</span>
       </div>`).join("")}
     </div>`; })();
-  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+krLine+note+prepBox+useTip+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
+  ans.innerHTML=head+`<b>${escapeHtml(it.ex.en)}</b>`+krLine+note+altBox+brBox+prepBox+useTip+myTip+mine+studyPanelHtml(it.ex.en, it.ex.ko, "auto");
   const stat=$("#autoStat"); card.insertBefore(ans, stat);
   try{ speakEn(it.ex.en); }catch(e){}
   bindStudyPanel(ans.querySelector(".study-panel"));
