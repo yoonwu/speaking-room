@@ -2017,7 +2017,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.241";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.242";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -18183,8 +18183,14 @@ function missRecord(it, ok){
     if(ok){ s.ok=(s.ok||0)+1; s.streak=(s.streak||0)+1; }
     else  { s.miss=(s.miss||0)+1; s.streak=0; }
     s.lastT=Date.now();
-    if(s.streak>=MISS_GRADUATE) delete o[en];    // 3연속 정답 → 졸업
-    else o[en]=s;
+    if(s.streak>=MISS_GRADUATE){
+      delete o[en];                              // 3연속 정답 → 졸업
+      try{ bleShowHintToast('🎉 <b>다 외웠어요!</b> 이 문장은 목록에서 빠졌어요 — "'+escapeHtml(en)+'"'); }catch(e){}
+    } else {
+      o[en]=s;
+      if(ok){ const left=MISS_GRADUATE-s.streak;
+        try{ bleShowHintToast('👍 <b>'+left+'번 더</b> 맞히면 목록에서 빠져요'); }catch(e){} }
+    }
     missSave(o);
   }catch(e){}
 }
@@ -18254,6 +18260,10 @@ function openMissPicker(){
         </span>
         <span class="chk-side" style="align-items:flex-end">
           <span style="font-size:10.5px;font-weight:900;color:#C0392B;background:#FBEAE7;border-radius:99px;padding:2px 8px">${m.miss}번 틀림</span>
+          <span style="display:flex;align-items:center;gap:4px;margin-top:5px">
+            ${[0,1,2].map(i=>`<span style="width:9px;height:9px;border-radius:50%;background:${i<(m.streak||0)?"#19a06b":"#E2D6CC"}"></span>`).join("")}
+            <i style="font-size:10px;font-weight:800;color:${(m.streak||0)?"#19a06b":"#B49C8D"};font-style:normal">${(m.streak||0)?(MISS_GRADUATE-(m.streak||0))+"번 더":"연속 0"}</i>
+          </span>
           <button class="missDel" data-en="${escapeHtml(m.en)}" style="margin-top:6px;padding:4px 9px;border:1px solid #E0C6AE;border-radius:9px;background:#fff;color:#B49C8D;font-size:11px;font-weight:800;cursor:pointer">다 외웠어요</button>
         </span>
       </div>`;
@@ -18263,7 +18273,7 @@ function openMissPicker(){
        <div class="hub-grab"></div>
        <div class="hub-title">🔁 자주 틀리는 문장</div>
        <div class="hub-sub">${L.length
-         ? "틀린 문장이 여기 모여요.<br><b>3번 연속 맞히면</b> 목록에서 빠져요."
+         ? "틀린 문장이 여기 모여요.<br><b>연속 "+MISS_GRADUATE+"번</b> 맞히면 목록에서 빠져요 — 오른쪽 점이 진행 상황이에요.<br><span style='font-size:11px;color:#B49C8D'>한 번이라도 틀리면 점이 처음으로 돌아가요.</span>"
          : "아직 없어요.<br>문제를 풀다 틀리면 그 문장이 여기 모입니다."}</div>
        ${L.length?`<div class="chk-list" id="missList">${rows}</div>
        <div style="padding-top:11px;border-top:1px solid #D9CEC6;margin-top:9px">
