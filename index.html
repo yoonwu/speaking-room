@@ -2017,7 +2017,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.240";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.241";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15794,40 +15794,46 @@ const TRAVEL_FRAMES=[
       ,
       {ko:"뭘 좀 사야 한다. 근처에 가게가 있는지 물어라.", en:"Is there a store nearby?"}
     ]},
-  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간",
-    tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?",
-    /* 뒤에 오는 건 딱 3가지. 상황을 보고 고르는 회로를 만드는 게 이 틀의 목적이다.
-       셋은 재는 대상이 다를 뿐 셋 다 '이미 진행 중'을 전제한다. */
+  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(진행 중) 얼마나 더요?", purpose:"남은 시간",
+    tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?<br><br><b style=\"color:#189E79\">주력은 ②번이에요.</b> <b>How much longer will it take?</b> — 뭔가 진행 중이면 거의 다 통해요.<br>음식 · 청소 · 수속 · 이동 · 수리 전부 ②번.<br><br><b style=\"color:#C0653A\">단, 아직 시작도 안 한 일에는 ②를 못 써요.</b><br>탑승 전에 'will it take?' 하면 <b>'뭐가 얼마나 걸린다는 거지?'</b> 하고 되물어요. 탑승이 진행 중이 아니니까요. 그땐 ④ until.<br><br><b>②와 ③의 차이</b><br>· <b>take</b> = 끝나면 결과가 나오는 <b>일</b> (청소 · 조리 · 수속)<br>· <b>last</b> = 계속 이어지는 <b>행사 · 현상</b> (투어 · 비 · 공연)<br>몇 시에 끝나는지가 궁금하면 → What time does the tour end?",
+    /* 네 갈래. 재는 대상이 다르다.
+       ② take 와 ③ last 를 가른 이유 — 투어가 진행 중일 때 'will the tour take?' 보다
+       'will the tour last?' 가 자연스럽다. take 는 끝나면 결과가 나오는 일,
+       last 는 그냥 이어지는 것이다. */
     branches:[
-      ["do","내가 더 기다려야 하는 시간","do I/we have to wait?"],
-      ["will","그 일이 끝나는 데 걸리는 시간","will it take?"],
-      ["until","특정 시점·도착점까지 남은 시간","until ~?"]
+      ["do","내 기다림을 강조","do I/we have to wait?"],
+      ["take","진행 중인 일이 끝나기까지","will it take?"],
+      ["last","진행 중인 행사·현상이 얼마나 더","will it last?"],
+      ["until","아직 시작 안 한 시점까지","until ~?"]
     ],
-    parts:[["How much longer","얼마나 더"],["do I have to wait?","기다려야 해요?"]],
-    pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ until <b>dinner</b>?",
+    parts:[["How much longer","얼마나 더"],["will it take?","걸려요?"]],
+    pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ will <b>the tour</b> last? ④ until <b>boarding</b>?",
     re:"\\bhow much longer\\b",
     items:[
-      /* ① do — 내가 기다리는 시간. 기다리는 대상이 분명할 때만 쓸 수 있다 */
-      {ko:"수하물 벨트 앞이다. 짐이 안 나와 계속 서 있다. 내가 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for my bags?", br:"do", alt:["How much longer will it be?"]},
-      {ko:"식당 앞 대기 명단에 이름을 올렸다. 자리가 안 난다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for a table?", br:"do", alt:["How much longer will it be?"]},
+      /* ① do — 내 기다림을 강조. 기다리는 대상이 분명할 때만 쓸 수 있다 */
+      {ko:"수하물 벨트 앞이다. 짐이 안 나와 계속 서 있다. 내가 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for my bags?", br:"do", alt:["How much longer will it take?"]},
+      {ko:"식당 대기 명단에 이름을 올렸다. 자리가 안 난다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for a table?", br:"do", alt:["How much longer will it be?"]},
       {ko:"픽업 차가 약속 시간이 지나도 안 온다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for the pickup?", br:"do", alt:["How much longer will it be?"]},
       {ko:"방이 준비가 안 돼 로비에서 기다리는 중이다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait for the room?", br:"do", alt:["How much longer will it take?"]},
-      {ko:"배에 탔는데 출발을 안 하고 서 있다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait to leave?", br:"do", alt:["How much longer until we leave?"]},
-      {ko:"Grab 기사를 한참 기다렸는데 안 온다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for the driver?", br:"do", alt:["How much longer will the driver take?"]},
-      /* ② will — 그 일이 끝나는 데 걸리는 시간. 내가 기다리든 아니든 쓸 수 있다 */
-      {ko:"방 청소가 아직 안 끝났다고 한다. 그 일이 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?", br:"will", alt:["How much longer until the room is ready?"]},
-      {ko:"음식을 시킨 지 한참 됐다. 음식 나오는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the food take?", br:"will", alt:["How much longer until the food comes?"]},
-      {ko:"투어가 예상보다 길어지고 있다. 투어가 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the tour take?", br:"will", alt:["How much longer until the tour ends?"]},
-      {ko:"체크인 수속이 시작됐는데 오래 걸린다. 수속이 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will check-in take?", br:"will", alt:["How much longer until we finish?"]},
-      {ko:"세탁을 맡겼는데 아직 안 됐다. 세탁이 되는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the laundry take?", br:"will", alt:["How much longer until it's ready?"]},
-      {ko:"비가 아까부터 계속 온다. 비가 얼마나 더 올지 물어라.", en:"How much longer will the rain last?", br:"will", alt:["How much longer until the rain stops?"]},
-      /* ③ until — 어떤 시점·도착점까지 남은 시간 */
-      {ko:"배를 타고 섬으로 가는 중이다. 도착까지 얼마나 더 남았는지 물어라.", en:"How much longer until we get there?", br:"until", alt:["How much longer will it take?"]},
-      {ko:"게이트 앞이다. 탑승 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until boarding starts?", br:"until", alt:["How much longer will it be?"]},
-      {ko:"배가 고프다. 저녁까지 얼마나 더 남았는지 물어라.", en:"How much longer until dinner?", br:"until", alt:["How much longer will it be?"]},
-      {ko:"택시를 타고 공항으로 가는 중이다. 공항까지 얼마나 더 남았는지 물어라.", en:"How much longer until we get to the airport?", br:"until", alt:["How much longer will it take?"]},
-      {ko:"투어 집합 장소에 미리 와 있다. 투어 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until the tour starts?", br:"until", alt:["How much longer will it be?"]},
-      {ko:"가게에서 구경 중이다. 문 닫을 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until you close?", br:"until", alt:["How much longer will you be open?"]}
+      {ko:"Grab 기사를 한참 기다렸는데 안 온다. 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do I have to wait for the driver?", br:"do", alt:["How much longer will it be?"]},
+      /* ② will ~ take — 진행 중인 '일'이 끝나기까지. 여행 실전의 주력이다 */
+      {ko:"방 청소가 지금 진행 중이라고 한다. 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?", br:"take", alt:["How much longer until the room is ready?"]},
+      {ko:"음식을 시켰고 지금 만드는 중이다. 나오는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the food take?", br:"take", alt:["How much longer until the food comes?"]},
+      {ko:"체크인 수속이 시작됐는데 오래 걸린다. 끝나는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will check-in take?", br:"take", alt:["How much longer will it take?"]},
+      {ko:"택시를 타고 이동하는 중이다. 도착까지 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?", br:"take", alt:["How much longer until we get there?","How much longer will it take to get there?"]},
+      {ko:"세탁을 맡겼는데 아직 안 됐다. 되는 데 얼마나 더 걸리는지 물어라.", en:"How much longer will the laundry take?", br:"take", alt:["How much longer until it's ready?"]},
+      /* ③ will ~ last — 진행 중인 '행사·현상'이 얼마나 더 이어지는지 */
+      {ko:"투어가 이미 진행 중이다. 앞으로 얼마나 더 이어지는지 물어라.", en:"How much longer will the tour last?", br:"last", alt:["How much longer will the tour take?"]},
+      {ko:"비가 아까부터 계속 온다. 앞으로 얼마나 더 올지 물어라.", en:"How much longer will the rain last?", br:"last", alt:["How much longer until the rain stops?"]},
+      {ko:"공연이 시작된 지 한참 됐다. 앞으로 얼마나 더 하는지 물어라.", en:"How much longer will the show last?", br:"last", alt:["How much longer until it ends?"]},
+      {ko:"세일 기간 중이다. 세일이 앞으로 얼마나 더 가는지 물어라.", en:"How much longer will the sale last?", br:"last", alt:["How much longer until the sale ends?"]},
+      {ko:"차가 꽉 막혀 있다. 이 정체가 얼마나 더 갈지 물어라.", en:"How much longer will the traffic last?", br:"last", alt:["How much longer will it take?"]},
+      /* ④ until — 아직 시작도 안 한 시점까지 남은 시간. 여기에 will it take? 를 쓰면 어색하다 */
+      {ko:"게이트 앞이다. 탑승은 아직 시작 전이다. 탑승까지 얼마나 더 남았는지 물어라.", en:"How much longer until boarding?", br:"until", alt:["How much longer until boarding starts?","How much longer do we have to wait?"]},
+      {ko:"배가 고프다. 저녁 시간까지 얼마나 더 남았는지 물어라.", en:"How much longer until dinner?", br:"until", alt:["How much longer will it be?"]},
+      {ko:"투어 집합 장소에 미리 와 있다. 투어 시작까지 얼마나 더 남았는지 물어라.", en:"How much longer until the tour starts?", br:"until", alt:["How much longer do we have to wait?"]},
+      {ko:"입장 줄에 서 있다. 아직 문을 안 열었다. 들어갈 수 있을 때까지 얼마나 더 남았는지 물어라.", en:"How much longer until we can go in?", br:"until", alt:["How much longer until entry starts?"]},
+      {ko:"배에 탔는데 아직 출발 전이다. 출발까지 얼마나 더 남았는지 물어라.", en:"How much longer until we leave?", br:"until", alt:["How much longer do we have to wait to leave?"]}
     ]},
   { id:"travel_whats_difference", frame:"What's the difference between ~ and ~?", tf:"what s the difference between", ko:"~와 ~는 뭐가 달라요?", purpose:"차이 묻기", re:"\\bwhat ?(s|is)? ?the difference between\\b",
     items:[
@@ -16263,12 +16269,9 @@ const TRAVEL_KR={
   "Can I get two tickets, please?":"표 두 장 주세요.",
   "Can I get two tickets?":"표 두 장 주세요.",
   "Can I leave a message for him?":"그분께 메시지 좀 남겨도 될까요?",
-
   "Can I leave my backpack here?":"여기 배낭 좀 맡겨도 될까요?",
-
   "Can I leave my bags here until evening?":"저녁까지 여기 가방 좀 맡겨도 될까요?",
   "Can I leave my bags here?":"여기 가방 좀 맡겨도 될까요?",
-
   "Can I leave my gear here for a bit?":"여기 장비 잠깐 둬도 될까요?",
   "Can I leave my jacket here?":"여기 겉옷 좀 맡겨도 될까요?",
   "Can I leave my luggage here until this evening?":"오늘 저녁까지 여기 짐 좀 맡겨도 될까요?",
@@ -16313,7 +16316,6 @@ const TRAVEL_KR={
   "Can I pay the bill by card?":"계산서 카드로 결제돼요?",
   "Can I pay the deposit by card?":"보증금 카드로 결제돼요?",
   "Can I pay the fare by card?":"요금 카드로 결제돼요?",
-
   "Can I pay the rest by card?":"나머지 카드로 결제돼요?",
   "Can I pay the taxi fare by card?":"택시 요금 카드로 결제돼요?",
   "Can I return this?":"이거 반품해도 될까요?",
@@ -16414,7 +16416,6 @@ const TRAVEL_KR={
   "Could you say the date again, more slowly?":"날짜 다시 천천히 말씀해 주실래요?",
   "Could you say the directions again, more slowly?":"길 다시 천천히 말씀해 주실래요?",
   "Could you say the discount again, more slowly?":"할인 조건 다시 천천히 말씀해 주실래요?",
-
   "Could you say the instructions again, more slowly?":"방법 다시 천천히 말씀해 주실래요?",
   "Could you say the last part again, more slowly?":"마지막 부분 다시 천천히 말씀해 주실래요?",
   "Could you say the meeting point again, more slowly?":"집합 장소 다시 천천히 말씀해 주실래요?",
@@ -16428,7 +16429,6 @@ const TRAVEL_KR={
   "Could you say the room number again, more slowly?":"방 번호 다시 천천히 말씀해 주실래요?",
   "Could you say the stop again, more slowly?":"내릴 곳 다시 천천히 말씀해 주실래요?",
   "Could you say the time again, more slowly?":"시간 다시 천천히 말씀해 주실래요?",
-
   "Could you say the word again, more slowly?":"그 단어 다시 천천히 말씀해 주실래요?",
   "Could you say your email again, more slowly?":"이메일 주소 다시 천천히 말씀해 주실래요?",
   "Could you take a photo of us?":"저희 사진 좀 찍어주실래요?",
@@ -16643,7 +16643,6 @@ const TRAVEL_KR={
   "How much is one more night?":"하루 더 묵으면 얼마예요?",
   "How much is one?":"하나에 얼마예요?",
   "How much is parking?":"주차비 얼마예요?",
-
   "How much is the airport pickup?":"공항 픽업 얼마예요?",
   "How much is the deposit?":"보증금 얼마예요?",
   "How much is the entrance fee?":"입장료 얼마예요?",
@@ -16662,16 +16661,13 @@ const TRAVEL_KR={
   "How much longer do I have to wait for my bags?":"제 짐 나오려면 얼마나 더 기다려야 해요?",
   "How much longer do we have to wait for a table?":"자리 나려면 얼마나 더 기다려야 해요?",
   "How much longer do we have to wait for the pickup?":"픽업 오려면 얼마나 더 기다려야 해요?",
-  "How much longer do we have to wait to leave?":"출발하려면 얼마나 더 기다려야 해요?",
   "How much longer do we have to wait?":"얼마나 더 기다려야 해요?",
   "How much longer until boarding starts?":"탑승 시작까지 얼마나 더 남았어요?",
   "How much longer until dinner?":"저녁까지 얼마나 더 남았어요?",
   "How much longer until we get there?":"도착하려면 얼마나 더 남았어요?",
   "How much longer will check-in take?":"체크인 얼마나 더 걸려요?",
-
   "How much longer will it take?":"얼마나 더 걸려요?",
   "How much longer will the rain last?":"비 얼마나 더 와요?",
-  "How much longer will the tour take?":"투어 얼마나 더 걸려요?",
   "I can't find my booking email.":"예약 메일을 못 찾겠어요.",
   "I can't find my charger.":"충전기를 못 찾겠어요.",
   "I can't find my driver.":"기사님을 못 찾겠어요.",
@@ -16786,7 +16782,6 @@ const TRAVEL_KR={
   "Is parking included?":"주차 포함이에요?",
   "Is pickup included?":"픽업 포함이에요?",
   "Is rice included?":"밥 포함이에요?",
-
   "Is snorkeling gear included?":"스노클 장비 포함이에요?",
   "Is tax included?":"세금 포함이에요?",
   "Is the boat ride included?":"배 타는 것도 포함이에요?",
@@ -16963,7 +16958,6 @@ const TRAVEL_KR={
   "What should I do then?":"그럼 어떻게 해야 해요?",
   "What should I do to get a refund?":"환불받으려면 어떻게 해야 해요?",
   "What should I do with the key?":"열쇠는 어떻게 해야 해요?",
-
   "What should I do with the tray?":"쟁반은 어떻게 해야 해요?",
   "What should I do with this form?":"이 서류는 어떻게 해야 해요?",
   "What should I do?":"어떻게 해야 해요?",
@@ -16971,7 +16965,6 @@ const TRAVEL_KR={
   "What should we do about the noise?":"소음은 어떻게 해야 해요?",
   "What should we do about the schedule?":"일정은 어떻게 해야 해요?",
   "What should we do about the wait?":"기다리는 건 어떻게 해야 해요?",
-
   "What should we do if it rains?":"비 오면 어떻게 해야 해요?",
   "What should we do if the boat is canceled?":"배가 취소되면 어떻게 해야 해요?",
   "What should we do if the tour is canceled?":"투어가 취소되면 어떻게 해야 해요?",
@@ -17066,7 +17059,6 @@ const TRAVEL_KR={
   "Where do we meet for dinner?":"저녁 먹으러 어디서 만나요?",
   "Where do we meet for lunch?":"점심 먹으러 어디서 만나요?",
   "Where do we meet for the boat trip?":"배 타는 건 어디서 만나요?",
-
   "Where do we meet for the tour?":"투어는 어디서 만나요?",
   "Where do we meet if we get separated?":"떨어지면 어디서 만나요?",
   "Where do we meet in the hotel?":"호텔 어디서 만나요?",
@@ -17075,7 +17067,6 @@ const TRAVEL_KR={
   "Where do we meet the driver?":"기사님은 어디서 만나요?",
   "Where do we meet the group?":"일행은 어디서 만나요?",
   "Where do we meet the guide?":"가이드는 어디서 만나요?",
-
   "Where do we meet the taxi?":"택시는 어디서 타요?",
   "Where do we meet tomorrow morning?":"내일 아침에 어디서 만나요?",
   "Where do we meet?":"어디서 만나요?",
@@ -17114,9 +17105,14 @@ const TRAVEL_KR={
   "How much longer do I have to wait for the driver?":"기사님 오시려면 얼마나 더 기다려야 해요?",
   "How much longer will the food take?":"음식 나오는 데 얼마나 더 걸려요?",
   "How much longer will the laundry take?":"세탁 되는 데 얼마나 더 걸려요?",
-  "How much longer until we get to the airport?":"공항까지 얼마나 더 남았어요?",
   "How much longer until the tour starts?":"투어 시작까지 얼마나 더 남았어요?",
-  "How much longer until you close?":"문 닫을 때까지 얼마나 더 남았어요?"
+  "How much longer will the tour last?":"투어가 앞으로 얼마나 더 이어져요?",
+  "How much longer will the show last?":"공연이 앞으로 얼마나 더 해요?",
+  "How much longer will the sale last?":"세일이 앞으로 얼마나 더 가요?",
+  "How much longer will the traffic last?":"이 정체가 얼마나 더 갈까요?",
+  "How much longer until boarding?":"탑승까지 얼마나 더 남았어요?",
+  "How much longer until we can go in?":"들어갈 수 있을 때까지 얼마나 더 남았어요?",
+  "How much longer until we leave?":"출발까지 얼마나 더 남았어요?"
 };
 /* ===================== 🔤 전치사 설명 =====================
    같은 to·for 라도 뒤에 뭐가 오느냐에 따라 뜻이 달라진다.
@@ -21936,9 +21932,9 @@ function autoDrillShowResult(it, canRetry, wasPerfect){
     const B=it.frame && it.frame.branches;
     if(!B || !B.length) return "";
     const cur=it.br||"";
-    const LAB={do:"①",will:"②",until:"③"};
+    const LAB={do:"①",take:"②",last:"③",until:"④"};
     return `<div class="br-box" style="margin-top:8px;padding:10px 12px;background:#FFF7EC;border:1.5px solid #F0D9B5;border-radius:12px;text-align:left">
-      <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C0863A;margin-bottom:6px">🔀 뒤에 오는 건 딱 3가지</span>
+      <span style="display:block;font-size:10px;font-weight:900;letter-spacing:.08em;color:#C0863A;margin-bottom:6px">🔀 뒤에 오는 건 딱 ${B.length}가지</span>
       ${B.map(([k,ko,en])=>{
         const on=(k===cur);
         return `<div style="display:flex;gap:8px;align-items:flex-start;margin-top:5px;padding:${on?"5px 7px":"0 7px"};background:${on?"#FFEBCF":"transparent"};border-radius:8px">
