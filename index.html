@@ -2017,7 +2017,7 @@ body{background:var(--paper)!important;color:var(--text)}
    ⬇⬇⬇  여기 한 줄만 네 Worker 주소로 바꾸면 끝  ⬇⬇⬇
    ============================================================ */
 const PROXY_URL = "https://speaking-room.thdghkstlr.workers.dev";
-const APP_VERSION = "v3.99.236";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
+const APP_VERSION = "v3.99.237";   // ← 배포할 때마다 이 숫자 올리면 앱 하단에 표시됨
 const APP_BUILD = "2026-08-15";
 // 🔧 일회성 정리: 단어가 같은 5개로 갇히는 옛 상태(미완료 세트/AI 캐시) 비우기
 try{
@@ -15794,7 +15794,7 @@ const TRAVEL_FRAMES=[
       ,
       {ko:"뭘 좀 사야 한다. 근처에 가게가 있는지 물어라.", en:"Is there a store nearby?"}
     ]},
-  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간", tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?<br><br><b style=\"color:#C0653A\">뒤에 오는 건 딱 3가지예요.</b><br>① <b>do</b> ~ → How much longer <b>do I have to wait?</b><br>② <b>will</b> ~ → How much longer <b>will it take?</b><br>③ <b>until</b> ~ → How much longer <b>until dinner?</b><br><b style=\"color:#189E79\">헷갈리면 ①번 하나만 쓰세요.</b> ②③ 자리에 다 넣어도 통해요.", parts:[["How much longer","얼마나 더"],["do I have to wait?","기다려야 해요?"]], pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리일 뿐이라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ until <b>dinner</b>?<br>③ until 뒤에는 <b>기다리는 대상</b>이 와요 — 사람·일이면 문장으로(until we get there), 그냥 일이면 낱말로(until dinner).", re:"\\bhow much longer\\b",
+  { id:"travel_how_much_longer", frame:"How much longer ~?", tf:"how much longer", ko:"(기다리는 중) 얼마나 더요?", purpose:"남은 시간", tip:"<b>이미 시작된 일</b>의 남은 시간이에요.<br>줄 서 있는 중 · 타고 가는 중 · 기다리는 중 → <b>How much longer?</b><br>아직 시작 전이라 전체 시간을 물으면 → How long does it take?<br><br><b style=\"color:#C0653A\">뒤에 오는 건 딱 3가지예요.</b><br>① <b>do</b> ~ → How much longer <b>do I have to wait?</b><br>② <b>will</b> ~ → How much longer <b>will it take?</b><br>③ <b>until</b> ~ → How much longer <b>until dinner?</b><br><br><b style=\"color:#189E79\">고르는 기준은 하나예요 — 내가 기다리는 중이냐.</b><br>· <b>기다리는 중</b>이면 ① — 줄 서서 · 짐 앞에서 · 자리 나길<br>· <b>그 일 안에 있으면</b> ② — 택시 타고 가는 중 · 투어 중 · 비 오는 중<br>투어 중에 'do I have to wait?' 라고 하면 이상해요. 기다리는 게 아니라 <b>하는 중</b>이니까요.<br>③ until 은 ①② 로 바꿔 말해도 돼요.", parts:[["How much longer","얼마나 더"],["do I have to wait?","기다려야 해요?"]], pnote:"<b>How much longer</b> 에는 주어가 없어요 — '얼마나 더'라는 말 덩어리일 뿐이라, 주어는 뒤에 붙는 말에 있어요.<br>① do <b>I</b> have to wait? ② will <b>it</b> take? ③ until <b>dinner</b>?<br>③ until 뒤에는 <b>기다리는 대상</b>이 와요 — 사람·일이면 문장으로(until we get there), 그냥 일이면 낱말로(until dinner).<br><b>18문장 중 12개</b>는 ①로 바꿔 말해도 되고, 6개는 안 돼요 — 그 6개가 바로 <b>내가 그 일 안에 있는</b> 상황이에요.", re:"\\bhow much longer\\b",
     items:[
       {ko:"방이 아직 준비가 안 돼 한참 기다렸다. 앞으로 얼마나 더 기다려야 하는지 물어라.", en:"How much longer do we have to wait?"},
       {ko:"음식을 시킨 지 한참 됐다. 지금부터 얼마나 더 걸리는지 물어라.", en:"How much longer will it take?"},
