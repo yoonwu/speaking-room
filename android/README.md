@@ -1,10 +1,14 @@
-# 3초영어 안드로이드 통합판 (0.2 시험 버전)
+# 3초영어 안드로이드 앱
 
 기존 `index.html`과 학습 자료를 APK에 그대로 포함합니다. 첫 화면은 기존 3초영어이며, 별도 주제 선택 앱 대신 기존 스피킹 훈련장의 상황을 이어갑니다. Android 8 이상에서 사용할 수 있습니다.
 
-## 업데이트와 사용
+## 배포 준비
 
-1. 이전에 설치한 시험 앱을 삭제하지 말고 새 APK를 위에 설치합니다. 같은 패키지·서명이고 versionCode는 2입니다. 기존 구독 로그인은 유지됩니다.
+현재 0.3.0 / versionCode 3의 Play 배포용 빌드를 준비합니다. 아직 스토어에 등록되지 않았습니다. 정식 사용자 배포는 Play 스토어를 사용하며 APK 직접 설치·보안 해제는 안내하지 않습니다. [Play 제출 준비와 남은 항목](PLAY-RELEASE.md)을 참고하세요.
+
+## 앱 사용
+
+1. 정식 배포가 완료되면 Play 스토어에서 설치·업데이트합니다. 이전 개인 시험 APK와는 서명이 달라질 수 있으므로 기록은 먼저 내보내거나 동기화합니다.
 2. 앱을 열고 `구독·음성` → `ChatGPT 구독 설정`을 누릅니다. `Continue with ChatGPT` → 모델 불러오기 → 모델 선택 → 연결 테스트를 완료합니다. 성공한 모델만 기존 학습의 AI 요청에 적용됩니다.
 3. 기존 스피킹 훈련장 → 실전회화에서 상황을 선택하고 대화를 시작합니다. 상대의 첫 질문을 받은 뒤 `구독·음성` → `현재 대화에서 음성 시작`을 누릅니다.
 4. 상대가 말한 뒤 영어로 답하면 같은 상황이 이어지고 기존 대화 화면과 학습 평가에 반영됩니다. 듣는 동안 `Repeat`, `Help`, `Stop`을 말할 수 있습니다. 도움말 요청은 학습 성공으로 기록하지 않습니다.
@@ -30,11 +34,11 @@ foreground microphone/media service, 제한된 wake lock을 사용합니다. 최
 
 ## 빌드와 검증
 
-JDK 17, Android SDK 35:
+JDK 17, Android SDK 36:
 
 ```powershell
 cd android
-.\gradlew.bat assembleDebug testDebugUnitTest lintDebug
+.\gradlew.bat bundleRelease testDebugUnitTest lintRelease
 cd ..
 node --test android/tests/native-integration.test.cjs
 ```

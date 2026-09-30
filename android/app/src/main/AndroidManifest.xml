@@ -15,6 +15,7 @@
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
         <activity android:name=".PlanSettingsActivity" android:exported="false" />
+        <activity android:name=".PrivacyActivity" android:exported="false" />
         <service android:name=".VoiceService" android:exported="false" android:foregroundServiceType="microphone|mediaPlayback" />
     </application>
 </manifest>

@@ -31,6 +31,7 @@ public final class PlanSettingsActivity extends Activity {
         });
         ScrollView scroll = new ScrollView(this); scroll.addView(content); setContentView(scroll);
         button("← 3초영어로 돌아가기", content, this::finish);
+        button("개인정보 처리 안내", content, () -> startActivity(new Intent(this, PrivacyActivity.class)));
         TextView title = text("3초영어 · 구독 설정", 26); content.addView(title);
         content.addView(text("ChatGPT 구독으로 짧은 일상 대화 연습\n설치·로그인·테스트는 정차한 상태에서 완료해주세요.", 16));
         account = text(plan.label(), 14); content.addView(account);
@@ -65,6 +66,13 @@ public final class PlanSettingsActivity extends Activity {
         logout = button("로그아웃", content, () -> {
             if (busy) return; stopService(new Intent(this, VoiceService.class));
             work(() -> { String message = plan.logout(); runOnUiThread(() -> { tested = false; modelData = new JSONArray(); models.setAdapter(null); show(message); }); });
+        });
+        button("저장된 ChatGPT 연결 정보 모두 삭제", content, () -> {
+            if(busy || VoiceService.running) { show("진행 중인 연결이나 음성 대화를 멈춰주세요."); return; }
+            new AlertDialog.Builder(this).setTitle("이 기기의 계정 연결 정보 삭제")
+                .setMessage("저장된 모든 ChatGPT 로그인 정보를 이 기기에서 삭제합니다. ChatGPT 계정과 학습 기록은 삭제되지 않습니다. 서버의 앱 권한은 ChatGPT 설정에서도 해제해주세요.")
+                .setPositiveButton("삭제", (d,w) -> { plan.forgetAccounts(); getSharedPreferences("native",MODE_PRIVATE).edit().clear().apply(); modelData=new JSONArray(); models.setAdapter(null); refresh(); show("기기에 저장된 계정 연결 정보를 삭제했습니다."); })
+                .setNegativeButton("취소",null).show();
         });
         refresh();
     }

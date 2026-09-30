@@ -111,6 +111,7 @@ public final class MainActivity extends Activity {
         });
         } else { new AlertDialog.Builder(this).setMessage("Android System WebView 또는 Chrome을 업데이트해주세요.").setPositiveButton("확인", (d,w)->finish()).show(); return; }
         VoiceService.observer = ignored -> runOnUiThread(this::drainVoice);
+        if(Build.VERSION.SDK_INT>=33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::leaveScenario);
         web.loadUrl(ORIGIN + "/assets/index.html");
     }
     static boolean trusted(Uri u) { return u != null && "https".equals(u.getScheme()) && "appassets.androidplatform.net".equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/assets/"); }
@@ -152,6 +153,7 @@ public final class MainActivity extends Activity {
         super.onRequestPermissionsResult(request, permissions, grants);
         if(request==21 && microphoneRequest!=null) { PermissionRequest pending=microphoneRequest; microphoneRequest=null; if(grants.length>0 && grants[0]==PackageManager.PERMISSION_GRANTED && trusted(Uri.parse(web.getUrl()))) pending.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}); else pending.deny(); }
     }
-    @Override public void onBackPressed() { web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
+    private void leaveScenario() { web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
+    @Override public void onBackPressed() { leaveScenario(); }
     @Override protected void onDestroy() { VoiceService.observer = null; stopService(new Intent(this,VoiceService.class)); if (fileChoice != null) fileChoice.onReceiveValue(null); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
 }

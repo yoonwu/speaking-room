@@ -83,7 +83,7 @@ final class PlanClient {
                     .appendQueryParameter("state", state).appendQueryParameter("nonce", nonce)
                     .appendQueryParameter("code_challenge_method", "S256")
                     .appendQueryParameter("code_challenge", b64(MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII))));
-                if (old == null) url.appendQueryParameter("agent_name_hint", "Speaking Room Voice");
+                if (old == null) url.appendQueryParameter("agent_name_hint", "3초영어");
                 else if (old.has("id_token")) url.appendQueryParameter("id_token_hint", old.getString("id_token"));
                 listener.openBrowser(url.build().toString());
                 Uri incoming = null;
@@ -97,7 +97,7 @@ final class PlanClient {
                         String[] request = line.split(" ");
                         Uri candidate = request.length >= 2 ? Uri.parse("http://127.0.0.1" + request[1]) : null;
                         boolean valid = candidate != null && "/auth/callback".equals(candidate.getPath()) && state.equals(candidate.getQueryParameter("state"));
-                        String body = valid ? "Login received. Return to Speaking Room Voice." : "Invalid callback.";
+                        String body = valid ? "로그인을 받았습니다. 3초영어 앱으로 돌아가세요." : "Invalid callback.";
                         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
                         OutputStream out = socket.getOutputStream();
                         out.write(("HTTP/1.1 " + (valid ? "200 OK" : "400 Bad Request") + "\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: " + bytes.length + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
@@ -191,6 +191,11 @@ final class PlanClient {
         try { if (account != null) { JSONObject mapping = new JSONObject().put("client_id", account.getString("client_id")).put("subject", account.getString("subject")).put("email", account.optString("email")); save(mapping); account = mapping; } }
         catch (Exception e) { prefs.edit().remove("credentials").apply(); account = null; }
         return result;
+    }
+    synchronized void forgetAccounts() {
+        cancelLogin();
+        prefs.edit().remove("credentials").apply();
+        account = null;
     }
     private JSONObject load() throws Exception {
         JSONObject stored = loadRaw(); if (stored == null) return null;
