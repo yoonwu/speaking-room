@@ -6,12 +6,21 @@ android {
         applicationId 'com.speakingroom.voice'
         minSdk 26
         targetSdk 35
-        versionCode 1
-        versionName '0.1.0-preview'
+        versionCode 2
+        versionName '0.2.0-integrated-preview'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDirs = [layout.buildDirectory.dir('webAssets')]
 }
+tasks.register('bundleWebApp', Copy) {
+    from(rootProject.file('..')) { include 'index.html', 'android-native.js', 'android-voice.html', 'shadowing.html', '*-bank.json', 'icon*.png', 'manifest.webmanifest' }
+    into layout.buildDirectory.dir('webAssets')
+}
+tasks.named('preBuild').configure { dependsOn 'bundleWebApp' }
 dependencies {
+    // Pinned for the SDK 35 preview; dependency updates need a separate compatibility check.
+    //noinspection GradleDependency
+    implementation 'androidx.webkit:webkit:1.12.1'
     implementation 'com.nimbusds:nimbus-jose-jwt:9.47'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20240303'

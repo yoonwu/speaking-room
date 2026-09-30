@@ -7,6 +7,10 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import static org.junit.Assert.*;
 
 public class ProtocolTest {
+    @Test public void learningMetadataIsNeverSpoken() {
+        assertEquals("Where are you going?", SpeechText.clean("Where are you going? ⟦USED:ble:test⟧ ⟦TURN_EVAL:{\"communication\":80,\"fix\":\"text\"}⟧"));
+        assertEquals("Okay.", SpeechText.clean("Okay.\nUSED:abc\nTURN_EVAL:{\"x\":2}"));
+    }
     @Test public void completedStreamAcceptsOnlyFinishedOutput() throws Exception {
         String stream = "data: {\"type\":\"response.output_text.delta\",\"delta\":\"Hello\"}\n\ndata: {\"type\":\"response.output_text.delta\",\"delta\":\" there\"}\n\ndata: {\"type\":\"response.completed\",\"response\":{\"status\":\"completed\"}}\n\n";
         assertEquals("Hello there", ResponseStream.read(new StringReader(stream)));

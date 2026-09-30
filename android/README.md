@@ -1,62 +1,46 @@
-# 3초영어 안드로이드 음성 앱 (시험 버전)
+# 3초영어 안드로이드 통합판 (0.2 시험 버전)
 
-기존 웹앱과 같은 저장소에 추가한 네이티브 음성 앱입니다. 웹앱의 학습 기록은 아직 공유하지 않습니다. Android 8.0 이상에서 설치할 수 있습니다.
+기존 `index.html`과 학습 자료를 APK에 그대로 포함합니다. 첫 화면은 기존 3초영어이며, 별도 주제 선택 앱 대신 기존 스피킹 훈련장의 상황을 이어갑니다. Android 8 이상에서 사용할 수 있습니다.
 
-## 연결 방식
+## 업데이트와 사용
 
-- ChatGPT의 공식 Sign in with ChatGPT 공개 클라이언트 OAuth 흐름을 사용합니다. 앱 이름은 `Speaking Room Voice`입니다.
-- 시스템 브라우저 로그인, 기기 안 `127.0.0.1` 콜백, PKCE/state/nonce, JWKS 서명·issuer·audience·만료 검증을 구현했습니다.
-- 기기마다 고정 host ID를 보관하고 계정별 issued client ID와 자격 정보를 분리합니다.
-- 계정 토큰은 Android Keystore AES-GCM으로 암호화해 앱 전용 저장소에 보관합니다. 서버·웹앱·로그로 보내지 않으며 백업·기기 이전을 차단합니다.
-- 계정의 모델 목록을 불러온 뒤 실제 연결 테스트가 완료되어야 AI 대화를 시작할 수 있습니다. 모델 목록만 보인다고 이용 권한이 검증되는 것은 아닙니다.
-- AI에는 인식된 텍스트만 보냅니다. 음성 인식과 읽어주기는 Android 기능을 사용합니다. 기기 음성 인식 서비스는 오디오를 Google 등 제공업체 서버로 보낼 수 있습니다.
-- 계정·앱의 구독 사용 승인과 한도가 적용됩니다. 크레딧 허용 여부는 ChatGPT 설정에서 관리합니다. 별도 API 키 결제나 Claude 호출로 자동 전환하지 않습니다.
+1. 이전에 설치한 시험 앱을 삭제하지 말고 새 APK를 위에 설치합니다. 같은 패키지·서명이고 versionCode는 2입니다. 기존 구독 로그인은 유지됩니다.
+2. 앱을 열고 `구독·음성` → `ChatGPT 구독 설정`을 누릅니다. `Continue with ChatGPT` → 모델 불러오기 → 모델 선택 → 연결 테스트를 완료합니다. 성공한 모델만 기존 학습의 AI 요청에 적용됩니다.
+3. 기존 스피킹 훈련장 → 실전회화에서 상황을 선택하고 대화를 시작합니다. 상대의 첫 질문을 받은 뒤 `구독·음성` → `현재 대화에서 음성 시작`을 누릅니다.
+4. 상대가 말한 뒤 영어로 답하면 같은 상황이 이어지고 기존 대화 화면과 학습 평가에 반영됩니다. 듣는 동안 `Repeat`, `Help`, `Stop`을 말할 수 있습니다. 도움말 요청은 학습 성공으로 기록하지 않습니다.
+5. `지난 대화 반복 · AI 요청 없음`은 저장한 상대의 질문을 다시 듣고 답하는 모드입니다. AI 호출이나 자동 채점은 없습니다.
 
-## 설치와 최초 설정
+## 기존 기록 가져오기
 
-1. 전달된 `speaking-room-voice-preview.apk`를 휴대폰으로 옮겨 설치합니다. Android의 파일을 여는 앱에 한해 필요한 경우 설치 권한을 허용합니다. Play 스토어 배포본이 아닌 개인 시험용 디버그 APK입니다.
-2. `3초영어 음성`을 엽니다. `Continue with ChatGPT`를 누르고 기존 구독 계정으로 로그인합니다. 앱의 구독 사용을 승인한 뒤 이 앱으로 돌아옵니다. 계정/지역/프리뷰 정책에 따라 연결이 거절될 수 있습니다.
-3. `사용 가능한 모델 불러오기` → 모델 선택 → `연결 테스트`를 누릅니다. 이 테스트는 구독 사용량을 소량 사용합니다.
-4. 마이크·알림 권한을 허용하고 영어 음성 인식/읽기 데이터를 준비합니다. `안드로이드 음성 설정` 버튼을 이용할 수 있습니다.
-5. 정차한 상태에서 주제를 선택하고 `5분 음성 연습 시작`을 누릅니다. 상대가 말을 마치면 영어로 답합니다.
-6. 듣는 동안 `Repeat`(다시 듣기), `Help`(예시 요청), `Stop`(종료)을 말할 수 있습니다. 상대가 말하는 동안에는 음성 명령을 인식하지 않습니다. 알림의 멈추기 버튼으로 종료할 수 있습니다.
-7. AI 대화 이후 `지난 대화 반복 · AI 요청 없음`을 누르면 저장된 질문에 다시 답합니다. 이 모드는 AI가 답을 채점하지 않으며 새 AI 요청을 보내지 않습니다. 마지막 대화 질문만 기기 안에 저장합니다.
+브라우저와 설치 앱의 저장 공간은 다릅니다. 기존 웹에서 사용한 동기화 닉네임으로 앱에서도 연결하면 기존 클라우드 기록을 가져옵니다. 닉네임은 기존 웹 설정에서 먼저 확인하세요. 로컬 기록은 통합 메뉴의 `학습 기록 파일 저장` / `가져오기`로 옮길 수 있습니다. 이 파일에는 개발자 GitHub 토큰과 계정 자격 정보를 포함하지 않습니다. 브라우저 쪽 파일 내보내기 메뉴는 이 변경이 웹에 배포된 후 표시됩니다.
 
-## 잠금 화면과 차량 오디오 확인
+## 구현과 구독 연결
 
-마이크/재생 foreground service와 최대 6분의 partial wake lock을 사용합니다. 대화는 최대 6번 답하거나 5분 후 종료합니다. 전화·다른 오디오의 focus loss, 반복 인식 오류, AI 요청 오류가 발생하면 종료합니다. 프로세스가 종료되어도 몰래 재시작하지 않습니다.
+- 공개 클라이언트용 공식 Sign in with ChatGPT OAuth: 시스템 브라우저, localhost 콜백, PKCE/state/nonce, JWKS·issuer·audience·만료 검증.
+- 토큰은 Android Keystore AES-GCM으로 암호화하며 웹 JavaScript나 학습 파일로 전달하지 않습니다. 계정별 client ID를 보관하고 계정 선택·로그아웃을 지원합니다.
+- WebViewAssetLoader의 HTTPS 앱 전용 출처에서 기존 UI를 엽니다. 네이티브 메시지 연결은 해당 출처의 최상위 문서만 허용합니다.
+- 설치 앱에서는 `callClaude`의 기존 호출 계약을 네이티브 Responses 요청으로 연결합니다. 구독 연결 실패 시 별도 API 키 결제나 Claude 프록시로 자동 전환하지 않습니다. 일반 브라우저의 기존 동작은 유지합니다.
+- 음성 서비스가 기존 역할 지침과 대화 이력을 받아 이어가며, 사용자 발화·응답·USED/TURN_EVAL을 원래 UI의 기록 함수로 전달합니다. 메타데이터는 읽어주기에서 제거합니다.
+- 음성 인식과 읽어주기는 Android 기능입니다. 인식 서비스에 따라 오디오가 Google 등 제공업체 서버로 전달될 수 있습니다. ChatGPT 앱의 음성모드를 내장한 것은 아닙니다.
+- 구독 한도와 계정의 앱 사용 승인이 적용됩니다. 크레딧 사용 허용 여부는 [ChatGPT 설정](https://chatgpt.com/settings/usage)에서 관리합니다.
 
-휴대폰 제조사, 설치된 음성 인식 서비스, 영어 모델, 절전 설정, 블루투스 오디오 경로에 따라 화면 잠금 상태의 인식과 재생이 다릅니다. 자동차 Bluetooth 마이크 경로는 별도 실기기 검증 전까지 지원을 보장하지 않습니다. Android Auto 앱이 아닙니다.
+## 음성 동작 범위
 
-출발 전에 아래를 정차 상태에서 확인하세요. 운전 중 화면 조작으로 복구하지 마세요.
+foreground microphone/media service, 제한된 wake lock을 사용합니다. 최대 6번 답하거나 5분 후 종료하며, 통화·오디오 충돌·반복 인식 오류에서 멈춥니다. 상대가 말하는 동안에는 명령을 듣지 않습니다. 화면 잠금과 차량 Bluetooth는 제조사·음성 서비스에 따라 다르며 실제 휴대폰 검증 전에는 지원을 보장할 수 없습니다. 시작·설정·문제 복구는 정차 상태에서 진행하세요.
 
-- 휴대폰 자체 스피커로 질문/답변이 왕복되는지 확인합니다.
-- 화면을 잠근 상태에서 최소 두 번 대화를 이어보고 `Stop`으로 종료합니다.
-- 같은 검사를 차량 Bluetooth 연결 상태에서 따로 수행합니다.
-- 끊기면 정차 후 Google 음성 인식의 영어 데이터, TTS 영어 음성, 앱 권한, 해당 기기의 배터리 제한을 확인합니다.
+## 빌드와 검증
 
-## 검증 범위
-
-빌드·JVM 테스트·Android Lint는 개발 PC에서 실행합니다. 실제 계정 로그인, 구독 Responses 요청, 실기기 마이크·TTS, 잠금 화면·Bluetooth는 휴대폰 로그인과 실기기 테스트가 필요합니다. 설치 가능한 APK 생성은 이 테스트들의 성공을 의미하지 않습니다.
-
-## 빌드
-
-JDK 17과 Android SDK 35가 필요합니다. SDK 경로를 `local.properties` 또는 환경 변수로 지정하고 실행합니다.
+JDK 17, Android SDK 35:
 
 ```powershell
 cd android
 .\gradlew.bat assembleDebug testDebugUnitTest lintDebug
+cd ..
+node --test android/tests/native-integration.test.cjs
 ```
 
-결과: `app/build/outputs/apk/debug/app-debug.apk`. 개인 디버그 서명은 다른 컴퓨터 빌드와 다를 수 있습니다. 업데이트 배포 전에는 별도 유지 가능한 release 서명을 설정해야 합니다.
+`bundleWebApp`이 저장소의 기존 UI와 JSON 학습 자료를 assets로 복사합니다. 결과는 `android/app/build/outputs/apk/debug/app-debug.apk`입니다. 개인 시험용 디버그 서명이므로 다른 PC에서 빌드할 경우 서명이 달라질 수 있습니다.
 
-## 공식 문서
+자동 검증은 OAuth 응답 검증·SSE 완료 처리·메타데이터 제거와 기존 대화/학습 기록 연결, 중복 이벤트, 도움말 평가 제외, 자격 정보 제외, 구독 호출 경로를 확인합니다. 실제 계정 로그인, 휴대폰 마이크·읽어주기, 화면 잠금·Bluetooth는 실기기 테스트가 남아 있습니다.
 
-- https://developers.openai.com/siwc/token-sharing-open-source/sign-in
-- https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions
-- https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference
-- https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations
-- https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start
-- https://developer.android.com/reference/android/speech/SpeechRecognizer
-
-구독 연결의 현재 프리뷰는 오디오 입력/전사 API를 지원하지 않으므로 ChatGPT 앱의 실시간 음성모드를 그대로 내장하지 않습니다. 텍스트 요청과 기기 음성 기능을 조합한 별도 구현입니다.
+공식 문서: [로그인](https://developers.openai.com/siwc/token-sharing-open-source/sign-in), [계정 관리](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions), [모델·추론](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference), [프리뷰 제한](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations), [Android 로컬 웹 콘텐츠](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content).

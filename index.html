@@ -1770,9 +1770,9 @@ body{background:var(--paper)!important;color:var(--text)}
           <span class="eng-tx"><b>자주 틀리는 문장</b><i id="engMissSub">틀린 문장만 모아서 반복해요</i></span>
           <span class="eng-ar">›</span>
         </button>
-        <a class="eng eng-out eng-core" href="android-voice.html" style="text-decoration:none;color:inherit">
+        <a class="eng eng-out eng-core" id="nativePlanEntry" href="android-voice.html" style="text-decoration:none;color:inherit">
           <span class="eng-emo">🎙️</span>
-          <span class="eng-tx"><b>안드로이드 음성 대화</b><i>ChatGPT 구독 연결 · 설치와 시험 사용 안내</i></span>
+          <span class="eng-tx"><b>구독 연결 · 음성 대화</b><i>기존 학습에 ChatGPT 연결 · 현재 상황에서 듣고 답하기</i></span>
           <span class="eng-ar">›</span>
         </a>
         </div>
@@ -2744,6 +2744,11 @@ async function saveNotes(){
 
 /* ============ Claude API ============ */
 async function callClaude(system, messages, model){
+  if(window.SpeakingRoomNative){
+    if(!window.srNativeRequest) throw new Error("구독 연결 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.");
+    const result=await window.srNativeRequest("infer", {instructions:String(system||""), messages});
+    return {content:[{type:"text",text:result.text}]};
+  }
   // 전역 출력 규칙: 마크다운/구분선 금지 (말풍선이 plain text라 별표가 그대로 보임)
   const NO_MD="\n\n[FORMAT] Plain conversational text only. Do NOT use markdown: no **, no *, no ##, no ---, no bullet lists, no backticks. Write naturally as if texting.";
   const sys = (typeof system==="string" && system.indexOf("ONLY")===-1 && system.indexOf("JSON")===-1)
@@ -23841,5 +23846,6 @@ pronKoAutoStart();
 
   <!-- 개발자 스킵 버튼 -->
   <button id="devSkip" onclick="devSkipStep()" title="다음 단계 스킵">⏭ 스킵</button>
+<script src="android-native.js"></script>
 </body>
 </html>
