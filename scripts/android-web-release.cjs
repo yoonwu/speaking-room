@@ -5,7 +5,7 @@ function generate(root,revision,committed=false){
   const read=name=>committed?execFileSync('git',['show',revision+':'+name],{cwd:root,maxBuffer:24000000}):fs.readFileSync(path.join(root,name));
   const config=JSON.parse(read('android/web-release-config.json').toString('utf8'));
   const listing=committed?execFileSync('git',['ls-tree','--name-only',revision],{cwd:root,encoding:'utf8'}).trim().split('\n'):fs.readdirSync(root);
-  const names=listing.filter(n=>['index.html','practice.js','practice-data.js','home-support.js','practice.css','mascot-guide.png','android-native.js','privacy.html','manifest.webmanifest'].includes(n)||/^icon[^/]*\.png$/.test(n)).sort();
+  const names=listing.filter(n=>['index.html','practice.js','practice-data.js','home-support.js','practice.css','mascot-guide.png','android-native.js','privacy.html','manifest.webmanifest'].includes(n)||/^(?:icon|mascot-)[^/]*\.png$/.test(n)).sort();
   const files={};for(const name of names){const bytes=read(name);files[name]={size:bytes.length,sha256:crypto.createHash('sha256').update(bytes).digest('hex')};}
   if(!files['index.html']||!files['android-native.js']) throw Error('Missing entry points');
   return {...config,revision,files};
