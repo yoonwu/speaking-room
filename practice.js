@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.1.1", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.1.2", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -9,8 +9,7 @@ function levelRate(slow){const v=typeof alGet==='function'?alGet().speed||1:30;c
 function adWordHint(it){const k=travelKeyOf(it);return k.key.length?k.key.join(' · '):'';}
 function showError(error){ $("#notice").textContent=String(error&&error.message||error); }
 function renderHome(){
-  const selected=travelStudyGet().filter(id=>TRAVEL_BY_ID[id]).length;
-  $("#engStudySub").textContent=selected?`${selected}개 표현을 골라 반복해요`:"필요한 표현만 골라 반복해요";
+  $("#engStudySub").textContent="필요한 표현만 골라 반복해요";
   $("#engMissSub").textContent=missCount()?`${missCount()}문장 · 틀린 문장만 다시 말해요`:"틀린 문장을 자동으로 모아 반복해요";
   if(typeof renderSupportHome==='function')renderSupportHome();
 }
