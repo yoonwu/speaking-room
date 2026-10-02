@@ -18,6 +18,9 @@ import java.util.concurrent.*;
 public final class MainActivity extends Activity {
     private WebView web;
     private PlanClient plan;
+    private volatile WebUpdater updater;
+    private long pausedAt;
+    private boolean loadingPage=true, checkingUpdate;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private ValueCallback<Uri[]> fileChoice;
     private PermissionRequest microphoneRequest;
@@ -25,11 +28,14 @@ public final class MainActivity extends Activity {
     private JavaScriptReplyProxy backupReply;
     private String backupId;
     static final String ORIGIN = "https://appassets.androidplatform.net";
-    // Only packaged scripts run; the native message bridge is restricted to the app origin and main frame.
+    // Only packaged or verified owner releases run, under the same restricted origin.
     @android.annotation.SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); plan = PlanClient.get(this);
-        web = new WebView(this); setContentView(web);
+        web = new WebView(this);
+        updater = new WebUpdater(this, 4);
+        android.widget.TextView loading=new android.widget.TextView(this);
+        loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
         WebSettings settings = web.getSettings(); settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false); settings.setAllowContentAccess(false); settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -37,10 +43,13 @@ public final class MainActivity extends Activity {
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder().addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
         web.setWebViewClient(new WebViewClient() {
             @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
-                WebResourceResponse response = loader.shouldInterceptRequest(request.getUrl());
+                Uri requested=request.getUrl();
+                WebResourceResponse response = trusted(requested) ? updater.handle(requested.getPath().substring("/assets/".length())) : null;
+                if(response==null) response = loader.shouldInterceptRequest(requested);
                 if (response != null && "text/html".equals(response.getMimeType())) {
                     Map<String,String> headers = new HashMap<>();
                     headers.put("Content-Security-Policy", "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' blob: data: https:; frame-src 'none'; object-src 'none'");
+                    headers.put("Cache-Control", "no-store");
                     response.setResponseHeaders(headers);
                 }
                 return response;
@@ -85,7 +94,10 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "webupdate":
+                        if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
+                        reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
                     case "settings": startActivity(new Intent(this, PlanSettingsActivity.class)); reply(reply, id, new JSONObject(), null); break;
                     case "infer":
                         if (VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 다른 AI 학습을 시작해주세요.");
@@ -112,9 +124,9 @@ public final class MainActivity extends Activity {
         } else { new AlertDialog.Builder(this).setMessage("Android System WebView 또는 Chrome을 업데이트해주세요.").setPositiveButton("확인", (d,w)->finish()).show(); return; }
         VoiceService.observer = ignored -> runOnUiThread(this::drainVoice);
         if(Build.VERSION.SDK_INT>=33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::leaveScenario);
-        web.loadUrl(ORIGIN + "/assets/index.html");
+        io.execute(()->{ updater.refresh(); updater.pruneBeforeLoad(); runOnUiThread(()->{ if(isDestroyed())return; loadingPage=false; setContentView(web); web.loadUrl(ORIGIN+"/assets/index.html"); }); });
     }
-    static boolean trusted(Uri u) { return u != null && "https".equals(u.getScheme()) && "appassets.androidplatform.net".equals(u.getHost()) && u.getPath() != null && u.getPath().startsWith("/assets/"); }
+    static boolean trusted(Uri u) { return u != null && "https".equals(u.getScheme()) && "appassets.androidplatform.net".equals(u.getHost()) && u.getPort()==-1 && u.getUserInfo()==null && u.getPath() != null && u.getPath().startsWith("/assets/"); }
     private String model() { return getSharedPreferences("native", MODE_PRIVATE).getString("model", ""); }
     private boolean ready() { return plan.connected() && !model().isEmpty() && plan.label().equals(getSharedPreferences("native", MODE_PRIVATE).getString("account", "")); }
     private void startVoice(JSONObject args, boolean review) throws Exception {
@@ -148,7 +160,21 @@ public final class MainActivity extends Activity {
             io.execute(() -> { try (OutputStream out = getContentResolver().openOutputStream(uri)) { if (out == null) throw new IOException(); out.write(text.getBytes(StandardCharsets.UTF_8)); runOnUiThread(()->reply(proxy,id,new JSONObject(),null)); } catch (Exception e) { runOnUiThread(()->reply(proxy,id,null,"파일 저장 실패")); } });
         }
     }
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); VoiceService.observer = ignored -> runOnUiThread(this::drainVoice); web.evaluateJavascript("window.srNativeRefresh&&window.srNativeRefresh()", null); drainVoice(); } }
+    private void checkWebUpdate(boolean explicit) {
+        if(loadingPage || checkingUpdate || VoiceService.running) return;
+        checkingUpdate=true;
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,4); next.refresh(); runOnUiThread(()->{
+            checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
+            if(!explicit && next.revision().equals(updater.revision())) return;
+            // Re-check AFTER download: a lesson may have started while checking.
+            web.evaluateJavascript("typeof state!=='undefined'&&!state.busy&&typeof curScreen!=='undefined'&&curScreen==='setup'&&typeof setup!=='undefined'&&setup.style.display!=='none'&&!(typeof _modalOpen==='function'&&_modalOpen())&&!(typeof _topOverlay==='function'&&_topOverlay())", safe->{
+                if(!"true".equals(safe)) { android.widget.Toast.makeText(this,"학습 화면 업데이트는 홈으로 돌아온 뒤 적용됩니다.",android.widget.Toast.LENGTH_SHORT).show(); return; }
+                updater=next; web.clearCache(true); web.loadUrl(ORIGIN+"/assets/index.html");
+            });
+        }); });
+    }
+    @Override protected void onPause() { pausedAt=SystemClock.elapsedRealtime(); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); VoiceService.observer = ignored -> runOnUiThread(this::drainVoice); web.evaluateJavascript("window.srNativeRefresh&&window.srNativeRefresh()", null); drainVoice(); if(pausedAt>0 && SystemClock.elapsedRealtime()-pausedAt>60000) checkWebUpdate(false); pausedAt=0; } }
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
         if(request==21 && microphoneRequest!=null) { PermissionRequest pending=microphoneRequest; microphoneRequest=null; if(grants.length>0 && grants[0]==PackageManager.PERMISSION_GRANTED && trusted(Uri.parse(web.getUrl()))) pending.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}); else pending.deny(); }

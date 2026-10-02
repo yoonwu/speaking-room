@@ -1,0 +1,34 @@
+name: Publish Android learning screen
+on:
+  push:
+    branches: [main, codex/android-chatgpt-voice]
+    paths: ['*.html', '*.js', '*-bank.json', 'icon*.png', 'manifest.webmanifest', 'android/web-release-config.json', 'scripts/android-web-release.cjs', '.github/workflows/android-web-release.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: android-web-live
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test android/tests/native-integration.test.cjs android/tests/web-release.test.cjs
+      - name: Generate immutable source descriptor
+        run: node scripts/android-web-release.cjs "$GITHUB_SHA" "$RUNNER_TEMP/android-web/android-web-release.json"
+      - name: Publish descriptor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd "$RUNNER_TEMP/android-web"
+          git init -b android-web-live
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add android-web-release.json
+          git commit -m "Publish learning screen $GITHUB_SHA"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:android-web-live

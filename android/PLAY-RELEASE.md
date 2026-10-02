@@ -2,7 +2,7 @@
 
 현재 상태: 배포용 코드/빌드 검증 중. Play Console 업로드, 계정별 로그인/음성 실기기 검증, 스토어 심사는 완료되지 않았습니다. APK 직접 설치나 보안 해제를 사용자 배포 경로로 안내하지 않습니다.
 
-앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.3.0 / code 3. Android 8 이상, target API 36. 기존 웹 학습 UI와 자료를 포함합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다.
+앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.4.0 / code 4. Android 8 이상, target API 36. 기존 웹 학습 UI와 자료를 포함하며 이후 학습 화면은 [자동 배포](WEB-UPDATES.md)로 갱신합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다.
 
 ## AAB 빌드와 서명
 

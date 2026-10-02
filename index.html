@@ -23641,6 +23641,11 @@ async function deployToGithub(p){
 }
 
 async function forceUpdate(){
+  if(window.SpeakingRoomNative){
+    if(state.busy || curScreen!=='setup' || setup.style.display==='none'){ alert('홈으로 돌아온 뒤 업데이트를 확인해주세요.'); return; }
+    try{ await window.srNativeRequest('webupdate'); }catch(e){ alert(e.message); }
+    return;
+  }
   const t=document.createElement("div");
   t.textContent="업데이트 확인 중…";
   t.style.cssText="position:fixed;left:50%;top:18px;transform:translateX(-50%);background:var(--jade);color:#ffffff;font-weight:800;padding:10px 18px;border-radius:999px;z-index:99999;font-size:13px;box-shadow:0 8px 24px -8px rgba(0,0,0,.5)";
@@ -23649,6 +23654,8 @@ async function forceUpdate(){
   setTimeout(()=>{ location.replace(location.pathname+"?v="+Date.now()); }, 400);
 }
 async function checkForUpdate(){
+  // Native app selects a complete release before loading; never reload a running lesson.
+  if(window.SpeakingRoomNative) return;
   try{
     const res=await fetch("index.html?cb="+Date.now(), {cache:"no-store"});
     if(!res.ok) return;
