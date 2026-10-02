@@ -1,0 +1,44 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.speakingroom.voice'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.speakingroom.voice'
+        minSdk 26
+        targetSdk 36
+        versionCode 6
+        versionName '0.5.1'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDirs = [layout.buildDirectory.dir('webAssets')]
+    def uploadStore = System.getenv('SR_UPLOAD_STORE')
+    if (uploadStore) {
+        signingConfigs {
+            upload {
+                storeFile file(uploadStore)
+                storePassword System.getenv('SR_UPLOAD_STORE_PASSWORD')
+                keyAlias System.getenv('SR_UPLOAD_KEY_ALIAS')
+                keyPassword System.getenv('SR_UPLOAD_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            debuggable false
+            if (uploadStore) signingConfig signingConfigs.upload
+        }
+    }
+}
+tasks.register('bundleWebApp', Sync) {
+    from(rootProject.file('..')) { include 'index.html', 'practice.js', 'practice-data.js', 'home-support.js', 'practice.css', 'mascot*.png', 'android-native.js', 'privacy.html', 'icon*.png', 'manifest.webmanifest' }
+    into layout.buildDirectory.dir('webAssets')
+}
+tasks.named('preBuild').configure { dependsOn 'bundleWebApp' }
+dependencies {
+    // Pinned dependency; updates need a separate compatibility check.
+    //noinspection GradleDependency
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.47'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+}
