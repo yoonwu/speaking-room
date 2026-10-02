@@ -2749,6 +2749,75 @@ function travelKeyOf(it){
   return {frameWords, want, key, needKey};
 }
 
+/* Context-preserving whole-sentence alternatives. Never interchange frame names globally. */
+function travelAnswerAlternatives(it){
+  const en=it.ex.en, id=it.frame.id, out=new Set([en]);
+  const add=(re,...replacements)=>{for(const replacement of replacements)if(re.test(en))out.add(en.replace(re,replacement));};
+  switch(id){
+    case 'travel_can_i_get':
+      add(/^Can (I|we) get /i,'Could $1 get ','Can $1 have ','Could $1 have ','May $1 have ');
+      add(/^Can I get /i,"I'd like ");add(/^Can we get /i,"We'd like ");break;
+    case 'travel_can_you':add(/^Can you /i,'Could you ','Would you ','Will you ','Please ');break;
+    case 'travel_can_i_we':add(/^Can (I|we) /i,'Could $1 ','May $1 ');add(/^Can I /i,'Is it okay if I ','Is it OK if I ','Am I allowed to ');add(/^Can we /i,'Is it okay if we ','Are we allowed to ');break;
+    case 'travel_do_you_have':
+      add(/^Do you have /i,'Have you got ');
+      if(!/this in|change for/.test(en))add(/^Do you have /i,/life jackets/.test(en)?'Are there ':'Is there ');break;
+    case 'travel_is_there':
+      add(/^Is there an extra charge for (.+)\?/i,'Do you charge extra for $1?');
+      if(!/nearby|problem|cheaper way|ferry|bus to|extra charge|minimum charge|dress code/.test(en))add(/^Is there /i,'Do you have ','Have you got ');break;
+    case 'travel_where_is':add(/^Where is /i,"Where's ",'Can you tell me where to find ','Could you tell me where to find ');add(/^Where are /i,'Can you tell me where to find ','Could you tell me where to find ');break;
+    case 'travel_how_do_i_get_to':add(/^How do (I|we) get to /i,'How can $1 get to ','Could you tell me how to get to ','Can you show me the way to ');break;
+    case 'travel_how_long':add(/^How long does it take/i,'How long will it take','How much time does it take');break;
+    case 'travel_what_time_does':add(/^What time does /i,'When does ');break;
+    case 'travel_what_time_need':add(/^What time do (we|I) need to /i,'When do $1 need to ','What time do $1 have to ','When do $1 have to ','What time should $1 ','When should $1 ');break;
+    case 'travel_do_i_need_to':add(/^Do (I|we) need to /i,'Do $1 have to ');add(/^Do I need to /i,'Is it necessary for me to ');add(/^Do we need to /i,'Is it necessary for us to ');break;
+    case 'travel_is_included':add(/^Is (.+) included\?/i,'Does the price include $1?','Is $1 included in the price?');add(/^Are (.+) included\?/i,'Does the price include $1?','Are $1 included in the price?');break;
+    case 'travel_how_much':if(!/ per | for | to | with /.test(en))add(/^How much (?:is|are) (.+)\?/i,"What's the price of $1?","What is the price of $1?",'How much does $1 cost?');else add(/^How much is it /i,'How much does it cost ');break;
+    case 'travel_pay_by_card':out.add('Could I pay by card?');out.add('Can I use a card?');out.add('Do you accept cards?');out.add('Do you take cards?');out.add('Can I pay with a card?');out.add('Is card payment accepted?');break;
+    case 'travel_have_reservation':add(/^I have a reservation/i,'I have a booking','I made a reservation');add(/^We have a reservation/i,'We have a booking','We made a reservation');break;
+    case 'travel_can_i_leave':add(/^Can (I|we) leave /i,'Could $1 leave ','May $1 leave ');break;
+    case 'travel_problem_with':add(/^There's a problem with /i,'There is a problem with ','There is an issue with ','Something is wrong with ','I have a problem with ');break;
+    case 'travel_cant_find':add(/^I can't find /i,'I cannot find ',"I'm unable to find ");add(/^We can't find /i,"We're unable to find ");break;
+    case 'travel_think_i_left':add(/^I think I left /i,'I may have left ','I might have left ');break;
+    case 'travel_does_that_mean':add(/^Does that mean /i,'Do you mean ','Are you saying ');break;
+    case 'travel_say_again_slowly':out.add('Could you repeat that more slowly?');out.add('Can you say that again more slowly?');out.add('Could you say that again slowly?');out.add('Please repeat that slowly.');break;
+    case 'travel_what_recommend':add(/^What do you recommend/i,'What would you recommend','What do you suggest','What would you suggest');break;
+    case 'travel_can_we_change':add(/^Can (we|I) change /i,'Could $1 change ','Is it possible to change ');if(!/money/.test(en))add(/^Can (we|I) change /i,'Can $1 switch ');break;
+    case 'travel_is_this_right':add(/^Is this the right /i,'Is this the correct ');break;
+    case 'travel_where_meet':add(/^Where do (we|I) meet/i,'Where should $1 meet','Where will $1 meet');break;
+    case 'travel_what_should_i_do':add(/^What should (I|we) do/i,'What do $1 need to do','What would you suggest $1 do');break;
+    case 'travel_id_like_to':add(/^I'd like to /i,'I would like to ','I want to ','Can I ','Could I ');break;
+    case 'travel_how_much_longer':add(/^How much longer until /i,'How long until ');add(/^How much longer (.+) take\?/i,'How much more time $1 take?');break;
+    case 'travel_whats_difference':add(/^What's the difference between /i,'What is the difference between ');add(/^What's the difference between (.+)\?/i,'How are $1 different?');break;
+    case 'travel_what_does_mean':add(/^What does (.+) mean\?/i,'What is the meaning of $1?','Can you explain $1?','Could you explain $1?');break;
+    case 'travel_how_do_i':add(/^How do (I|we) /i,'How can $1 ');add(/^How (?:do|can) (?:I|we) /i,'Can you show me how to ','Could you tell me how to ');break;
+    case 'travel_can_i_ask':add(/^Can (I|we) ask /i,'Could $1 ask ','May $1 ask ');break;
+  }
+  return [...out];
+}
+function travelMeaningNorm(text){
+  return adNorm(text).replace(/\b(?:excuse me|please|thank you|thanks)\b/g,' ')
+    .replace(/\b(?:there s|theres)\b/g,'there is').replace(/\bwhere s\b/g,'where is').replace(/\bwhat s\b/g,'what is')
+    .replace(/\b(?:do not|don t)\b/g,'dont').replace(/\b(?:can not|can t)\b/g,'cant')
+    .replace(/\b(?:is not|isn t)\b/g,'isnt').replace(/\b(?:are not|aren t)\b/g,'arent')
+    .replace(/\bmore slowly\b/g,'slowly').replace(/\b(?:one more|extra)\b/g,'another').replace(/\b(?:bathroom|washroom)\b/g,'restroom')
+    .replace(/\bbooking\b/g,'reservation').replace(/\bcab\b/g,'taxi').replace(/\bwi fi\b/g,'wifi')
+    .replace(/\b(?:credit|debit) (?=cards?\b)/g,'').replace(/\b(?:a|an|the|some)\b/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function travelMeaningGuard(expected,heard){
+  const words=t=>travelMeaningNorm(t).split(' '), a=words(expected),b=words(heard);
+  const neg=w=>/^(?:not|no|never|cant|dont|doesnt|isnt|arent|wont|cannot|couldnt|shouldnt|unable)$/.test(w);
+  if(a.some(neg)!==b.some(neg))return false;
+  const numeric=w=>/^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/.test(w);
+  for(const modifier of ['child','kids','hot','iced','bigger','smaller','cheaper','another','more','less','slowly','not','only','last','next','nearest'])if(a.includes(modifier)&&!b.includes(modifier))return false;
+  const numbers=a.filter(numeric);if(numbers.join('|')!==b.filter(numeric).join('|'))return false;
+  for(const pair of [['hot','iced'],['bigger','smaller'],['on','off'],['up','down'],['before','after'],['open','close'],['tomorrow','today']]){
+    if(pair.some(w=>a.includes(w))&&pair.some(w=>b.includes(w)&&!a.includes(w)))return false;
+  }
+  return true;
+}
+
 function travelGrade(it, heard){
   const h=adNorm(heard), hw=h.split(" ").filter(Boolean);
   /* 1순위 — 목표 프레임을 실제로 썼는가. 여기는 엄격하게 본다. */
@@ -2771,15 +2840,19 @@ function travelGrade(it, heard){
      전부를 요구하지는 않는다: "another towel" 을 "one more towel" 로 바꿔 말한 건 맞는 답이다.
      하지만 towel 자리에 fork 를 넣으면 다른 말이라 오답이다. */
   const keyMissing=K.key.filter(w=>!hasW(w));
-  const keyHit = !K.key.length || keyMissing.length<K.key.length;
+  const keyHit = !K.key.length || keyMissing.length===0;
   /* 프레임에 ~ 가 있으면 뒤에 뭔가는 붙여야 한다(Can I get ~?).
      문장 자체가 프레임이면(Hello. / How long does it take?) 그대로 말해도 정답이다. */
   const openFrame=/~/.test(String((it.frame&&it.frame.frame)||""));
   let ok = myOk ? true
            : frameOk && ((K.needKey && K.key.length) ? keyHit : (openFrame ? extra>0 : true));
+  const candidates=travelAnswerAlternatives(it);
+  const natural=candidates.find(answer=>travelMeaningNorm(answer)===travelMeaningNorm(heard));
+  if(natural){ok=true;frameOk=true;}
+  if(!travelMeaningGuard(it.ex.en,heard))ok=false;
   /* 같은 상황을 다르게 말해도 맞는 경우가 있다 (짐 기다릴 때 will it be? 도 자연스러움).
      예문 하나만 정답으로 보면 맞는 영어를 틀렸다고 가르치게 된다. */
-  let altUsed=null;
+  let altUsed=natural&&travelMeaningNorm(natural)!==travelMeaningNorm(it.ex.en)?natural:null;
   if(!ok && it.alt && it.alt.length){
     for(let ai=0; ai<it.alt.length; ai++){
       const sub=Object.assign({}, it, {ex:Object.assign({}, it.ex, {en:it.alt[ai]}), alt:null});
