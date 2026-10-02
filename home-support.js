@@ -147,7 +147,7 @@ function supportStats(){
 }
 function supportToday(){const q=hGet('speakingroom:compact_quest',{});return q.date===SUPPORT_DAY()?q:{date:SUPPORT_DAY(),travel:0,miss:0,talk:0};}
 function supportBump(kind){const q=supportToday();q[kind]=(q[kind]||0)+1;hSet('speakingroom:compact_quest',q);}
-function recordPractice({it,ok,perfect,meta,started,mode}){
+function recordPractice({it,heard,ok,perfect,meta,started,mode}){
   const log=supportLog(),id=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random();
   const reaction=meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   log[id]={t:Date.now(),fid:it.frame.id,ok,perfect,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel'};
@@ -155,6 +155,7 @@ function recordPractice({it,ok,perfect,meta,started,mode}){
   if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
   const bonus=mode==='기본표현'&&supportToday().travel===10?25:0;
   const xp=10+(ok?5:0)+(perfect?5:0)+bonus;log[id].xp=xp-bonus;log[id].dailyBonus=bonus;
+  if(perfect&&!it._intro&&!it.recall&&heard){const expected=new Set(practiceWords(it.ex.en));log[id].words=practiceWords(heard).filter(w=>expected.has(w));}
   hSet(PRACTICE_LOG,log);const after=practiceReward();it._earnedXP=Math.max(0,after.total-before.total);
   it._rewardMessage='+'+xp+' XP'+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
   autoLvlRecord('speak',perfect?'perfect':ok?'ok':'miss');
@@ -183,17 +184,22 @@ function practiceReward(){
 }
 function renderReward(){const r=practiceReward(),s=supportStats();$('#rewardZone').innerHTML=`<div class="reward-top"><div><span class="reward-label">쌓아온 연습</span><b>Lv.${r.level}<small>학습 레벨</small></b></div><span class="xp-total">${r.total.toLocaleString()}<small>총 XP</small></span></div><div class="xp-track"><i style="width:${Math.round(r.remaining/r.need*100)}%"></i></div><div class="xp-next"><span>다음 레벨까지 ${r.need-r.remaining} XP</span><b>${r.remaining} / ${r.need}</b></div><div class="reward-stats"><span>오늘 <b>${r.todayCount}회</b></span><span>오늘 <b>+${r.todayXP} XP</b></span><span>누적 <b>${s.total}회</b></span></div>`;if($('#coreDifficulty'))$('#coreDifficulty').textContent='기본표현 D'+alGet().speak;}
 function basicDifficultyLabel(n=alGet().speak){return '기본표현 D'+n+' · '+(n<15?'짧은 문장부터':n<35?'문장을 조금 더 길게':'다양한 길이의 문장');}
+const WORD_SUCCESS_GOAL=3;
+function practiceWords(text){return [...new Set((String(text).toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[]).filter(w=>w.length>1&&!TRAVEL_SKIP_WORDS.has(w)&&!TRAVEL_FILLER_WORDS.has(w)))];}
+function supportWordStats(){const counts={};for(const event of supportEvents()){if(!event.perfect||!Array.isArray(event.words))continue;for(const word of new Set(event.words)){if(typeof word==='string'&&/^[a-z]+(?:'[a-z]+)?$/.test(word))counts[word]=(counts[word]||0)+1;}}return Object.entries(counts).map(([word,count])=>({word,count})).sort((a,b)=>b.count-a.count||a.word.localeCompare(b.word));}
+function openLearnedWords(){const ov=openSheet('익숙해진 단어'),words=supportWordStats(),learned=words.filter(w=>w.count>=WORD_SUCCESS_GOAL),growing=words.filter(w=>w.count<WORD_SUCCESS_GOAL);ov.querySelector('#sheetContent').innerHTML=`<p class="muted">연습 예문에 나오는 단어를 표현이나 힌트 없이 바로 맞힌 답변에서 ${WORD_SUCCESS_GOAL}회 이상 사용하면 여기에 쌓여요. 한 답변에서 반복한 단어는 한 번만 세고, a·the 같은 문법 단어는 제외해요.</p><div class="word-total">${learned.length}<small>개 단어가 익숙해졌어요</small></div>${learned.length?'<div class="learned-word-list">'+learned.map(w=>'<div class="learned-word"><b>'+escapeHtml(w.word)+'</b><span>바로 맞힘 '+w.count+'회 ✓</span></div>').join('')+'</div>':'<p class="empty">기본표현을 반복하면 익숙해진 단어가 쌓여요.</p>'}${growing.length?'<div class="prof-h">조금만 더 연습하면 익숙해져요</div>'+growing.map(w=>'<div class="growing-word"><b>'+escapeHtml(w.word)+'</b><span>'+w.count+' / '+WORD_SUCCESS_GOAL+'회</span></div>').join(''):''}`;}
 function supportName(){return hGet('speakingroom:name','')||localStorage.getItem('speakingroom:sync_name')||'친구';}
 function renderAutoLvlStatus(){if($('#autoLvlLine'))$('#autoLvlLine').textContent='말하기 D'+alGet().speak+' · 속도 D'+alGet().speed;}
 function renderSupportHome(){
   const s=supportStats(),q=supportToday(),d=alGet(),done=q.travel>=10;
+  const learnedWords=supportWordStats().filter(w=>w.count>=WORD_SUCCESS_GOAL);
   renderReward();
   $('#profileBtn').textContent=supportName().slice(0,1);
   $('#heroZone').innerHTML=`<div class="home-head"><div class="hh-top"><div class="hh-lv"><span class="hh-lv-num">D${d.speak}</span><span class="hh-lv-band">말하기 난이도</span></div><div class="hh-chips"><span class="hh-chip"><b>🔥 ${s.streak}</b> 일 연속</span><span class="hh-chip"><b>${s.automatic}</b> 표현 익숙해짐</span></div></div><div class="hello-line">${escapeHtml(supportName())}님, 오늘도 입에서 꺼내볼까요?</div><div class="hh-bar"><i style="width:${Math.round(s.automatic/TRAVEL_FRAMES.length*100)}%"></i></div><div class="hh-xp"><span>익숙한 기본표현</span><span>${s.automatic} / ${TRAVEL_FRAMES.length}</span></div></div>`;
   $('#routineZone').innerHTML=`<div class="routine-single"><div><div class="panel-title">☀️ 오늘의 루틴</div><b>기본표현 10회</b><small>하루 10번, 입에서 바로 나오도록.</small></div><button data-routine="travel" class="routine-start">${done?'한 번 더 →':'시작 →'}</button></div><div class="routine-progress"><i style="width:${Math.min(100,(q.travel||0)/10*100)}%"></i></div><div class="routine-bottom"><span>${done?'오늘의 목표 완료 ✓':'오늘의 작은 목표'}</span><b>${Math.min(10,q.travel||0)} / 10회</b></div>`;
   $('[data-routine="travel"]').onclick=()=>startTravelDrill(10,true,true);
-  $('#growthZone').innerHTML=`<div class="panel-title"><span>🌱 말하기가 쌓이고 있어요</span><button id="growthDetail" class="quiet">기록 보기 ›</button></div><div class="growth-grid"><div><b>${s.accuracy===null?'—':s.accuracy+'%'}</b><span>기본표현 정답률</span></div><div><b>${s.automatic}<small>개</small></b><span>익숙해진 표현</span></div><div><b>${s.total}<small>번</small></b><span>누적 말하기 연습</span></div></div><div class="adaptive-line"><span>✦ 난이도 자동 조절</span><b id="autoLvlLine">말하기 D${d.speak} · 속도 D${d.speed}</b></div><p class="routine-sub">성공하면 문장과 음성 속도를 조금씩 높여요.</p>`;
-  $('#growthDetail').onclick=openGrowth;
+  $('#growthZone').innerHTML=`<div class="panel-title"><span>🌱 말하기가 쌓이고 있어요</span><button id="growthDetail" class="quiet">기록 보기 ›</button></div><div class="growth-grid"><div><b>${s.accuracy===null?'—':s.accuracy+'%'}</b><span>기본표현 정답률</span></div><div><b>${s.automatic}<small>개</small></b><span>익숙해진 표현</span></div><button id="learnedWords" class="word-stat"><b>${learnedWords.length}<small>개</small></b><span>익숙해진 단어 ›</span></button><div><b>${s.total}<small>번</small></b><span>누적 말하기 연습</span></div></div><div class="adaptive-line"><span>✦ 난이도 자동 조절</span><b id="autoLvlLine">말하기 D${d.speak} · 속도 D${d.speed}</b></div><p class="routine-sub">성공하면 문장과 음성 속도를 조금씩 높여요.</p>`;
+  $('#growthDetail').onclick=openGrowth;$('#learnedWords').onclick=openLearnedWords;
   $('#syncSummary').textContent=localStorage.getItem('speakingroom:sync_nick')?'연결됨 · 기록 관리 ›':'기기 간 이어서 ›';
 }
 function openGrowth(){const ov=openSheet('실력 · 성장 기록'),s=supportStats(),voice=s.voice.slice(-20);const reaction=voice.length?voice.reduce((n,e)=>n+e.reaction,0)/voice.length:null;

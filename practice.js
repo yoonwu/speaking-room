@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.2.0", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.2.1", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -102,7 +102,7 @@ function autoDrillFinish(heard,meta={}){
   const it=autoDrill.items[autoDrill.idx],g=travelGrade(it,heard),perfect=g.ok&&!it._hintUsed;
   it._lastHeard=heard;it._lastOk=g.ok;
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
-  if(typeof recordPractice==='function'){recordPractice({it,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
+  if(typeof recordPractice==='function'){recordPractice({it,heard,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
   if(!perfect&&(it._requeues||0)<2){const again={...it,_intro:false,_hintUsed:false,_requeues:(it._requeues||0)+1,_lastHeard:'',_lastOk:false};if(!it._requeues)autoDrill.items.splice(Math.min(autoDrill.items.length,autoDrill.idx+5+Math.floor(Math.random()*3)),0,again);else autoDrill.items.push(again);}
   const message=perfect?'상황에 맞게 말했어요.':g.ok?'표현을 보고 말했어요. 다음엔 상황만 보고 꺼내보세요.':g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:g.keyMiss?'표현은 맞았어요. 상황에 맞는 핵심 낱말을 넣어보세요.':`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
   autoDrillShowResult(it,!perfect,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
