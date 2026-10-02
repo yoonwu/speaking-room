@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.3.3", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.3.4", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -128,10 +128,21 @@ function autoDrillDone(){
   $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p>${rows.some(r=>r.xp)?`<div class="session-reward"><b>+${rows.reduce((n,r)=>n+(r.xp||0),0)} XP</b><span>이번 연습에서 쌓은 경험치</span></div>`:''}<p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
 }
 function openSurvival(){
-  const ov=openSheet('AI 실전회화');
-  ov.querySelector('#sheetContent').innerHTML='<p class="muted">상황을 골라 영어로 주고받아보세요.</p>'+SURVIVAL.map(s=>`<button class="scenario-row" data-scene="${s.id}"><span>${s.emo}</span><b>${escapeHtml(s.t)}</b><span>›</span></button>`).join('')+(window.SpeakingRoomNative?'<button id="aiAccount" class="quiet account">ChatGPT 연결 설정</button>':'');
-  ov.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{const scene=SURVIVAL.find(s=>s.id===b.dataset.scene);ov.remove();startSurvival(scene);});
-  if(ov.querySelector('#aiAccount'))ov.querySelector('#aiAccount').onclick=()=>window.srNativeRequest('settings').catch(showError);
+  const ov=openSheet('AI 실전회화'),content=ov.querySelector('#sheetContent');
+  const scenes=()=>{
+    content.innerHTML='<p class="muted">상황을 골라 영어로 주고받아보세요.</p>'+SURVIVAL.map(s=>`<button class="scenario-row" data-scene="${s.id}"><span>${s.emo}</span><b>${escapeHtml(s.t)}</b><span>›</span></button>`).join('')+(window.SpeakingRoomNative?'<button id="aiAccount" class="quiet account">✓ ChatGPT 연결됨 · 연결 관리</button>':'');
+    content.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{const scene=SURVIVAL.find(s=>s.id===b.dataset.scene);ov.remove();startSurvival(scene);});
+    if(window.SpeakingRoomNative)content.querySelector('#aiAccount').onclick=()=>window.srNativeRequest('settings').catch(showError);
+  };
+  if(!window.SpeakingRoomNative){scenes();return;}
+  const connection=()=>{
+    content.innerHTML='<div class="ai-connect"><span class="ai-connect-icon">💬</span><h3>삼초와 연습한 말을<br>대화로 꺼내볼까요?</h3><p>처음 한 번, 내 ChatGPT 계정을 연결해주세요.</p><button id="connectChatGPT" class="primary">ChatGPT 연결하기 →</button><p id="aiConnectStatus" role="status" class="muted">연결을 마치고 돌아오면 상황을 고를 수 있어요.</p></div>';
+    content.querySelector('#connectChatGPT').onclick=()=>window.srNativeRequest('settings').catch(e=>{content.querySelector('#aiConnectStatus').textContent=e.message;});
+  };
+  const refresh=s=>{if(ov.isConnected===false)return;if(s.ready)scenes();else connection();};
+  window.srAiEntryRefresh=refresh;
+  content.innerHTML='<p class="muted" role="status">ChatGPT 연결을 확인하고 있어요…</p>';
+  window.srNativeRequest('status').then(refresh).catch(()=>{if(ov.isConnected!==false)connection();});
 }
 function rolePrompt(){return ['You are a friendly realistic conversation partner helping a Korean learner practice spoken English.','Situation: '+state.scn.ctx,'Play the role of '+state.scn.role+'.',typeof aiLevelInstruction==='function'?aiLevelInstruction():'Use short beginner-friendly English: one or two sentences and one question at a time.','Stay in character and respond to the learner’s intended meaning, even with imperfect grammar.','Accept different natural expressions; do not require an exact memorized sentence or reveal answers before the learner tries.','Create a natural conversation. Ask for missing details one at a time. Let the learner explain, clarify, request, and correct misunderstandings. Wrap up when the situation is resolved.','Give a short hint only when asked. Do not score, award points, or prescribe other learning modes.'].join('\n');}
 function startSurvival(scene){goToSetup();state.scn=scene;state.convo=[];state.engine='survival';state.mode='talk';startSession();}
