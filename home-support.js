@@ -236,3 +236,35 @@ async function openRank(){const ov=openSheet('랭킹');let rows=[],tab='mins',er
 }
 $('#profileBtn').onclick=openProfile;$('#tutorialBtn').onclick=openTutorial;$('#rankBtn').onclick=openRank;$('#syncBtn').onclick=openSync;
 renderSupportHome();
+/* A brief first-use guide per feature. These device-local flags never enter sync. */
+const FEATURE_GUIDES={
+ basic:{icon:'⚡',title:'기본표현',steps:[['상황을 보고 영어로 말해요','처음 만나는 표현은 예문을 보여줘요. 익숙해지면 한국어 상황만 보고 영어를 꺼내보세요.'],['틀려도 다시 꺼내보면 돼요','말하기 버튼을 누르고 답하거나 직접 입력하세요. 틀린 문장은 잠시 뒤 다시 나오고, 답을 본 뒤에는 가리고 다시 말할 수 있어요.'],['연습량과 난이도가 함께 쌓여요','시도하면 10 XP, 정답이면 +5 XP, 힌트 없이 정답이면 +5 XP예요. 오늘 기본표현 10회를 채우면 +25 XP를 받아요. D 난이도는 답변 결과로 조절되고 다음 연습의 문장 길이에 반영돼요.']]},
+ study:{icon:'✓',title:'골라서 연습',steps:[['필요한 표현만 선택해요','약한 표현이나 지금 연습하고 싶은 표현에 체크하세요. 선택한 표현은 이 기기에 저장돼요.'],['선택한 표현으로만 반복해요','연습하기를 누르고 문제 수를 고르면 체크한 표현만 나와요. 기본표현과 같은 방식으로 말하고, 틀린 문장은 다시 연습해요.']]},
+ miss:{icon:'↻',title:'자주 틀리는 문장',steps:[['틀린 문장이 자동으로 모여요','표현 연습 중 틀린 문장을 따로 적을 필요 없어요. 이 목록에서 바로 반복할 수 있어요.'],['연속 3번 맞히면 졸업해요','틀린 문장 반복하기를 눌러 연습하세요. 한 문장을 연속 3번 맞히면 목록에서 빠져요.']]},
+ ai:{icon:'💬',title:'AI 실전회화',steps:[['상황을 고르고 주고받아요','상대의 첫 말을 받은 뒤 영어로 답해보세요. 외운 문장 그대로가 아니어도 뜻에 맞게 대화를 이어가요.'],['막히면 도움을 받아요','막혔어요에서 예시 답변을, 내 표현 확인에서 교정을 볼 수 있어요. Android의 ChatGPT 연결과 음성 대화는 이 화면에서 사용해요.']]},
+ growth:{icon:'🌱',title:'실력 · 성장 기록',steps:[['내가 쌓은 연습을 확인해요','기본표현 정답률, 누적 연습 횟수와 표현별 기록을 볼 수 있어요. 익숙해진 표현은 연속 정답 3회가 기준이에요.'],['말 시작 시간은 음성 답변으로 봐요','최근 20회의 음성 답변을 기준으로 상황 읽는 예상 시간을 제외해 보여줘요. 직접 입력은 말 시작 시간에 포함하지 않아요.']]},
+ words:{icon:'📚',title:'익숙해진 단어',steps:[['바로 맞힌 단어가 쌓여요','예문에 나오는 단어를 표현과 힌트 없이 바로 맞힌 답변에서 3회 사용하면 익숙해진 단어로 쌓여요.'],['아직 쌓이는 중인 단어도 보여요','1~2회 맞힌 단어와 3회 이상 맞힌 단어를 구분해서 볼 수 있어요. 답을 보고 따라 한 경우와 한 답변 안의 중복은 세지 않아요.']]},
+ xp:{icon:'⭐',title:'학습 레벨 · 경험치',steps:[['연습한 만큼 레벨이 올라요','누적 XP, 오늘 얻은 XP, 오늘과 누적 연습 횟수를 확인하세요. 진행 막대가 차면 다음 학습 레벨로 올라요.'],['학습 레벨과 D 난이도는 달라요','학습 레벨은 연습량을 보여주고, 기본표현 D는 답변 결과에 맞춘 문장 난이도예요. 틀려도 얻은 XP와 학습 레벨은 줄지 않아요.']]},
+ profile:{icon:'☺',title:'내 프로필',steps:[['나의 기록을 한곳에서 봐요','앱에서 부를 이름을 바꾸고, 학습 레벨과 경험치, 성장 기록을 확인할 수 있어요.'],['필요한 안내를 다시 볼 수 있어요','랭킹과 기록 동기화로 이동하거나 처음 사용법을 다시 열어 각 기능의 안내를 볼 수 있어요.']]},
+ rank:{icon:'🏆',title:'랭킹',steps:[['함께 쌓은 기록을 봐요','이번 주와 누적 학습 시간, 익숙한 표현, 연속 학습 기록을 비교할 수 있어요.'],['기록 동기화로 참여해요','연결한 표시 이름과 학습 통계가 랭킹에 공개돼요. 내 기록을 연결하지 않아도 랭킹을 확인할 수 있어요.']]},
+ sync:{icon:'☁️',title:'기록 동기화',steps:[['같은 닉네임으로 이어서 해요','다른 기기에서 같은 닉네임을 입력하면 기존 서버의 학습 기록을 불러와 합쳐요. 추측하기 어려운 별명을 사용하세요.'],['무엇이 저장되는지 확인해요','연결하면 학습 기록을 서버에 저장하고 표시 이름과 요약 통계를 랭킹에 공개해요. ChatGPT 로그인 정보와 대화 내용은 보내지 않아요. 자동 동기화를 꺼도 기존 기록은 남아 있어요.']]}
+};
+function featureGuideKey(id){return 'speakingroom:feature_guide:v1:'+id;}
+function showFeatureGuide(id,proceed=null){const guide=FEATURE_GUIDES[id];if(!guide)return;if(proceed&&hGet(featureGuideKey(id),false))return proceed();let index=0;const ov=openSheet(guide.title+' 시작 안내');
+ const paint=()=>{const [title,text]=guide.steps[index];ov.querySelector('#sheetContent').innerHTML=`<div class="feature-guide"><div class="guide-brand">3<span>3초영어 안내</span></div><img class="guide-mascot" src="mascot-guide.png" alt="3초영어 말풍선 마스코트 삼초"><span class="mascot-name">삼초가 알려줄게요</span><div class="onb-dots">${guide.steps.map((_,i)=>`<span class="onb-dot ${i===index?'on':''}"></span>`).join('')}</div><small>${index+1} / ${guide.steps.length}</small><h3>${title}</h3><p>${text}</p></div><div class="guide-actions">${index?'<button id="featurePrev" class="quiet">이전</button>':''}<button id="featureNext" class="primary">${index===guide.steps.length-1?(proceed?'시작하기':'알겠어요'):'다음'}</button></div>`;if(index)ov.querySelector('#featurePrev').onclick=()=>{index--;paint();};ov.querySelector('#featureNext').onclick=()=>{if(index<guide.steps.length-1){index++;paint();}else{hSet(featureGuideKey(id),true);ov.remove();if(proceed)proceed();}};};paint();}
+function withFirstGuide(id,fn){return function(...args){return showFeatureGuide(id,()=>fn.apply(this,args));};}
+startTravelDrill=withFirstGuide('basic',startTravelDrill);
+openTravelStudyPicker=withFirstGuide('study',openTravelStudyPicker);
+openMissPicker=withFirstGuide('miss',openMissPicker);
+openSurvival=withFirstGuide('ai',openSurvival);
+openGrowth=withFirstGuide('growth',openGrowth);
+openLearnedWords=withFirstGuide('words',openLearnedWords);
+openProfile=withFirstGuide('profile',openProfile);
+openRank=withFirstGuide('rank',openRank);
+openSync=withFirstGuide('sync',openSync);
+openTutorial=function(){const ov=openSheet('3초영어 사용법');ov.querySelector('#sheetContent').innerHTML='<p class="muted">처음 들어가는 기능은 짧게 안내해요. 여기서 언제든 다시 볼 수 있어요.</p>'+Object.entries(FEATURE_GUIDES).map(([id,g])=>`<button class="tut-li" data-feature-guide="${id}"><span>${g.icon} ${g.title}</span><span>›</span></button>`).join('');ov.querySelectorAll('[data-feature-guide]').forEach(b=>b.onclick=()=>showFeatureGuide(b.dataset.featureGuide));};
+$('#engTravel').onclick=()=>startTravelDrill(10,true,true);$('#engStudy').onclick=()=>openTravelStudyPicker();$('#engMiss').onclick=()=>openMissPicker();$('#engReal').onclick=()=>openSurvival();
+$('#profileBtn').onclick=()=>openProfile();$('#tutorialBtn').onclick=()=>openTutorial();$('#rankBtn').onclick=()=>openRank();$('#syncBtn').onclick=()=>openSync();
+const supportRenderWithoutGuide=renderSupportHome;
+renderSupportHome=function(){supportRenderWithoutGuide();const reward=$('#rewardZone');if(reward){const btn=document.createElement('button');btn.id='rewardHelp';btn.className='reward-help';btn.textContent='레벨 · XP 안내 ?';btn.onclick=()=>showFeatureGuide('xp');reward.appendChild(btn);}};
+renderSupportHome();

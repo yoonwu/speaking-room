@@ -2,7 +2,7 @@ name: Publish Android learning screen
 on:
   push:
     branches: [main, codex/android-chatgpt-voice]
-    paths: ['*.html', '*.js', '*.css', 'icon*.png', 'manifest.webmanifest', 'android/web-release-config.json', 'scripts/android-web-release.cjs', '.github/workflows/android-web-release.yml']
+    paths: ['*.html', '*.js', '*.css', 'icon*.png', 'mascot*.png', 'manifest.webmanifest', 'android/web-release-config.json', 'scripts/android-web-release.cjs', '.github/workflows/android-web-release.yml']
   workflow_dispatch:
 permissions:
   contents: write
