@@ -26,6 +26,7 @@ function alGet(){
   }
   // 🚀 빠른 시작 배치 필드 — 없으면 배치 모드 시작(신규/기존 모두 첫 문제들로 초기 레벨을 빠르게 잡음)
   if(!d.n){ d.n={}; d.placed=d.placed||{}; d.base={word:d.word,listen:d.listen,block:d.block,speed:d.speed}; try{ hSet(AL_KEY,d); }catch(e){} }
+  d.placed=d.placed||{};d.placed.speak=true;d.placed.speed=true;
   return d;
 }
 function alProbeLevel(skill){
@@ -130,7 +131,7 @@ function getAutoLevels(){
 }
 const PRACTICE_LOG='speakingroom:practice_log_v1';
 const SUPPORT_DAY=()=>new Date().toLocaleDateString('sv-SE');
-const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','speakingroom:name',PRACTICE_LOG,'speakingroom:compact_quest'];
+const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','speakingroom:name',PRACTICE_LOG,'speakingroom:compact_quest','speakingroom:practice_xpbase'];
 let supportSyncBusy=false;
 function supportLog(){return hGet(PRACTICE_LOG,{})||{};}
 function supportEvents(){return Object.values(supportLog()).filter(e=>e&&Number.isFinite(e.t)).sort((a,b)=>a.t-b.t);}
@@ -150,7 +151,12 @@ function recordPractice({it,ok,perfect,meta,started,mode}){
   const log=supportLog(),id=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random();
   const reaction=meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   log[id]={t:Date.now(),fid:it.frame.id,ok,perfect,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel'};
-  hSet(PRACTICE_LOG,log);if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
+  const before=practiceReward();
+  if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
+  const bonus=mode==='기본표현'&&supportToday().travel===10?25:0;
+  const xp=10+(ok?5:0)+(perfect?5:0)+bonus;log[id].xp=xp-bonus;log[id].dailyBonus=bonus;
+  hSet(PRACTICE_LOG,log);const after=practiceReward();it._earnedXP=Math.max(0,after.total-before.total);
+  it._rewardMessage='+'+xp+' XP'+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
   autoLvlRecord('speak',perfect?'perfect':ok?'ok':'miss');
   if(reaction!==null&&!meta.typed)autoLvlRecord('speed',perfect&&reaction<=3?'perfect':ok?'ok':'miss');
   supportQueueSync();
@@ -165,10 +171,23 @@ travelPickItem=function(f,o){
   const candidates=f.items.filter(x=>x.en.trim().split(/\s+/).length<=limit);
   return originalTravelPickItem(candidates.length?{...f,items:candidates}:f,o);
 };
+function practiceReward(){
+  let base=hGet('speakingroom:practice_xpbase',null);
+  if(base===null){base=Math.max(0,Number((hGet('speakingroom:prof',{})||{}).xp)||0);hSet('speakingroom:practice_xpbase',base);}
+  const events=supportEvents(),bonuses={};for(const e of events){const day=new Date(e.t).toLocaleDateString('sv-SE');bonuses[day]=Math.max(bonuses[day]||0,Number(e.dailyBonus)||0);}
+  const earned=events.reduce((n,e)=>n+Math.max(0,Number(e.xp)||0),0)+Object.values(bonuses).reduce((n,v)=>n+v,0);
+  const total=Math.max(0,Number(base)||0)+earned;let level=1,remaining=total,need=100;
+  while(remaining>=need&&level<10000){remaining-=need;level++;need=100+(level-1)*50;}
+  const today=events.filter(e=>new Date(e.t).toLocaleDateString('sv-SE')===SUPPORT_DAY());
+  return {total,level,remaining,need,todayXP:today.reduce((n,e)=>n+(Number(e.xp)||0),0)+(bonuses[SUPPORT_DAY()]||0),todayCount:today.filter(e=>e.fid).length};
+}
+function renderReward(){const r=practiceReward(),s=supportStats();$('#rewardZone').innerHTML=`<div class="reward-top"><div><span class="reward-label">쌓아온 연습</span><b>Lv.${r.level}<small>학습 레벨</small></b></div><span class="xp-total">${r.total.toLocaleString()}<small>총 XP</small></span></div><div class="xp-track"><i style="width:${Math.round(r.remaining/r.need*100)}%"></i></div><div class="xp-next"><span>다음 레벨까지 ${r.need-r.remaining} XP</span><b>${r.remaining} / ${r.need}</b></div><div class="reward-stats"><span>오늘 <b>${r.todayCount}회</b></span><span>오늘 <b>+${r.todayXP} XP</b></span><span>누적 <b>${s.total}회</b></span></div>`;if($('#coreDifficulty'))$('#coreDifficulty').textContent='기본표현 D'+alGet().speak;}
+function basicDifficultyLabel(n=alGet().speak){return '기본표현 D'+n+' · '+(n<15?'짧은 문장부터':n<35?'문장을 조금 더 길게':'다양한 길이의 문장');}
 function supportName(){return hGet('speakingroom:name','')||localStorage.getItem('speakingroom:sync_name')||'친구';}
 function renderAutoLvlStatus(){if($('#autoLvlLine'))$('#autoLvlLine').textContent='말하기 D'+alGet().speak+' · 속도 D'+alGet().speed;}
 function renderSupportHome(){
   const s=supportStats(),q=supportToday(),d=alGet(),done=q.travel>=10;
+  renderReward();
   $('#profileBtn').textContent=supportName().slice(0,1);
   $('#heroZone').innerHTML=`<div class="home-head"><div class="hh-top"><div class="hh-lv"><span class="hh-lv-num">D${d.speak}</span><span class="hh-lv-band">말하기 난이도</span></div><div class="hh-chips"><span class="hh-chip"><b>🔥 ${s.streak}</b> 일 연속</span><span class="hh-chip"><b>${s.automatic}</b> 표현 익숙해짐</span></div></div><div class="hello-line">${escapeHtml(supportName())}님, 오늘도 입에서 꺼내볼까요?</div><div class="hh-bar"><i style="width:${Math.round(s.automatic/TRAVEL_FRAMES.length*100)}%"></i></div><div class="hh-xp"><span>익숙한 기본표현</span><span>${s.automatic} / ${TRAVEL_FRAMES.length}</span></div></div>`;
   $('#routineZone').innerHTML=`<div class="routine-single"><div><div class="panel-title">☀️ 오늘의 루틴</div><b>기본표현 10회</b><small>하루 10번, 입에서 바로 나오도록.</small></div><button data-routine="travel" class="routine-start">${done?'한 번 더 →':'시작 →'}</button></div><div class="routine-progress"><i style="width:${Math.min(100,(q.travel||0)/10*100)}%"></i></div><div class="routine-bottom"><span>${done?'오늘의 목표 완료 ✓':'오늘의 작은 목표'}</span><b>${Math.min(10,q.travel||0)} / 10회</b></div>`;
@@ -180,7 +199,7 @@ function renderSupportHome(){
 function openGrowth(){const ov=openSheet('실력 · 성장 기록'),s=supportStats(),voice=s.voice.slice(-20);const reaction=voice.length?voice.reduce((n,e)=>n+e.reaction,0)/voice.length:null;
   ov.querySelector('#sheetContent').innerHTML=`<div class="stat-grid"><div class="stat"><span class="se">🎯</span><div><div class="sv">${s.accuracy===null?'—':s.accuracy+'%'}</div><div class="sl">누적 정답률</div></div></div><div class="stat"><span class="se">⚡</span><div><div class="sv">${reaction===null?'—':reaction.toFixed(1)+'초'}</div><div class="sl">최근 말 시작 시간</div></div></div></div><p class="muted">말 시작 시간은 음성 입력의 최근 20회 기준이며, 상황을 읽는 예상 시간을 제외한 값이에요. 직접 입력은 포함하지 않아요.</p><div class="prof-h">표현별 숙련도</div>${TRAVEL_FRAMES.map(f=>{const r=travelStat(f.id),pct=Math.min(100,(r.streak||0)/3*100);return `<div class="mastery-row"><div><b>${escapeHtml(f.frame)}</b><small>${r.ok||0}번 정답 · ${r.miss||0}번 오답</small></div><div class="mastery-track"><i style="width:${pct}%"></i></div></div>`;}).join('')}`;
 }
-function openProfile(){const ov=openSheet('내 프로필'),s=supportStats();ov.querySelector('#sheetContent').innerHTML=`<div class="profile-heading"><div class="prof-av">${escapeHtml(supportName().slice(0,1))}</div><div><b>${escapeHtml(supportName())}님</b><small>${s.streak}일 연속 · ${s.total}번 연습 · 말하기 D${alGet().speak}</small></div></div><label class="field-label" for="profileName">앱에서 부를 이름</label><input id="profileName" class="auto-input" maxlength="12" value="${escapeHtml(supportName())}"><button id="saveName" class="primary">이름 저장</button><div class="prof-h">나의 영어</div><button id="profileGrowth" class="tut-li">🌱 실력 · 성장 기록 <span>›</span></button><button id="profileRank" class="tut-li">🏆 랭킹 <span>›</span></button><div class="prof-h">계정 · 기기 연동</div><button id="profileSync" class="tut-li">☁️ 기록 동기화 <span>›</span></button><div class="prof-h">시작 안내 · 튜토리얼</div><button id="profileGuide" class="tut-li">📖 처음 사용법 다시 보기 <span>›</span></button>`;
+function openProfile(){const ov=openSheet('내 프로필'),s=supportStats();ov.querySelector('#sheetContent').innerHTML=`<div class="profile-heading"><div class="prof-av">${escapeHtml(supportName().slice(0,1))}</div><div><b>${escapeHtml(supportName())}님</b><small>Lv.${practiceReward().level} · ${practiceReward().total} XP · ${s.total}번 연습 · 기본표현 D${alGet().speak}</small></div></div><label class="field-label" for="profileName">앱에서 부를 이름</label><input id="profileName" class="auto-input" maxlength="12" value="${escapeHtml(supportName())}"><button id="saveName" class="primary">이름 저장</button><div class="prof-h">나의 영어</div><button id="profileGrowth" class="tut-li">🌱 실력 · 성장 기록 <span>›</span></button><button id="profileRank" class="tut-li">🏆 랭킹 <span>›</span></button><div class="prof-h">계정 · 기기 연동</div><button id="profileSync" class="tut-li">☁️ 기록 동기화 <span>›</span></button><div class="prof-h">시작 안내 · 튜토리얼</div><button id="profileGuide" class="tut-li">📖 처음 사용법 다시 보기 <span>›</span></button>`;
   ov.querySelector('#saveName').onclick=()=>{hSet('speakingroom:name',ov.querySelector('#profileName').value.trim().slice(0,12)||'친구');ov.remove();renderHome();supportQueueSync();};
   for(const [id,fn]of [['profileGrowth',openGrowth],['profileRank',openRank],['profileSync',openSync],['profileGuide',openTutorial]])ov.querySelector('#'+id).onclick=fn;
 }
@@ -188,9 +207,9 @@ const GUIDE=[['✈️','먼저 기본표현부터','상황을 읽고 영어로 �
 function openTutorial(){let index=0;const ov=openSheet('처음 사용법');const paint=()=>{const [ico,title,text]=GUIDE[index];ov.querySelector('#sheetContent').innerHTML=`<div class="guide-card"><div class="onb-badge">${ico}</div><div class="onb-dots">${GUIDE.map((_,i)=>`<span class="onb-dot ${i===index?'on':''}"></span>`).join('')}</div><small>${index+1} / ${GUIDE.length}</small><h3>${title}</h3><p>${text}</p></div><div class="guide-actions">${index?'<button id="guideBack" class="quiet">이전</button>':''}<button id="guideNext" class="primary">${index===GUIDE.length-1?'연습 시작하기':'다음'}</button></div>`;if(index)ov.querySelector('#guideBack').onclick=()=>{index--;paint();};ov.querySelector('#guideNext').onclick=()=>{if(index===GUIDE.length-1){hSet('speakingroom:compact_guide_seen',true);ov.remove();}else{index++;paint();}};};paint();}
 function supportMergeLog(a,b){const out={...a};for(const [k,v]of Object.entries(b||{}))if(v&&typeof v==='object'&&Number.isFinite(v.t))out[k]=v;return out;}
 function supportMergeTravel(a,b){const out={...a};for(const [k,v]of Object.entries(b||{})){if(!v||typeof v!=='object')continue;const own=out[k];if(!own){out[k]=v;continue;}const recent=(v.lastT||0)>(own.lastT||0)?v:own;out[k]={...recent,seen:Math.max(own.seen||0,v.seen||0),ok:Math.max(own.ok||0,v.ok||0),miss:Math.max(own.miss||0,v.miss||0),introduced:!!(v.introduced||own.introduced),used:[...new Set([...(own.used||[]),...(v.used||[])])]};}return out;}
-function supportApplySnapshot(data){for(const key of SYNC_KEYS){if(typeof data[key]!=='string')continue;let remote;try{remote=JSON.parse(data[key]);}catch(_){continue;}const local=hGet(key,null);if(key===PRACTICE_LOG)remote=supportMergeLog(local||{},remote);else if(key===TRAVEL_KEY)remote=supportMergeTravel(local||{},remote);else if(key===MISS_KEY){const out={...local};for(const [en,r]of Object.entries(remote||{}))if(r&&typeof r==='object'&&(!out[en]||(r.lastT||0)>(out[en].lastT||0)))out[en]=r;remote=out;for(const [en,r]of Object.entries(remote)){const f=(hGet(TRAVEL_KEY,{})||{})[r.fid];if(f&&(f.lastT||0)>=(r.lastT||0)&&(f.streak||0)>=3)delete remote[en];}}else if(key==='speakingroom:compact_quest'){if(local&&local.date===remote.date)remote={...remote,travel:Math.max(local.travel||0,remote.travel||0),miss:Math.max(local.miss||0,remote.miss||0),talk:Math.max(local.talk||0,remote.talk||0)};else if(local&&local.date>remote.date)remote=local;}else if(key==='speakingroom:autolvl'&&local){remote={...local,...remote};}hSet(key,remote);}}
+function supportApplySnapshot(data){for(const key of SYNC_KEYS){if(typeof data[key]!=='string')continue;let remote;try{remote=JSON.parse(data[key]);}catch(_){continue;}const local=hGet(key,null);if(key===PRACTICE_LOG)remote=supportMergeLog(local||{},remote);else if(key===TRAVEL_KEY)remote=supportMergeTravel(local||{},remote);else if(key===MISS_KEY){const out={...local};for(const [en,r]of Object.entries(remote||{}))if(r&&typeof r==='object'&&(!out[en]||(r.lastT||0)>(out[en].lastT||0)))out[en]=r;remote=out;for(const [en,r]of Object.entries(remote)){const f=(hGet(TRAVEL_KEY,{})||{})[r.fid];if(f&&(f.lastT||0)>=(r.lastT||0)&&(f.streak||0)>=3)delete remote[en];}}else if(key==='speakingroom:compact_quest'){if(local&&local.date===remote.date)remote={...remote,travel:Math.max(local.travel||0,remote.travel||0),miss:Math.max(local.miss||0,remote.miss||0),talk:Math.max(local.talk||0,remote.talk||0)};else if(local&&local.date>remote.date)remote=local;}else if(key==='speakingroom:practice_xpbase'){remote=Math.max(Number(local)||0,Number(remote)||0);}else if(key==='speakingroom:autolvl'&&local){remote={...local,...remote};}hSet(key,remote);}}
 function supportCollect(){const data={};for(const key of SYNC_KEYS){const v=localStorage.getItem(key);if(v!==null)data[key]=v;}return data;}
-function supportRankingSummary(){const s=supportStats(),now=Date.now(),week=s.events.filter(e=>e.t>=now-7*86400000),old=hGet('speakingroom:prof',{})||{};return {name:supportName(),xp:old.xp||0,lv:1,week:0,streak:s.streak,blocks:s.automatic,lvl:alGet().speak,mins:Math.round(week.reduce((n,e)=>n+(e.seconds||0),0)/60),allMins:Math.round(s.events.reduce((n,e)=>n+(e.seconds||0),0)/60)};}
+function supportRankingSummary(){const s=supportStats(),now=Date.now(),week=s.events.filter(e=>e.t>=now-7*86400000),old=hGet('speakingroom:prof',{})||{};return {name:supportName(),xp:practiceReward().total,lv:practiceReward().level,week:s.events.filter(e=>e.t>=now-7*86400000).reduce((n,e)=>n+(Number(e.xp)||0),0),streak:s.streak,blocks:s.automatic,lvl:alGet().speak,mins:Math.round(week.reduce((n,e)=>n+(e.seconds||0),0)/60),allMins:Math.round(s.events.reduce((n,e)=>n+(e.seconds||0),0)/60)};}
 async function supportSync(nick){if(supportSyncBusy)throw Error('다른 동기화가 진행 중이에요.');supportSyncBusy=true;try{
  const response=await fetch(PROXY_URL+'/u?n='+encodeURIComponent(nick),{cache:'no-store'});if(!response.ok)throw Error('기록을 불러오지 못했어요 ('+response.status+').');const saved=await response.json();
  const existing=saved.d&&typeof saved.d==='object'?saved.d:{};supportApplySnapshot(existing);

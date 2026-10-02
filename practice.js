@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.1.2", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.2.0", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -36,7 +36,7 @@ function travelCountPick(onPick){
 function travelPoolOf(ids){if(!ids||!ids.length)return null;return TRAVEL_FRAMES.filter(f=>ids.includes(f.id));}
 function travelBuildItems(count,pool){
   const frames=travelPickFrames(count,pool),records=travelAll();
-  const items=frames.map(f=>{const ex=travelPickItem(f,records);return {_travel:true,frame:f,block:{id:f.id,block:f.frame},ex:{en:ex.en,ko:ex.ko,situation:f.purpose},limit:3};});
+  const items=frames.map(f=>{const ex=travelPickItem(f,records);return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame:f,block:{id:f.id,block:f.frame},ex:{en:ex.en,ko:ex.ko,situation:f.purpose},limit:3};});
   travelSave(records);travelMarkShown(frames.map(f=>f.id));return items;
 }
 function travelReadMs(it){return Math.max(2500,Math.min(7000,String(it.ex.ko||'').replace(/\s/g,'').length*220));}
@@ -83,7 +83,7 @@ function autoDrillRender(recall=false){
   const it=autoDrill.items[autoDrill.idx];it.recall=recall;
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
-  const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card"><div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div><p class="eyebrow">${escapeHtml(autoDrill.title)}</p><h2>${it._intro&&!recall?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>${it._intro&&!recall?`<p class="intro">${escapeHtml(it.frame.ko)}<br><b>${escapeHtml(it.ex.en)}</b></p>`:''}<p class="situation">${escapeHtml(it.ex.ko)}</p><p id="autoStat" class="muted">${recall?'방금 본 문장을 가렸어요. 기억에서 꺼내보세요.':'상황을 먼저 읽고, 영어로 말해보세요.'}</p><div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div></div>`;
+  const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card"><div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div><p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty))}</p>`:''}<h2>${it._intro&&!recall?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>${it._intro&&!recall?`<p class="intro">${escapeHtml(it.frame.ko)}<br><b>${escapeHtml(it.ex.en)}</b></p>`:''}<p class="situation">${escapeHtml(it.ex.ko)}</p><p id="autoStat" class="muted">${recall?'방금 본 문장을 가렸어요. 기억에서 꺼내보세요.':'상황을 먼저 읽고, 영어로 말해보세요.'}</p><div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div></div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
   $('#autoMic').onclick=async()=>{if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='말한 뒤 다시 누르면 끝나요';$('#autoStat').textContent='듣고 있어요…';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en);};
@@ -102,10 +102,10 @@ function autoDrillFinish(heard,meta={}){
   const it=autoDrill.items[autoDrill.idx],g=travelGrade(it,heard),perfect=g.ok&&!it._hintUsed;
   it._lastHeard=heard;it._lastOk=g.ok;
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
-  if(typeof recordPractice==='function')recordPractice({it,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title});
+  if(typeof recordPractice==='function'){recordPractice({it,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
   if(!perfect&&(it._requeues||0)<2){const again={...it,_intro:false,_hintUsed:false,_requeues:(it._requeues||0)+1,_lastHeard:'',_lastOk:false};if(!it._requeues)autoDrill.items.splice(Math.min(autoDrill.items.length,autoDrill.idx+5+Math.floor(Math.random()*3)),0,again);else autoDrill.items.push(again);}
   const message=perfect?'상황에 맞게 말했어요.':g.ok?'표현을 보고 말했어요. 다음엔 상황만 보고 꺼내보세요.':g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:g.keyMiss?'표현은 맞았어요. 상황에 맞는 핵심 낱말을 넣어보세요.':`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
-  autoDrillShowResult(it,!perfect,perfect,message);
+  autoDrillShowResult(it,!perfect,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
 }
 function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 말해보세요.'){
   if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);pendingReply=true;
@@ -125,7 +125,7 @@ function autoDrillAdvance(perfect,it){
 function autoDrillDone(){
   if(!autoDrill)return;stopMicrophone();if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);svStop();if(TTS)TTS.cancel();
   const rows=autoDrill.results,title=autoDrill.title,correct=rows.filter(r=>r.ok).length;
-  $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p><p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
+  $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p>${rows.some(r=>r.xp)?`<div class="session-reward"><b>+${rows.reduce((n,r)=>n+(r.xp||0),0)} XP</b><span>이번 연습에서 쌓은 경험치</span></div>`:''}<p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
 }
 function openSurvival(){
   const ov=openSheet('AI 실전회화');
