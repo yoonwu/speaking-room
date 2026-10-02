@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test android/tests/native-integration.test.cjs android/tests/web-release.test.cjs android/tests/compact-practice.test.cjs
+      - run: node --test android/tests/native-integration.test.cjs android/tests/web-release.test.cjs android/tests/compact-practice.test.cjs android/tests/home-support.test.cjs
       - name: Generate immutable source descriptor
         run: node scripts/android-web-release.cjs "$GITHUB_SHA" "$RUNNER_TEMP/android-web/android-web-release.json"
       - name: Publish descriptor

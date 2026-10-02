@@ -1,17 +1,18 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.0.0", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.1.0", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
 let curScreen="setup", autoDrill=null, sessionEpoch=0, pendingReply=false;
 const TTS=window.speechSynthesis, SSU=window.SpeechSynthesisUtterance;
-function levelRate(){return .95;}
+function levelRate(slow){const v=typeof alGet==='function'?alGet().speed||1:30;const rate=.70+(v-1)*(.34/59);return slow?Math.max(.45,rate*.6):rate;}
 function adWordHint(it){const k=travelKeyOf(it);return k.key.length?k.key.join(' · '):'';}
 function showError(error){ $("#notice").textContent=String(error&&error.message||error); }
 function renderHome(){
   const selected=travelStudyGet().filter(id=>TRAVEL_BY_ID[id]).length;
   $("#engStudySub").textContent=selected?`${selected}개 표현을 골라 반복해요`:"필요한 표현만 골라 반복해요";
   $("#engMissSub").textContent=missCount()?`${missCount()}문장 · 틀린 문장만 다시 말해요`:"틀린 문장을 자동으로 모아 반복해요";
+  if(typeof renderSupportHome==='function')renderSupportHome();
 }
 function stopMicrophone(){ micEpoch++; vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
 function goToSetup(){
@@ -102,6 +103,7 @@ function autoDrillFinish(heard,meta={}){
   const it=autoDrill.items[autoDrill.idx],g=travelGrade(it,heard),perfect=g.ok&&!it._hintUsed;
   it._lastHeard=heard;it._lastOk=g.ok;
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
+  if(typeof recordPractice==='function')recordPractice({it,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title});
   if(!perfect&&(it._requeues||0)<2){const again={...it,_intro:false,_hintUsed:false,_requeues:(it._requeues||0)+1,_lastHeard:'',_lastOk:false};if(!it._requeues)autoDrill.items.splice(Math.min(autoDrill.items.length,autoDrill.idx+5+Math.floor(Math.random()*3)),0,again);else autoDrill.items.push(again);}
   const message=perfect?'상황에 맞게 말했어요.':g.ok?'표현을 보고 말했어요. 다음엔 상황만 보고 꺼내보세요.':g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:g.keyMiss?'표현은 맞았어요. 상황에 맞는 핵심 낱말을 넣어보세요.':`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
   autoDrillShowResult(it,!perfect,perfect,message);
@@ -132,7 +134,7 @@ function openSurvival(){
   ov.querySelectorAll('[data-scene]').forEach(b=>b.onclick=()=>{const scene=SURVIVAL.find(s=>s.id===b.dataset.scene);ov.remove();startSurvival(scene);});
   if(ov.querySelector('#aiAccount'))ov.querySelector('#aiAccount').onclick=()=>window.srNativeRequest('settings').catch(showError);
 }
-function rolePrompt(){return ['You are a friendly realistic conversation partner helping a Korean learner practice spoken English.','Situation: '+state.scn.ctx,'Play the role of '+state.scn.role+'.','Use short beginner-friendly English: one or two sentences and one question at a time. Stay in character and respond to the learner’s intended meaning, even with imperfect grammar.','Accept different natural expressions; do not require an exact memorized sentence or reveal answers before the learner tries.','Create a natural conversation. Ask for missing details one at a time. Let the learner explain, clarify, request, and correct misunderstandings. Wrap up when the situation is resolved.','Give a short hint only when asked. Do not score, award points, or prescribe other learning modes.'].join('\n');}
+function rolePrompt(){return ['You are a friendly realistic conversation partner helping a Korean learner practice spoken English.','Situation: '+state.scn.ctx,'Play the role of '+state.scn.role+'.',typeof aiLevelInstruction==='function'?aiLevelInstruction():'Use short beginner-friendly English: one or two sentences and one question at a time.','Stay in character and respond to the learner’s intended meaning, even with imperfect grammar.','Accept different natural expressions; do not require an exact memorized sentence or reveal answers before the learner tries.','Create a natural conversation. Ask for missing details one at a time. Let the learner explain, clarify, request, and correct misunderstandings. Wrap up when the situation is resolved.','Give a short hint only when asked. Do not score, award points, or prescribe other learning modes.'].join('\n');}
 function startSurvival(scene){goToSetup();state.scn=scene;state.convo=[];state.engine='survival';state.mode='talk';startSession();}
 async function startSession(){
   const epoch=sessionEpoch;curScreen='talk';setup.hidden=true;setup.style.display='none';stage.hidden=false;stage.style.display='flex';$('#sceneTitle').textContent=state.scn.t;threadInner.innerHTML='';setBusy(true);
@@ -145,7 +147,7 @@ function setBusy(b){state.busy=b;$('#sendBtn').disabled=b;$('#micBtn').disabled=
 async function sendMessage(){
   const text=msg.value.trim();if(!text||state.busy||!state.scn)return;
   const epoch=sessionEpoch;msg.value='';addMeTurn(text);state.convo.push({role:'user',text});setBusy(true);
-  try{const result=await callClaude(rolePrompt(),state.convo.map(t=>({role:t.role,content:t.text})));if(epoch!==sessionEpoch)return;const answer=stripUsedMarker(extractText(result)).clean;state.convo.push({role:'assistant',text:answer});addCoachTurn(answer);}catch(e){if(epoch===sessionEpoch)addCoachTurn('응답하지 못했어요. '+e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
+  try{const result=await callClaude(rolePrompt(),state.convo.map(t=>({role:t.role,content:t.text})));if(epoch!==sessionEpoch)return;const answer=stripUsedMarker(extractText(result)).clean;state.convo.push({role:'assistant',text:answer});addCoachTurn(answer);if(typeof recordAiPractice==='function')recordAiPractice();}catch(e){if(epoch===sessionEpoch)addCoachTurn('응답하지 못했어요. '+e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
 async function askHelp(){if(state.busy||!state.scn)return;await conversationAdvice('Give me one short example of how I can answer your last question, with a brief Korean meaning.');}
 async function getFeedback(){if(state.busy||!state.scn)return;await conversationAdvice('Give concise Korean feedback on my most recent English sentence and one natural English alternative. Do not score. Do not advance the conversation.');}
@@ -153,7 +155,7 @@ async function conversationAdvice(request){
   const epoch=sessionEpoch;setBusy(true);
   try{const history=state.convo.map(t=>({role:t.role,content:t.text}));history.push({role:'user',content:request});const result=await callClaude(rolePrompt(),history);if(epoch===sessionEpoch)addCoachTurn(stripUsedMarker(extractText(result)).clean,false);}catch(e){if(epoch===sessionEpoch)addCoachTurn(e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
-function speakEn(text){if(!text)return;const epoch=sessionEpoch;svSpeak(text,.95).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=.95;TTS.speak(u);});}
+function speakEn(text){if(!text)return;const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
 async function micFillCb(rawCb,refText=''){
   if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};

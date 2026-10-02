@@ -6,20 +6,25 @@
 <meta name="theme-color" content="#f7f8f5">
 <meta name="description" content="상황을 보고 영어로 말하는 반복 연습. 여행 표현, 골라서 연습, 자주 틀리는 문장, AI 실전회화.">
 <title>3초영어</title>
-<!-- APP_VERSION = "v4.0.0" : lets the previous installed web app detect this update. -->
+<!-- APP_VERSION = "v4.1.0" : lets the previous installed web app detect this update. -->
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="practice.css">
 </head>
 <body>
 <main id="setup" class="home">
-  <header class="home-heading"><span class="brand-mark">3</span><h1>3초영어</h1><p>상황을 보고, 바로 말하는 연습.</p></header>
+  <header class="home-heading"><div><span class="brand-label">SPEAKING ROOM</span><h1>3초영어<span class="brand-dot">.</span></h1></div><button id="profileBtn" class="profile-pill" aria-label="내 프로필">나</button></header>
+  <section id="heroZone" aria-label="내 성장 기록"></section>
+  <section id="routineZone" class="routine-panel" aria-label="오늘의 루틴"></section>
+  <div class="section-label"><h2>입에서 바로 나오는 연습</h2><button id="tutorialBtn" class="quiet">사용법 ?</button></div>
   <nav class="practice-menu" aria-label="연습 선택">
     <button id="engTravel" class="menu-card travel"><span class="menu-icon">✈️</span><span><b>여행 표현</b><small>상황만 보고 영어를 꺼내보세요</small></span><span class="arrow">›</span></button>
     <button id="engStudy" class="menu-card"><span class="menu-icon">✓</span><span><b>골라서 연습</b><small id="engStudySub">필요한 표현만 골라 반복해요</small></span><span class="arrow">›</span></button>
     <button id="engMiss" class="menu-card"><span class="menu-icon">↻</span><span><b>자주 틀리는 문장</b><small id="engMissSub">틀린 문장을 모아 다시 말해요</small></span><span class="arrow">›</span></button>
     <button id="engReal" class="menu-card"><span class="menu-icon">💬</span><span><b>AI 실전회화</b><small>실제 상황처럼 영어로 주고받아요</small></span><span class="arrow">›</span></button>
   </nav>
+  <section id="growthZone" class="growth-panel" aria-label="실력과 성장"></section>
+  <div class="home-tools"><button id="rankBtn" class="tool-card">🏆 랭킹 <span>함께 쌓은 기록 ›</span></button><button id="syncBtn" class="tool-card">☁️ 기록 동기화 <span id="syncSummary">기기 간 이어서 ›</span></button></div>
   <p id="notice" role="status" class="notice"></p>
   <footer><button id="verFoot" class="quiet">업데이트 확인</button><a href="privacy.html">개인정보 안내</a></footer>
 </main>
@@ -33,6 +38,7 @@
 </section>
 <script src="practice-data.js"></script>
 <script src="practice.js"></script>
+<script src="home-support.js"></script>
 <script src="android-native.js"></script>
 </body>
 </html>
