@@ -1,6 +1,6 @@
 # 학습 화면 자동 배포
 
-0.4.0 (code 4)부터 학습 HTML/JavaScript/표현 자료는 Play 설치 파일과 별도로 갱신합니다. 아직 정식 Play 배포와 실기기 검증은 완료되지 않았습니다. 이전 시험 APK에는 이 기능이 없어 최초 전환에는 새 앱 버전 설치가 필요합니다.
+0.4.0 (code 4)부터 학습 HTML/JavaScript/표현 자료는 Play 설치 파일과 별도로 갱신합니다. 현재 빌드는 0.5.0이며 네 가지 연습으로 간소화했습니다. 아직 정식 Play 배포와 실기기 검증은 완료되지 않았습니다. 이전 시험 APK에는 이 기능이 없어 최초 전환에는 새 앱 버전 설치가 필요합니다.
 
 ## 사용자에게 반영되는 시점
 
@@ -23,6 +23,6 @@
 
 문제가 있는 학습 배포는 GitHub Actions에서 이전 정상 소스 커밋을 다시 배포하거나 정상 상태를 복원하여 push합니다. 되돌릴 때도 학습 기록은 삭제하지 않습니다.
 
-검증: Node 배포 설명서 검사, JVM 크기/해시/경로/호환성/부분 다운로드 검사, release lint/AAB 빌드. 실제 폰에서 네트워크 차단·복귀·다운로드 중 종료·기록 유지·연습 중 미갱신은 추가 검증이 필요합니다.
+검증: Node 네 가지 연습·음성 연결·배포 설명서 검사, JVM 크기/해시/경로/호환성/부분 다운로드 검사, release lint/AAB 빌드. 실제 폰에서 네트워크 차단·복귀·다운로드 중 종료·기록 유지·연습 중 미갱신은 추가 검증이 필요합니다.
 
 [Android WebView 콘텐츠 문서](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content), [Google Play 네이티브 연결 보안 안내](https://support.google.com/googleplay/android-developer/answer/10768383?hl=en).

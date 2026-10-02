@@ -33,12 +33,9 @@ public final class VoiceService extends Service implements RecognitionListener {
     private boolean active, speaking, listening, ttsReady;
     private int generation, turns, silenceRetries;
     private JSONArray history = new JSONArray();
-    private JSONArray reviewQuestions = new JSONArray();
-    private boolean review;
     private String utterance;
     private int utteranceNumber;
     private String webInstructions;
-    private boolean integrated;
     private final Runnable timeout = () -> finish("연습 시간이 끝났습니다.");
 
     @Override public void onCreate() {
@@ -59,7 +56,7 @@ public final class VoiceService extends Service implements RecognitionListener {
         }));
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override public void onStart(String id) {}
-            @Override public void onDone(String id) { main.post(() -> { if (!active || !id.equals(utterance)) return; speaking = false; if (turns >= 6) finish("대화 완료. 지난 대화 반복으로 다시 연습할 수 있어요."); else main.postDelayed(() -> listen(), 450); }); }
+            @Override public void onDone(String id) { main.post(() -> { if (!active || !id.equals(utterance)) return; speaking = false; if (turns >= 6) finish("대화를 마쳤습니다."); else main.postDelayed(() -> listen(), 450); }); }
             @Override public void onError(String id) { main.post(() -> finish("음성 재생 오류로 연습을 멈췄습니다.")); }
         });
     }
@@ -72,26 +69,22 @@ public final class VoiceService extends Service implements RecognitionListener {
             if (Build.VERSION.SDK_INT >= 30) startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE | ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
             else if (Build.VERSION.SDK_INT >= 29) startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
             else startForeground(1, notification);
-            review = intent.getBooleanExtra("review", false);
-            if (!review && !client.connected()) { finish("먼저 ChatGPT를 연결해주세요."); return START_NOT_STICKY; }
+            if (!client.connected()) { finish("먼저 ChatGPT를 연결해주세요."); return START_NOT_STICKY; }
             if (!SpeechRecognizer.isRecognitionAvailable(this)) { finish("음성 인식 서비스가 없습니다. Google 음성 인식을 설치해주세요."); return START_NOT_STICKY; }
             model = intent.getStringExtra("model"); topic = intent.getStringExtra("topic");
-            webInstructions = intent.getStringExtra("webInstructions"); integrated = !review && webInstructions != null;
-            if (!review && (model == null || topic == null)) { finish("모델과 주제를 선택해주세요."); return START_NOT_STICKY; }
-            if (review) { reviewQuestions = new JSONArray(getSharedPreferences("practice", MODE_PRIVATE).getString("questions", "[]")); if (reviewQuestions.length() == 0) { finish("반복할 대화가 없습니다."); return START_NOT_STICKY; } }
+            webInstructions = intent.getStringExtra("webInstructions");
+            if (model == null || webInstructions == null) { finish("모델과 주제를 선택해주세요."); return START_NOT_STICKY; }
             focus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
                 .setOnAudioFocusChangeListener(change -> { if (change < 0) finish("통화 또는 다른 오디오가 시작되어 연습을 멈췄습니다."); }, main).build();
             if (audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { finish("오디오를 사용할 수 없습니다."); return START_NOT_STICKY; }
             active = true; running = true; generation++; turns = 0; history = new JSONArray();
-            if (integrated) history = new JSONArray(intent.getStringExtra("webHistory"));
+            history = new JSONArray(intent.getStringExtra("webHistory"));
             wake.acquire(6 * 60 * 1000L); main.postDelayed(timeout, 5 * 60 * 1000L);
             recognizer = Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
                 ? SpeechRecognizer.createOnDeviceSpeechRecognizer(this) : SpeechRecognizer.createSpeechRecognizer(this);
             recognizer.setRecognitionListener(this);
-            if (review) speak(reviewQuestions.getString(0));
-            else if (integrated) { JSONObject last = history.getJSONObject(history.length()-1); if(!"assistant".equals(last.optString("role"))) { finish("상대의 답변이 나온 뒤 음성을 시작해주세요."); return START_NOT_STICKY; } speak(last.getString("content")); }
-            else next("Start the conversation with one simple question about " + topic + ".");
+            JSONObject last = history.getJSONObject(history.length()-1); if(!"assistant".equals(last.optString("role"))) { finish("상대의 답변이 나온 뒤 음성을 시작해주세요."); return START_NOT_STICKY; } speak(last.getString("content"));
         } catch (Exception e) { finish("음성 시작 실패. 마이크 권한과 음성 설정을 확인해주세요."); }
         return START_NOT_STICKY;
     }
@@ -103,13 +96,12 @@ public final class VoiceService extends Service implements RecognitionListener {
         try { input = new JSONArray(history.toString()); } catch (JSONException e) { finish("대화 저장 실패"); return; }
         io.execute(() -> {
             try {
-                String instructions = integrated ? webInstructions + "\n[VOICE] Continue this same scenario. The learner is speaking. Keep the spoken part concise, at most 35 words, and ask only one question. Preserve required USED and TURN_EVAL metadata tags. After 6 learner turns wrap up without another question. Never ask the learner to operate a phone." : Lesson.instructions(topic);
+                String instructions = webInstructions + "\n[VOICE] Continue this same scenario. The learner is speaking. Keep the spoken part concise, at most 35 words, and ask only one question. After 6 learner turns wrap up without another question. Never ask the learner to operate a phone.";
                 String reply = client.respond(model, instructions, input);
                 main.post(() -> {
                     if (!active || generation != run) return;
                     try { history.put(new JSONObject().put("role", "assistant").put("content", reply)); } catch (JSONException e) { finish("대화 저장 실패"); return; }
-                    saveReview();
-                    if(integrated) try { event(new JSONObject().put("kind","assistant").put("raw",reply).put("user",answer).put("help",answer.startsWith("Please give me one short example"))); } catch(JSONException ignored) {}
+                    try { event(new JSONObject().put("kind","assistant").put("raw",reply).put("user",answer).put("help",answer.startsWith("Please give me one short example"))); } catch(JSONException ignored) {}
                     lastReply = reply; speak(reply);
                 });
             } catch (Exception e) { main.post(() -> { if (active && generation == run) finish(PlanClient.safeMessage(e)); }); }
@@ -141,27 +133,10 @@ public final class VoiceService extends Service implements RecognitionListener {
         String command = Lesson.command(answer);
         if (command.equals("stop")) { finish("연습을 멈췄습니다."); return; }
         if (command.equals("repeat")) { speak(lastReply); return; }
-        if (review) {
-            if (command.equals("help")) { speak("Try a short answer about yourself. " + lastReply); return; }
-            turns++;
-            if (turns >= reviewQuestions.length()) { finish("반복 완료. 답변은 자동 채점하지 않았습니다."); return; }
-            try { speak(reviewQuestions.getString(turns)); } catch (JSONException e) { finish("복습 데이터를 읽지 못했습니다."); }
-            return;
-        }
         if (command.equals("help")) { next("Please give me one short example answer to your last question that I can repeat."); return; }
         turns++;
-        if(integrated) try { event(new JSONObject().put("kind","user").put("text",answer)); } catch(JSONException ignored) {}
+        try { event(new JSONObject().put("kind","user").put("text",answer)); } catch(JSONException ignored) {}
         update("나: " + answer); next(answer);
-    }
-    private void saveReview() {
-        try {
-            JSONArray questions = new JSONArray();
-            for (int i = 0; i + 1 < history.length(); i++) {
-                JSONObject line = history.getJSONObject(i), after = history.getJSONObject(i + 1);
-                if ("assistant".equals(line.optString("role")) && "user".equals(after.optString("role")) && !after.optString("content").startsWith("Please give me one short example")) questions.put(SpeechText.clean(line.getString("content")));
-            }
-            if (questions.length() > 0) getSharedPreferences("practice", MODE_PRIVATE).edit().putString("questions", questions.toString()).apply();
-        } catch (JSONException ignored) {}
     }
     @Override public void onError(int error) {
         listening = false; if (!active) return;

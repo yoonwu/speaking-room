@@ -10,7 +10,6 @@ import android.webkit.*;
 import androidx.webkit.*;
 import org.json.*;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -22,18 +21,14 @@ public final class MainActivity extends Activity {
     private long pausedAt;
     private boolean loadingPage=true, checkingUpdate;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
-    private ValueCallback<Uri[]> fileChoice;
     private PermissionRequest microphoneRequest;
-    private String backup;
-    private JavaScriptReplyProxy backupReply;
-    private String backupId;
     static final String ORIGIN = "https://appassets.androidplatform.net";
     // Only packaged or verified owner releases run, under the same restricted origin.
     @android.annotation.SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); plan = PlanClient.get(this);
         web = new WebView(this);
-        updater = new WebUpdater(this, 4);
+        updater = new WebUpdater(this, 5);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -64,12 +59,6 @@ public final class MainActivity extends Activity {
             @Override public void onPageFinished(WebView v, String url) { drainVoice(); }
         });
         web.setWebChromeClient(new WebChromeClient() {
-            @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                if (fileChoice != null) fileChoice.onReceiveValue(null); fileChoice = callback;
-                try { startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE), 10); }
-                catch (Exception e) { fileChoice.onReceiveValue(null); fileChoice = null; }
-                return true;
-            }
             @Override public void onPermissionRequest(PermissionRequest request) {
                 runOnUiThread(() -> {
                     if (!ORIGIN.equals(request.getOrigin().toString().replaceAll("/$", "")) || !trusted(Uri.parse(web.getUrl())) || VoiceService.running || !Arrays.asList(request.getResources()).contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) { request.deny(); return; }
@@ -110,14 +99,8 @@ public final class MainActivity extends Activity {
                         } catch (Exception e) { runOnUiThread(() -> reply(reply, requestId, null, PlanClient.safeMessage(e))); } }); break;
                     case "voice":
                         if (!ready()) throw new IOException("먼저 구독 연결 테스트를 완료해주세요.");
-                        startVoice(args, false); reply(reply, id, new JSONObject(), null); break;
-                    case "review": startVoice(args, true); reply(reply, id, new JSONObject(), null); break;
+                        startVoice(args); reply(reply, id, new JSONObject(), null); break;
                     case "stop": stopService(new Intent(this, VoiceService.class)); reply(reply, id, new JSONObject(), null); break;
-                    case "backup":
-                        if (backupReply != null) throw new IOException("먼저 진행 중인 파일 저장을 끝내주세요.");
-                        backup = args.getString("text"); new JSONObject(backup);
-                        backupReply = reply; backupId = id;
-                        startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE,"speaking-room-progress.json"), 11); break;
                     default: throw new IOException("지원하지 않는 요청입니다.");
                 }
             } catch (Exception e) { reply(reply, id, null, PlanClient.safeMessage(e)); }
@@ -130,15 +113,15 @@ public final class MainActivity extends Activity {
     static boolean trusted(Uri u) { return u != null && "https".equals(u.getScheme()) && "appassets.androidplatform.net".equals(u.getHost()) && u.getPort()==-1 && u.getUserInfo()==null && u.getPath() != null && u.getPath().startsWith("/assets/"); }
     private String model() { return getSharedPreferences("native", MODE_PRIVATE).getString("model", ""); }
     private boolean ready() { return plan.connected() && !model().isEmpty() && plan.label().equals(getSharedPreferences("native", MODE_PRIVATE).getString("account", "")); }
-    private void startVoice(JSONObject args, boolean review) throws Exception {
+    private void startVoice(JSONObject args) throws Exception {
         if (VoiceService.running) throw new IOException("이미 음성 연습 중입니다.");
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)) {
             if (Build.VERSION.SDK_INT >= 33) requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS}, 20);
             else requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 20);
             throw new IOException("권한을 허용한 뒤 음성 시작을 다시 눌러주세요.");
         }
-        Intent intent = new Intent(this, VoiceService.class).putExtra("review", review).putExtra("model", model()).putExtra("topic", "current 3초영어 scenario");
-        if (!review) { JSONArray history = args.getJSONArray("history"); if (history.length() == 0 || history.length() > 100) throw new IOException("먼저 기존 회화에서 상황을 선택하고 대화를 시작해주세요."); intent.putExtra("webHistory", history.toString()).putExtra("webInstructions", args.getString("instructions")); }
+        Intent intent = new Intent(this, VoiceService.class).putExtra("model", model()).putExtra("topic", "current 3초영어 scenario");
+        JSONArray history = args.getJSONArray("history"); if (history.length() == 0 || history.length() > 100) throw new IOException("먼저 기존 회화에서 상황을 선택하고 대화를 시작해주세요."); intent.putExtra("webHistory", history.toString()).putExtra("webInstructions", args.getString("instructions"));
         startForegroundService(intent);
     }
     private void reply(JavaScriptReplyProxy proxy, String id, JSONObject result, String error) {
@@ -151,24 +134,14 @@ public final class MainActivity extends Activity {
         if (events.length() == 0) return;
         web.evaluateJavascript("window.srNativeEvents?window.srNativeEvents(" + JSONObject.quote(events.toString()) + "):false", ack -> { if ("true".equals(ack)) VoiceService.ackEvents(events); });
     }
-    @Override protected void onActivityResult(int request, int result, Intent intent) {
-        super.onActivityResult(request, result, intent);
-        if (request == 10 && fileChoice != null) { fileChoice.onReceiveValue(result == RESULT_OK && intent != null ? new Uri[]{intent.getData()} : null); fileChoice = null; }
-        if (request == 11 && backupReply != null) {
-            JavaScriptReplyProxy proxy = backupReply; String id = backupId, text = backup; backupReply = null; backup = null;
-            if (result != RESULT_OK || intent == null) { reply(proxy, id, null, "파일 저장을 취소했습니다."); return; }
-            Uri uri = intent.getData();
-            io.execute(() -> { try (OutputStream out = getContentResolver().openOutputStream(uri)) { if (out == null) throw new IOException(); out.write(text.getBytes(StandardCharsets.UTF_8)); runOnUiThread(()->reply(proxy,id,new JSONObject(),null)); } catch (Exception e) { runOnUiThread(()->reply(proxy,id,null,"파일 저장 실패")); } });
-        }
-    }
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,4); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,5); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.
-            web.evaluateJavascript("typeof state!=='undefined'&&!state.busy&&typeof curScreen!=='undefined'&&curScreen==='setup'&&typeof setup!=='undefined'&&setup.style.display!=='none'&&!(typeof _modalOpen==='function'&&_modalOpen())&&!(typeof _topOverlay==='function'&&_topOverlay())", safe->{
+            web.evaluateJavascript("typeof state!=='undefined'&&!state.busy&&typeof curScreen!=='undefined'&&curScreen==='setup'&&typeof setup!=='undefined'&&setup.style.display!=='none'&&!document.getElementById('practiceSheet')&&!(typeof _modalOpen==='function'&&_modalOpen())&&!(typeof _topOverlay==='function'&&_topOverlay())", safe->{
                 if(!"true".equals(safe)) { android.widget.Toast.makeText(this,"학습 화면 업데이트는 홈으로 돌아온 뒤 적용됩니다.",android.widget.Toast.LENGTH_SHORT).show(); return; }
                 updater=next; web.clearCache(true); web.loadUrl(ORIGIN+"/assets/index.html");
             });
@@ -182,5 +155,5 @@ public final class MainActivity extends Activity {
     }
     private void leaveScenario() { web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
     @Override public void onBackPressed() { leaveScenario(); }
-    @Override protected void onDestroy() { VoiceService.observer = null; stopService(new Intent(this,VoiceService.class)); if (fileChoice != null) fileChoice.onReceiveValue(null); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() { VoiceService.observer = null; stopService(new Intent(this,VoiceService.class)); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
 }

@@ -1,5 +1,16 @@
-# speaking-room
+# 3초영어
 
-기존 3초영어와 사용자별 ChatGPT 연결을 포함하는 Android 앱. [사용 안내](android/README.md) · [Play 배포 준비](android/PLAY-RELEASE.md).
+상황을 보고 바로 영어를 말하는 반복학습 앱입니다. 메뉴는 네 가지입니다.
 
-Play 스토어 등록과 실기기 연동 검증은 아직 완료되지 않았습니다.
+- 여행 표현: 처음에는 표현을 보여주고 이후에는 상황만 보고 말합니다. 틀린 문장은 뒤에 다시 나옵니다.
+- 골라서 연습: 필요한 여행 표현을 선택해 해당 표현만 반복합니다.
+- 자주 틀리는 문장: 오답을 모아 반복하며 연속 3번 맞히면 목록에서 빠집니다.
+- AI 실전회화: 상황을 고르면 짧은 영어 대화를 시작합니다. 막혔을 때 도움말과 내 표현 확인을 사용할 수 있습니다.
+
+기존 여행 표현·선택·오답의 localStorage 키를 유지합니다. 루틴, 랭킹, XP/보상, 단어·파닉스·별도 듣기·스피드런·별도 블록 훈련·프로필·닉네임 동기화는 제거했습니다. 기존 저장 데이터를 일괄 삭제하지 않습니다.
+
+`index.html`, `practice.css`, `practice.js`, `practice-data.js`가 현재 웹 앱입니다. `practice-data.js`는 기존 여행 자료/선택/판정/음성 입력·읽기 공통 도구만 보관합니다. `android-native.js`는 Android의 ChatGPT 연결과 AI 회화 음성을 같은 화면에 붙입니다.
+
+[Android 안내](android/README.md) · [학습 화면 자동 배포](android/WEB-UPDATES.md) · [Play 제출 준비](android/PLAY-RELEASE.md)
+
+Play 업로드는 중단된 상태이며 정식 배포와 실기기 검증은 아직 완료되지 않았습니다.

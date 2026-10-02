@@ -1,12 +1,12 @@
 {
   "name": "3초영어",
   "short_name": "3초영어",
-  "description": "아는 영어 말고, 나오는 영어",
+  "description": "여행 표현 · 골라서 연습 · 자주 틀리는 문장 · AI 실전회화",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fdf6f0",
-  "theme_color": "#E8755A",
+  "background_color": "#f7f8f5",
+  "theme_color": "#f7f8f5",
   "orientation": "portrait",
   "icons": [
     {
