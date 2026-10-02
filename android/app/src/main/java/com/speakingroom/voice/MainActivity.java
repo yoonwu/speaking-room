@@ -38,6 +38,7 @@ public final class MainActivity extends Activity {
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
         WebSettings settings = web.getSettings(); settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE); // Snapshot files are already cached and verified by WebUpdater.
         settings.setAllowFileAccess(false); settings.setAllowContentAccess(false); settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setMediaPlaybackRequiresUserGesture(true);
         WebViewAssetLoader loader = new WebViewAssetLoader.Builder().addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this)).build();
@@ -46,7 +47,7 @@ public final class MainActivity extends Activity {
                 Uri requested=request.getUrl();
                 WebResourceResponse response = trusted(requested) ? updater.handle(requested.getPath().substring("/assets/".length())) : null;
                 if(response==null) response = loader.shouldInterceptRequest(requested);
-                if (response != null && "text/html".equals(response.getMimeType())) {
+                if (response != null) {
                     Map<String,String> headers = new HashMap<>();
                     headers.put("Content-Security-Policy", "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self' data: https:; media-src 'self' blob: data: https:; frame-src 'none'; object-src 'none'");
                     headers.put("Cache-Control", "no-store");
