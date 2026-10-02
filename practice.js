@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.1.0", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.1.1", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -44,7 +44,7 @@ function travelReadMs(it){return Math.max(2500,Math.min(7000,String(it.ex.ko||''
 function startTravelDrill(count,skipGuide,skipPick,ids){
   if(count==null&&!skipPick)return travelCountPick(n=>startTravelDrill(n,true,true,ids));
   if(ids&&ids.length&&!travelPoolOf(ids).length)return showError('선택한 표현이 없어요. 다시 골라주세요.');
-  startDrill(travelBuildItems(Math.max(3,Math.min(30,count||travelCountGet())),travelPoolOf(ids)),ids?'골라서 연습':'여행 표현');
+  startDrill(travelBuildItems(Math.max(3,Math.min(30,count||travelCountGet())),travelPoolOf(ids)),ids?'골라서 연습':'기본표현');
 }
 function openTravelStudyPicker(){
   const ov=openSheet('골라서 연습'),selected=new Set(travelStudyGet().filter(id=>TRAVEL_BY_ID[id]));
@@ -70,7 +70,7 @@ function missBuildItems(list){return list.filter(m=>TRAVEL_BY_ID[m.fid]).map(m=>
 function openMissPicker(){
   const ov=openSheet('자주 틀리는 문장'),content=ov.querySelector('#sheetContent');
   const list=missList();
-  content.innerHTML=list.length?`<p class="muted">연속 ${MISS_GRADUATE}번 맞히면 목록에서 빠져요.</p>`+list.map(m=>`<div class="miss-row"><b>${escapeHtml(m.en)}</b><span>${escapeHtml(m.ko||travelKrOf(m.en))}</span><small>${m.miss}번 틀림 · 연속 ${m.streak||0}번 정답</small></div>`).join('')+'<button id="missStart" class="primary">틀린 문장 반복하기</button>':'<p class="empty">여행 표현을 연습하다 틀린 문장이 여기에 모여요.</p>';
+  content.innerHTML=list.length?`<p class="muted">연속 ${MISS_GRADUATE}번 맞히면 목록에서 빠져요.</p>`+list.map(m=>`<div class="miss-row"><b>${escapeHtml(m.en)}</b><span>${escapeHtml(m.ko||travelKrOf(m.en))}</span><small>${m.miss}번 틀림 · 연속 ${m.streak||0}번 정답</small></div>`).join('')+'<button id="missStart" class="primary">틀린 문장 반복하기</button>':'<p class="empty">기본표현을 연습하다 틀린 문장이 여기에 모여요.</p>';
   const start=content.querySelector('#missStart');if(start)start.onclick=()=>{ov.remove();startMissDrill(list.slice(0,30));};
 }
 function startMissDrill(list){const items=missBuildItems(list);for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}if(items.length)startDrill(items,'자주 틀리는 문장');}
@@ -188,7 +188,7 @@ async function checkForUpdate(){
   if(window.SpeakingRoomNative)return;
   try{const r=await fetch('practice.js?cb='+Date.now(),{cache:'no-store'});if(!r.ok)return;const v=(await r.text()).match(/APP_VERSION="([^"]+)"/);if(v&&v[1]!==APP_VERSION&&curScreen==='setup')location.reload();}catch(_){}
 }
-$('#engTravel').onclick=()=>startTravelDrill();$('#engStudy').onclick=openTravelStudyPicker;$('#engMiss').onclick=openMissPicker;$('#engReal').onclick=openSurvival;
+$('#engTravel').onclick=()=>startTravelDrill(10,true,true);$('#engStudy').onclick=openTravelStudyPicker;$('#engMiss').onclick=openMissPicker;$('#engReal').onclick=openSurvival;
 $('#chatBack').onclick=goToSetup;$('#sendBtn').onclick=sendMessage;$('#helpBtn').onclick=askHelp;$('#fbBtn').onclick=getFeedback;
 $('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
 $('#micBtn').onclick=()=>{if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(state.busy)return;svStop();if(TTS)TTS.cancel();$('#micBtn').textContent='말하기 끝';micFillCb((text,meta)=>{$('#micBtn').textContent='🎤';if(text){msg.value=text;sendMessage();}else addCoachTurn(meta.sttErr||'잘 들리지 않았어요. 다시 말해주세요.',false);});};

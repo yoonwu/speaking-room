@@ -1,7 +1,7 @@
 {
   "name": "3초영어",
   "short_name": "3초영어",
-  "description": "여행 표현 · 골라서 연습 · 자주 틀리는 문장 · AI 실전회화",
+  "description": "기본표현 · 골라서 연습 · 자주 틀리는 문장 · AI 실전회화",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
