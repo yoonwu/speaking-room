@@ -170,6 +170,10 @@ function speakEn(text){if(!text)return;const epoch=sessionEpoch;svSpeak(text,lev
 async function micFillCb(rawCb,refText=''){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};
+  if(window.srNativeRequest && window.srNativePracticeSpeech==null){
+    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;}catch(_){}
+    if(epoch!==micEpoch)return;
+  }
   if(window.srNativePracticeSpeech){
     qzRecording=true;const startAt=Date.now();
     try{const result=await window.srNativeRequest('recognize');cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text});}
