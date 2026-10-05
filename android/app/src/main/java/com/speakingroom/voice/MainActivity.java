@@ -17,6 +17,7 @@ import java.util.concurrent.*;
 public final class MainActivity extends Activity {
     private WebView web;
     private PlanClient plan;
+    private PracticeSpeech practiceSpeech;
     private volatile WebUpdater updater;
     private long pausedAt;
     private boolean loadingPage=true, checkingUpdate;
@@ -27,9 +28,9 @@ public final class MainActivity extends Activity {
     // Only packaged or verified owner releases run, under the same restricted origin.
     @android.annotation.SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle saved) {
-        super.onCreate(saved); plan = PlanClient.get(this);
+        super.onCreate(saved); plan = PlanClient.get(this); practiceSpeech=new PracticeSpeech(this);
         web = new WebView(this);
-        updater = new WebUpdater(this, 7);
+        updater = new WebUpdater(this, 8);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -85,7 +86,7 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
                     case "webupdate":
                         if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
                         reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
@@ -98,6 +99,17 @@ public final class MainActivity extends Activity {
                             String text = plan.respond(model(), args.getString("instructions"), messages);
                             runOnUiThread(() -> { try { reply(reply, requestId, new JSONObject().put("text", text), null); } catch (Exception ignored) {} });
                         } catch (Exception e) { runOnUiThread(() -> reply(reply, requestId, null, PlanClient.safeMessage(e))); } }); break;
+                    case "recognize":
+                        if(VoiceService.running)throw new IOException("AI 음성 대화를 멈춘 뒤 연습해주세요.");
+                        Runnable recognize=()->practiceSpeech.start((text,error)->{try{reply(reply,requestId,new JSONObject().put("text",text),error);}catch(Exception ignored){}});
+                        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
+                            if(pendingVoiceStart!=null)throw new IOException("마이크 허용을 기다리고 있어요.");
+                            pendingVoiceStart=recognize;
+                            pendingVoiceDenied=()->reply(reply,requestId,null,"마이크 사용을 허용해주세요.");
+                            requestMicrophonePermission(20);
+                        } else recognize.run(); break;
+                    case "recognizeStop": practiceSpeech.stop(); reply(reply,id,new JSONObject(),null); break;
+                    case "recognizeCancel": practiceSpeech.cancel(); reply(reply,id,new JSONObject(),null); break;
                     case "voice":
                         if (!ready()) throw new IOException("먼저 구독 연결 테스트를 완료해주세요.");
                         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
@@ -155,7 +167,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,5); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,8); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.
@@ -165,7 +177,7 @@ public final class MainActivity extends Activity {
             });
         }); });
     }
-    @Override protected void onPause() { pausedAt=SystemClock.elapsedRealtime(); super.onPause(); }
+    @Override protected void onPause() { pausedAt=SystemClock.elapsedRealtime(); if(practiceSpeech!=null)practiceSpeech.cancel(); super.onPause(); }
     @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); VoiceService.observer = ignored -> runOnUiThread(this::drainVoice); web.evaluateJavascript("window.srNativeRefresh&&window.srNativeRefresh()", null); drainVoice(); if(pausedAt>0 && SystemClock.elapsedRealtime()-pausedAt>60000) checkWebUpdate(false); pausedAt=0; } }
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
@@ -179,5 +191,5 @@ public final class MainActivity extends Activity {
     }
     private void leaveScenario() { finishVoicePermission(false); web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
     @Override public void onBackPressed() { leaveScenario(); }
-    @Override protected void onDestroy() { VoiceService.observer = null; stopService(new Intent(this,VoiceService.class)); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() { VoiceService.observer = null; if(practiceSpeech!=null)practiceSpeech.cancel(); stopService(new Intent(this,VoiceService.class)); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
 }

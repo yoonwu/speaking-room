@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.3.6", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.3.7", APP_BUILD="2026-10-02";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -13,7 +13,7 @@ function renderHome(){
   $("#engMissSub").textContent=missCount()?`${missCount()}문장 · 틀린 문장만 다시 말해요`:"틀린 문장을 자동으로 모아 반복해요";
   if(typeof renderSupportHome==='function')renderSupportHome();
 }
-function stopMicrophone(){ micEpoch++; vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
+function stopMicrophone(){ micEpoch++; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
 function goToSetup(){
   sessionEpoch++; stopMicrophone(); if(TTS)TTS.cancel(); svStop();
   if(autoDrill&&autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
@@ -86,7 +86,7 @@ function autoDrillRender(recall=false){
   const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card"><div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div><p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty))}</p>`:''}<h2>${it._intro&&!recall?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>${it._intro&&!recall?`<p class="intro">${escapeHtml(it.frame.ko)}<br><b>${escapeHtml(it.ex.en)}</b></p>`:''}<p class="situation">${escapeHtml(it.ex.ko)}</p><p id="autoStat" class="muted">${recall?'방금 본 문장을 가렸어요. 기억에서 꺼내보세요.':'상황을 먼저 읽고, 영어로 말해보세요.'}</p><div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div></div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
-  $('#autoMic').onclick=async()=>{if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='말한 뒤 다시 누르면 끝나요';$('#autoStat').textContent='듣고 있어요…';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en);};
+  $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='말한 뒤 다시 누르면 끝나요';$('#autoStat').textContent='듣고 있어요…';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en);};
   $('#autoType').onclick=()=>{$('#autoInput').hidden=false;$('#autoInput').focus();};
   $('#autoInput').oninput=()=>{if(!autoDrill.typedAt)autoDrill.typedAt=Date.now();};
   $('#autoInput').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()&&!pendingReply){e.preventDefault();autoDrillFinish(e.target.value.trim(),{speechStartAt:autoDrill.typedAt,typed:true});}};
@@ -168,8 +168,15 @@ async function conversationAdvice(request){
 }
 function speakEn(text){if(!text)return;const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
 async function micFillCb(rawCb,refText=''){
-  if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
+  if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};
+  if(window.srNativePracticeSpeech){
+    qzRecording=true;const startAt=Date.now();
+    try{const result=await window.srNativeRequest('recognize');cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text});}
+    catch(e){cb('',{sttErr:e.message});}
+    finally{if(epoch===micEpoch)qzRecording=false;}
+    return;
+  }
   try{
     const wait=micCooldownLeft();if(wait)await new Promise(r=>setTimeout(r,wait));if(epoch!==micEpoch)return;
     const stream=await micStreamGet();if(epoch!==micEpoch){micStreamRelease();return;}
@@ -192,7 +199,7 @@ async function micFillCb(rawCb,refText=''){
     };
     qzMR.start(250);qzRecording=true;
     vadArm(stream,{...VAD_OPTS,silenceMs:450,maxSilenceMs:1400,maxMs:25000,noSpeechMs:7000,expectWords:refText.trim().split(/\s+/).length,onSpeechStart:t=>{meta.spoke=true;meta.speechStartAt=t;}});
-  }catch(e){micStreamRelease();qzRecording=false;cb('',{sttErr:'마이크를 사용할 수 없어요. 권한을 확인하거나 직접 입력해주세요.'});}
+  }catch(e){micStreamRelease();qzRecording=false;cb('',{sttErr:'녹음을 시작하지 못했어요. ('+String(e.name||'Error')+') '+String(e.message||'')});}
 }
 function forceUpdate(){if(curScreen!=='setup')return showError('홈에서 업데이트를 확인해주세요.');if(window.SpeakingRoomNative)return window.srNativeRequest('webupdate').catch(showError);location.reload();}
 async function checkForUpdate(){
@@ -202,7 +209,7 @@ async function checkForUpdate(){
 $('#engTravel').onclick=()=>startTravelDrill(10,true,true);$('#engStudy').onclick=openTravelStudyPicker;$('#engMiss').onclick=openMissPicker;$('#engReal').onclick=openSurvival;
 $('#chatBack').onclick=goToSetup;$('#sendBtn').onclick=sendMessage;$('#helpBtn').onclick=askHelp;$('#fbBtn').onclick=getFeedback;
 $('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
-$('#micBtn').onclick=()=>{if(qzRecording){if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(state.busy)return;svStop();if(TTS)TTS.cancel();$('#micBtn').textContent='말하기 끝';micFillCb((text,meta)=>{$('#micBtn').textContent='🎤';if(text){msg.value=text;sendMessage();}else addCoachTurn(meta.sttErr||'잘 들리지 않았어요. 다시 말해주세요.',false);});};
+$('#micBtn').onclick=()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(state.busy)return;svStop();if(TTS)TTS.cancel();$('#micBtn').textContent='말하기 끝';micFillCb((text,meta)=>{$('#micBtn').textContent='🎤';if(text){msg.value=text;sendMessage();}else addCoachTurn(meta.sttErr||'잘 들리지 않았어요. 다시 말해주세요.',false);});};
 $('#ttsBtn').onclick=function(){state.ttsOn=!state.ttsOn;this.setAttribute('aria-pressed',String(state.ttsOn));if(!state.ttsOn){svStop();if(TTS)TTS.cancel();}};
 $('#verFoot').textContent='업데이트 확인';$('#verFoot').onclick=forceUpdate;
 window.addEventListener('popstate',()=>{const sheet=$('#practiceSheet');if(sheet)sheet.remove();else goToSetup();});
