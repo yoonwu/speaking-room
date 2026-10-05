@@ -63,7 +63,7 @@ public final class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     if (!ORIGIN.equals(request.getOrigin().toString().replaceAll("/$", "")) || !trusted(Uri.parse(web.getUrl())) || VoiceService.running || !Arrays.asList(request.getResources()).contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) { request.deny(); return; }
                     if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
-                    else { if(microphoneRequest!=null) microphoneRequest.deny(); microphoneRequest=request; requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},21); }
+                    else { if(microphoneRequest!=null) microphoneRequest.deny(); microphoneRequest=request; requestMicrophonePermission(21); }
                 });
             }
             @Override public void onPermissionRequestCanceled(PermissionRequest request) { if(microphoneRequest==request) microphoneRequest=null; }
@@ -113,12 +113,23 @@ public final class MainActivity extends Activity {
     static boolean trusted(Uri u) { return u != null && "https".equals(u.getScheme()) && "appassets.androidplatform.net".equals(u.getHost()) && u.getPort()==-1 && u.getUserInfo()==null && u.getPath() != null && u.getPath().startsWith("/assets/"); }
     private String model() { return getSharedPreferences("native", MODE_PRIVATE).getString("model", ""); }
     private boolean ready() { return plan.connected() && !model().isEmpty() && plan.label().equals(getSharedPreferences("native", MODE_PRIVATE).getString("account", "")); }
+    private void requestMicrophonePermission(int code) {
+        boolean asked=getSharedPreferences("native",MODE_PRIVATE).getBoolean("micAsked",false);
+        if(asked && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+            if(microphoneRequest!=null){microphoneRequest.deny();microphoneRequest=null;}
+            new AlertDialog.Builder(this).setTitle("마이크 권한이 필요해요")
+                .setMessage("앱 설정의 권한 → 마이크에서 '앱 사용 중에만 허용'을 선택해주세요. 직접 입력으로도 연습할 수 있어요.")
+                .setPositiveButton("앱 설정 열기",(d,w)->startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))))
+                .setNegativeButton("나중에",null).show();return;
+        }
+        getSharedPreferences("native",MODE_PRIVATE).edit().putBoolean("micAsked",true).apply();
+        requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},code);
+    }
     private void startVoice(JSONObject args) throws Exception {
         if (VoiceService.running) throw new IOException("이미 음성 연습 중입니다.");
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED || (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)) {
-            if (Build.VERSION.SDK_INT >= 33) requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS}, 20);
-            else requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 20);
-            throw new IOException("권한을 허용한 뒤 음성 시작을 다시 눌러주세요.");
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestMicrophonePermission(20);
+            throw new IOException("마이크 권한을 허용한 뒤 음성 시작을 다시 눌러주세요.");
         }
         Intent intent = new Intent(this, VoiceService.class).putExtra("model", model()).putExtra("topic", "current 3초영어 scenario");
         JSONArray history = args.getJSONArray("history"); if (history.length() == 0 || history.length() > 100) throw new IOException("먼저 기존 회화에서 상황을 선택하고 대화를 시작해주세요."); intent.putExtra("webHistory", history.toString()).putExtra("webInstructions", args.getString("instructions"));
