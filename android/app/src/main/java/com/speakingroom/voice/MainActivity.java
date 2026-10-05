@@ -30,7 +30,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); plan = PlanClient.get(this); practiceSpeech=new PracticeSpeech(this);
         web = new WebView(this);
-        updater = new WebUpdater(this, 8);
+        updater = new WebUpdater(this, 9);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -58,7 +58,7 @@ public final class MainActivity extends Activity {
                 if (request.isForMainFrame() && "https".equals(u.getScheme())) try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception ignored) {}
                 return true;
             }
-            @Override public void onPageFinished(WebView v, String url) { drainVoice(); }
+            @Override public void onPageFinished(WebView v, String url) { if(trusted(Uri.parse(url)))web.evaluateJavascript("window.srNativeRefresh&&window.srNativeRefresh()",null); drainVoice(); }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public void onPermissionRequest(PermissionRequest request) {
@@ -86,7 +86,7 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",BuildConfig.VERSION_NAME).put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
                     case "webupdate":
                         if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
                         reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
@@ -167,7 +167,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,8); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,9); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.
