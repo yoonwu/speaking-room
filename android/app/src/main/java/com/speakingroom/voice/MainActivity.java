@@ -22,13 +22,14 @@ public final class MainActivity extends Activity {
     private boolean loadingPage=true, checkingUpdate;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private PermissionRequest microphoneRequest;
+    private Runnable pendingVoiceStart, pendingVoiceDenied;
     static final String ORIGIN = "https://appassets.androidplatform.net";
     // Only packaged or verified owner releases run, under the same restricted origin.
     @android.annotation.SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved); plan = PlanClient.get(this);
         web = new WebView(this);
-        updater = new WebUpdater(this, 5);
+        updater = new WebUpdater(this, 7);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -99,7 +100,12 @@ public final class MainActivity extends Activity {
                         } catch (Exception e) { runOnUiThread(() -> reply(reply, requestId, null, PlanClient.safeMessage(e))); } }); break;
                     case "voice":
                         if (!ready()) throw new IOException("먼저 구독 연결 테스트를 완료해주세요.");
-                        startVoice(args); reply(reply, id, new JSONObject(), null); break;
+                        if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
+                            if(pendingVoiceStart!=null)throw new IOException("마이크 허용을 기다리고 있어요.");
+                            pendingVoiceStart=()->{try{startVoice(args);reply(reply,requestId,new JSONObject(),null);}catch(Exception e){reply(reply,requestId,null,PlanClient.safeMessage(e));}};
+                            pendingVoiceDenied=()->reply(reply,requestId,null,"마이크를 허용하면 음성으로 연습할 수 있어요. 직접 입력으로도 계속할 수 있어요.");
+                            requestMicrophonePermission(20);
+                        } else {startVoice(args);reply(reply,id,new JSONObject(),null);} break;
                     case "stop": stopService(new Intent(this, VoiceService.class)); reply(reply, id, new JSONObject(), null); break;
                     default: throw new IOException("지원하지 않는 요청입니다.");
                 }
@@ -117,6 +123,7 @@ public final class MainActivity extends Activity {
         boolean asked=getSharedPreferences("native",MODE_PRIVATE).getBoolean("micAsked",false);
         if(asked && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
             if(microphoneRequest!=null){microphoneRequest.deny();microphoneRequest=null;}
+            finishVoicePermission(false);
             new AlertDialog.Builder(this).setTitle("마이크 권한이 필요해요")
                 .setMessage("앱 설정의 권한 → 마이크에서 '앱 사용 중에만 허용'을 선택해주세요. 직접 입력으로도 연습할 수 있어요.")
                 .setPositiveButton("앱 설정 열기",(d,w)->startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName()))))
@@ -162,9 +169,15 @@ public final class MainActivity extends Activity {
     @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); VoiceService.observer = ignored -> runOnUiThread(this::drainVoice); web.evaluateJavascript("window.srNativeRefresh&&window.srNativeRefresh()", null); drainVoice(); if(pausedAt>0 && SystemClock.elapsedRealtime()-pausedAt>60000) checkWebUpdate(false); pausedAt=0; } }
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] grants) {
         super.onRequestPermissionsResult(request, permissions, grants);
+        if(request==20)finishVoicePermission(checkSelfPermission(Manifest.permission.RECORD_AUDIO)==PackageManager.PERMISSION_GRANTED);
         if(request==21 && microphoneRequest!=null) { PermissionRequest pending=microphoneRequest; microphoneRequest=null; if(grants.length>0 && grants[0]==PackageManager.PERMISSION_GRANTED && trusted(Uri.parse(web.getUrl()))) pending.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE}); else pending.deny(); }
     }
-    private void leaveScenario() { web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
+    private void finishVoicePermission(boolean granted) {
+        Runnable action=granted?pendingVoiceStart:pendingVoiceDenied;
+        pendingVoiceStart=null;pendingVoiceDenied=null;
+        if(action!=null && !isDestroyed())action.run();
+    }
+    private void leaveScenario() { finishVoicePermission(false); web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
     @Override public void onBackPressed() { leaveScenario(); }
     @Override protected void onDestroy() { VoiceService.observer = null; stopService(new Intent(this,VoiceService.class)); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
 }
