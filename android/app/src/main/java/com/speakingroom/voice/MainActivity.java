@@ -86,7 +86,7 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",BuildConfig.VERSION_NAME).put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName).put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
                     case "webupdate":
                         if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
                         reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
