@@ -171,9 +171,10 @@ async function micFillCb(rawCb,refText=''){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};
   if(window.srNativeRequest && window.srNativePracticeSpeech==null){
-    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;}catch(_){}
+    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
     if(epoch!==micEpoch)return;
   }
+  if(window.srNativeRequest && !window.srNativePracticeSpeech){cb('',{sttErr:'학습 화면은 최신이지만 설치된 앱의 음성 기능은 이전 버전이에요. Play 스토어에서 앱을 0.5.3 이상으로 업데이트해주세요.'});return;}
   if(window.srNativePracticeSpeech){
     qzRecording=true;const startAt=Date.now();
     try{const result=await window.srNativeRequest('recognize');cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text});}
