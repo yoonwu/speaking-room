@@ -212,6 +212,8 @@ body{background:radial-gradient(ellipse at 85% 15%,#f5ead660,transparent 45%),#e
 .practice-coach img{display:block;width:88px;height:88px;object-fit:contain;flex:none;animation:samcho-breathe 4.6s ease-in-out infinite;transform-origin:50% 80%}
 .practice-coach #autoStat{min-height:0;margin:0;font-size:14px;line-height:1.65;color:#55796b;word-break:keep-all}
 .auto-actions{flex-shrink:0}
+#autoHintRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+#autoHintRow button{min-height:44px;border:1px solid #c8e6da;background:#f3faf6;border-radius:14px;color:#527b69;font-size:14px;font-weight:750}
 .has-answer .drill-prompt{margin-block:0;padding-bottom:0}
 .practice-feedback{padding:0 3px}
 @media(max-width:359px){.practice-coach{gap:8px}.practice-coach img{width:70px;height:70px}.practice-coach #autoStat{font-size:13px}}

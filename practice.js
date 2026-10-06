@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.3", APP_BUILD="2026-10-06";
+const APP_VERSION="v4.4.4", APP_BUILD="2026-10-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -44,7 +44,6 @@ async function listenMyVoice(){
 function stopMicrophone(){ stopAnswerLoop();stopMyVoice(); micEpoch++; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
 function goToSetup(){
   sessionEpoch++; stopMicrophone();clearAnswerVoice(); if(TTS)TTS.cancel(); svStop();
-  if(autoDrill&&autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
   autoDrill=null; state.busy=false; pendingReply=false; state.scn=null;
   for(const id of ['stage','sprint'])$("#"+id).hidden=true;
   stage.style.display="none"; setup.hidden=false; setup.style.display="block";
@@ -102,7 +101,7 @@ function openMissPicker(){
 }
 function startMissDrill(list){const items=missBuildItems(list);for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}if(items.length)startDrill(items,'자주 틀리는 문장');}
 function startDrill(items,title){
-  goToSetup();autoDrill={items,idx:0,results:[],title,t0:0,hintTimer:null,typedAt:null};
+  goToSetup();autoDrill={items,idx:0,results:[],title,t0:0,typedAt:null};
   curScreen='sprint';setup.hidden=true;setup.style.display='none';$('#sprint').hidden=false;autoDrillRender();
 }
 function autoDrillRender(recall=false){
@@ -110,7 +109,6 @@ function autoDrillRender(recall=false){
   stopMicrophone();clearAnswerVoice();svStop();if(TTS)TTS.cancel();
   const it=autoDrill.items[autoDrill.idx];it.recall=recall;
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
-  if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
   const firstLook=it._intro&&!recall;
   const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
   const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card">
@@ -122,7 +120,7 @@ function autoDrillRender(recall=false){
       <p class="situation">${escapeHtml(it.ex.ko)}</p>
     </div>
     <div id="autoCoach" class="practice-coach"><img src="mascot-guide.png" alt="" width="88" height="88"><p id="autoStat" class="muted" role="status">${escapeHtml(guidance)}</p></div>
-    <div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div>
+    <div class="auto-actions"><div id="autoHintRow"><button class="quiet" id="autoWord">🔍 단어 힌트</button><button class="quiet" id="autoShow">👀 표현 보기</button></div><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden></div>
   </div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
@@ -132,13 +130,11 @@ function autoDrillRender(recall=false){
   $('#autoInput').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()&&!pendingReply){e.preventDefault();autoDrillFinish(e.target.value.trim(),{speechStartAt:autoDrill.typedAt,typed:true});}};
   $('#autoShow').onclick=()=>{stopMicrophone();it._hintUsed=true;autoDrillShowResult(it,true,false);};
   $('#autoWord').onclick=()=>{it._hintUsed=true;$('#autoStat').textContent=adWordHint(it)||'이 표현은 통째로 기억해보세요.';};
-  const epoch=sessionEpoch,index=autoDrill.idx;
-  autoDrill.hintTimer=setTimeout(()=>{if(autoDrill&&epoch===sessionEpoch&&autoDrill.idx===index&&$('#autoHintRow'))$('#autoHintRow').hidden=false;},7000+travelReadMs(it));
 }
 function autoDrillFinish(heard,meta={}){
   if(!autoDrill||pendingReply)return;
   if(!heard){$('#autoStat').textContent=meta.sttErr||'잘 들리지 않았어요. 다시 말하거나 직접 입력해주세요.';$('#autoMic').textContent='🎤 다시 말하기';return;}
-  pendingReply=true;stopMicrophone();saveAnswerVoice(meta.recordingBlob);if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
+  pendingReply=true;stopMicrophone();saveAnswerVoice(meta.recordingBlob);
   const it=autoDrill.items[autoDrill.idx],g=travelGrade(it,heard),perfect=g.ok&&!it._hintUsed;
   it._lastHeard=heard;it._lastOk=g.ok;
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
@@ -148,7 +144,7 @@ function autoDrillFinish(heard,meta={}){
   autoDrillShowResult(it,!perfect,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
 }
 function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 말해보세요.'){
-  if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);pendingReply=true;
+  pendingReply=true;
   const card=document.querySelector('.auto-card'),old=$('#autoAnswer');if(old)old.remove();
   const intro=card.querySelector('.intro');if(intro)intro.remove();const heading=card.querySelector('h2');if(heading)heading.textContent='상황을 보고 말해보세요';
   const answer=document.createElement('div');answer.id='autoAnswer';answer.className='answer';
@@ -177,7 +173,7 @@ function autoDrillAdvance(perfect,it){
   autoDrill.idx++;autoDrillRender();
 }
 function autoDrillDone(){
-  if(!autoDrill)return;stopMicrophone();clearAnswerVoice();if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);svStop();if(TTS)TTS.cancel();
+  if(!autoDrill)return;stopMicrophone();clearAnswerVoice();svStop();if(TTS)TTS.cancel();
   const rows=autoDrill.results,title=autoDrill.title,correct=rows.filter(r=>r.ok).length;
   $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p>${rows.some(r=>r.xp)?`<div class="session-reward"><b>+${rows.reduce((n,r)=>n+(r.xp||0),0)} XP</b><span>이번 연습에서 쌓은 경험치</span></div>`:''}<p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
 }
