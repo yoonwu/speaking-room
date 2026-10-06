@@ -35,7 +35,7 @@ public final class MainActivity extends Activity {
         getSharedPreferences("native", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         getSharedPreferences("plan", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         web = new WebView(this);
-        updater = new WebUpdater(this, 11);
+        updater = new WebUpdater(this, 12);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -91,7 +91,7 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName).put("practiceSpeech",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName).put("practiceSpeech",true).put("practicePlayback",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
                     case "webupdate":
                         if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
                         reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
@@ -105,8 +105,11 @@ public final class MainActivity extends Activity {
                             runOnUiThread(() -> { try { reply(reply, requestId, new JSONObject().put("text", text), null); } catch (Exception ignored) {} });
                         } catch (Exception e) { runOnUiThread(() -> reply(reply, requestId, null, PlanClient.safeMessage(e))); } }); break;
                     case "recognize":
+                    case "recordPractice":
                         if(VoiceService.running)throw new IOException("AI 음성 대화를 멈춘 뒤 연습해주세요.");
-                        Runnable recognize=()->practiceSpeech.start((text,error)->{try{reply(reply,requestId,new JSONObject().put("text",text),error);}catch(Exception ignored){}});
+                        final boolean recordOnly="recordPractice".equals(action);
+                        PracticeSpeech.Completion completed=(text,error,wav)->{try{JSONObject result=new JSONObject().put("text",text);if(wav!=null)result.put("audioBase64",android.util.Base64.encodeToString(wav,android.util.Base64.NO_WRAP));reply(reply,requestId,result,error);}catch(Exception ignored){}};
+                        Runnable recognize=()->{if(recordOnly)practiceSpeech.recordOnly(completed);else practiceSpeech.start(args.optBoolean("recordAnswer",false),completed);};
                         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED) {
                             if(pendingVoiceStart!=null)throw new IOException("마이크 허용을 기다리고 있어요.");
                             pendingVoiceStart=recognize;
@@ -172,7 +175,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,11); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,12); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.

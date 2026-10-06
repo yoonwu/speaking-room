@@ -6,8 +6,8 @@ android {
         applicationId 'com.speakingroom.voice'
         minSdk 26
         targetSdk 36
-        versionCode 11
-        versionName '0.5.6'
+        versionCode 12
+        versionName '0.5.7'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
     sourceSets.main.assets.srcDirs = [layout.buildDirectory.dir('webAssets')]

@@ -237,7 +237,11 @@ $('#profileBtn').onclick=openProfile;$('#tutorialBtn').onclick=openTutorial;$('#
 renderSupportHome();
 /* A brief first-use guide per feature. These device-local flags never enter sync. */
 const FEATURE_GUIDES={
- basic:{icon:'⚡',title:'기본표현',cta:'첫 표현 말해보기 →',steps:[['아는 말인데… 왜 입에서는 안 나오지?','영어 문장을 보면 알겠는데, 막상 말하려면 머릿속이 하얘진 적 있나요?\n\n나랑 짧은 표현부터 꺼내봐요. 상황을 보고 말하고, 막히면 답을 보고 다시 말해요.\n\n오늘은 딱 10번만 해볼까요?']]},
+ basic:{icon:'⚡',title:'기본표현',revision:3,cta:'첫 표현 말해보기 →',steps:[
+  ['아는 말인데… 왜 입에서는 안 나오지?','읽으면 아는 영어도, 말하려면 멈칫하죠.\n\n삼초랑 짧은 표현부터 직접 꺼내봐요.\n하루 10번, 내 입으로 말하는 연습이에요.'],
+  ['처음엔 보고, 다음엔 꺼내요','처음 소개하는 표현만 답안을 보여줘요.\n다음부터는 상황을 보고 기억에서 꺼내요.','first-recall'],
+  ['막혀도 괜찮아요. 다시 말하면 돼요','생각나지 않으면 힌트나 표현 보기를 눌러요.\n답을 확인한 뒤에는 가리고 다시 말해봐요.\n\n내 목소리를 듣고, 예문과 비교해도 좋아요.','answer-tools']
+ ]},
  study:{icon:'✓',title:'골라서 연습',steps:[['이 표현만 자꾸 막히나요?','지금 필요한 표현, 입에 잘 안 붙는 표현만 골라봐요. 여러 개를 함께 선택할 수 있어요.'],['선택한 표현으로만 반복해요','연습하기를 누르고 문제 수를 고르면 체크한 표현만 나와요. 기본표현과 같은 방식으로 말하고, 틀린 문장은 다시 연습해요.']]},
  miss:{icon:'↻',title:'자주 틀리는 문장',steps:[['아까 못 꺼낸 말, 다시 해볼까요?','막혔던 문장은 내가 모아둘게요. 답을 읽는 데서 멈추지 말고, 이번엔 직접 꺼내봐요.'],['연속 3번 맞히면 졸업해요','틀린 문장 반복하기를 눌러 연습하세요. 한 문장을 연속 3번 맞히면 목록에서 빠져요.']]},
  ai:{icon:'💬',title:'AI 실전회화',steps:[['연습한 한마디로 대화를 이어봐요','상황을 고르면 상대가 먼저 말을 걸어요. 완벽한 문장을 만들려고 오래 고민하지 말고, 전하고 싶은 뜻부터 말해봐요.'],['막히면 도움을 받아요','막혔어요에서 예시 답변을, 내 표현 확인에서 교정을 볼 수 있어요. Android의 ChatGPT 연결과 음성 대화는 이 화면에서 사용해요.']]},
@@ -250,9 +254,14 @@ const FEATURE_GUIDES={
 };
 const SAMCHO_POSES={welcome:'mascot-welcome.png',explain:'mascot-guide.png',listen:'mascot-listen.png',cheer:'mascot-cheer.png'};
 function samchoGuidePose(id,index,total){if(index===0)return 'welcome';if(id==='ai'||id==='sync')return 'listen';return index===total-1?'cheer':'explain';}
-function featureGuideKey(id){return 'speakingroom:feature_guide:v2:'+id;}
+function featureGuideKey(id){return 'speakingroom:feature_guide:v'+(FEATURE_GUIDES[id]?.revision||2)+':'+id;}
+function featureGuideDemo(kind){
+ if(kind==='first-recall')return `<div class="guide-practice-demo"><div class="guide-demo-first"><span class="guide-demo-step">1 · 처음 만난 표현</span><strong>처음 배우는 문장이에요</strong><p>이 주소 맞아요?</p><b lang="en">Is this the right address?</b><small>보고 익히고, 소리 내어 말해요.</small></div><span class="guide-demo-arrow" aria-hidden="true">↓</span><div class="guide-demo-recall"><span class="guide-demo-step">2 · 그 표현을 다시 연습할 때</span><p>기사에게 주소를 보여줬다.<br>이 주소가 맞는지 물어보세요.</p><span class="guide-hidden-answer">● ● ● <span>이번엔 내가 꺼내 말하기</span></span></div></div>`;
+ if(kind==='answer-tools')return '<div class="guide-practice-tools"><span>🔊 예문 듣기</span><span>🗣 내 목소리 듣기</span><b>🎙 가리고 다시 말하기</b></div>';
+ return '';
+}
 function showFeatureGuide(id,proceed=null){const guide=FEATURE_GUIDES[id];if(!guide)return;if(proceed&&hGet(featureGuideKey(id),false))return proceed();let index=0;let previousPose=null;const ov=openSheet(guide.title+' 시작 안내');
- const paint=()=>{const [title,text]=guide.steps[index];const pose=samchoGuidePose(id,index,guide.steps.length);const previous=previousPose;previousPose=pose;ov.querySelector('#sheetContent').innerHTML=`<div class="feature-guide"><div class="guide-brand">3<span>3초영어 안내</span></div><div class="samcho-stage samcho-${pose}">${previous&&previous!==pose?`<img class="samcho-out" src="${SAMCHO_POSES[previous]}" alt="" aria-hidden="true">`:""}<div class="samcho-enter"><img class="guide-mascot" src="${SAMCHO_POSES[pose]}" alt="3초영어 말풍선 마스코트 삼초"></div></div><span class="mascot-name">삼초랑 한마디씩</span>${guide.steps.length>1?`<div class="onb-dots">${guide.steps.map((_,i)=>`<span class="onb-dot ${i===index?'on':''}"></span>`).join('')}</div><small>${index+1} / ${guide.steps.length}</small>`:''}<h3>${title}</h3><p class="guide-story">${text}</p></div><div class="guide-actions">${index?'<button id="featurePrev" class="quiet">이전</button>':''}<button id="featureNext" class="primary">${index===guide.steps.length-1?(proceed?(guide.cta||'시작하기'):'알겠어요'):'다음'}</button></div>`;if(index)ov.querySelector('#featurePrev').onclick=()=>{index--;paint();};ov.querySelector('#featureNext').onclick=()=>{if(index<guide.steps.length-1){index++;paint();}else{hSet(featureGuideKey(id),true);ov.remove();if(proceed)proceed();}};};paint();}
+ const paint=()=>{const [title,text,demo]=guide.steps[index];const pose=samchoGuidePose(id,index,guide.steps.length);const previous=previousPose;previousPose=pose;ov.querySelector('#sheetContent').innerHTML=`<div class="feature-guide ${demo?'guide-with-demo':''}"><div class="guide-brand">3<span>3초영어 안내</span></div><div class="samcho-stage samcho-${pose}">${previous&&previous!==pose?`<img class="samcho-out" src="${SAMCHO_POSES[previous]}" alt="" aria-hidden="true">`:""}<div class="samcho-enter"><img class="guide-mascot" src="${SAMCHO_POSES[pose]}" alt="3초영어 말풍선 마스코트 삼초"></div></div><span class="mascot-name">삼초랑 한마디씩</span>${guide.steps.length>1?`<div class="onb-dots">${guide.steps.map((_,i)=>`<span class="onb-dot ${i===index?'on':''}"></span>`).join('')}</div><small>${index+1} / ${guide.steps.length}</small>`:''}<h3>${title}</h3><p class="guide-story">${text}</p>${featureGuideDemo(demo)}</div><div class="guide-actions">${index?'<button id="featurePrev" class="quiet">이전</button>':''}<button id="featureNext" class="primary">${index===guide.steps.length-1?(proceed?(guide.cta||'시작하기'):'알겠어요'):'다음'}</button></div>`;if(index)ov.querySelector('#featurePrev').onclick=()=>{index--;paint();};ov.querySelector('#featureNext').onclick=()=>{if(index<guide.steps.length-1){index++;paint();}else{hSet(featureGuideKey(id),true);ov.remove();if(proceed)proceed();}};};paint();}
 function withFirstGuide(id,fn){return function(...args){return showFeatureGuide(id,()=>fn.apply(this,args));};}
 startTravelDrill=withFirstGuide('basic',startTravelDrill);
 openTravelStudyPicker=withFirstGuide('study',openTravelStudyPicker);

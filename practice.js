@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.1", APP_BUILD="2026-10-06";
+const APP_VERSION="v4.4.3", APP_BUILD="2026-10-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -13,11 +13,37 @@ function renderHome(){
   $("#engMissSub").textContent=missCount()?`${missCount()}문장 · 틀린 문장만 다시 말해요`:"틀린 문장을 자동으로 모아 반복해요";
   if(typeof renderSupportHome==='function')renderSupportHome();
 }
-let answerLoopTimer=null;
-function stopAnswerLoop(){if(answerLoopTimer)clearTimeout(answerLoopTimer);answerLoopTimer=null;}
-function stopMicrophone(){ stopAnswerLoop(); micEpoch++; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
+let answerLoopTimer=null, answerVoiceUrl=null, answerVoicePlayer=null;
+function stopAnswerLoop(){if(answerLoopTimer)clearTimeout(answerLoopTimer);answerLoopTimer=null;const button=$('#answerLoop');if(button)button.textContent='🔁 반복 듣기';}
+function stopMyVoice(){if(answerVoicePlayer){answerVoicePlayer.pause();answerVoicePlayer=null;}const button=$('#answerVoice');if(button)button.textContent='🗣 내 목소리 듣기';}
+function clearAnswerVoice(){stopMyVoice();if(answerVoiceUrl)URL.revokeObjectURL(answerVoiceUrl);answerVoiceUrl=null;}
+function saveAnswerVoice(blob){clearAnswerVoice();if(blob&&blob.size>44)answerVoiceUrl=URL.createObjectURL(blob);}
+function nativeRecordingBlob(result){if(!result.audioBase64)return null;const bytes=Uint8Array.from(atob(result.audioBase64),c=>c.charCodeAt(0));return new Blob([bytes],{type:'audio/wav'});}
+async function listenMyVoice(){
+  const out=$('#answerToolInfo'),button=$('#answerVoice');if(!button)return;
+  if(answerVoicePlayer){stopMyVoice();return;}
+  if(!answerVoiceUrl){
+    out.hidden=false;
+    if(window.srNativePracticePlayback){
+      out.innerHTML='<p>내 목소리로 한 번 더 말하고, 예문과 비교해보세요.</p><button id="recordMyVoice" class="quiet">🎙 녹음하기</button>';
+      const record=$('#recordMyVoice');record.onclick=async()=>{
+        if(qzRecording){window.srNativeRequest('recognizeStop').catch(()=>{});return;}
+        const epoch=micEpoch;stopAnswerLoop();svStop();if(TTS)TTS.cancel();qzRecording=true;record.textContent='■ 녹음 끝내기';
+        try{const result=await window.srNativeRequest('recordPractice');if(epoch!==micEpoch)return;saveAnswerVoice(nativeRecordingBlob(result));if(!answerVoiceUrl)throw Error('녹음된 소리가 없어요. 다시 말해주세요.');out.textContent='녹음했어요. 내 목소리 듣기를 눌러 비교해보세요.';}
+        catch(e){if(epoch===micEpoch)out.textContent=e.message;}finally{if(epoch===micEpoch)qzRecording=false;}
+      };
+    }else out.textContent=window.SpeakingRoomNative?'내 목소리 듣기는 앱 0.5.7부터 사용할 수 있어요. Play 스토어에서 업데이트해주세요.':'마이크로 답한 뒤 내 목소리를 들을 수 있어요. 직접 입력한 답변에는 녹음이 없어요.';
+    return;
+  }
+  stopAnswerLoop();svStop();if(TTS)TTS.cancel();
+  const epoch=micEpoch,player=new Audio(answerVoiceUrl);answerVoicePlayer=player;button.textContent='■ 재생 멈추기';
+  player.onended=()=>{if(answerVoicePlayer===player)stopMyVoice();};
+  player.onerror=()=>{if(answerVoicePlayer!==player)return;stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 다시 말하며 녹음해주세요.';};
+  try{await player.play();}catch(e){if(epoch===micEpoch&&answerVoicePlayer===player){stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 내 목소리 듣기를 다시 눌러주세요.';}}
+}
+function stopMicrophone(){ stopAnswerLoop();stopMyVoice(); micEpoch++; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
 function goToSetup(){
-  sessionEpoch++; stopMicrophone(); if(TTS)TTS.cancel(); svStop();
+  sessionEpoch++; stopMicrophone();clearAnswerVoice(); if(TTS)TTS.cancel(); svStop();
   if(autoDrill&&autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
   autoDrill=null; state.busy=false; pendingReply=false; state.scn=null;
   for(const id of ['stage','sprint'])$("#"+id).hidden=true;
@@ -81,11 +107,23 @@ function startDrill(items,title){
 }
 function autoDrillRender(recall=false){
   if(!autoDrill)return;if(autoDrill.idx>=autoDrill.items.length)return autoDrillDone();
-  stopMicrophone();svStop();if(TTS)TTS.cancel();
+  stopMicrophone();clearAnswerVoice();svStop();if(TTS)TTS.cancel();
   const it=autoDrill.items[autoDrill.idx];it.recall=recall;
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
-  const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card"><div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><div class="lesson-progress" aria-label="연습 진행"><i style="width:${autoDrill.idx/autoDrill.items.length*100}%"></i></div><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div><p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty))}</p>`:''}<h2>${it._intro&&!recall?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>${it._intro&&!recall?`<p class="intro">${escapeHtml(it.frame.ko)}<br><b>${escapeHtml(it.ex.en)}</b></p>`:''}<p class="situation">${escapeHtml(it.ex.ko)}</p><p id="autoStat" class="muted">${recall?'방금 본 문장을 가렸어요. 기억에서 꺼내보세요.':'상황을 먼저 읽고, 영어로 말해보세요.'}</p><div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div></div>`;
+  const firstLook=it._intro&&!recall;
+  const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
+  const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card">
+    <div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><div class="lesson-progress" aria-label="연습 진행"><i style="width:${autoDrill.idx/autoDrill.items.length*100}%"></i></div><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div>
+    <div class="drill-prompt">
+      <p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty))}</p>`:''}
+      <h2>${firstLook?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>
+      ${firstLook?`<div class="intro"><p class="intro-label">처음 배우는 문장이에요</p><p>${escapeHtml(it.frame.ko)}</p><b>${escapeHtml(it.ex.en)}</b></div>`:''}
+      <p class="situation">${escapeHtml(it.ex.ko)}</p>
+    </div>
+    <div id="autoCoach" class="practice-coach"><img src="mascot-guide.png" alt="" width="88" height="88"><p id="autoStat" class="muted" role="status">${escapeHtml(guidance)}</p></div>
+    <div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden><div id="autoHintRow" hidden><button class="quiet" id="autoWord">단어 힌트</button><button class="quiet" id="autoShow">표현 보기</button></div></div>
+  </div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
   $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='말한 뒤 다시 누르면 끝나요';$('#autoStat').textContent='듣고 있어요…';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en);};
@@ -100,7 +138,7 @@ function autoDrillRender(recall=false){
 function autoDrillFinish(heard,meta={}){
   if(!autoDrill||pendingReply)return;
   if(!heard){$('#autoStat').textContent=meta.sttErr||'잘 들리지 않았어요. 다시 말하거나 직접 입력해주세요.';$('#autoMic').textContent='🎤 다시 말하기';return;}
-  pendingReply=true;stopMicrophone();if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
+  pendingReply=true;stopMicrophone();saveAnswerVoice(meta.recordingBlob);if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);
   const it=autoDrill.items[autoDrill.idx],g=travelGrade(it,heard),perfect=g.ok&&!it._hintUsed;
   it._lastHeard=heard;it._lastOk=g.ok;
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
@@ -116,7 +154,12 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   const answer=document.createElement('div');answer.id='autoAnswer';answer.className='answer';
   const key=travelKeyOf(it),kr=travelKrOf(it.ex.en),notes=prepNotes(it.ex.en),words=[...new Set(adWords(it.ex.en))].filter(w=>w.length>2&&!/^(can|could|would|the|you|your|have|does|there|that|with|for|and|this|are)$/.test(w));
   answer.innerHTML=`<small class="answer-kicker">이렇게 말하면 돼요</small><b class="answer-sentence">${escapeHtml(it.ex.en)}</b>${kr?`<p class="answer-ko">${escapeHtml(kr)}</p>`:''}<p class="answer-pattern">표현은 <b>${escapeHtml(it.frame.frame)}</b>${key.key.length?` · 꼭 들어갈 말 <em>${escapeHtml(key.key.join(' · '))}</em>`:''}<br>나머지는 상황에 맞게 바꿔도 돼요.</p>${it._lastOk&&adNorm(it._lastHeard)!==adNorm(it.ex.en)?`<p class="accepted-answer">✓ 내가 말한 표현도 맞아요: ${escapeHtml(it._lastHeard)}</p>`:''}${notes.length?`<section class="answer-explain prep-explain"><h3>🔤 왜 이 전치사냐면</h3>${notes.map(n=>`<div class="prep-row"><b>${escapeHtml(n.w)}</b><p><strong>${escapeHtml(n.t)}</strong> — ${n.d}</p></div>`).join('')}</section>`:''}${it.frame.tip?`<section class="answer-explain usage-explain"><h3>🧭 언제 쓰는 표현이냐면</h3><div>${it.frame.tip}</div>${it.frame.parts?.length?`<div class="answer-chunks"><h3>✂️ 이렇게 끊어서 보세요 <span>표현 예시</span></h3><div class="chunk-row">${it.frame.parts.map(([en,ko])=>`<span><b>${escapeHtml(en)}</b><small>${escapeHtml(ko)}</small></span>`).join('')}</div>${it.frame.pnote?`<p>${it.frame.pnote}</p>`:''}</div>`:''}</section>`:''}<div class="answer-words"><span>🔍 단어 뜻</span>${words.map(w=>`<button data-word="${escapeHtml(w)}">${escapeHtml(w)}</button>`).join('')}</div><div id="answerWordInfo" hidden></div><div class="answer-tools"><button id="answerListen">🔊 다시 듣기</button><button id="answerLoop">🔁 반복 듣기</button><button id="answerSay">🎙 다시 말하기</button><button id="answerStress">📊 문장 강세</button><button id="answerAi">💬 AI 질문</button><button id="answerVocab">📒 단어장</button></div><div id="answerToolInfo" hidden role="status"></div>`;
-  card.insertBefore(answer,$('#autoStat'));
+  const voiceButton=document.createElement('button');voiceButton.id='answerVoice';voiceButton.textContent='🗣 내 목소리 듣기';voiceButton.onclick=listenMyVoice;
+  const tools=answer.querySelector('.answer-tools');tools.insertBefore(voiceButton,tools.querySelector('#answerStress'));
+  card.className='auto-card has-answer';
+  const coach=$('#autoCoach');coach.className='practice-coach practice-feedback';
+  const mascot=coach.querySelector('img');if(mascot)mascot.remove();
+  card.insertBefore(answer,coach);
   $('#answerListen').onclick=()=>speakEn(it.ex.en);
   $('#answerLoop').onclick=()=>{if(answerLoopTimer){stopAnswerLoop();$('#answerLoop').textContent='🔁 반복 듣기';}else{const play=()=>{if(!answer.isConnected)return stopAnswerLoop();speakEn(it.ex.en);answerLoopTimer=setTimeout(play,Math.max(4500,it.ex.en.length*95));};play();$('#answerLoop').textContent='⏹ 반복 멈추기';}};
   $('#answerSay').onclick=()=>autoDrillRender(true);
@@ -134,7 +177,7 @@ function autoDrillAdvance(perfect,it){
   autoDrill.idx++;autoDrillRender();
 }
 function autoDrillDone(){
-  if(!autoDrill)return;stopMicrophone();if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);svStop();if(TTS)TTS.cancel();
+  if(!autoDrill)return;stopMicrophone();clearAnswerVoice();if(autoDrill.hintTimer)clearTimeout(autoDrill.hintTimer);svStop();if(TTS)TTS.cancel();
   const rows=autoDrill.results,title=autoDrill.title,correct=rows.filter(r=>r.ok).length;
   $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p>${rows.some(r=>r.xp)?`<div class="session-reward"><b>+${rows.reduce((n,r)=>n+(r.xp||0),0)} XP</b><span>이번 연습에서 쌓은 경험치</span></div>`:''}<p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
 }
@@ -177,7 +220,7 @@ async function conversationAdvice(request){
   const epoch=sessionEpoch;setBusy(true);
   try{const history=state.convo.map(t=>({role:t.role,content:t.text}));history.push({role:'user',content:request});const result=await callClaude(rolePrompt(),history);if(epoch===sessionEpoch)addCoachTurn(stripUsedMarker(extractText(result)).clean,false);}catch(e){if(epoch===sessionEpoch)addCoachTurn(e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
-function speakEn(text){if(!text)return;const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
+function speakEn(text){if(!text)return;if(qzRecording)stopMicrophone();stopMyVoice();const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
 async function micFillCb(rawCb,refText=''){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};
@@ -188,7 +231,7 @@ async function micFillCb(rawCb,refText=''){
   if(window.srNativeRequest && !window.srNativePracticeSpeech){cb('',{sttErr:'학습 화면은 최신이지만 설치된 앱의 음성 기능은 이전 버전이에요. Play 스토어에서 앱을 0.5.3 이상으로 업데이트해주세요.'});return;}
   if(window.srNativePracticeSpeech){
     qzRecording=true;const startAt=Date.now();
-    try{const result=await window.srNativeRequest('recognize');cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text});}
+    try{const result=await window.srNativeRequest('recognize',{recordAnswer:!!refText});if(epoch!==micEpoch)return;cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text,recordingBlob:nativeRecordingBlob(result)});}
     catch(e){cb('',{sttErr:e.message});}
     finally{if(epoch===micEpoch)qzRecording=false;}
     return;
@@ -203,9 +246,10 @@ async function micFillCb(rawCb,refText=''){
       if(epoch!==micEpoch){micLiveStop(live);return;}
       vadCancel();qzRecording=false;micStartCooldown();micStreamIdle();meta.stopAt=Date.now();
       try{
+        const raw=new Blob(chunks,{type:actualMime});if(raw.size>=400)meta.recordingBlob=raw;
         const device=await micLiveWait(live,900);if(epoch!==micEpoch)return;
         if(device&&device.text)return cb(device.text,meta);
-        const raw=new Blob(chunks,{type:actualMime});if(raw.size<400)return cb('',meta);
+        if(raw.size<400)return cb('',meta);
         const response=await sttRecognize(raw,actualMime);if(!response.ok)throw new Error('음성 인식 연결 오류 ('+response.status+')');
         const data=await response.json();let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
         if(text&&(!meta.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text.trim()))text='';
