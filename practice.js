@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.5", APP_BUILD="2026-10-06";
+const APP_VERSION="v4.4.6", APP_BUILD="2026-10-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -78,7 +78,7 @@ function openTravelStudyPicker(){
   const content=ov.querySelector('#sheetContent');
   content.innerHTML='<p class="muted">입에 안 붙는 표현만 체크하세요.</p><div class="selection-actions"><button id="pickWeak" class="quiet">약한 표현</button><button id="pickAll" class="quiet">전체</button><button id="pickNone" class="quiet">해제</button></div><div id="expressionList"></div><button id="pickStart" class="primary"></button>';
   const paint=()=>{
-    content.querySelector('#expressionList').innerHTML=TRAVEL_FRAMES.map(f=>`<label class="expression-row"><input type="checkbox" value="${f.id}" ${selected.has(f.id)?'checked':''}><span><b>${escapeHtml(f.frame)}</b><small>${escapeHtml(f.ko)}</small></span></label>`).join('');
+    content.querySelector('#expressionList').innerHTML=TRAVEL_FRAMES.map(f=>{const display=basicFrameFor(f,basicStarterItem(f));return `<label class="expression-row"><input type="checkbox" value="${f.id}" ${selected.has(f.id)?'checked':''}><span><b>${escapeHtml(display.frame)}</b><small>${escapeHtml(display.ko)}</small></span></label>`;}).join('');
     content.querySelectorAll('input').forEach(box=>box.onchange=()=>{box.checked?selected.add(box.value):selected.delete(box.value);travelStudySet([...selected]);paint();});
     const start=content.querySelector('#pickStart');start.textContent=selected.size?`${selected.size}개 표현 연습하기`:'표현을 골라주세요';start.disabled=!selected.size;
     start.onclick=()=>{const ids=[...selected];ov.remove();travelCountPick(n=>startTravelDrill(n,true,true,ids));};
@@ -93,7 +93,7 @@ function missRecord(it,ok){
   if(ok){r.ok=(r.ok||0)+1;r.streak=(r.streak||0)+1;}else{r.miss=(r.miss||0)+1;r.streak=0;}
   if(r.streak>=MISS_GRADUATE)delete records[en];else records[en]=r;missSave(records);
 }
-function missBuildItems(list){return list.filter(m=>TRAVEL_BY_ID[m.fid]).map(m=>{const f=TRAVEL_BY_ID[m.fid],core=(basicCoreItems(f)||[]).find(ex=>ex.en===m.en),ex={...core,en:m.en,ko:m.ko||travelKrOf(m.en)||f.ko,situation:f.purpose},frame=basicFrameFor(f,ex);return {_travel:true,_miss:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};});}
+function missBuildItems(list){return list.filter(m=>TRAVEL_ACTIVE_IDS.has(m.fid)).map(m=>{const f=TRAVEL_BY_ID[m.fid],core=(basicCoreItems(f)||[]).find(ex=>ex.en===m.en),ex={...core,en:m.en,ko:m.ko||travelKrOf(m.en)||f.ko,situation:f.purpose},frame=basicFrameFor(f,ex);return {_travel:true,_miss:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};});}
 function openMissPicker(){
   const ov=openSheet('자주 틀리는 문장'),content=ov.querySelector('#sheetContent');
   const list=missList();

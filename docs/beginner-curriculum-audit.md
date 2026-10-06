@@ -2,6 +2,10 @@
 
 검토일: 2026-10-06 · 32개 표현 / 기존 761개 예문
 
+1단계는 23개 표현을 사용한다. 사용자가 선택한 기존 목록 번호 7·8·9·16·18·25·28·29·30은 2단계로 보관하며, 오늘의 10회·골라서 연습·틀린 문장 목록에 나오지 않는다. 기존 답안과 학습 기록은 삭제하지 않는다. D 난이도 상승과 아래의 예문 확장은 이 9개 표현을 자동으로 해제하지 않는다.
+
+2단계 표현: How long does it take? / What time does ~? / What time do we need to ~? / There's a problem with ~. / I think I left ~. / What should I do? / How much longer will it take? / What's the difference between ~? / What does ~ mean?
+
 처음 보는 표현은 정해진 짧은 핵심 문장으로 시작한다. 초급은 8단어 이하의 한 가지 의도만 담고, 시간·장소를 덧붙이거나 조건·추가 요청을 연결한 문장은 제외한다. 단순 단어 수 필터 대신 아래의 수동 검토 목록을 사용한다.
 
 새로 줄인 75개 예문은 한국어 상황과 번역도 함께 바꿨다. 기존 긴 예문은 삭제하지 않고 확장 단계에 보존한다. by card, get to, turn on 같은 의미에 필요한 결합은 유지한다.

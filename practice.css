@@ -242,5 +242,17 @@ body{background:radial-gradient(ellipse at 85% 15%,#f5ead660,transparent 45%),#e
 .guide-practice-tools{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:8px 0}
 .guide-practice-tools span,.guide-practice-tools b{padding:9px 13px;border-radius:99px;background:#e5f3ec;font-size:12px;color:#5f7e6f;font-weight:750}
 .guide-practice-tools b{background:#d1eddf;color:#188263}
+.guide-familiar{width:100%;max-width:340px;margin:8px auto 0;text-align:left}
+.familiar-cue,.familiar-answer{padding:15px 17px;border-radius:20px;border:1px solid #d8e6df;background:#fff}
+.familiar-cue{width:88%;border-bottom-left-radius:5px}
+.familiar-cue>span,.familiar-answer>span{display:block;font-size:11px;font-weight:750;color:#78988a;margin-bottom:7px}
+.familiar-cue p{font-size:20px!important;font-weight:800;color:#374d41!important;line-height:1.45!important}
+.familiar-arrow{display:block;text-align:center;font-size:24px;color:#80b89c;line-height:1.65}
+.familiar-answer{margin-left:auto;width:94%;border-color:#a6d9c2;border-bottom-right-radius:5px;background:linear-gradient(130deg,#d8f3e5,#eefaf4);box-shadow:0 7px 20px -15px #189e7960}
+.familiar-answer b{display:block;font-size:26px;line-height:1.35;letter-spacing:-.035em;color:#148769;font-weight:850}
+.guide-familiar .familiar-note{margin:14px 0;text-align:center;font-size:13px;line-height:1.65;color:#6d8c7c}
+.familiar-goal{padding:12px;text-align:center;border-radius:13px;background:#fff4df;color:#94734a;font-size:14px}
+.familiar-goal strong{color:#736033}
+@media(max-width:359px){.familiar-answer b{font-size:20px;white-space:nowrap}.familiar-cue p{font-size:18px!important}.familiar-cue,.familiar-answer{padding:12px 14px}}
 #practiceSheet .guide-actions{position:sticky;bottom:0;z-index:1;background:#fffaf4;padding:12px 0 3px;margin-top:6px;box-shadow:0 -12px 14px #fffaf4}
 body:has(.practice-sheet[open]){overflow:hidden}

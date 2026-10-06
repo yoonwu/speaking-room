@@ -14,7 +14,7 @@ test('existing travel, selection, and mistake records survive initialization',()
 test('an AI reply arriving after leaving cannot replace the home or a new lesson',async()=>{const {run,context,elements}=setup();let resolve;context.delayed=new Promise(r=>resolve=r);run('callClaude=()=>delayed;state.scn=SURVIVAL[0];');const pending=run('startSession()');run('goToSetup()');resolve({content:[{type:'text',text:'Late reply'}]});await pending;assert.equal(run('curScreen'),'setup');assert.equal(run('state.busy'),false);assert.equal(run('state.convo.length'),0);assert.equal(elements.get('#threadInner').innerHTML,'');});
 
 test('all 761 situations retain their answers and accept their full-sentence alternatives',()=>{
- const {run}=setup();const report=run(`TRAVEL_FRAMES.flatMap(frame=>frame.items.map(ex=>{const it={frame,ex};return {en:ex.en,answers:travelAnswerAlternatives(it),fail:travelAnswerAlternatives(it).filter(a=>!travelGrade(it,a).ok)};}))`);
+ const {run}=setup();const report=run(`TRAVEL_ALL_FRAMES.flatMap(frame=>frame.items.map(ex=>{const it={frame,ex};return {en:ex.en,answers:travelAnswerAlternatives(it),fail:travelAnswerAlternatives(it).filter(a=>!travelGrade(it,a).ok)};}))`);
  assert.equal(report.length,761);for(const row of report)assert.deepEqual([...row.fail],[],row.en);assert.ok(report.reduce((n,r)=>n+r.answers.length,0)>2700);
 });
 test('equivalent intentions pass without accepting wrong objects, numbers or polarity',()=>{

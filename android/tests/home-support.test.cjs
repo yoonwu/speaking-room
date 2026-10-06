@@ -23,8 +23,8 @@ test('the revised basic guide is shown once to existing learners without resetti
 
 test('all 761 examples are reviewed and each expression has a short, gradable first sentence',()=>{
  const {run}=setup();
- assert.equal(run('TRAVEL_FRAMES.length'),32);assert.equal(run('TRAVEL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),761);
- const failures=run(`TRAVEL_FRAMES.flatMap(f=>{
+ assert.equal(run('TRAVEL_ALL_FRAMES.length'),32);assert.equal(run('TRAVEL_ALL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),761);
+ const failures=run(`TRAVEL_ALL_FRAMES.flatMap(f=>{
    const r=basicCurriculumRule(f),pool=basicCoreItems(f),starter=basicStarterItem(f),errors=[];
    if(!starter||!pool.length)errors.push(f.id+' missing starter');
    for(const i of [...r.core,...r.complex,...Object.keys(r.simple||{}).map(Number)])if(!f.items[i])errors.push(f.id+' invalid index '+i);
@@ -86,4 +86,36 @@ test('saved short mistakes retain beginner explanations while older extended mis
  assert.equal(run('mistakes[0].ex._tier'),1);assert.equal(run('mistakes[0].frame.frame'),'Could you say that again?');assert.doesNotMatch(run('mistakes[0].frame.tip'),/slowly/);
  assert.equal(run('travelGrade(mistakes[0],"Could you repeat that?").ok'),true);
  assert.equal(run('mistakes[1].ex.en'),'Can I leave my bags here until evening?');assert.equal(run('travelGrade(mistakes[1],"Can I leave my bags here?").ok'),false);
+});
+
+test('exactly the nine selected expressions are stored in stage 2 and never sampled by stage 1',()=>{
+ const {run}=setup();const expected=['travel_how_long','travel_what_time_does','travel_what_time_need','travel_problem_with','travel_think_i_left','travel_how_much_longer','travel_whats_difference','travel_what_does_mean','travel_what_should_i_do'];
+ assert.deepEqual(Array.from(run('TRAVEL_STAGE2_FRAMES.map(f=>f.id)')).sort(),expected.sort());assert.equal(run('TRAVEL_FRAMES.length'),23);
+ for(const difficulty of [1,15,35,60]){
+   run(`const d${difficulty}=alGet();d${difficulty}.speak=${difficulty};alSave(d${difficulty});`);
+   assert.equal(run('travelBuildItems(100).some(it=>TRAVEL_STAGE2_IDS.has(it.frame.id))'),false);
+ }
+ assert.equal(run('travelBuildItems(10,TRAVEL_STAGE2_FRAMES).length'),0);
+ assert.equal(run('travelBuildItems(30,TRAVEL_ALL_FRAMES).some(it=>TRAVEL_STAGE2_IDS.has(it.frame.id))'),false);
+ assert.equal(run('travelPoolOf([...TRAVEL_STAGE2_IDS]).length'),0);
+});
+
+test('old selections and mistakes from stage 2 are hidden without deleting their records or XP',()=>{
+ const seed={
+   'speakingroom:travel_study':'["travel_can_i_get","travel_how_long"]',
+   'speakingroom:travelrepeat':'{"travel_how_long":{"seen":20,"ok":18,"introduced":true}}',
+   'speakingroom:travel_miss':'{"How long does it take?":{"fid":"travel_how_long","miss":2},"Can I get water?":{"fid":"travel_can_i_get","miss":1}}',
+   'speakingroom:prof':'{"xp":150}'
+ };
+ const {run,records}=setup(seed);assert.deepEqual(Array.from(run('travelStudyGet()')),['travel_can_i_get']);
+ assert.equal(run('missList().length'),1);assert.equal(run('missBuildItems([{fid:"travel_how_long",en:"How long does it take?"}]).length'),0);
+ assert.equal(run('TRAVEL_BY_ID.travel_how_long.items.length'),26);assert.equal(run('practiceReward().total'),150);
+ for(const key of Object.keys(seed))assert.equal(records.get(key),seed[key]);
+});
+
+test('the core tutorial shows a familiar whole sentence and keeps first-look, recall and playback guidance',()=>{
+ const {run}=setup({'speakingroom:feature_guide:v3:basic':'true'});
+ assert.equal(run('FEATURE_GUIDES.basic.revision'),4);assert.equal(run('hGet(featureGuideKey("basic"),false)'),false);
+ const demo=run('featureGuideDemo("familiar-phrase")');assert.match(demo,/이름이 뭐예요/);assert.match(demo,/What's your name\?/);assert.doesNotMatch(demo,/what your name\?/i);
+ assert.match(run('FEATURE_GUIDES.basic.steps[0][1]'),/한 덩어리/);assert.equal(run('FEATURE_GUIDES.basic.steps[1][2]'),'first-recall');assert.match(run('featureGuideDemo("answer-tools")'),/내 목소리 듣기/);
 });

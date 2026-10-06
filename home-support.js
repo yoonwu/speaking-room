@@ -251,10 +251,10 @@ $('#profileBtn').onclick=openProfile;$('#tutorialBtn').onclick=openTutorial;$('#
 renderSupportHome();
 /* A brief first-use guide per feature. These device-local flags never enter sync. */
 const FEATURE_GUIDES={
- basic:{icon:'⚡',title:'기본표현',revision:3,cta:'첫 표현 말해보기 →',steps:[
-  ['아는 말인데… 왜 입에서는 안 나오지?','읽으면 아는 영어도, 말하려면 멈칫하죠.\n\n삼초랑 짧은 표현부터 직접 꺼내봐요.\n하루 10번, 내 입으로 말하는 연습이에요.'],
-  ['처음엔 보고, 다음엔 꺼내요','처음 소개하는 표현만 답안을 보여줘요.\n다음부터는 상황을 보고 기억에서 꺼내요.','first-recall'],
-  ['막혀도 괜찮아요. 다시 말하면 돼요','생각나지 않으면 힌트나 표현 보기를 눌러요.\n답을 확인한 뒤에는 가리고 다시 말해봐요.\n\n내 목소리를 듣고, 예문과 비교해도 좋아요.','answer-tools']
+ basic:{icon:'⚡',title:'기본표현',revision:4,cta:'내 입에 붙일 첫 한마디 →',steps:[
+  ['이 한마디는, 바로 떠오르죠?','what은 의문사, your은 소유격…\n말할 때마다 하나씩 조립하진 않죠.\n익숙한 문장이 한 덩어리로 떠올라요.','familiar-phrase'],
+  ['그렇게 나오는 말을 늘려봐요','3초영어는 짧은 표현을 내 입으로 반복해,\n상황을 만나면 꺼내 말하는 연습을 하는 곳이에요.\n\n처음엔 보고 말하고, 다음엔 가리고 말해요.','first-recall'],
+  ['하루 10번, 내 입에 한마디씩','막히면 단어 힌트나 표현 보기를 눌러요.\n확인한 뒤에는 가리고 다시 말해봐요.\n\n읽고 아는 데서, 꺼내 말하는 데까지.\n삼초랑 짧은 한마디부터 입에 붙여봐요.','answer-tools']
  ]},
  study:{icon:'✓',title:'골라서 연습',steps:[['이 표현만 자꾸 막히나요?','지금 필요한 표현, 입에 잘 안 붙는 표현만 골라봐요. 여러 개를 함께 선택할 수 있어요.'],['선택한 표현으로만 반복해요','연습하기를 누르고 문제 수를 고르면 체크한 표현만 나와요. 기본표현과 같은 방식으로 말하고, 틀린 문장은 다시 연습해요.']]},
  miss:{icon:'↻',title:'자주 틀리는 문장',steps:[['아까 못 꺼낸 말, 다시 해볼까요?','막혔던 문장은 내가 모아둘게요. 답을 읽는 데서 멈추지 말고, 이번엔 직접 꺼내봐요.'],['연속 3번 맞히면 졸업해요','틀린 문장 반복하기를 눌러 연습하세요. 한 문장을 연속 3번 맞히면 목록에서 빠져요.']]},
@@ -270,6 +270,7 @@ const SAMCHO_POSES={welcome:'mascot-welcome.png',explain:'mascot-guide.png',list
 function samchoGuidePose(id,index,total){if(index===0)return 'welcome';if(id==='ai'||id==='sync')return 'listen';return index===total-1?'cheer':'explain';}
 function featureGuideKey(id){return 'speakingroom:feature_guide:v'+(FEATURE_GUIDES[id]?.revision||2)+':'+id;}
 function featureGuideDemo(kind){
+ if(kind==='familiar-phrase')return `<div class="guide-familiar"><div class="familiar-cue"><span>이름을 물어보고 싶을 때</span><p>이름이 뭐예요?</p></div><span class="familiar-arrow" aria-hidden="true">↓</span><div class="familiar-answer"><span>입에서 나오는 한마디</span><b lang="en">What's your name?</b></div><p class="familiar-note">바로 떠올랐다면, 그 감각을<br>다른 표현으로 넓혀봐요.</p><div class="familiar-goal">아는 영어 말고, <strong>나오는 영어.</strong></div></div>`;
  if(kind==='first-recall')return `<div class="guide-practice-demo"><div class="guide-demo-first"><span class="guide-demo-step">1 · 처음 만난 표현</span><strong>처음 배우는 문장이에요</strong><p>이 주소 맞아요?</p><b lang="en">Is this the right address?</b><small>보고 익히고, 소리 내어 말해요.</small></div><span class="guide-demo-arrow" aria-hidden="true">↓</span><div class="guide-demo-recall"><span class="guide-demo-step">2 · 그 표현을 다시 연습할 때</span><p>기사에게 주소를 보여줬다.<br>이 주소가 맞는지 물어보세요.</p><span class="guide-hidden-answer">● ● ● <span>이번엔 내가 꺼내 말하기</span></span></div></div>`;
  if(kind==='answer-tools')return '<div class="guide-practice-tools"><span>🔊 예문 듣기</span><span>🗣 내 목소리 듣기</span><b>🎙 가리고 다시 말하기</b></div>';
  return '';

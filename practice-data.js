@@ -577,7 +577,7 @@ function adStem(w){
   return s;
 }
 
-const TRAVEL_FRAMES=[
+const TRAVEL_ALL_FRAMES=[
   { id:"travel_can_i_get", frame:"Can I get ~?", tf:"can i get", ko:"~ 주세요 / 받을 수 있을까요?", purpose:"요청", tip:"<b>내가 받을 물건</b>을 달라고 할 때예요.<br>수건 하나 더 → <b>Can I get another towel?</b><br>상대가 해줄 행동은 → Can you ~?", parts:[["Can I get","~ 주실 수 있어요?"],["another towel?","수건 하나 더"]], pnote:"주어는 <b>I</b>. '제가 받을 수 있을까요'라서 받을 물건을 뒤에 붙여요.", re:"\\bcan (i|we) get\\b",
     items:[
       {ko:"호텔 방에 수건이 부족하다. 수건을 하나 더 달라고 해라.", en:"Can I get another towel?"},
@@ -2607,9 +2607,18 @@ function basicFrameFor(f,ex){
   return {...f,frame:rule.pattern||f.frame,ko:rule.ko||f.ko,tip:rule.tip,parts:rule.parts,pnote:''};
 }
 // Register new short-answer translations for saved mistake practice as well.
-for(const f of TRAVEL_FRAMES)for(const ex of basicCoreItems(f)||[])if(ex._answerKo&&!TRAVEL_KR[ex.en])TRAVEL_KR[ex.en]=ex._answerKo;
+for(const f of TRAVEL_ALL_FRAMES)for(const ex of basicCoreItems(f)||[])if(ex._answerKo&&!TRAVEL_KR[ex.en])TRAVEL_KR[ex.en]=ex._answerKo;
 
-const TRAVEL_ALL_FRAMES=TRAVEL_FRAMES;
+// User-selected expressions reserved for course stage 2. Preserve IDs, answers
+// and historical records; difficulty D never unlocks these in stage 1.
+const TRAVEL_STAGE2_IDS=new Set([
+  'travel_how_long','travel_what_time_does','travel_what_time_need',
+  'travel_problem_with','travel_think_i_left','travel_how_much_longer',
+  'travel_whats_difference','travel_what_does_mean','travel_what_should_i_do'
+]);
+const TRAVEL_STAGE2_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>TRAVEL_STAGE2_IDS.has(f.id));
+const TRAVEL_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>!TRAVEL_STAGE2_IDS.has(f.id));
+const TRAVEL_ACTIVE_IDS=new Set(TRAVEL_FRAMES.map(f=>f.id));
 
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 
@@ -2658,7 +2667,8 @@ function travelSeedNew(o){
 }
 
 function travelPickFrames(n, pool){
-  const FR=(pool&&pool.length)?pool:TRAVEL_FRAMES;   // 골라서 연습이면 그 표현들만
+  const FR=pool?pool.filter(f=>TRAVEL_ACTIVE_IDS.has(f.id)):TRAVEL_FRAMES;
+  if(!FR.length)return [];
   const o=travelAll();
   /* 새로 추가된 프레임의 출발선을 먼저 맞추고 저장한다.
      기록이 만들어진 뒤에 심으면 늦어서 cost 0 으로 굳어버린다. */
@@ -2990,7 +3000,7 @@ function travelCountGet(){
 const TRAVEL_STUDY_KEY="speakingroom:travel_study";
 
 function travelStudyGet(){
-  try{ const v=hGet(TRAVEL_STUDY_KEY,[]); return Array.isArray(v)?v.filter(id=>TRAVEL_BY_ID[id]):[]; }
+  try{ const v=hGet(TRAVEL_STUDY_KEY,[]); return Array.isArray(v)?v.filter(id=>TRAVEL_ACTIVE_IDS.has(id)):[]; }
   catch(e){ return []; }
 }
 
@@ -3007,7 +3017,7 @@ const MISS_GRADUATE=3;
 function missList(){
   const o=missAll();
   return Object.keys(o)
-    .filter(en=>(o[en].miss||0)>0 && TRAVEL_BY_ID[o[en].fid])
+    .filter(en=>(o[en].miss||0)>0 && TRAVEL_ACTIVE_IDS.has(o[en].fid))
     .map(en=>Object.assign({en:en}, o[en]))
     .sort((a,b)=> (b.miss-a.miss) || ((b.lastT||0)-(a.lastT||0)));
 }
