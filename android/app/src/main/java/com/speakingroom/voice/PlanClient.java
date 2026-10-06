@@ -183,7 +183,10 @@ final class PlanClient {
                     && !account.getString("access_token").equals(rejectedToken)) return account.getString("access_token");
                 previous = new JSONObject(account.toString());
             }
-            if (!previous.has("refresh_token")) throw new IOException("저장된 로그인 갱신 정보가 없어요. ChatGPT를 다시 연결해주세요.");
+            if (!previous.has("refresh_token")) {
+                synchronized (this) { if (sameSession(previous)) clearUnusableSession(); }
+                throw new IOException("저장된 로그인 갱신 정보가 없어요. ChatGPT를 다시 연결해주세요.");
+            }
             JSONObject replacement;
             try {
                 replacement = jsonRequest(AUTH + "/api/accounts/oauth/token", "POST", null,
