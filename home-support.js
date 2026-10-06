@@ -151,6 +151,7 @@ function recordPractice({it,heard,ok,perfect,meta,started,mode}){
   const log=supportLog(),id=window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random();
   const reaction=meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   log[id]={t:Date.now(),fid:it.frame.id,ok,perfect,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel'};
+  if(perfect&&!it._intro&&!it.recall&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
   const before=practiceReward();
   if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
   const bonus=mode==='기본표현'&&supportToday().travel===10?25:0;
@@ -165,10 +166,23 @@ function recordPractice({it,heard,ok,perfect,meta,started,mode}){
 let supportTalkAt=Date.now();
 function recordAiPractice(){const log=supportLog(),id=Date.now()+'-'+Math.random();log[id]={t:Date.now(),kind:'talk',seconds:Math.min(90,Math.max(1,(Date.now()-supportTalkAt)/1000))};supportTalkAt=Date.now();hSet(PRACTICE_LOG,log);supportBump('talk');supportQueueSync();}
 function aiLevelInstruction(){const n=alGet().speak;return n<15?'Use very short beginner English, one sentence and one question at a time.':n<35?'Use everyday English, one or two short sentences and one natural question at a time.':'Use natural everyday English with occasional follow-up details, at most three sentences and one question at a time.';}
-// Keep the original no-repeat item picker while adapting sentence length to the speaking level.
+// A short sentence can still contain a new clause. Review grammar and require
+// successful unaided recall of this expression before adding a detail.
 const originalTravelPickItem=travelPickItem;
-travelPickItem=function(f,o){
+function basicCurriculumStage(f){
+  const n=alGet().speak,events=supportEvents().filter(e=>e.fid===f.id&&e.perfect);
+  if(n<15||events.filter(e=>e.curriculumTier===1).length<3)return 1;
+  return n>=35&&events.filter(e=>e.curriculumTier===2).length>=3?3:2;
+}
+travelPickItem=function(f,o,options={}){
   const n=alGet().speak,limit=n<15?8:n<35?12:Infinity;
+  const core=basicCoreItems(f);
+  if(core){
+    if(options.introduce)return originalTravelPickItem({...f,items:[basicStarterItem(f)]},o);
+    const stage=basicCurriculumStage(f),catalog=basicCurriculumCatalog(f);
+    const candidates=stage===1?core:[...catalog.filter(x=>x._tier<=stage&&x.en.trim().split(/\s+/).length<=(stage===2?12:Infinity)),...core.filter(x=>x._answerKo)];
+    return originalTravelPickItem({...f,items:candidates},o);
+  }
   const candidates=f.items.filter(x=>x.en.trim().split(/\s+/).length<=limit);
   return originalTravelPickItem(candidates.length?{...f,items:candidates}:f,o);
 };
@@ -183,7 +197,7 @@ function practiceReward(){
   return {total,level,remaining,need,todayXP:today.reduce((n,e)=>n+(Number(e.xp)||0),0)+(bonuses[SUPPORT_DAY()]||0),todayCount:today.filter(e=>e.fid).length};
 }
 function renderReward(){const r=practiceReward(),s=supportStats();$('#rewardZone').innerHTML=`<div class="reward-top"><div><span class="reward-label">쌓아온 연습</span><b>Lv.${r.level}<small>학습 레벨</small></b></div><span class="xp-total">${r.total.toLocaleString()}<small>총 XP</small></span></div><div class="xp-track"><i style="width:${Math.round(r.remaining/r.need*100)}%"></i></div><div class="xp-next"><span>다음 레벨까지 ${r.need-r.remaining} XP</span><b>${r.remaining} / ${r.need}</b></div><div class="reward-stats"><span>오늘 <b>${r.todayCount}회</b></span><span>오늘 <b>+${r.todayXP} XP</b></span><span>누적 <b>${s.total}회</b></span></div>`;if($('#coreDifficulty'))$('#coreDifficulty').textContent='기본표현 D'+alGet().speak;}
-function basicDifficultyLabel(n=alGet().speak){return '기본표현 D'+n+' · '+(n<15?'짧은 문장부터':n<35?'문장을 조금 더 길게':'다양한 길이의 문장');}
+function basicDifficultyLabel(n=alGet().speak,tier){return '기본표현 D'+n+' · '+(tier===1?'짧은 핵심 문장':tier===2?'정보를 하나씩 더하기':tier===3?'조건까지 말해보기':n<15?'짧은 문장부터':n<35?'문장을 조금 더 길게':'다양한 길이의 문장');}
 const WORD_SUCCESS_GOAL=3;
 function practiceWords(text){return [...new Set((String(text).toLowerCase().match(/[a-z]+(?:'[a-z]+)?/g)||[]).filter(w=>w.length>1&&!TRAVEL_SKIP_WORDS.has(w)&&!TRAVEL_FILLER_WORDS.has(w)))];}
 function supportWordStats(){const counts={};for(const event of supportEvents()){if(!event.perfect||!Array.isArray(event.words))continue;for(const word of new Set(event.words)){if(typeof word==='string'&&/^[a-z]+(?:'[a-z]+)?$/.test(word))counts[word]=(counts[word]||0)+1;}}return Object.entries(counts).map(([word,count])=>({word,count})).sort((a,b)=>b.count-a.count||a.word.localeCompare(b.word));}

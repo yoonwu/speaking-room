@@ -2502,6 +2502,113 @@ function travelKrOf(en){
   return TRAVEL_KR[s] || TRAVEL_KR[s.replace(/\s+/g," ")] || "";
 }
 
+/* Reviewed beginner curriculum: all 761 original examples retain their meaning.
+   core = one short intention; all remaining examples add a detail (tier 2);
+   complex = joined actions, conditional clauses or multiple details (tier 3).
+   Shortened examples have their own matching Korean cue and answer translation.
+   Never strip prepositions mechanically: by card, get to, turn on, etc. carry meaning. */
+const BASIC_CURRICULUM={
+  can_i_get:{starter:1,core:[0,1,2,3,4,5,6,7,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26],complex:[],
+    simple:{8:['Can I get a bag?','물건을 샀는데 담을 게 없어요. 봉투를 달라고 해보세요.','봉투 좀 주실 수 있어요?']},
+    tip:'받을 물건을 달라고 할 때 써요.',parts:[['Can I get','~ 주실 수 있어요?'],['some water?','물 좀']]},
+  can_you:{starter:20,core:[5,8,11,17,18,19,20,21,22,23,25,26,27],complex:[],
+    simple:{1:['Can you watch my bags?','화장실에 가려고 해요. 짐을 봐달라고 부탁해보세요.','제 짐 좀 봐주실 수 있어요?'],2:['Can you call a taxi?','차가 필요해요. 택시를 불러달라고 부탁해보세요.','택시를 불러주실 수 있어요?'],4:['Can you take a photo?','사진을 남기고 싶어요. 사진을 찍어달라고 부탁해보세요.','사진 좀 찍어주실 수 있어요?'],7:['Can you wait here?','잠깐 가게에 들르려고 해요. 여기서 기다려달라고 해보세요.','여기서 기다려주실 수 있어요?'],14:['Can you help me?','서류를 쓰다가 막혔어요. 도와달라고 부탁해보세요.','도와주실 수 있어요?'],15:['Can you wrap this?','물건을 샀어요. 이것을 포장해달라고 부탁해보세요.','이것 좀 포장해주실 수 있어요?'],16:['Can you hold this?','손에 물건이 많아요. 이것을 들어달라고 부탁해보세요.','이것 좀 들어주실 수 있어요?'],24:['Can you carry this?','짐이 무거워요. 이것을 들어 옮겨달라고 부탁해보세요.','이것 좀 옮겨주실 수 있어요?']},
+    tip:'상대가 해줄 행동을 부탁할 때 써요.',parts:[['Can you','~ 해주실 수 있어요?'],['open the door?','문을 열어']]},
+  can_i_we:{starter:25,core:[1,3,4,6,7,8,11,13,14,15,16,18,19,25,26,27,28,29,30,31,32],complex:[],
+    tip:'내가 하려는 행동을 해도 되는지 물어요.',parts:[['Can I','제가 ~ 해도 될까요?'],['sit here?','여기 앉아']]},
+  do_you_have:{starter:20,core:[3,5,6,7,8,10,11,18,20,21,22,23,26,27],complex:[],
+    simple:{1:['Do you have a room?','예약 없이 호텔에 왔어요. 방이 있는지 물어보세요.','방이 있어요?']},
+    tip:'상대가 물건이나 자리를 가지고 있는지 물어요.',parts:[['Do you have','~ 있어요?'],['water?','물']]},
+  where_is:{starter:1,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,28],complex:[],
+    tip:'찾는 물건이나 장소가 어디 있는지 물어요.',parts:[['Where is','~ 어디 있어요?'],['the restroom?','화장실']]},
+  how_do_i_get_to:{starter:0,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22],complex:[],
+    tip:'장소까지 가는 방법을 물어요. 목적지 이름만 붙여보세요.',parts:[['How do I get to','어떻게 가요?'],['the hotel?','호텔에']]},
+  how_long:{starter:2,core:[2],complex:[0,1,8,11,13,16,18,19,20],
+    simple:{0:['How long does it take?','택시를 타려고 해요. 이동에 얼마나 걸리는지 물어보세요.','얼마나 걸려요?'],5:['How long does it take?','체크인 수속을 하려고 해요. 얼마나 걸리는지 물어보세요.','얼마나 걸려요?'],9:['How long does it take?','수리를 맡기려고 해요. 얼마나 걸리는지 물어보세요.','얼마나 걸려요?'],15:['How long does it take?','주문한 요리를 만드는 데 시간이 걸린대요. 얼마나 걸리는지 물어보세요.','얼마나 걸려요?'],17:['How long does it take?','선물 포장을 부탁했어요. 얼마나 걸리는지 물어보세요.','얼마나 걸려요?'],21:['How long does it take?','빨래를 말리려고 해요. 얼마나 걸리는지 물어보세요.','얼마나 걸려요?']},
+    tip:'상황에 나온 일이 전체적으로 얼마나 걸리는지 물어요.',parts:[['How long','얼마나'],['does it take?','걸려요?']]},
+  what_time_does:{starter:0,core:[0,1,2,3,5,6,7,9,10,11,12,13,14,15,16,17,19,20,21,23],complex:[],
+    tip:'시작하거나 끝나는 시각을 물어요.',parts:[['What time does','몇 시에 ~ 하나요?'],['the tour start?','투어가 시작']]},
+  what_time_need:{starter:19,core:[1,4,5,7,10,17,19,20,21,22,23,24],complex:[13,16],
+    tip:'내가 어떤 행동을 해야 하는 시각을 물어요.',parts:[['What time','몇 시에'],['do we need to leave?','우리가 나가야 하나요?']]},
+  do_i_need_to:{starter:1,core:[1,2,3,4,6,7,8,10,11,14,15,16,17,19,21,22,23,26,27],complex:[],
+    simple:{0:['Do I need to book?','투어를 신청하려고 해요. 예약해야 하는지 물어보세요.','예약해야 하나요?'],5:['Do I need to wait?','사람들이 기다리고 있어요. 나도 기다려야 하는지 물어보세요.','기다려야 하나요?']},
+    tip:'어떤 행동이 필요한지 물어요.',parts:[['Do I need to','제가 ~ 해야 하나요?'],['pay now?','지금 돈을 내']]},
+  is_included:{starter:1,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,15,16,17,18,19,20,21,22],complex:[],
+    tip:'가격에 무엇이 포함되어 있는지 물어요.',parts:[['Is breakfast','아침 식사가'],['included?','포함인가요?']]},
+  how_much:{starter:2,core:[0,2,5,6,7,10,11,13,14,16,17,20,21,22,23,24,25],complex:[],
+    tip:'물건이나 서비스의 가격을 물어요.',parts:[['How much is','~ 얼마예요?'],['this shirt?','이 셔츠']]},
+  pay_by_card:{starter:0,core:[0,1,2,3,4,5,6,7,8,9,10,11],complex:[],
+    tip:'카드로 결제해도 되는지 물어요. by card는 함께 기억해요.',parts:[['Can I pay','내도 될까요?'],['by card?','카드로']]},
+  have_reservation:{starter:0,core:[0],complex:[16,18,19],
+    simple:{1:['I have a reservation.','식당에 예약하고 왔어요. 예약했다고 말해보세요.','예약했어요.'],2:['I have a reservation.','직원이 예약 여부를 물어요. 예약했다고 말해보세요.','예약했어요.'],11:['I have a reservation.','투어 예약을 확인하러 왔어요. 예약했다고 말해보세요.','예약했어요.'],21:['I have a reservation.','예약한 공연을 보러 왔어요. 예약했다고 말해보세요.','예약했어요.']},
+    tip:'예약해두었다고 알려줄 때 써요.',parts:[['I have','제가 갖고 있어요'],['a reservation.','예약을 → 예약했어요']]},
+  can_i_leave:{starter:0,core:[0,1,2,3,9,10,12,16,17],complex:[11,14],
+    simple:{4:['Can I leave my bags here?','체크아웃했어요. 짐을 여기 맡겨도 되는지 물어보세요.','제 짐을 여기 맡겨도 될까요?']},
+    tip:'물건을 여기에 맡기거나 두어도 되는지 물어요.',parts:[['Can I leave','제가 ~ 두어도 될까요?'],['my bags here?','제 짐을 여기에']]},
+  problem_with:{starter:1,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23],complex:[],
+    tip:'무엇에 문제가 있는지 알려줄 때 써요.',parts:[["There's a problem with",'~에 문제가 있어요'],['the wifi.','와이파이에']]},
+  cant_find:{starter:11,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25],complex:[],
+    tip:'찾는 물건이나 사람을 못 찾겠다고 말해요.',parts:[["I can't find",'못 찾겠어요'],['my phone.','제 휴대폰을']]},
+  think_i_left:{starter:0,core:[21],complex:[8,14,17,18],
+    simple:{0:['I think I left my phone.','택시에서 내렸는데 휴대폰이 없어요. 두고 온 것 같다고 말해보세요.','휴대폰을 두고 온 것 같아요.'],1:['I think I left my charger.','체크아웃하고 나오니 충전기가 없어요. 두고 온 것 같다고 말해보세요.','충전기를 두고 온 것 같아요.'],2:['I think I left my umbrella.','식당에서 나오니 우산이 없어요. 두고 온 것 같다고 말해보세요.','우산을 두고 온 것 같아요.'],3:['I think I left my bag.','배에서 내렸는데 가방이 없어요. 두고 온 것 같다고 말해보세요.','가방을 두고 온 것 같아요.'],4:['I think I left my sunglasses.','카페에서 나오니 선글라스가 없어요. 두고 온 것 같다고 말해보세요.','선글라스를 두고 온 것 같아요.'],5:['I think I left my camera.','버스에서 내렸는데 카메라가 없어요. 두고 온 것 같다고 말해보세요.','카메라를 두고 온 것 같아요.'],6:['I think I left my wallet.','검색대를 지나니 지갑이 없어요. 두고 온 것 같다고 말해보세요.','지갑을 두고 온 것 같아요.'],7:['I think I left my jacket.','호텔을 나서니 겉옷이 없어요. 두고 온 것 같다고 말해보세요.','겉옷을 두고 온 것 같아요.'],8:['I think I left my passport.','체크인하고 나니 여권이 없어요. 두고 온 것 같다고 말해보세요.','여권을 두고 온 것 같아요.'],10:['I think I left my hat.','해변에서 나오니 모자가 없어요. 두고 온 것 같다고 말해보세요.','모자를 두고 온 것 같아요.'],12:['I think I left my ticket.','창구를 지나니 표가 없어요. 두고 온 것 같다고 말해보세요.','표를 두고 온 것 같아요.'],13:['I think I left my shoes.','사원에서 나오니 신발이 없어요. 두고 온 것 같다고 말해보세요.','신발을 두고 온 것 같아요.'],14:['I think I left my water bottle.','버스에서 내리니 물병이 없어요. 두고 온 것 같다고 말해보세요.','물병을 두고 온 것 같아요.'],15:['I think I left my card.','계산하고 나오니 카드가 없어요. 두고 온 것 같다고 말해보세요.','카드를 두고 온 것 같아요.'],17:['I think I left my glasses.','옷을 갈아입고 나오니 안경이 없어요. 두고 온 것 같다고 말해보세요.','안경을 두고 온 것 같아요.']},
+    tip:'물건을 두고 온 것 같을 때 말해요. 먼저 물건 이름만 붙여보세요.',parts:[['I think I left','두고 온 것 같아요'],['my phone.','제 휴대폰을']]},
+  does_that_mean:{starter:19,core:[0,8,17,18,19,22,25],complex:[2,3,5,9,10,13],
+    tip:'상대 말을 듣고 내가 이해한 결론이 맞는지 확인해요.',parts:[['Does that mean','그럼 ~라는 거예요?'],["it's free?",'공짜라는']]},
+  say_again_slowly:{starter:0,core:[],complex:[],pattern:'Could you say that again?',ko:'다시 말해주실래요?',
+    simple:{0:['Could you say that again?','직원의 말을 놓쳤어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],1:['Could you say that again?','안내 방송을 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],2:['Could you say that again?','가이드의 설명을 놓쳤어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],3:['Could you say that again?','전화로 한 말을 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],4:['Could you say that again?','길 안내를 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],5:['Could you say that again?','말해준 가격을 놓쳤어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],6:['Could you say that again?','기사가 말한 요금을 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],7:['Could you say that again?','집합 장소를 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],8:['Could you say that again?','내릴 곳을 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],9:['Could you say that again?','말해준 조식 시간을 놓쳤어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],10:['Could you say that again?','계산 금액을 못 들었어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?'],11:['Could you say that again?','직원의 안내를 놓쳤어요. 다시 말해달라고 부탁해보세요.','다시 말해주실래요?']},
+    tip:'못 들었을 때 다시 말해달라고 부탁해요.',parts:[['Could you say','말해주실래요?'],['that again?','그 말을 다시']]},
+  what_recommend:{starter:0,core:[0],complex:[6,18],
+    simple:{2:['What do you recommend?','카페에서 무엇을 고를지 모르겠어요. 추천을 부탁해보세요.','무엇을 추천하세요?'],15:['What do you recommend?','메뉴판을 봐도 못 고르겠어요. 추천을 부탁해보세요.','무엇을 추천하세요?'],19:['What do you recommend?','점심을 먹으러 왔어요. 메뉴 추천을 부탁해보세요.','무엇을 추천하세요?']},
+    tip:'무엇을 고를지 모르겠을 때 추천을 부탁해요.',parts:[['What','무엇을'],['do you recommend?','추천하세요?']]},
+  can_we_change:{starter:0,core:[0,1,2,3,4,6,9,11,15,17,19,20],complex:[14,21],
+    tip:'예약이나 물건을 바꿀 수 있는지 물어요.',parts:[['Can we change','~ 바꿀 수 있나요?'],['the date?','날짜를']]},
+  is_this_right:{starter:0,core:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],complex:[],
+    tip:'내가 고른 물건이나 장소가 맞는지 확인해요.',parts:[['Is this the right','이게 맞는 ~인가요?'],['bus?','버스']]},
+  where_meet:{starter:0,core:[0,1,2,7],complex:[12],
+    tip:'만날 장소를 물어요. 먼저 이 한 문장으로 말해보세요.',parts:[['Where','어디서'],['do we meet?','우리가 만나요?']]},
+  what_should_i_do:{starter:0,core:[0,1,5,6,20],complex:[3,7,12,15,18,21,23],
+    simple:{2:['What should I do?','표를 잃어버렸어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],4:['What should we do?','일정이 겹쳤어요. 어떻게 해야 하는지 물어보세요.','우리가 어떻게 해야 해요?'],8:['What should we do?','체크인 전에 도착했고 짐이 있어요. 어떻게 해야 하는지 물어보세요.','우리가 어떻게 해야 해요?'],9:['What should I do?','계산서에 모르는 요금이 붙었어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],11:['What should I do?','체크아웃하는데 직원이 없어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],13:['What should I do?','비행기를 놓쳤어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],14:['What should I do?','서류를 다 썼어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],17:['What should I do?','푸드코트에서 식사를 마쳤어요. 어떻게 해야 하는지 물어보세요.','어떻게 해야 해요?'],19:['What should we do?','음식이 많이 남았어요. 어떻게 해야 하는지 물어보세요.','우리가 어떻게 해야 해요?']},
+    tip:'상황을 설명한 뒤 어떻게 해야 하는지 물어요.',parts:[['What should','무엇을 해야'],['I do?','제가 해요?']]},
+  id_like_to:{starter:0,core:[0,3,5,12,13,14,15,16,17,18,19],complex:[9],
+    simple:{1:["I'd like to book a tour.",'투어를 알아보고 있어요. 예약하고 싶다고 말해보세요.','투어를 예약하고 싶어요.'],2:["I'd like to book a tour.",'투어 상품을 골랐어요. 예약하고 싶다고 말해보세요.','투어를 예약하고 싶어요.'],7:["I'd like to rent a car.",'렌터카 업체에 왔어요. 차를 빌리고 싶다고 말해보세요.','차를 빌리고 싶어요.'],10:["I'd like to reserve a table.",'식당에 전화를 했어요. 자리를 예약하고 싶다고 말해보세요.','자리를 예약하고 싶어요.'],11:["I'd like to book a taxi.",'프런트에 왔어요. 택시를 예약하고 싶다고 말해보세요.','택시를 예약하고 싶어요.']},
+    tip:'하고 싶은 행동을 정중하게 말해요.',parts:[["I'd like to",'~ 하고 싶어요'],['check in.','체크인']]},
+  is_there:{starter:0,core:[11,15,19],complex:[8,14],
+    simple:{0:['Is there an ATM?','현금이 필요해요. ATM이 있는지 물어보세요.','ATM이 있나요?'],1:['Is there a clinic?','몸이 아파요. 병원이 있는지 물어보세요.','병원이 있나요?'],2:['Is there a pharmacy?','약이 필요해요. 약국이 있는지 물어보세요.','약국이 있나요?'],3:['Is there a laundromat?','빨래가 쌓였어요. 코인세탁소가 있는지 물어보세요.','코인세탁소가 있나요?'],5:['Is there an extra charge?','장비를 빌리려고 해요. 추가 요금이 있는지 물어보세요.','추가 요금이 있나요?'],6:['Is there an extra charge?','늦게 체크아웃하고 싶어요. 추가 요금이 있는지 물어보세요.','추가 요금이 있나요?'],7:['Is there a shuttle?','호텔에서 이동하려고 해요. 셔틀이 있는지 물어보세요.','셔틀이 있나요?'],10:['Is there wifi?','인터넷을 쓰고 싶어요. 와이파이가 있는지 물어보세요.','와이파이가 있나요?']},
+    tip:'장소나 시설이 있는지 물어요.',parts:[['Is there','~ 있나요?'],['an ATM?','ATM이']]},
+  how_much_longer:{starter:5,core:[5,6,7,8,9,10,11,12,13,14],complex:[0,1,2,3,4,17,18,19],
+    tip:'이미 진행 중인 일이 얼마나 더 걸릴지 물어요.',parts:[['How much longer','얼마나 더'],['will it take?','걸릴까요?']]},
+  whats_difference:{starter:10,core:[0,6,10,11,12,13,16,18,19],complex:[3,4,5,7,14,15],pattern:"What's the difference between ~?",ko:'~ 사이에 차이가 뭐예요?',
+    tip:'두 가지의 차이를 물어요. 처음엔 비교할 물건 이름만 붙여보세요.',parts:[["What's the difference",'차이가 뭐예요?'],['between these two tickets?','이 두 표 사이에']]},
+  what_does_mean:{starter:24,core:[3,7,8,9,10,15,18,20,21,22,24],complex:[],
+    tip:'모르는 단어나 안내 문구의 뜻을 물어요.',parts:[['What does','무슨'],['"reserved" mean?','reserved가 뜻이에요?']]},
+  how_do_i:{starter:7,core:[0,1,4,5,6,7,8,9,10,12,13,14,15,16,17,19,20,21,22,23,24,25,26,28,29,30,31,32,34,36,37,39,40,41,42,43,44,45],complex:[],
+    tip:'물건을 쓰거나 어떤 일을 하는 방법을 물어요.',parts:[['How do I','제가 어떻게'],['use this machine?','이 기계를 쓰나요?']]},
+  can_i_ask:{starter:1,core:[0,1,2,3,4,5,8],complex:[],
+    tip:'질문하기 전에 물어봐도 되는지 말해요.',parts:[['Can I ask','물어봐도 될까요?'],['a question?','질문을']]}
+};
+function basicCurriculumRule(f){return f&&BASIC_CURRICULUM[f.id.replace(/^travel_/,'')];}
+function basicCurriculumCatalog(f){
+  const rule=basicCurriculumRule(f);if(!rule)return null;
+  const core=new Set(rule.core),complex=new Set(rule.complex);
+  return f.items.map((ex,index)=>({...ex,_tier:core.has(index)?1:complex.has(index)?3:2,_sourceIndex:index}));
+}
+function basicCoreItems(f){
+  const rule=basicCurriculumRule(f);if(!rule)return null;
+  const originals=basicCurriculumCatalog(f).filter(ex=>ex._tier===1&&ex.en.trim().split(/\s+/).length<=8);
+  const shortened=Object.entries(rule.simple||{}).map(([index,[en,ko,answerKo]])=>({en,ko,_tier:1,_sourceIndex:Number(index),_answerKo:answerKo}));
+  return [...originals,...shortened];
+}
+function basicStarterItem(f){
+  const rule=basicCurriculumRule(f);if(!rule)return null;
+  return basicCoreItems(f).find(ex=>ex._sourceIndex===rule.starter);
+}
+function basicFrameFor(f,ex){
+  const rule=basicCurriculumRule(f);if(!rule||ex._tier!==1)return f;
+  return {...f,frame:rule.pattern||f.frame,ko:rule.ko||f.ko,tip:rule.tip,parts:rule.parts,pnote:''};
+}
+// Register new short-answer translations for saved mistake practice as well.
+for(const f of TRAVEL_FRAMES)for(const ex of basicCoreItems(f)||[])if(ex._answerKo&&!TRAVEL_KR[ex.en])TRAVEL_KR[ex.en]=ex._answerKo;
+
 const TRAVEL_ALL_FRAMES=TRAVEL_FRAMES;
 
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
@@ -2780,7 +2887,10 @@ function travelAnswerAlternatives(it){
     case 'travel_cant_find':add(/^I can't find /i,'I cannot find ',"I'm unable to find ");add(/^We can't find /i,"We're unable to find ");break;
     case 'travel_think_i_left':add(/^I think I left /i,'I may have left ','I might have left ');break;
     case 'travel_does_that_mean':add(/^Does that mean /i,'Do you mean ','Are you saying ');break;
-    case 'travel_say_again_slowly':out.add('Could you repeat that more slowly?');out.add('Can you say that again more slowly?');out.add('Could you say that again slowly?');out.add('Please repeat that slowly.');break;
+    case 'travel_say_again_slowly':
+      if(/\bslowly\b/i.test(en)){out.add('Could you repeat that more slowly?');out.add('Can you say that again more slowly?');out.add('Could you say that again slowly?');out.add('Please repeat that slowly.');}
+      else{out.add('Could you repeat that?');out.add('Can you say that again?');out.add('Please repeat that.');}
+      break;
     case 'travel_what_recommend':add(/^What do you recommend/i,'What would you recommend','What do you suggest','What would you suggest');break;
     case 'travel_can_we_change':add(/^Can (we|I) change /i,'Could $1 change ','Is it possible to change ');if(!/money/.test(en))add(/^Can (we|I) change /i,'Can $1 switch ');break;
     case 'travel_is_this_right':add(/^Is this the right /i,'Is this the correct ');break;

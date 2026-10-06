@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.4", APP_BUILD="2026-10-06";
+const APP_VERSION="v4.4.5", APP_BUILD="2026-10-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -63,7 +63,8 @@ function travelCountPick(onPick){
 function travelPoolOf(ids){if(!ids||!ids.length)return null;return TRAVEL_FRAMES.filter(f=>ids.includes(f.id));}
 function travelBuildItems(count,pool){
   const frames=travelPickFrames(count,pool),records=travelAll();
-  const items=frames.map(f=>{const ex=travelPickItem(f,records);return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame:f,block:{id:f.id,block:f.frame},ex:{en:ex.en,ko:ex.ko,situation:f.purpose},limit:3};});
+  const introPlanned=new Set();
+  const items=frames.map(f=>{const introduce=!records[f.id]?.introduced&&!introPlanned.has(f.id);introPlanned.add(f.id);const ex=travelPickItem(f,records,{introduce}),frame=basicFrameFor(f,ex);return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame,block:{id:f.id,block:frame.frame},ex:{...ex,situation:f.purpose},limit:3};});
   travelSave(records);travelMarkShown(frames.map(f=>f.id));return items;
 }
 function travelReadMs(it){return Math.max(2500,Math.min(7000,String(it.ex.ko||'').replace(/\s/g,'').length*220));}
@@ -92,7 +93,7 @@ function missRecord(it,ok){
   if(ok){r.ok=(r.ok||0)+1;r.streak=(r.streak||0)+1;}else{r.miss=(r.miss||0)+1;r.streak=0;}
   if(r.streak>=MISS_GRADUATE)delete records[en];else records[en]=r;missSave(records);
 }
-function missBuildItems(list){return list.filter(m=>TRAVEL_BY_ID[m.fid]).map(m=>{const f=TRAVEL_BY_ID[m.fid];return {_travel:true,_miss:true,frame:f,block:{id:f.id,block:f.frame},ex:{en:m.en,ko:m.ko||travelKrOf(m.en)||f.ko,situation:f.purpose},limit:3,_intro:false};});}
+function missBuildItems(list){return list.filter(m=>TRAVEL_BY_ID[m.fid]).map(m=>{const f=TRAVEL_BY_ID[m.fid],core=(basicCoreItems(f)||[]).find(ex=>ex.en===m.en),ex={...core,en:m.en,ko:m.ko||travelKrOf(m.en)||f.ko,situation:f.purpose},frame=basicFrameFor(f,ex);return {_travel:true,_miss:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};});}
 function openMissPicker(){
   const ov=openSheet('자주 틀리는 문장'),content=ov.querySelector('#sheetContent');
   const list=missList();
@@ -114,13 +115,14 @@ function autoDrillRender(recall=false){
   const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card">
     <div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><div class="lesson-progress" aria-label="연습 진행"><i style="width:${autoDrill.idx/autoDrill.items.length*100}%"></i></div><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div>
     <div class="drill-prompt">
-      <p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty))}</p>`:''}
+      <p class="eyebrow">${escapeHtml(autoDrill.title)}</p>${typeof basicDifficultyLabel==='function'?`<p class="difficulty-note">${escapeHtml(basicDifficultyLabel(it._difficulty,it.ex._tier))}</p>`:''}
       <h2>${firstLook?escapeHtml(it.frame.frame):'상황을 보고 말해보세요'}</h2>
-      ${firstLook?`<div class="intro"><p class="intro-label">처음 배우는 문장이에요</p><p>${escapeHtml(it.frame.ko)}</p><b>${escapeHtml(it.ex.en)}</b></div>`:''}
       <p class="situation">${escapeHtml(it.ex.ko)}</p>
+      ${firstLook?`<div class="intro"><p class="intro-label">처음 배우는 문장이에요</p><p>${escapeHtml(it.frame.ko)}</p><b>${escapeHtml(it.ex.en)}</b></div>`:''}
     </div>
+    <div id="autoHintRow"><button class="quiet" id="autoWord">🔍 단어 힌트</button><button class="quiet" id="autoShow">👀 표현 보기</button></div>
     <div id="autoCoach" class="practice-coach"><img src="mascot-guide.png" alt="" width="88" height="88"><p id="autoStat" class="muted" role="status">${escapeHtml(guidance)}</p></div>
-    <div class="auto-actions"><div id="autoHintRow"><button class="quiet" id="autoWord">🔍 단어 힌트</button><button class="quiet" id="autoShow">👀 표현 보기</button></div><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden></div>
+    <div class="auto-actions"><button class="primary" id="autoMic">🎤 터치해서 말하기</button><button class="quiet" id="autoType">직접 입력</button><input id="autoInput" class="auto-input" placeholder="영어로 입력 후 Enter" autocomplete="off" hidden></div>
   </div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
@@ -146,6 +148,7 @@ function autoDrillFinish(heard,meta={}){
 function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 말해보세요.'){
   pendingReply=true;
   const card=document.querySelector('.auto-card'),old=$('#autoAnswer');if(old)old.remove();
+  $('#autoHintRow').hidden=true;
   const intro=card.querySelector('.intro');if(intro)intro.remove();const heading=card.querySelector('h2');if(heading)heading.textContent='상황을 보고 말해보세요';
   const answer=document.createElement('div');answer.id='autoAnswer';answer.className='answer';
   const key=travelKeyOf(it),kr=travelKrOf(it.ex.en),notes=prepNotes(it.ex.en),words=[...new Set(adWords(it.ex.en))].filter(w=>w.length>2&&!/^(can|could|would|the|you|your|have|does|there|that|with|for|and|this|are)$/.test(w));
