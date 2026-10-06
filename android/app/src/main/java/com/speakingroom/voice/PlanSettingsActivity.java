@@ -1,9 +1,7 @@
 package com.speakingroom.voice;
 
-import android.Manifest;
 import android.app.*;
 import android.content.*;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.*;
 import android.graphics.Color;
@@ -13,7 +11,7 @@ import org.json.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-/** Subscription settings for the existing 3초영어 UI: no hosted proxy, no API-key billing fallback. */
+/** One connection flow; model selection and a completed inference are persisted. */
 public final class PlanSettingsActivity extends Activity {
     private PlanClient plan;
     private TextView account, status;
@@ -21,7 +19,13 @@ public final class PlanSettingsActivity extends Activity {
     private Button login, catalog, test, start, logout;
     private JSONArray modelData = new JSONArray();
     private final ExecutorService io = Executors.newSingleThreadExecutor();
-    private boolean busy, tested;
+    private boolean busy;
+    private final SharedPreferences.OnSharedPreferenceChangeListener loginChanged = (prefs, key) -> {
+        if (!"credentials".equals(key) || isDestroyed() || isFinishing() || busy) return;
+        refresh();
+        if (plan.connected() && !plan.ready()) loadModels(true);
+        else if (plan.ready()) showReady();
+    };
     @Override public void onCreate(Bundle state) {
         super.onCreate(state); plan = PlanClient.get(this);
         LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(36, 48, 36, 40); content.setBackgroundColor(Color.rgb(246, 249, 248));
@@ -31,103 +35,112 @@ public final class PlanSettingsActivity extends Activity {
         });
         ScrollView scroll = new ScrollView(this); scroll.addView(content); setContentView(scroll);
         button("← 3초영어로 돌아가기", content, this::finish);
-        button("개인정보 처리 안내", content, () -> startActivity(new Intent(this, PrivacyActivity.class)));
-        TextView title = text("3초영어 · 구독 설정", 26); content.addView(title);
-        content.addView(text("ChatGPT 구독으로 짧은 일상 대화 연습\n설치·로그인·테스트는 정차한 상태에서 완료해주세요.", 16));
+        content.addView(text("ChatGPT 연결", 26));
+        content.addView(text("처음 한 번 연결하면 다음 연습에서도 그대로 사용할 수 있어요. 로그인 후 대화 준비까지 자동으로 확인합니다.", 16));
         account = text(plan.label(), 14); content.addView(account);
         login = button("Continue with ChatGPT", content, () -> signIn(false));
+        status = text("", 18); content.addView(status);
+        start = button("연결 완료 · 상황 고르고 대화하기 →", content, this::finish);
+        catalog = button("대화 연결 확인 / 모델 목록 새로고침", content, () -> loadModels(!plan.ready()));
+        models = new Spinner(this); content.addView(models);
+        models.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { refresh(); }
+            public void onNothingSelected(AdapterView<?> parent) { refresh(); }
+        });
+        test = button("선택한 모델로 연결 확인", content, this::testConnection);
+        content.addView(text("Using ChatGPT plan · 연결 확인과 AI 대화는 내 ChatGPT 구독 한도를 사용합니다. 반복학습은 연결 없이 사용할 수 있어요.", 14));
         button("다른 계정으로 연결", content, () -> signIn(true));
         button("저장된 계정 선택", content, () -> {
             if (busy || VoiceService.running) { show("연습을 멈춘 뒤 계정을 선택해주세요."); return; }
             try {
                 JSONArray choices = plan.savedAccounts(); String[] names = new String[choices.length()];
-                for (int i = 0; i < choices.length(); i++) names[i] = choices.getJSONObject(i).optString("email") + " · " + choices.getJSONObject(i).optString("client_id");
+                for (int i = 0; i < choices.length(); i++) names[i] = choices.getJSONObject(i).optString("email");
                 if (names.length == 0) { show("저장된 계정이 없습니다."); return; }
                 new AlertDialog.Builder(this).setTitle("ChatGPT 계정").setItems(names, (dialog, which) -> {
-                    try { plan.selectAccount(choices.getJSONObject(which).getString("client_id")); tested = false; modelData = new JSONArray(); models.setAdapter(null); refresh(); show("계정을 선택했습니다. 모델을 다시 불러오고 연결 테스트를 해주세요."); }
-                    catch (Exception e) { show("계정 선택 실패"); }
+                    try { plan.selectAccount(choices.getJSONObject(which).getString("client_id")); modelData = new JSONArray(); models.setAdapter(null); refresh(); if (plan.connected()) { if (plan.ready()) showReady(); else loadModels(true); } else signIn(false); }
+                    catch (Exception e) { show(PlanClient.safeMessage(e)); }
                 }).show();
             } catch (Exception e) { show("계정 목록을 불러오지 못했습니다."); }
         });
-        button("로그인 취소", content, () -> { plan.cancelLogin(); });
-        catalog = button("사용 가능한 모델 불러오기", content, this::loadModels);
-        models = new Spinner(this); content.addView(models);
-        content.addView(text("Using ChatGPT plan · 대화 요청은 구독 한도를 사용합니다. 크레딧 사용 허용 여부는 ChatGPT 설정에서 관리하세요.", 14));
-        models.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) { tested = false; try { if (!selectedModel().equals(getSharedPreferences("native", MODE_PRIVATE).getString("model", ""))) getSharedPreferences("native", MODE_PRIVATE).edit().remove("model").apply(); } catch(Exception ignored) {} }
-            public void onNothingSelected(android.widget.AdapterView<?> parent) { tested = false; }
-        });
-        test = button("연결 테스트 · 구독 사용량 소량 사용", content, this::testConnection);
-        start = button("3초영어에서 상황 선택하고 대화하기", content, this::finish);
-        status = text(VoiceService.status, 18); content.addView(status);
-        content.addView(text("상대가 말한 뒤 영어로 답하면 자동으로 이어갑니다.\n음성 명령: Stop · Repeat · Help\n최대 6번 답하거나 5분이 지나면 종료합니다.\n\n기기 영어 음성 인식과 읽어주기를 사용합니다. 기기에 따라 인식이 Google 서버를 사용할 수 있습니다.\n화면 잠금·블루투스 동작은 휴대폰마다 달라 실제 확인 전에는 운전용으로 사용하지 마세요.", 15));
+        button("로그인 취소", content, plan::cancelLogin);
         button("ChatGPT 사용량·앱 권한 설정", content, () -> open("https://chatgpt.com/settings/usage"));
-        button("안드로이드 음성 설정", content, () -> { try { startActivity(new Intent("com.android.settings.TTS_SETTINGS")); } catch (Exception e) { startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS)); } });
+        button("개인정보 처리 안내", content, () -> startActivity(new Intent(this, PrivacyActivity.class)));
         logout = button("로그아웃", content, () -> {
             if (busy) return; stopService(new Intent(this, VoiceService.class));
-            work(() -> { String message = plan.logout(); runOnUiThread(() -> { tested = false; modelData = new JSONArray(); models.setAdapter(null); show(message); }); });
+            work(() -> { String message = plan.logout(); updateUi(() -> { modelData = new JSONArray(); models.setAdapter(null); show(message); }); });
         });
         button("저장된 ChatGPT 연결 정보 모두 삭제", content, () -> {
-            if(busy || VoiceService.running) { show("진행 중인 연결이나 음성 대화를 멈춰주세요."); return; }
+            if (busy || VoiceService.running) { show("진행 중인 연결이나 음성 대화를 멈춰주세요."); return; }
             new AlertDialog.Builder(this).setTitle("이 기기의 계정 연결 정보 삭제")
                 .setMessage("저장된 모든 ChatGPT 로그인 정보를 이 기기에서 삭제합니다. ChatGPT 계정과 학습 기록은 삭제되지 않습니다. 서버의 앱 권한은 ChatGPT 설정에서도 해제해주세요.")
-                .setPositiveButton("삭제", (d,w) -> { plan.forgetAccounts(); getSharedPreferences("native",MODE_PRIVATE).edit().clear().apply(); modelData=new JSONArray(); models.setAdapter(null); refresh(); show("기기에 저장된 계정 연결 정보를 삭제했습니다."); })
-                .setNegativeButton("취소",null).show();
+                .setPositiveButton("삭제", (d,w) -> { plan.forgetAccounts(); getSharedPreferences("native", MODE_PRIVATE).edit().remove("model").remove("account").remove("modelAccountId").apply(); modelData = new JSONArray(); models.setAdapter(null); refresh(); show("기기에 저장된 계정 연결 정보를 삭제했습니다."); })
+                .setNegativeButton("취소", null).show();
         });
         refresh();
+        getSharedPreferences("plan", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(loginChanged);
+        if (plan.ready()) showReady();
+        else if (plan.connected()) loadModels(true);
+        else show("ChatGPT 계정을 연결해주세요.");
     }
     private TextView text(String value, int size) { TextView view = new TextView(this); view.setText(value); view.setTextSize(size); view.setTextColor(Color.rgb(25, 53, 48)); view.setPadding(0, 12, 0, 12); return view; }
     private Button button(String label, LinearLayout host, Runnable action) { Button b = new Button(this); b.setText(label); b.setAllCaps(false); host.addView(b); b.setOnClickListener(v -> action.run()); return b; }
     private void signIn(boolean different) {
         if (busy || VoiceService.running) { show("연습을 멈춘 뒤 연결해주세요."); return; }
-        busy = true; refresh(); show("브라우저에서 로그인한 뒤 이 앱으로 돌아오세요.");
+        if (!different && plan.connected()) { if (plan.ready()) showReady(); else loadModels(true); return; }
+        busy = true; refresh(); show("브라우저에서 로그인한 뒤 이 앱으로 돌아오세요. 대화 준비는 자동으로 확인할게요.");
         plan.login(different, new PlanClient.LoginListener() {
-            public void openBrowser(String url) { runOnUiThread(() -> { if (!isFinishing()) open(url); else plan.cancelLogin(); }); }
-            public void finished(String message) { runOnUiThread(() -> {
-                busy = false; tested = false; modelData = new JSONArray(); models.setAdapter(null); show(message); refresh();
-                if (plan.connected() && !getPreferences(MODE_PRIVATE).getBoolean("welcomed", false) && !isFinishing()) {
-                    getPreferences(MODE_PRIVATE).edit().putBoolean("welcomed", true).apply();
-                    new AlertDialog.Builder(PlanSettingsActivity.this).setTitle("ChatGPT 구독을 사용합니다")
-                        .setMessage("이 앱의 AI 대화 요청은 연결한 구독의 사용량 한도를 사용합니다. 앱별 한도와 크레딧 사용 허용 여부는 ChatGPT 설정에서 관리할 수 있습니다.")
-                        .setPositiveButton("확인", null).show();
-                }
+            public void openBrowser(String url) { updateUi(() -> open(url)); }
+            public void finished(boolean success, String message) { updateUi(() -> {
+                busy = false; modelData = new JSONArray(); models.setAdapter(null); show(message); refresh();
+                if (success) { if (plan.ready()) showReady(); else loadModels(true); }
             }); }
         });
     }
-    private void loadModels() {
-        if (busy || VoiceService.running) { show("연습을 멈춘 뒤 모델을 불러와주세요."); return; }
+    private void loadModels(boolean complete) {
+        if (busy || VoiceService.running) { show("연습을 멈춘 뒤 연결을 확인해주세요."); return; }
         work(() -> {
+            String id = plan.accountId();
             JSONArray data = plan.models();
+            int selection = plan.catalogSelection(data);
+            if (complete) plan.testModel(data.getJSONObject(selection).getString("slug"));
             ArrayList<String> names = new ArrayList<>();
             for (int i = 0; i < data.length(); i++) names.add(data.getJSONObject(i).optString("display_name", data.getJSONObject(i).getString("slug")));
-            runOnUiThread(() -> { modelData = data; tested = false; models.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names)); show("모델을 선택하고 연결 테스트를 눌러주세요. 목록 표시만으로 사용 권한이 검증되지는 않습니다."); });
+            updateUi(() -> {
+                if (!id.equals(plan.accountId())) return;
+                modelData = data; models.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names)); models.setSelection(selection);
+                if (plan.ready()) showReady(); else show("로그인은 저장되었어요. 사용할 모델을 선택하고 연결을 확인해주세요.");
+            });
         });
     }
     private String selectedModel() throws Exception {
-        int i = models.getSelectedItemPosition(); if (i < 0 || i >= modelData.length()) throw new java.io.IOException("먼저 모델을 불러오고 선택해주세요.");
-        return modelData.getJSONObject(i).getString("slug");
+        int i = models.getSelectedItemPosition();
+        if (i >= 0 && i < modelData.length()) return modelData.getJSONObject(i).getString("slug");
+        if (plan.ready()) return plan.model();
+        throw new java.io.IOException("대화 연결 확인을 눌러주세요. 다시 로그인할 필요는 없어요.");
     }
     private void testConnection() {
         if (busy || VoiceService.running) return;
         final String selected;
         try { selected = selectedModel(); } catch (Exception e) { show(e.getMessage()); return; }
-        tested = false;
-        work(() -> {
-            String reply = plan.respond(selected, "Reply with exactly: Ready.", new JSONArray().put(new JSONObject().put("role", "user").put("content", "Connection test.")));
-            runOnUiThread(() -> { tested = true; getSharedPreferences("native", MODE_PRIVATE).edit().putString("model", selected).putString("account", plan.label()).apply(); show("구독 요청 성공: " + reply + "\n3초영어로 돌아가면 기존 학습 기능이 이 구독을 사용합니다."); });
-        });
+        work(() -> { plan.testModel(selected); updateUi(this::showReady); });
     }
     private interface Task { void run() throws Exception; }
     private void work(Task task) {
-        busy = true; refresh(); show("연결 중…");
-        io.execute(() -> { try { task.run(); } catch (Exception e) { runOnUiThread(() -> show(PlanClient.safeMessage(e))); }
-            finally { runOnUiThread(() -> { busy = false; refresh(); }); } });
+        busy = true; refresh(); show("로그인은 저장되어 있어요. 대화 연결을 확인하고 있어요…");
+        io.execute(() -> { try { task.run(); } catch (Exception e) { updateUi(() -> show(PlanClient.safeMessage(e))); }
+            finally { updateUi(() -> { busy = false; refresh(); }); } });
     }
-    private void refresh() { account.setText(plan.label()); login.setEnabled(!busy); catalog.setEnabled(!busy && plan.connected()); test.setEnabled(!busy && plan.connected()); start.setEnabled(!busy && plan.connected()); logout.setEnabled(!busy); }
+    private void refresh() {
+        account.setText(plan.label()); login.setVisibility(plan.connected() ? View.GONE : View.VISIBLE); login.setEnabled(!busy);
+        catalog.setEnabled(!busy && plan.connected()); test.setEnabled(!busy && plan.connected());
+        boolean selectedReady = plan.ready();
+        if (selectedReady && modelData.length() > 0) try { selectedReady = plan.model().equals(selectedModel()); } catch (Exception e) { selectedReady = false; }
+        start.setEnabled(!busy && selectedReady); logout.setEnabled(!busy);
+    }
+    private void showReady() { show("ChatGPT 연결 완료 ✓\n앱을 다시 열어도 연결이 유지됩니다. 아래 버튼으로 연습을 시작하세요."); refresh(); }
     private void show(String message) { if (!isDestroyed()) status.setText(message); }
+    private void updateUi(Runnable action) { runOnUiThread(() -> { if (!isDestroyed() && !isFinishing()) action.run(); }); }
     private void open(String url) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) { show("브라우저를 열 수 없습니다."); plan.cancelLogin(); } }
-    @Override public void onResume() { super.onResume(); VoiceService.observer = message -> runOnUiThread(() -> show(message)); }
-    @Override public void onPause() { VoiceService.observer = null; super.onPause(); }
-    @Override public void onDestroy() { plan.cancelLogin(); io.shutdownNow(); super.onDestroy(); }
+    @Override public void onResume() { super.onResume(); if (account != null) refresh(); }
+    @Override public void onDestroy() { getSharedPreferences("plan", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(loginChanged); if (isFinishing()) plan.cancelLogin(); io.shutdown(); super.onDestroy(); }
 }
-

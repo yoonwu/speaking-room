@@ -12,4 +12,7 @@
  stop.onclick=()=>attempt(async()=>{await window.srNativeRequest('stop');voice=false;setBusy(false);start.hidden=false;stop.hidden=true;});
  window.srNativeEvents=json=>{for(const e of JSON.parse(json)){if(seen.has(e.id))continue;seen.add(e.id);if(e.kind==='status'){voice=e.running;status.textContent=e.text;start.hidden=voice;stop.hidden=!voice;if(!voice)setBusy(false);continue;}if(curScreen!=='talk'||!state.scn)continue;if(e.kind==='user'){state.convo.push({role:'user',text:e.text});addMeTurn(e.text);}if(e.kind==='assistant'){const text=stripUsedMarker(e.raw).clean;if(!e.help){state.convo.push({role:'assistant',text});if(typeof recordAiPractice==='function')recordAiPractice();}addCoachTurn(text,false);}}return true;};
  const leave=goToSetup;goToSetup=function(...args){if(voice){window.srNativeRequest('stop').catch(()=>{});voice=false;setBusy(false);start.hidden=false;stop.hidden=true;}return leave.apply(this,args);};
+ window.addEventListener('focus',()=>window.srNativeRefresh());
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.srNativeRefresh();});
+ window.srNativeRefresh();
 })();

@@ -37,18 +37,45 @@ final class PlanClient {
     private final Context context;
     private final SharedPreferences prefs;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final Object refreshLock = new Object();
+    private final PlanConnection connection;
     private volatile ServerSocket callback;
     private JSONObject account;
 
-    interface LoginListener { void openBrowser(String url); void finished(String message); }
+    interface LoginListener { void openBrowser(String url); void finished(boolean success, String message); }
     private PlanClient(Context context) {
         this.context = context.getApplicationContext();
         prefs = context.getSharedPreferences("plan", Context.MODE_PRIVATE);
+        SharedPreferences nativePrefs = context.getSharedPreferences("native", Context.MODE_PRIVATE);
+        connection = new PlanConnection(new PlanConnection.Store() {
+            public String get(String key) { return nativePrefs.getString(key, ""); }
+            public boolean verified(String model, String id, String label) {
+                return nativePrefs.edit().putString("model", model).putString("modelAccountId", id).putString("account", label).commit();
+            }
+        });
         try { account = load(); } catch (Exception e) { account = null; }
         if (!prefs.contains("host")) prefs.edit().putString("host", "urn:uuid:" + UUID.randomUUID()).apply();
     }
     synchronized boolean connected() { return account != null && account.has("access_token"); }
     synchronized String label() { return account == null ? "연결 안 됨" : account.optString("email", "ChatGPT 계정") + " · " + account.optString("client_id"); }
+    synchronized String accountId() { return account == null ? "" : account.optString("client_id"); }
+    synchronized boolean ready() { return connection.ready(connected(), accountId(), label()); }
+    String model() { return connection.model(); }
+    int catalogSelection(JSONArray data) { return connection.catalogSelection(data); }
+    synchronized void verifiedModel(String id, String model) throws Exception {
+        if (!connected() || !id.equals(accountId())) throw new IOException("계정이 변경되었어요. 선택한 계정에서 다시 연결해주세요.");
+        connection.verified(model, id, label());
+    }
+    void testModel(String model) throws Exception {
+        String id = accountId();
+        respond(model, "Reply with exactly: Ready.", new JSONArray().put(new JSONObject().put("role", "user").put("content", "Connection test.")));
+        verifiedModel(id, model);
+    }
+    synchronized void clearUnusableSession() throws Exception {
+        if (account == null) return;
+        JSONObject mapping = new JSONObject().put("client_id", account.getString("client_id")).put("subject", account.optString("subject")).put("email", account.optString("email"));
+        save(mapping); account = mapping;
+    }
     synchronized JSONArray savedAccounts() throws Exception {
         JSONObject stored = loadRaw(); JSONArray result = new JSONArray();
         if (stored == null) return result;
@@ -97,7 +124,7 @@ final class PlanClient {
                         String[] request = line.split(" ");
                         Uri candidate = request.length >= 2 ? Uri.parse("http://127.0.0.1" + request[1]) : null;
                         boolean valid = candidate != null && "/auth/callback".equals(candidate.getPath()) && state.equals(candidate.getQueryParameter("state"));
-                        String body = valid ? "로그인을 받았습니다. 3초영어 앱으로 돌아가세요." : "Invalid callback.";
+                        String body = valid ? "로그인 응답을 받았습니다. 앱에서 연결을 확인하고 있습니다. 3초영어로 돌아가주세요." : "Invalid callback.";
                         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
                         OutputStream out = socket.getOutputStream();
                         out.write(("HTTP/1.1 " + (valid ? "200 OK" : "400 Bad Request") + "\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: " + bytes.length + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
@@ -121,8 +148,8 @@ final class PlanClient {
                 tokens.put("client_id", issued).put("subject", claims.getSubject()).put("email", claims.getStringClaim("email"))
                     .put("expires_at", System.currentTimeMillis() + tokens.getLong("expires_in") * 1000L);
                 synchronized (this) { save(tokens); account = tokens; }
-                listener.finished("구독 권한이 연결되었습니다. 모델을 선택하고 연결 테스트를 해주세요.");
-            } catch (Exception e) { listener.finished("연결 실패: " + safeMessage(e)); }
+                listener.finished(true, "로그인 정보를 저장했어요. 대화 연결을 확인할게요.");
+            } catch (Exception e) { listener.finished(false, "연결 실패: " + safeMessage(e)); }
             finally { if (server != null) try { server.close(); } catch (IOException ignored) {} if (callback == server) callback = null; }
         });
     }
@@ -145,22 +172,49 @@ final class PlanClient {
     static void requirePlanScope(String scopes) throws IOException {
         if (!Arrays.asList(scopes.split("\\s+")).contains("chatgpt.tokens.use.direct")) throw new IOException("ChatGPT 구독 사용 권한이 없습니다.");
     }
-    synchronized String accessToken() throws Exception {
-        if (!connected()) throw new IOException("먼저 ChatGPT로 로그인해주세요.");
-        if (account.optLong("expires_at") < System.currentTimeMillis() + 60000) {
-            JSONObject replacement = jsonRequest(AUTH + "/api/accounts/oauth/token", "POST", null,
-                form("grant_type", "refresh_token", "client_id", account.getString("client_id"), "refresh_token", account.getString("refresh_token"), "resource", RESOURCE), "application/x-www-form-urlencoded");
-            JSONObject next = new JSONObject(account.toString());
-            Iterator<String> names = replacement.keys();
-            while (names.hasNext()) { String k = names.next(); next.put(k, replacement.get(k)); }
-            requirePlanScope(next.getString("scope"));
-            next.put("expires_at", System.currentTimeMillis() + replacement.getLong("expires_in") * 1000L);
-            save(next); account = next;
+    String accessToken() throws Exception { return accessToken(null); }
+    private String accessToken(String rejectedToken) throws Exception {
+        // Network IO must not hold the monitor used by the main-thread status query.
+        synchronized (refreshLock) {
+            JSONObject previous;
+            synchronized (this) {
+                if (!connected()) throw new IOException("ChatGPT 로그인이 필요해요.");
+                if (account.optLong("expires_at") >= System.currentTimeMillis() + 60000
+                    && !account.getString("access_token").equals(rejectedToken)) return account.getString("access_token");
+                previous = new JSONObject(account.toString());
+            }
+            if (!previous.has("refresh_token")) throw new IOException("저장된 로그인 갱신 정보가 없어요. ChatGPT를 다시 연결해주세요.");
+            JSONObject replacement;
+            try {
+                replacement = jsonRequest(AUTH + "/api/accounts/oauth/token", "POST", null,
+                    form("grant_type", "refresh_token", "client_id", previous.getString("client_id"), "refresh_token", previous.getString("refresh_token"), "resource", RESOURCE), "application/x-www-form-urlencoded");
+            } catch (OpenAiError e) {
+                if (e.terminalRefresh()) synchronized (this) {
+                    if (sameSession(previous)) clearUnusableSession();
+                }
+                throw e;
+            }
+            synchronized (this) {
+                if (!sameSession(previous)) throw new IOException("로그인 계정이 변경되었어요. 다시 시도해주세요.");
+                JSONObject next = new JSONObject(previous.toString());
+                Iterator<String> names = replacement.keys();
+                while (names.hasNext()) { String k = names.next(); next.put(k, replacement.get(k)); }
+                requirePlanScope(next.getString("scope"));
+                next.put("expires_at", System.currentTimeMillis() + replacement.getLong("expires_in") * 1000L);
+                save(next); account = next;
+                return next.getString("access_token");
+            }
         }
-        return account.getString("access_token");
+    }
+    private boolean sameSession(JSONObject previous) {
+        return account != null && previous.optString("client_id").equals(account.optString("client_id"))
+            && previous.optString("refresh_token").equals(account.optString("refresh_token"));
     }
     JSONArray models() throws Exception {
-        JSONObject data = jsonRequest(RESOURCE + "/models", "GET", accessToken(), null, null);
+        String token = accessToken();
+        JSONObject data;
+        try { data = jsonRequest(RESOURCE + "/models", "GET", token, null, null); }
+        catch (OpenAiError e) { if (e.status != 401) throw e; data = jsonRequest(RESOURCE + "/models", "GET", accessToken(token), null, null); }
         JSONArray available = new JSONArray();
         JSONArray all = data.getJSONArray("models");
         for (int i = 0; i < all.length(); i++) { JSONObject m = all.getJSONObject(i); if ("list".equals(m.optString("visibility"))) available.put(m); }
@@ -169,12 +223,17 @@ final class PlanClient {
     }
     String respond(String model, String instructions, JSONArray history) throws Exception {
         JSONObject payload = new JSONObject().put("model", model).put("instructions", instructions).put("input", history).put("store", false).put("stream", true);
-        HttpsURLConnection c = connection(RESOURCE + "/responses", "POST", accessToken());
+        String token = accessToken();
+        try { return respondWithToken(payload, token); }
+        catch (OpenAiError e) { if (e.status != 401) throw e; return respondWithToken(payload, accessToken(token)); }
+    }
+    private String respondWithToken(JSONObject payload, String token) throws Exception {
+        HttpsURLConnection c = connection(RESOURCE + "/responses", "POST", token);
         c.setReadTimeout(60000); c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "text/event-stream");
         c.setDoOutput(true);
         try {
             try (OutputStream out = c.getOutputStream()) { out.write(payload.toString().getBytes(StandardCharsets.UTF_8)); }
-            if (c.getResponseCode() != 200) throw httpError(c.getResponseCode());
+            if (c.getResponseCode() != 200) throw httpError(c);
             try (Reader in = new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8)) { return ResponseStream.read(in); }
         } finally { c.disconnect(); }
     }
@@ -230,7 +289,7 @@ final class PlanClient {
         HttpsURLConnection c = connection(url, method, token);
         try {
             if (body != null) { c.setDoOutput(true); c.setRequestProperty("Content-Type", contentType); try (OutputStream out = c.getOutputStream()) { out.write(body.getBytes(StandardCharsets.UTF_8)); } }
-            int status = c.getResponseCode(); if (status < 200 || status >= 300) throw httpError(status);
+            int status = c.getResponseCode(); if (status < 200 || status >= 300) throw httpError(c);
             try (InputStream in = c.getInputStream()) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream(); byte[] chunk = new byte[4096]; int count;
                 while ((count = in.read(chunk)) != -1) { buffer.write(chunk, 0, count); if (buffer.size() > 2000000) throw new IOException("서버 응답이 너무 큽니다."); }
@@ -243,7 +302,13 @@ final class PlanClient {
         if (token != null) c.setRequestProperty("Authorization", "Bearer " + token);
         return c;
     }
-    private static IOException httpError(int status) { return new IOException(status == 401 ? "로그인이 만료되었습니다. 다시 연결해주세요. (401)" : status == 403 ? "계정 또는 앱에서 구독 사용이 허용되지 않았습니다. (403)" : status == 429 ? "사용량 한도 또는 요청 제한에 도달했습니다. (429)" : "OpenAI 연결 오류 (HTTP " + status + ")"); }
+    private static OpenAiError httpError(HttpsURLConnection c) throws Exception {
+        String code = "";
+        try (InputStream in = c.getErrorStream()) {
+            if (in != null) { byte[] buffer = new byte[8192]; int total = 0, count; while (total < buffer.length && (count = in.read(buffer, total, buffer.length - total)) > 0) total += count; JSONObject root = new JSONObject(new String(buffer, 0, total, StandardCharsets.UTF_8)); JSONObject error = root.optJSONObject("error"); code = error == null ? root.optString("error") : error.optString("code"); }
+        } catch (Exception ignored) {}
+        return new OpenAiError(c.getResponseCode(), code);
+    }
     static String form(String... items) throws Exception { StringBuilder b = new StringBuilder(); for (int i = 0; i < items.length; i += 2) { if (i > 0) b.append('&'); b.append(URLEncoder.encode(items[i], "UTF-8")).append('=').append(URLEncoder.encode(items[i + 1], "UTF-8")); } return b.toString(); }
     private static String random() { byte[] bytes = new byte[32]; new SecureRandom().nextBytes(bytes); return b64(bytes); }
     private static String b64(byte[] bytes) { return Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING); }

@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.0", APP_BUILD="2026-10-02";
+const APP_VERSION="v4.4.1", APP_BUILD="2026-10-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -148,13 +148,13 @@ function openSurvival(){
   if(!window.SpeakingRoomNative){scenes();return;}
   const connection=(connected=false)=>{
     content.innerHTML='<div class="ai-connect"><span class="ai-connect-icon">💬</span><h3>삼초와 연습한 말을<br>대화로 꺼내볼까요?</h3><p>처음 한 번, 내 ChatGPT 계정을 연결해주세요.</p><button id="connectChatGPT" class="primary">ChatGPT 연결하기 →</button><p id="aiConnectStatus" role="status" class="muted">연결을 마치고 돌아오면 상황을 고를 수 있어요.</p></div>';
-    if(connected){content.querySelector('.ai-connect h3').innerHTML='ChatGPT 로그인은 완료됐어요';content.querySelector('.ai-connect p').textContent='대화를 시작하려면 모델 선택과 연결 테스트를 마쳐주세요.';content.querySelector('#connectChatGPT').textContent='연결 마무리하기 →';content.querySelector('#aiConnectStatus').textContent='설정에서 모델 불러오기 → 모델 선택 → 연결 테스트를 진행해주세요. 다시 로그인할 필요는 없어요.';}
+    if(connected){content.querySelector('.ai-connect h3').innerHTML='ChatGPT 로그인은 저장되어 있어요';content.querySelector('.ai-connect p').textContent='대화 준비를 확인하면 바로 연습할 수 있어요.';content.querySelector('#connectChatGPT').textContent='대화 연결 확인하기 →';content.querySelector('#aiConnectStatus').textContent='앱 0.5.5부터 대화 준비를 자동으로 확인해요. 다시 로그인할 필요는 없어요.';}
     content.querySelector('#connectChatGPT').onclick=()=>window.srNativeRequest('settings').catch(e=>{content.querySelector('#aiConnectStatus').textContent=e.message;});
   };
   const refresh=s=>{if(ov.isConnected===false)return;if(s.ready)scenes();else connection(!!s.connected);};
   window.srAiEntryRefresh=refresh;
   content.innerHTML='<p class="muted" role="status">ChatGPT 연결을 확인하고 있어요…</p>';
-  window.srNativeRequest('status').then(refresh).catch(()=>{if(ov.isConnected!==false)connection();});
+  window.srNativeRequest('status').then(refresh).catch(e=>{if(ov.isConnected===false)return;content.innerHTML='<p role="status">연결 상태를 확인하지 못했어요. '+escapeHtml(e.message)+'</p><button id="retryAiStatus" class="primary">다시 확인</button>';content.querySelector('#retryAiStatus').onclick=()=>{ov.remove();openSurvival();};});
 }
 function rolePrompt(){return ['You are a friendly realistic conversation partner helping a Korean learner practice spoken English.','Situation: '+state.scn.ctx,'Play the role of '+state.scn.role+'.',typeof aiLevelInstruction==='function'?aiLevelInstruction():'Use short beginner-friendly English: one or two sentences and one question at a time.','Stay in character and respond to the learner’s intended meaning, even with imperfect grammar.','Accept different natural expressions; do not require an exact memorized sentence or reveal answers before the learner tries.','Create a natural conversation. Ask for missing details one at a time. Let the learner explain, clarify, request, and correct misunderstandings. Wrap up when the situation is resolved.','Give a short hint only when asked. Do not score, award points, or prescribe other learning modes.'].join('\n');}
 function startSurvival(scene){goToSetup();state.scn=scene;state.convo=[];state.engine='survival';state.mode='talk';startSession();}
