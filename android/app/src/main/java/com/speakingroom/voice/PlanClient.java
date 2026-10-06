@@ -2,6 +2,9 @@ package com.speakingroom.voice;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.app.Activity;
+import android.app.Application;
+import android.os.Bundle;
 import android.net.Uri;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -39,12 +42,22 @@ final class PlanClient {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final Object refreshLock = new Object();
     private final PlanConnection connection;
+    private final ForegroundGate foreground = new ForegroundGate();
     private volatile ServerSocket callback;
     private JSONObject account;
 
-    interface LoginListener { void openBrowser(String url); void finished(boolean success, String message); }
+    interface LoginListener { void openBrowser(String url); void finished(boolean success, String message); default void progress(String message) {} }
     private PlanClient(Context context) {
         this.context = context.getApplicationContext();
+        ((Application)this.context).registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            public void onActivityResumed(Activity activity) { foreground.resume(activity); }
+            public void onActivityPaused(Activity activity) { foreground.pause(activity); }
+            public void onActivityDestroyed(Activity activity) { foreground.pause(activity); }
+            public void onActivityCreated(Activity activity, Bundle state) {}
+            public void onActivityStarted(Activity activity) {}
+            public void onActivityStopped(Activity activity) {}
+            public void onActivitySaveInstanceState(Activity activity, Bundle state) {}
+        });
         prefs = context.getSharedPreferences("plan", Context.MODE_PRIVATE);
         SharedPreferences nativePrefs = context.getSharedPreferences("native", Context.MODE_PRIVATE);
         connection = new PlanConnection(new PlanConnection.Store() {
@@ -124,10 +137,10 @@ final class PlanClient {
                         String[] request = line.split(" ");
                         Uri candidate = request.length >= 2 ? Uri.parse("http://127.0.0.1" + request[1]) : null;
                         boolean valid = candidate != null && "/auth/callback".equals(candidate.getPath()) && state.equals(candidate.getQueryParameter("state"));
-                        String body = valid ? "로그인 응답을 받았습니다. 앱에서 연결을 확인하고 있습니다. 3초영어로 돌아가주세요." : "Invalid callback.";
+                        String body = valid ? callbackPage() : "Invalid callback.";
                         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
                         OutputStream out = socket.getOutputStream();
-                        out.write(("HTTP/1.1 " + (valid ? "200 OK" : "400 Bad Request") + "\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: " + bytes.length + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                        out.write(("HTTP/1.1 " + (valid ? "200 OK" : "400 Bad Request") + "\r\nContent-Type: " + (valid ? "text/html" : "text/plain") + "; charset=utf-8\r\nCache-Control: no-store\r\nContent-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'\r\nContent-Length: " + bytes.length + "\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
                         out.write(bytes); out.flush();
                         if (valid) incoming = candidate;
                     }
@@ -140,6 +153,10 @@ final class PlanClient {
                 if (issued == null) issued = client;
                 String code = incoming.getQueryParameter("code");
                 if (code == null || code.isEmpty()) throw new IOException("로그인 코드가 없습니다.");
+                ServerSocket attemptServer = server;
+                listener.progress("로그인 응답을 받았어요. 3초영어로 돌아오면 연결을 마칠게요.");
+                foreground.await(300000, attemptServer::isClosed);
+                listener.progress("로그인 응답을 확인하고 연결 정보를 저장하고 있어요…");
                 JSONObject tokens = jsonRequest(AUTH + "/api/accounts/oauth/token", "POST", null,
                     form("grant_type", "authorization_code", "client_id", issued, "code", code, "code_verifier", verifier, "redirect_uri", redirect, "resource", RESOURCE), "application/x-www-form-urlencoded");
                 JWTClaimsSet claims = validateIdentity(tokens.getString("id_token"), issued, nonce);
@@ -152,6 +169,15 @@ final class PlanClient {
             } catch (Exception e) { listener.finished(false, "연결 실패: " + safeMessage(e)); }
             finally { if (server != null) try { server.close(); } catch (IOException ignored) {} if (callback == server) callback = null; }
         });
+    }
+    boolean loginPending() { ServerSocket server = callback; return server != null && !server.isClosed(); }
+    static String callbackPage() {
+        // The return link carries no code, state, token or other account data.
+        return "<!doctype html><html lang='ko'><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+            + "<title>3초영어로 돌아가기</title><style>body{font-family:system-ui,sans-serif;background:#f3faf7;color:#193530;padding:36px 24px;line-height:1.6}a{display:block;background:#169b7b;color:white;padding:18px;border-radius:16px;text-align:center;text-decoration:none;font-weight:700;margin-top:24px}</style>"
+            + "<h1>로그인 응답을 받았어요</h1><p>3초영어로 돌아가면 연결을 마칩니다.</p>"
+            + "<a href='speakingroom://chatgpt-return'>3초영어로 돌아가서 연결 마치기 →</a>"
+            + "<p>버튼이 열리지 않으면 최근 앱에서 3초영어로 돌아가주세요.</p></html>";
     }
     void cancelLogin() { ServerSocket s = callback; if (s != null) try { s.close(); } catch (IOException ignored) {} }
     private JWTClaimsSet validateIdentity(String raw, String audience, String nonce) throws Exception {
@@ -231,6 +257,9 @@ final class PlanClient {
         catch (OpenAiError e) { if (e.status != 401) throw e; return respondWithToken(payload, accessToken(token)); }
     }
     private String respondWithToken(JSONObject payload, String token) throws Exception {
+        return NetworkRecovery.run(() -> sendResponse(payload, token));
+    }
+    private String sendResponse(JSONObject payload, String token) throws Exception {
         HttpsURLConnection c = connection(RESOURCE + "/responses", "POST", token);
         c.setReadTimeout(60000); c.setRequestProperty("Content-Type", "application/json"); c.setRequestProperty("Accept", "text/event-stream");
         c.setDoOutput(true);
@@ -289,6 +318,9 @@ final class PlanClient {
         return (SecretKey) store.getKey("speaking-room-plan", null);
     }
     static JSONObject jsonRequest(String url, String method, String token, String body, String contentType) throws Exception {
+        return NetworkRecovery.run(() -> sendJsonRequest(url, method, token, body, contentType));
+    }
+    private static JSONObject sendJsonRequest(String url, String method, String token, String body, String contentType) throws Exception {
         HttpsURLConnection c = connection(url, method, token);
         try {
             if (body != null) { c.setDoOutput(true); c.setRequestProperty("Content-Type", contentType); try (OutputStream out = c.getOutputStream()) { out.write(body.getBytes(StandardCharsets.UTF_8)); } }
@@ -315,5 +347,8 @@ final class PlanClient {
     static String form(String... items) throws Exception { StringBuilder b = new StringBuilder(); for (int i = 0; i < items.length; i += 2) { if (i > 0) b.append('&'); b.append(URLEncoder.encode(items[i], "UTF-8")).append('=').append(URLEncoder.encode(items[i + 1], "UTF-8")); } return b.toString(); }
     private static String random() { byte[] bytes = new byte[32]; new SecureRandom().nextBytes(bytes); return b64(bytes); }
     private static String b64(byte[] bytes) { return Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING); }
-    static String safeMessage(Exception e) { return e instanceof IOException || e instanceof SecurityException ? Objects.toString(e.getMessage(), "연결 실패") : "연결 처리 실패 (" + e.getClass().getSimpleName() + ")"; }
+    static String safeMessage(Exception e) {
+        if (e instanceof UnknownHostException) return "이 기기에서 ChatGPT 서버 주소를 찾지 못했어요. 앱을 연 상태에서도 계속되면 휴대폰 Chrome에서 auth.openai.com 접속을 확인해주세요. (DNS)";
+        return e instanceof IOException || e instanceof SecurityException ? Objects.toString(e.getMessage(), "연결 실패") : "연결 처리 실패 (" + e.getClass().getSimpleName() + ")";
+    }
 }

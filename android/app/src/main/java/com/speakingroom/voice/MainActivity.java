@@ -35,7 +35,7 @@ public final class MainActivity extends Activity {
         getSharedPreferences("native", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         getSharedPreferences("plan", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         web = new WebView(this);
-        updater = new WebUpdater(this, 10);
+        updater = new WebUpdater(this, 11);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -172,7 +172,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,10); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,11); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.

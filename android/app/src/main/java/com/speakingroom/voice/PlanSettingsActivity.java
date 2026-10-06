@@ -90,6 +90,7 @@ public final class PlanSettingsActivity extends Activity {
         busy = true; refresh(); show("브라우저에서 로그인한 뒤 이 앱으로 돌아오세요. 대화 준비는 자동으로 확인할게요.");
         plan.login(different, new PlanClient.LoginListener() {
             public void openBrowser(String url) { updateUi(() -> open(url)); }
+            public void progress(String message) { updateUi(() -> show(message)); }
             public void finished(boolean success, String message) { updateUi(() -> {
                 busy = false; modelData = new JSONArray(); models.setAdapter(null); show(message); refresh();
                 if (success) { if (plan.ready()) showReady(); else loadModels(true); }

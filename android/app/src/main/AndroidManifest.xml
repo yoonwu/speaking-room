@@ -14,7 +14,16 @@
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
-        <activity android:name=".PlanSettingsActivity" android:exported="false" />
+        <activity android:name=".PlanSettingsActivity" android:exported="false" android:launchMode="singleTask" />
+        <activity android:name=".LoginReturnActivity" android:exported="true" android:noHistory="true">
+            <!-- Opens our connection screen only. OAuth credentials stay on loopback. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="speakingroom" android:host="chatgpt-return" />
+            </intent-filter>
+        </activity>
         <activity android:name=".PrivacyActivity" android:exported="false" />
         <service android:name=".VoiceService" android:exported="false" android:foregroundServiceType="microphone|mediaPlayback" />
     </application>
