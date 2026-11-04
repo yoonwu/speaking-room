@@ -57,3 +57,74 @@ test('web device recognition retains recorded chunks before returning its fast t
 test('answer playback stops and releases audio when leaving, and a typed answer cannot replay a previous recording',async()=>{const {run,context,records}=setup();const revoked=[],players=[];context.URL={createObjectURL:()=> 'blob:current-answer',revokeObjectURL:url=>revoked.push(url)};context.Audio=class{constructor(url){this.url=url;this.paused=false;players.push(this);}async play(){}pause(){this.paused=true;}};context.clip=new Blob([new Uint8Array(650)]);run(`startDrill(travelBuildItems(3,[TRAVEL_FRAMES[0]]),'기본표현');autoDrillFinish(autoDrill.items[0].ex.en,{recordingBlob:clip});`);await run('listenMyVoice()');assert.equal(players[0].url,'blob:current-answer');run('goToSetup()');assert.equal(players[0].paused,true);assert.deepEqual(revoked,['blob:current-answer']);run(`startDrill(travelBuildItems(3,[TRAVEL_FRAMES[0]]),'기본표현');autoDrillFinish(autoDrill.items[0].ex.en,{typed:true});`);assert.equal(run('answerVoiceUrl'),null);assert.ok([...records.values()].every(v=>!String(v).includes('blob:current-answer')));});
 
 test('cancelled recognition discards audio before decoding or displaying it',async()=>{const {run,context}=setup();let resolve;context.atob=()=>{throw Error('Late audio must not be decoded');};context.window.srNativePracticeSpeech=true;context.window.srNativeRequest=action=>action==='recognize'?new Promise(r=>resolve=r):Promise.resolve({});context.received=[];const pending=run(`micFillCb((text,meta)=>received.push(meta),'Can I get water?')`);run('stopMicrophone()');resolve({text:'Can I get water?',audioBase64:'unused'});await pending;assert.equal(context.received.length,0);assert.equal(run('answerVoiceUrl'),null);});
+
+test('microphone cues bracket a completed native answer once, and cancellation or failure never sounds complete',async()=>{
+ for(const outcome of ['success','cancel','error']){
+  const {run,context}=setup();let resolve,reject;context.cues=[];context.answers=[];
+  run('micBeep=()=>cues.push("start");micBeepEnd=()=>cues.push("end")');context.window.srNativePracticeSpeech=true;
+  context.window.srNativeRequest=action=>action==='recognize'?new Promise((yes,no)=>{resolve=yes;reject=no;}):Promise.resolve({});
+  const pending=run('micFillCb((text,meta)=>answers.push({text,meta}))');assert.deepEqual(context.cues,['start']);
+  if(outcome==='cancel')run('stopMicrophone()');
+  if(outcome==='error')reject(Error('permission denied'));else resolve({text:'Can I get water?'});
+  await pending;assert.deepEqual(context.cues,outcome==='success'?['start','end']:['start']);
+  assert.equal(context.answers.length,outcome==='cancel'?0:1);assert.equal(run('qzRecording||micPreparing'),false);
+ }
+});
+
+test('device final recognition automatically stops the recording without another click, preserving recorded audio',async()=>{
+ const {run,context}=setup();const recognizers=[],recorders=[];context.cues=[];context.answers=[];let finished;
+ const done=new Promise(resolve=>finished=resolve);context.finished=finished;
+ context.window.SpeechRecognition=class{constructor(){recognizers.push(this);}start(){}stop(){this.onend?.();}abort(){}};
+ context.MediaRecorder=class{constructor(){recorders.push(this);this.state='inactive';this.mimeType='audio/webm';this.stops=0;}start(){this.state='recording';}stop(){if(this.state==='inactive')throw Error('duplicate stop');this.stops++;this.state='inactive';this.ondataavailable({data:new Blob([new Uint8Array(650)])});this.onstop();}};
+ run(`micBeep=()=>cues.push('start');micBeepEnd=()=>cues.push('end');getBestMime=()=>'';micStreamGet=async()=>({});micStreamIdle=()=>{};vadArm=()=>{};sttRecognize=()=>{throw Error('unexpected upload');};`);
+ await run(`micFillCb((text,meta)=>{answers.push({text,meta});finished();},'Can I get water?')`);
+ recognizers[0].onresult({resultIndex:0,results:[Object.assign([{transcript:'Can I get'}],{isFinal:false})]});assert.equal(recorders[0].stops,0);
+ recognizers[0].onresult({resultIndex:0,results:[Object.assign([{transcript:'Can I get water?'}],{isFinal:true})]});await done;
+ assert.equal(recorders[0].stops,1);assert.equal(context.answers.length,1);assert.equal(context.answers[0].text,'Can I get water?');assert.equal(context.answers[0].meta.recordingBlob.size,650);assert.deepEqual(context.cues,['start','end']);
+ recognizers[0].onend();assert.equal(recorders[0].stops,1);
+});
+
+test('a second press while microphone permission is pending cannot start two recordings',async()=>{
+ const {run,context}=setup();let grant;context.opens=0;context.cues=[];
+ run(`micBeep=()=>cues.push('start');micStreamGet=()=>{opens++;return new Promise(resolve=>grantMic=resolve);};`);
+ const pending=run('micFillCb(()=>{})');await run('micFillCb(()=>{})');assert.equal(context.opens,1);assert.deepEqual(context.cues,['start']);
+ run('stopMicrophone();grantMic({})');await pending;assert.equal(run('micPreparing||qzRecording'),false);
+});
+
+function audioClock(context,voiceAt){
+ let now=0,sequence=0,resumes=0,disconnects=0;const tasks=new Map(),oscillators=[];
+ context.Date=class extends Date{static now(){return now;}};
+ context.setTimeout=(fn,ms=0)=>{const id=++sequence;tasks.set(id,{at:now+ms,fn});return id;};context.clearTimeout=id=>tasks.delete(id);
+ const node=()=>({connect(){},disconnect(){disconnects++;}}),param=()=>({setValueAtTime(){},exponentialRampToValueAtTime(){}});
+ context.window.AudioContext=class{constructor(){this.state='suspended';this.currentTime=0;this.destination={};}resume(){resumes++;this.state='running';return Promise.resolve();}createMediaStreamSource(){return node();}createAnalyser(){return {...node(),getByteTimeDomainData(buf){for(let i=0;i<buf.length;i++)buf[i]=128+(voiceAt(now)?(i%2?20:-20):0);}};}createGain(){return {...node(),gain:param()};}createOscillator(){const oscillator={...node(),frequency:param(),start(){oscillator.started=true;},stop(){oscillator.stopped=true;}};oscillators.push(oscillator);return oscillator;}};
+ return {advance(ms){const end=now+ms;for(;;){let next=null;for(const [id,task]of tasks)if(task.at<=end&&(!next||task.at<next[1].at))next=[id,task];if(!next)break;now=next[1].at;tasks.delete(next[0]);next[1].fn();}now=end;},get resumes(){return resumes;},get disconnects(){return disconnects;},oscillators};
+}
+
+test('silence detection resumes suspended audio, tolerates pauses, then stops without animation frames',()=>{
+ const {run,context}=setup(),clock=audioClock(context,t=>(t>=300&&t<750)||(t>=1100&&t<1550));context.stops=0;
+ run('cancelVAD=attachVAD({},()=>stops++,{silenceMs:600,maxSilenceMs:1400,expectWords:2,maxMs:25000,noSpeechMs:7000})');
+ assert.equal(clock.resumes,1);clock.advance(1150);assert.equal(context.stops,0);clock.advance(700);assert.equal(context.stops,0);clock.advance(1000);assert.equal(context.stops,1);assert.ok(clock.disconnects>=2);clock.advance(30000);assert.equal(context.stops,1);
+});
+
+test('cancelling during the silence tail prevents late auto-submit and no-speech input also ends automatically',()=>{
+ const first=setup(),clock=audioClock(first.context,t=>t>=300&&t<900);first.context.stops=0;
+ first.run('cancelVAD=attachVAD({},()=>stops++,{silenceMs:600,maxMs:25000,noSpeechMs:7000})');clock.advance(1600);first.run('cancelVAD()');clock.advance(1000);assert.equal(first.context.stops,0);
+ const second=setup(),quiet=audioClock(second.context,()=>false);second.context.stops=0;
+ second.run('attachVAD({},()=>stops++,{maxMs:25000,noSpeechMs:7000})');quiet.advance(7500);assert.equal(second.context.stops,1);
+});
+
+test('both restored cues generate connected audio and reuse a running context for the microphone',()=>{
+ const {run,context}=setup(),clock=audioClock(context,()=>false);run('micBeep();micBeepEnd()');assert.equal(clock.oscillators.length,2);assert.equal(clock.resumes,1);assert.ok(clock.oscillators.every(o=>o.started&&o.stopped));
+});
+
+test('capture completion sounds immediately while transcription is pending and cannot start a second recording',async()=>{
+ const {run,context}=setup();let transcribe;context.cues=[];context.answers=[];context.opens=0;context.phases=[];
+ context.MediaRecorder=class{constructor(){this.state='inactive';this.mimeType='audio/webm';}start(){this.state='recording';}stop(){this.state='inactive';this.ondataavailable({data:new Blob([new Uint8Array(650)])});return this.onstop();}};
+ context.transcription=new Promise(resolve=>transcribe=resolve);
+ run(`micBeep=()=>cues.push('start');micBeepEnd=()=>cues.push('end');micStreamGet=async()=>{opens++;return {};};getBestMime=()=>'';micStreamIdle=()=>{};micLiveStart=()=>null;vadArm=()=>{};sttRecognize=()=>transcription;`);
+ await run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?',()=>phases.push('processing'))`);
+ const pending=run('qzMR.stop()');assert.deepEqual(context.cues,['start','end']);assert.deepEqual(context.phases,['processing']);assert.equal(context.answers.length,0);
+ await run('micFillCb(()=>{})');assert.equal(context.opens,1);
+ transcribe({ok:true,json:async()=>({DisplayText:'Can I get water?'})});await pending;
+ assert.equal(context.answers.length,1);assert.deepEqual(context.cues,['start','end']);assert.equal(run('micPreparing||qzRecording'),false);
+});

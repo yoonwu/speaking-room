@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.6", APP_BUILD="2026-10-06";
+const APP_VERSION="v4.4.7", APP_BUILD="2026-11-04";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -28,8 +28,8 @@ async function listenMyVoice(){
       out.innerHTML='<p>내 목소리로 한 번 더 말하고, 예문과 비교해보세요.</p><button id="recordMyVoice" class="quiet">🎙 녹음하기</button>';
       const record=$('#recordMyVoice');record.onclick=async()=>{
         if(qzRecording){window.srNativeRequest('recognizeStop').catch(()=>{});return;}
-        const epoch=micEpoch;stopAnswerLoop();svStop();if(TTS)TTS.cancel();qzRecording=true;record.textContent='■ 녹음 끝내기';
-        try{const result=await window.srNativeRequest('recordPractice');if(epoch!==micEpoch)return;saveAnswerVoice(nativeRecordingBlob(result));if(!answerVoiceUrl)throw Error('녹음된 소리가 없어요. 다시 말해주세요.');out.textContent='녹음했어요. 내 목소리 듣기를 눌러 비교해보세요.';}
+        const epoch=micEpoch;stopAnswerLoop();svStop();if(TTS)TTS.cancel();micBeep();qzRecording=true;record.textContent='■ 녹음 중 · 누르면 종료';
+        try{const result=await window.srNativeRequest('recordPractice');if(epoch!==micEpoch)return;saveAnswerVoice(nativeRecordingBlob(result));if(!answerVoiceUrl)throw Error('녹음된 소리가 없어요. 다시 말해주세요.');micBeepEnd();out.textContent='녹음했어요. 내 목소리 듣기를 눌러 비교해보세요.';}
         catch(e){if(epoch===micEpoch)out.textContent=e.message;}finally{if(epoch===micEpoch)qzRecording=false;}
       };
     }else out.textContent=window.SpeakingRoomNative?'내 목소리 듣기는 앱 0.5.7부터 사용할 수 있어요. Play 스토어에서 업데이트해주세요.':'마이크로 답한 뒤 내 목소리를 들을 수 있어요. 직접 입력한 답변에는 녹음이 없어요.';
@@ -41,7 +41,7 @@ async function listenMyVoice(){
   player.onerror=()=>{if(answerVoicePlayer!==player)return;stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 다시 말하며 녹음해주세요.';};
   try{await player.play();}catch(e){if(epoch===micEpoch&&answerVoicePlayer===player){stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 내 목소리 듣기를 다시 눌러주세요.';}}
 }
-function stopMicrophone(){ stopAnswerLoop();stopMyVoice(); micEpoch++; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
+function stopMicrophone(){ stopAnswerLoop();stopMyVoice(); micEpoch++;micPreparing=false; if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
 function goToSetup(){
   sessionEpoch++; stopMicrophone();clearAnswerVoice(); if(TTS)TTS.cancel(); svStop();
   autoDrill=null; state.busy=false; pendingReply=false; state.scn=null;
@@ -126,7 +126,7 @@ function autoDrillRender(recall=false){
   </div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
-  $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='말한 뒤 다시 누르면 끝나요';$('#autoStat').textContent='듣고 있어요…';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en);};
+  $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply||micPreparing)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='말을 마치면 자동으로 끝나요.';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en,()=>{$('#autoMic').textContent='답변 확인 중…';$('#autoStat').textContent='말하기가 끝났어요. 답변을 확인하고 있어요.';});};
   $('#autoType').onclick=()=>{$('#autoInput').hidden=false;$('#autoInput').focus();};
   $('#autoInput').oninput=()=>{if(!autoDrill.typedAt)autoDrill.typedAt=Date.now();};
   $('#autoInput').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()&&!pendingReply){e.preventDefault();autoDrillFinish(e.target.value.trim(),{speechStartAt:autoDrill.typedAt,typed:true});}};
@@ -220,9 +220,13 @@ async function conversationAdvice(request){
   try{const history=state.convo.map(t=>({role:t.role,content:t.text}));history.push({role:'user',content:request});const result=await callClaude(rolePrompt(),history);if(epoch===sessionEpoch)addCoachTurn(stripUsedMarker(extractText(result)).clean,false);}catch(e){if(epoch===sessionEpoch)addCoachTurn(e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
 function speakEn(text){if(!text)return;if(qzRecording)stopMicrophone();stopMyVoice();const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
-async function micFillCb(rawCb,refText=''){
+async function micFillCb(rawCb,refText='',onCaptureEnd=null){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
-  const epoch=micEpoch,cb=(text,meta)=>{if(epoch===micEpoch)rawCb(text,meta);};
+  if(micPreparing)return;micPreparing=true;micBeep();
+  const epoch=micEpoch;let delivered=false,endCued=false;
+  const captureEnded=()=>{if(epoch===micEpoch&&!endCued){endCued=true;micBeepEnd();if(onCaptureEnd)onCaptureEnd();}};
+  const cb=(text,meta)=>{if(epoch===micEpoch&&!delivered){delivered=true;micPreparing=false;qzRecording=false;if(!meta?.sttErr)captureEnded();rawCb(text,meta);}};
+  try{
   if(window.srNativeRequest && window.srNativePracticeSpeech==null){
     try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
     if(epoch!==micEpoch)return;
@@ -239,11 +243,13 @@ async function micFillCb(rawCb,refText=''){
     const wait=micCooldownLeft();if(wait)await new Promise(r=>setTimeout(r,wait));if(epoch!==micEpoch)return;
     const stream=await micStreamGet();if(epoch!==micEpoch){micStreamRelease();return;}
     const meta={startAt:Date.now(),speechStartAt:null,spoke:false},live=micLiveStart(),chunks=[],mime=getBestMime();
-    qzMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);const actualMime=qzMR.mimeType||mime;
+    qzMR=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);const recorder=qzMR,actualMime=recorder.mimeType||mime;
+    const finishCapture=()=>{if(epoch===micEpoch&&qzRecording&&recorder.state!=='inactive')recorder.stop();};
+    if(live)live.onFinal=finishCapture;
     qzMR.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
     qzMR.onstop=async()=>{
       if(epoch!==micEpoch){micLiveStop(live);return;}
-      vadCancel();qzRecording=false;micStartCooldown();micStreamIdle();meta.stopAt=Date.now();
+      if(live)live.onFinal=null;vadCancel();qzRecording=false;micPreparing=true;captureEnded();micStartCooldown();micStreamIdle();meta.stopAt=Date.now();
       try{
         const raw=new Blob(chunks,{type:actualMime});if(raw.size>=400)meta.recordingBlob=raw;
         const device=await micLiveWait(live,900);if(epoch!==micEpoch)return;
@@ -257,8 +263,9 @@ async function micFillCb(rawCb,refText=''){
       }catch(e){cb('',{...meta,sttErr:e.message});}
     };
     qzMR.start(250);qzRecording=true;
-    vadArm(stream,{...VAD_OPTS,silenceMs:450,maxSilenceMs:1400,maxMs:25000,noSpeechMs:7000,expectWords:refText.trim().split(/\s+/).length,onSpeechStart:t=>{meta.spoke=true;meta.speechStartAt=t;}});
+    vadArm(stream,{...VAD_OPTS,silenceMs:600,maxSilenceMs:1400,maxMs:25000,noSpeechMs:7000,expectWords:refText.trim().split(/\s+/).filter(Boolean).length,onSpeechStart:t=>{meta.spoke=true;meta.speechStartAt=t;}});
   }catch(e){micStreamRelease();qzRecording=false;cb('',{sttErr:'녹음을 시작하지 못했어요. ('+String(e.name||'Error')+') '+String(e.message||'')});}
+  }finally{if(epoch===micEpoch)micPreparing=false;}
 }
 function forceUpdate(){if(curScreen!=='setup')return showError('홈에서 업데이트를 확인해주세요.');if(window.SpeakingRoomNative)return window.srNativeRequest('webupdate').catch(showError);location.reload();}
 async function checkForUpdate(){
@@ -268,7 +275,7 @@ async function checkForUpdate(){
 $('#engTravel').onclick=()=>startTravelDrill(10,true,true);$('#engStudy').onclick=openTravelStudyPicker;$('#engMiss').onclick=openMissPicker;$('#engReal').onclick=openSurvival;
 $('#chatBack').onclick=goToSetup;$('#sendBtn').onclick=sendMessage;$('#helpBtn').onclick=askHelp;$('#fbBtn').onclick=getFeedback;
 $('#msg').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}};
-$('#micBtn').onclick=()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(state.busy)return;svStop();if(TTS)TTS.cancel();$('#micBtn').textContent='말하기 끝';micFillCb((text,meta)=>{$('#micBtn').textContent='🎤';if(text){msg.value=text;sendMessage();}else addCoachTurn(meta.sttErr||'잘 들리지 않았어요. 다시 말해주세요.',false);});};
+$('#micBtn').onclick=()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(state.busy||micPreparing)return;svStop();if(TTS)TTS.cancel();$('#micBtn').textContent='■ 듣는 중';micFillCb((text,meta)=>{$('#micBtn').textContent='🎤';if(text){msg.value=text;sendMessage();}else addCoachTurn(meta.sttErr||'잘 들리지 않았어요. 다시 말해주세요.',false);},'',()=>{$('#micBtn').textContent='확인 중…';});};
 $('#ttsBtn').onclick=function(){state.ttsOn=!state.ttsOn;this.setAttribute('aria-pressed',String(state.ttsOn));if(!state.ttsOn){svStop();if(TTS)TTS.cancel();}};
 $('#verFoot').textContent='업데이트 확인';$('#verFoot').onclick=forceUpdate;
 window.addEventListener('popstate',()=>{const sheet=$('#practiceSheet');if(sheet)sheet.remove();else goToSetup();});

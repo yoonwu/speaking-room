@@ -126,6 +126,31 @@ async function svSpeak(text, rate, onEnd, voice){
   }catch(e){ return false; }
 }
 
+// Unlock while the microphone button still has a user gesture. Reuse the same
+// running context for cues and VAD so a suspended analyser cannot wait forever.
+let _micAudio=null;
+function micAudioReady(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
+    if(!_micAudio||_micAudio.state==='closed')_micAudio=new AC();
+    if(_micAudio.state==='suspended'||_micAudio.state==='interrupted')Promise.resolve(_micAudio.resume()).catch(()=>{});
+    return _micAudio;
+  }catch(e){return null;}
+}
+function micCue(end=false){
+  try{
+    const ac=micAudioReady();if(!ac)return;
+    const oscillator=ac.createOscillator(),gain=ac.createGain(),t=ac.currentTime,duration=end ? .12 : .2;
+    oscillator.type=end?'triangle':'sine';oscillator.frequency.setValueAtTime(end?660:880,t);
+    if(!end)oscillator.frequency.setValueAtTime(1320,t+.07);
+    gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(end ? .09 : .16,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+duration-.01);
+    oscillator.connect(gain);gain.connect(ac.destination);
+    oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};oscillator.start(t);oscillator.stop(t+duration);
+  }catch(e){} // Audio feedback must never block an answer or microphone access.
+}
+function micBeep(){micCue(false);}
+function micBeepEnd(){micCue(true);}
+
 const MIN_REC_MS=900;
 
 const VAD_OPTS={maxMs:15000, silenceMs:600, minSpeechMs:200, thresh:0.012};
@@ -140,8 +165,8 @@ function attachVAD(stream, onStop, opts){
   const expectWords=opts.expectWords||0, maxSilenceMs=opts.maxSilenceMs||2600, noSpeechMs=opts.noSpeechMs||0;
   const onSpeechStart=typeof opts.onSpeechStart==="function"?opts.onSpeechStart:null;
   try{
-    const AC=window.AudioContext||window.webkitAudioContext;
-    const ac=new AC(); const src=ac.createMediaStreamSource(stream);
+    const ac=micAudioReady();if(!ac)throw new Error('Audio analyser unavailable');
+    const src=ac.createMediaStreamSource(stream);
     const an=ac.createAnalyser(); an.fftSize=512; src.connect(an);
     const buf=new Uint8Array(an.fftSize);
     const t0=Date.now(); let lastLoud=0, spoke=false, started=false, done=false;
@@ -155,19 +180,20 @@ function attachVAD(stream, onStop, opts){
       if(voicedMs>=expectWords*430) return true;                // 나눠 말했어도 총량이 충분
       return false;
     }
-    // rAF는 탭이 뒤로 가거나 화면이 꺼지면 멈춘다 → 벽시계 백스톱으로 반드시 끝나게
-    let guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000);
+    // Poll on a timer instead of animation frames; retain a wall-clock backstop.
+    let timer=null,guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000),tail=null;
     // 말이 끝났다고 판단한 순간 바로 끊으면 마지막 자음(-t, -k, -s)이 잘려 인식이 나빠진다.
     const tailMs = (opts.tailMs!=null) ? opts.tailMs : 250;
-    function fin(){ if(done)return; done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){}
-      if(tailMs>0) setTimeout(onStop, tailMs); else onStop(); }
+    function release(){if(timer)clearTimeout(timer);if(guard)clearTimeout(guard);try{src.disconnect();an.disconnect();}catch(e){}}
+    function fin(){ if(done)return; done=true;release();
+      if(tailMs>0)tail=setTimeout(onStop,tailMs);else onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
       let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
       const dt=Math.min(120, now-lastTick); lastTick=now;
-      if(rms>thresh){
+      if(now-t0>250&&rms>thresh){ // Do not mistake the short start cue for speech.
         if(!inBurst){ inBurst=true; bursts++; }        // 말 덩어리 개수 (단어를 끊어 말한 횟수)
         lastLoud=now; voicedMs+=dt;                    // 쉬는 시간은 빼고 '말한 시간'만 누적
         if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
@@ -179,7 +205,7 @@ function attachVAD(stream, onStop, opts){
         const quiet=now-lastLoud;
         // 녹음이 너무 짧으면 STT 가 아무것도 못 돌려준다("안 들렸어요"의 흔한 원인).
         // 말이 끝난 것 같아도 최소 길이는 채우고 끊는다.
-        if(now-t0 < MIN_REC_MS) { requestAnimationFrame(tick); return; }
+        if(now-t0 < MIN_REC_MS) { timer=setTimeout(tick,30); return; }
         // 다 말한 것 같으면 곧바로 종료 → 빨리 말한 사람이 기다리지 않음
         if(quiet>silenceMs && looksDone()) return fin();
         // 덜 말한 것 같아도 오래 조용하면 종료 (중간에 멈춘 경우)
@@ -187,10 +213,10 @@ function attachVAD(stream, onStop, opts){
       }
       if(!spoke && noSpeechMs && (now-t0)>noSpeechMs){ return fin(); }   // 말이 없으면 그만 기다림
       if(now-t0>maxMs){ return fin(); }
-      requestAnimationFrame(tick);
+      timer=setTimeout(tick,30);
     }
-    requestAnimationFrame(tick);
-    return ()=>{ if(!done){ done=true; if(guard){ clearTimeout(guard); guard=null; } try{ac.close();}catch(e){} } };
+    timer=setTimeout(tick,30);
+    return ()=>{done=true;release();if(tail)clearTimeout(tail);};
   }catch(e){
     const id=setTimeout(onStop, maxMs);
     return ()=>clearTimeout(id);
@@ -271,7 +297,7 @@ function micLiveStart(){
   let SR=null; try{ SR=window.SpeechRecognition||window.webkitSpeechRecognition; }catch(e){}
   if(!SR) return null;
   let rec=null; try{ rec=new SR(); }catch(e){ return null; }
-  const st={text:"", alts:[], interim:"", done:false, err:"", rec, onInterim:null};
+  const st={text:"", alts:[], interim:"", done:false, err:"", rec, onInterim:null, onFinal:null};
   try{
     rec.lang="en-US"; rec.interimResults=true; rec.continuous=false;
     try{ rec.maxAlternatives=5; }catch(e){}      // 억양이 세면 1등이 틀리고 2등이 맞는 일이 잦다
@@ -287,17 +313,18 @@ function micLiveStart(){
       }
       st.interim=interim;
       if(typeof st.onInterim==="function"){ try{ st.onInterim(st.text||interim); }catch(e){} }
+      if(st.text&&typeof st.onFinal==='function')st.onFinal();
     };
     rec.onerror=(e)=>{ st.err=String((e&&e.error)||"error"); st.done=true;
       /* 마이크를 못 잡는 기기면 계속 켰다 껐다 하면서 녹음까지 방해한다 — 이번 세션은 끈다 */
       if(/not-allowed|service-not-allowed|audio-capture/.test(st.err)) _micLiveOff=true; };
-    rec.onend=()=>{ st.done=true; };
+    rec.onend=()=>{ st.done=true;if(st.text&&typeof st.onFinal==='function')st.onFinal(); };
     rec.start();
   }catch(e){ return null; }
   _micLive=st; return st;
 }
 
-function micLiveStop(st){ if(st&&st.rec){ try{ st.rec.stop(); }catch(e){} try{ st.rec.abort(); }catch(e){} } if(_micLive===st) _micLive=null; }
+function micLiveStop(st){ if(st&&st.rec){st.onFinal=null;st.onInterim=null;try{ st.rec.stop(); }catch(e){} try{ st.rec.abort(); }catch(e){} } if(_micLive===st) _micLive=null; }
 
 async function micLiveWait(st, ms){
   if(!st) return null;
@@ -312,6 +339,7 @@ async function micLiveWait(st, ms){
 let qzMR=null;
 
 let qzRecording=false;
+let micPreparing=false;
 
 let enVoice=null;
 
