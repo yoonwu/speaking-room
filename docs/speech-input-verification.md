@@ -1,5 +1,15 @@
 # Installed Android speech input — 2026-11-05
 
+## Follow-up: answer-recognition latency, web v4.4.9
+
+The v4.4.8 installed-app transcription path could wait for Azure for ten seconds, then a backup for ten seconds, then retry Azure for ten more seconds. A deterministic timeout reproduction was still pending at 20 seconds and failed at 30 seconds. The local answer grader itself does not make a network request.
+
+The installed-app transcription path now has one seven-second deadline covering both providers and their response bodies. Azure starts immediately. If it is still pending at two seconds, the available backup starts; a primary failure starts the backup immediately. The first fully received successful HTTP response wins, losing requests are aborted, and Azure is never requested twice for one recording. Backup quota/authorization failures retain their existing cooldowns, and a backup still pending at the overall deadline gets a five-minute cooldown. The ordinary browser transcription route is unchanged. The deadline reports a retryable error rather than inventing or accepting an answer.
+
+Production-server tests from the PC used the same three generated English WAVs as the existing installed-bridge simulation, actual production JavaScript and grading, and no reference text sent to recognition. They returned the correct transcripts and rejected the deliberately wrong objects in **2946 ms, 1431 ms, and 1147 ms**. A separate direct server benchmark returned the bags sentence in 3116 ms; adding eight seconds of trailing silence took 4830 ms. These are measured server/pipeline timings, not physical-handset or microphone timings.
+
+Deterministic tests cover the fast-primary path without a backup, slow response bodies and late losing responses, immediate failure fallback, hung providers, request cancellation, and backup cooldown. A delayed primary with a fast backup completed at 2200 ms; both hung providers ended at 7000 ms. Diagnostics expose only the latest capture duration, recognition duration, and phase as `window.srLastSpeechTiming`, with no transcript or audio in that diagnostic. The home footer includes the active learning-screen version so a stale web update can be distinguished from native app version 0.5.8. Test reports live locally in `outputs/installed-speech-pipeline-results.json` and `outputs/stt-latency-benchmark.json`.
+
 ## Follow-up: regression reproduced in the existing native end detector
 
 This follow-up shipped to Google Play internal testing as **0.5.8 / versionCode13** on November5,2026,19:26 KST. Play Console confirmed “내부 테스터에게 제공됨” for release8. It is **not** a completed handset or installed-app end-to-end verification.

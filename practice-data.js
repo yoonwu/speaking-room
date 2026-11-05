@@ -550,6 +550,50 @@ async function practiceTranscribe(raw,actualMime,meta,refText='',options={}){
   if(/[\uac00-\ud7af]/.test(text)){const roman=hanRoman(text);text=refText&&phCloseHan(roman,refText)?refText:roman;}
   return String(text).trim();
 }
+// Short practice answers share one deadline. A slow provider must not queue
+// another full timeout (or a second Azure attempt) before returning a result.
+function sttPreferAzure(body,ctype){
+  return new Promise((resolve,reject)=>{
+    const controllers=new Set(),backupAllowed=STT_SOFT&&Date.now()>_sttSoftOff;
+    let settled=false,primaryDone=false,backupStarted=false,backupDone=false,backupTimer,deadline;
+    let failure=new Error('음성 인식 연결을 확인해주세요. 다시 말해주세요.');
+    const finish=(result,error)=>{
+      if(settled)return;settled=true;clearTimeout(backupTimer);clearTimeout(deadline);
+      for(const controller of controllers)controller.abort();controllers.clear();
+      if(error)reject(error);else resolve(result);
+    };
+    const failed=(secondary,error)=>{
+      if(settled)return;failure=error;
+      if(secondary)backupDone=true;else{primaryDone=true;startBackup();}
+      if(primaryDone&&(!backupAllowed||backupDone))finish(null,failure);
+    };
+    const send=async(path,secondary)=>{
+      const controller=new AbortController();controllers.add(controller);
+      try{
+        const response=await fetch(PROXY_URL+path,{method:'POST',headers:{'Content-Type':ctype},body,signal:controller.signal});
+        const result=new Response(await response.arrayBuffer(),{status:response.status,headers:response.headers});
+        if(settled)return;
+        if(result.ok){_sttVia=secondary?'관대':'Azure';finish(result);return;}
+        if(secondary){
+          let eb='';try{eb=await result.text();}catch(e){}
+          if(settled)return;
+          const longPause=result.status===404||result.status===501||result.status===401||result.status===403||/insufficient_quota|exceeded your current quota|billing/i.test(eb);
+          _sttSoftOff=Date.now()+(longPause?30:5)*60000;
+        }
+        failed(secondary,new Error('음성 인식 서버 오류 ('+result.status+'). 잠시 후 다시 말해주세요.'));
+      }catch(e){
+        if(!settled){if(secondary)_sttSoftOff=Date.now()+5*60000;failed(secondary,new Error('음성 인식 연결을 확인해주세요. 다시 말해주세요.'));}
+      }finally{controllers.delete(controller);}
+    };
+    const startBackup=()=>{if(settled||backupStarted||!backupAllowed)return;backupStarted=true;clearTimeout(backupTimer);send('/stt2',true);};
+    deadline=setTimeout(()=>{
+      if(backupStarted&&!backupDone)_sttSoftOff=Date.now()+5*60000;
+      finish(null,new Error('음성 인식 응답이 늦어요. 다시 말해주세요.'));
+    },7000);
+    if(backupAllowed)backupTimer=setTimeout(startBackup,2000);
+    _sttVia='Azure';send('/stt',false);
+  });
+}
 async function sttRecognize(raw, actualMime,options={}){
   let body, ctype;
   try{ body=/^audio\/wav\b/i.test(actualMime)?raw:await speechWait(recordedToWav(raw),3000,'녹음 변환 시간이 지났어요.'); ctype="audio/wav"; }
@@ -561,16 +605,15 @@ async function sttRecognize(raw, actualMime,options={}){
           : /mp4|aac/.test(actualMime) ? "audio/mp4"
           : (actualMime||"audio/webm; codecs=opus");
   }
+  // Android supplies a complete WAV. Transcribe it on the existing server,
+  // bypassing device SpeechRecognizer audio-source implementations entirely.
+  if(options.preferAzure)return sttPreferAzure(body,ctype);
   const send=async path=>{
     const controller=new AbortController();
     const receive=async()=>{const r=await fetch(PROXY_URL+path,{method:'POST',headers:{'Content-Type':ctype},body,signal:controller.signal});return new Response(await r.arrayBuffer(),{status:r.status,headers:r.headers});};
     try{return await speechWait(receive(),10000,'음성 인식 응답이 늦어요. 다시 말해주세요.',()=>controller.abort());}
     finally{controller.abort();}
   };
-  // Android supplies a complete WAV. Transcribe it on the existing server,
-  // bypassing device SpeechRecognizer audio-source implementations entirely.
-  let azure=null;
-  if(options.preferAzure){try{azure=await send('/stt');if(azure.ok)return azure;}catch(e){}}
   _sttVia="Azure";
   if(STT_SOFT && Date.now()>_sttSoftOff){
     try{
@@ -589,7 +632,7 @@ async function sttRecognize(raw, actualMime,options={}){
     }catch(e){ _sttSoftOff=Date.now()+5*60000; _sttVia="Azure(관대 인식 연결실패)"; }
   } else if(STT_SOFT){ _sttVia="Azure(관대 인식 잠시 중단됨)"; }
   else { _sttVia="Azure(관대 인식 꺼짐)"; }
-  return azure||send("/stt");
+  return send("/stt");
 }
 
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }

@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.8", APP_BUILD="2026-11-05";
+const APP_VERSION="v4.4.9", APP_BUILD="2026-11-05";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -126,7 +126,7 @@ function autoDrillRender(recall=false){
   </div>`;
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
-  $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply||micPreparing)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='말을 마치면 자동으로 끝나요.';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en,()=>{$('#autoMic').textContent='답변 확인 중…';$('#autoStat').textContent='말하기가 끝났어요. 답변을 확인하고 있어요.';});};
+  $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply||micPreparing)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='말을 마치면 자동으로 끝나요.';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en,()=>{$('#autoMic').textContent='말소리 인식 중…';$('#autoStat').textContent='말하기가 끝났어요. 말한 내용을 확인하고 있어요.';});};
   $('#autoType').onclick=()=>{$('#autoInput').hidden=false;$('#autoInput').focus();};
   $('#autoInput').oninput=()=>{if(!autoDrill.typedAt)autoDrill.typedAt=Date.now();};
   $('#autoInput').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()&&!pendingReply){e.preventDefault();autoDrillFinish(e.target.value.trim(),{speechStartAt:autoDrill.typedAt,typed:true});}};
@@ -249,7 +249,13 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null){
         const recordingBlob=nativeRecordingBlob(result);if(!recordingBlob)throw new Error('녹음된 소리가 없어요. 다시 말해주세요.');
         qzRecording=false;micPreparing=true;captureEnded();
         const meta={startAt,stopAt:Date.now(),speechStartAt:null,spoke:true,recordingBlob};
-        const text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});
+        const recognizeAt=Date.now();
+        const timing={captureMs:recognizeAt-startAt,recognitionMs:null,phase:'recognition'};
+        window.srLastSpeechTiming=timing;
+        let text;
+        try{text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});timing.phase='complete';}
+        catch(e){timing.phase='error';throw e;}
+        finally{timing.recognitionMs=Date.now()-recognizeAt;}
         cb(text,meta);
       }else{
         const result=await window.srNativeRequest('recognize',{recordAnswer:!!refText});if(epoch!==micEpoch)return;

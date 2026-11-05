@@ -180,3 +180,68 @@ test('the start cue finishes before native capture so it cannot trigger speech d
  context.window.srNativeRequest=async action=>{actions.push(action);assert.equal(action,'recordPractice');return {audioBase64:Buffer.alloc(644,1).toString('base64')};};run(`practiceTranscribe=async()=> 'Can I get water?'`);
  const pending=run(`micFillCb(()=>{},'Can I get water?')`);assert.deepEqual(actions,[]);clock.advance(199);assert.deepEqual(actions,[]);clock.advance(1);await pending;assert.deepEqual(actions,['recordPractice']);
 });
+
+// Advance wall time and all promise continuations together, without waiting for
+// real network time. Requests retain abort signals even when a server responds late.
+function sttHarness(){
+ const app=setup(),{context}=app,tasks=new Map(),calls=[];let now=1000000,sequence=0;
+ context.Date=class extends Date{static now(){return now;}};
+ context.setTimeout=(fn,ms=0)=>{const id=++sequence;tasks.set(id,{at:now+ms,fn});return id;};context.clearTimeout=id=>tasks.delete(id);
+ const flush=async()=>{for(let i=0;i<40;i++)await Promise.resolve();};
+ const clock={get now(){return now-1000000;},get pending(){return tasks.size;},async advance(ms){
+  const end=now+ms;await flush();
+  for(;;){let next=null;for(const [id,task]of tasks)if(task.at<=end&&(!next||task.at<next[1].at))next=[id,task];if(!next)break;now=next[1].at;tasks.delete(next[0]);next[1].fn();await flush();}
+  now=end;await flush();
+ }};
+ const routes={};context.fetch=(url,options)=>{
+  const route=routes[new URL(url).pathname]||{},call={path:new URL(url).pathname,at:clock.now,signal:options.signal};calls.push(call);
+  return new Promise((resolve,reject)=>{
+   let headTimer,bodyTimer,bodyReject;const bytes=Buffer.from(JSON.stringify(route.data||{DisplayText:call.path==='/stt'?'primary transcript':'backup transcript'}));
+   if(route.head!=null)headTimer=context.setTimeout(()=>resolve({status:route.status||200,headers:{'Content-Type':'application/json'},arrayBuffer:()=>new Promise((done,fail)=>{
+    bodyReject=fail;
+    bodyTimer=context.setTimeout(()=>done(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)),route.body||0);
+   })}),route.head);
+   options.signal.addEventListener('abort',()=>{call.abortedAt=clock.now;if(!route.ignoreAbort){context.clearTimeout(headTimer);context.clearTimeout(bodyTimer);const error=Object.assign(Error('aborted'),{name:'AbortError'});reject(error);if(bodyReject)bodyReject(error);}},{once:true});
+  });
+ };
+ const start=()=>{let outcome;const done=app.run(`sttRecognize(new Blob([new Uint8Array(644)]),'audio/wav',{preferAzure:true})`).then(value=>{outcome={value,at:clock.now};},error=>{outcome={error,at:clock.now};});return {done,get outcome(){return outcome;}};};
+ return {...app,routes,calls,clock,start};
+}
+
+test('native fast primary response finishes without starting or leaving a backup timer',async()=>{
+ const h=sttHarness();h.routes['/stt']={head:100,body:100};const request=h.start();
+ await h.clock.advance(200);assert.ok(request.outcome?.value);assert.equal(request.outcome.at,200);assert.equal((await request.outcome.value.json()).DisplayText,'primary transcript');
+ await h.clock.advance(10000);assert.deepEqual(h.calls.map(c=>c.path),['/stt']);assert.equal(h.clock.pending,0);await request.done;
+});
+
+test('native slow primary starts a backup after two seconds and a fully read backup wins before ten seconds',async()=>{
+ const h=sttHarness();h.routes['/stt']={head:100,body:6000,ignoreAbort:true};h.routes['/stt2']={head:100,body:100};const request=h.start();
+ await h.clock.advance(1999);assert.deepEqual(h.calls.map(c=>c.path),['/stt']);assert.equal(request.outcome,undefined);
+ await h.clock.advance(201);assert.equal(request.outcome.at,2200);assert.equal((await request.outcome.value.json()).DisplayText,'backup transcript');
+ assert.deepEqual(h.calls.map(c=>[c.path,c.at]),[['/stt',0],['/stt2',2000]]);assert.equal(h.calls[0].signal.aborted,true);
+ await h.clock.advance(6000);assert.equal(request.outcome.at,2200);assert.equal(h.run('_sttVia'),'관대');assert.equal(h.clock.pending,0);await request.done;
+});
+
+test('native primary failure starts the backup immediately instead of waiting for its hedge delay',async()=>{
+ const h=sttHarness();h.routes['/stt']={head:50,status:503};h.routes['/stt2']={head:100};const request=h.start();
+ await h.clock.advance(150);assert.equal(request.outcome.at,150);assert.equal((await request.outcome.value.json()).DisplayText,'backup transcript');assert.deepEqual(h.calls.map(c=>[c.path,c.at]),[['/stt',0],['/stt2',50]]);assert.equal(h.clock.pending,0);await request.done;
+});
+
+test('native hung providers share a seven second deadline rather than serial ten second waits and an Azure retry',async()=>{
+ const h=sttHarness(),request=h.start();await h.clock.advance(6999);assert.equal(request.outcome,undefined);
+ await h.clock.advance(1);assert.match(request.outcome?.error?.message||'',/응답이 늦어요/);assert.equal(request.outcome.at,7000);assert.deepEqual(h.calls.map(c=>c.path),['/stt','/stt2']);assert.ok(h.calls.every(c=>c.signal.aborted));assert.equal(h.clock.pending,0);
+ await h.clock.advance(23000);assert.equal(h.calls.length,2);assert.equal(request.outcome.at,7000);await request.done;
+ assert.ok(h.run('_sttSoftOff-Date.now()')>4*60000);const next=h.start();await h.clock.advance(7000);assert.match(next.outcome.error.message,/응답이 늦어요/);assert.deepEqual(h.calls.map(c=>c.path),['/stt','/stt2','/stt']);assert.equal(h.clock.pending,0);await next.done;
+});
+
+test('native primary success cancels a pending healthy backup without imposing a failure cooldown',async()=>{
+ const h=sttHarness();h.routes['/stt']={head:2400};h.routes['/stt2']={head:5000};const first=h.start();await h.clock.advance(2400);
+ assert.equal((await first.outcome.value.json()).DisplayText,'primary transcript');assert.equal(h.calls[1].signal.aborted,true);assert.equal(h.run('_sttSoftOff'),0);assert.equal(h.clock.pending,0);await first.done;
+ h.routes['/stt']={};h.routes['/stt2']={head:100};const next=h.start();await h.clock.advance(2100);assert.equal((await next.outcome.value.json()).DisplayText,'backup transcript');assert.deepEqual(h.calls.map(c=>c.path),['/stt','/stt2','/stt','/stt2']);assert.equal(h.clock.pending,0);await next.done;
+});
+
+test('native secondary backoff prevents backup requests and both HTTP failures return promptly',async()=>{
+ const h=sttHarness();h.routes['/stt']={head:50,status:503};h.routes['/stt2']={head:50,status:429,data:{error:'insufficient_quota'}};const first=h.start();
+ await h.clock.advance(100);assert.match(first.outcome.error.message,/429/);assert.equal(first.outcome.at,100);assert.ok(h.run('_sttSoftOff-Date.now()')>=29*60000);await first.done;
+ h.routes['/stt']={};const next=h.start();await h.clock.advance(7000);assert.match(next.outcome.error.message,/응답이 늦어요/);assert.deepEqual(h.calls.map(c=>c.path),['/stt','/stt2','/stt']);assert.equal(h.clock.pending,0);await next.done;
+});
