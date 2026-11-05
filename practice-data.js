@@ -128,7 +128,7 @@ async function svSpeak(text, rate, onEnd, voice){
 
 // Unlock while the microphone button still has a user gesture. Reuse the same
 // running context for cues and VAD so a suspended analyser cannot wait forever.
-let _micAudio=null;
+let _micAudio=null,_micCueUntil=0;
 function micAudioReady(){
   try{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
@@ -146,6 +146,7 @@ function micCue(end=false){
     gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(end ? .09 : .16,t+.012);gain.gain.exponentialRampToValueAtTime(.0001,t+duration-.01);
     oscillator.connect(gain);gain.connect(ac.destination);
     oscillator.onended=()=>{oscillator.disconnect();gain.disconnect();};oscillator.start(t);oscillator.stop(t+duration);
+    if(!end)_micCueUntil=Date.now()+Math.ceil(duration*1000);
   }catch(e){} // Audio feedback must never block an answer or microphone access.
 }
 function micBeep(){micCue(false);}
@@ -193,7 +194,7 @@ function attachVAD(stream, onStop, opts){
       let sum=0; for(let i=0;i<buf.length;i++){ const v=(buf[i]-128)/128; sum+=v*v; }
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
       const dt=Math.min(120, now-lastTick); lastTick=now;
-      if(now-t0>250&&rms>thresh){ // Do not mistake the short start cue for speech.
+      if(rms>thresh){
         if(!inBurst){ inBurst=true; bursts++; }        // 말 덩어리 개수 (단어를 끊어 말한 횟수)
         lastLoud=now; voicedMs+=dt;                    // 쉬는 시간은 빼고 '말한 시간'만 누적
         if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
@@ -536,9 +537,22 @@ function phDist(a,b){
   return prev[n];
 }
 
-async function sttRecognize(raw, actualMime){
+function speechWait(promise,ms,message,onTimeout){
+  let timer;
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{if(onTimeout)onTimeout();reject(new Error(message));},ms);});
+  return Promise.race([promise,timeout]).finally(()=>clearTimeout(timer));
+}
+async function practiceTranscribe(raw,actualMime,meta,refText='',options={}){
+  const response=await sttRecognize(raw,actualMime,options);
+  if(!response.ok)throw new Error('음성 인식 서버 오류 ('+response.status+'). 잠시 후 다시 말해주세요.');
+  const data=await response.json();let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
+  if(text&&(!meta.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text.trim()))text='';
+  if(/[\uac00-\ud7af]/.test(text)){const roman=hanRoman(text);text=refText&&phCloseHan(roman,refText)?refText:roman;}
+  return String(text).trim();
+}
+async function sttRecognize(raw, actualMime,options={}){
   let body, ctype;
-  try{ body=await recordedToWav(raw); ctype="audio/wav"; }
+  try{ body=/^audio\/wav\b/i.test(actualMime)?raw:await speechWait(recordedToWav(raw),3000,'녹음 변환 시간이 지났어요.'); ctype="audio/wav"; }
   catch(_){
     // 디코드 실패 기기 → 원본 컨테이너 그대로 전송
     body=raw;
@@ -547,7 +561,16 @@ async function sttRecognize(raw, actualMime){
           : /mp4|aac/.test(actualMime) ? "audio/mp4"
           : (actualMime||"audio/webm; codecs=opus");
   }
-  const send=(path)=>fetch(PROXY_URL+path,{method:"POST",headers:{"Content-Type":ctype},body});
+  const send=async path=>{
+    const controller=new AbortController();
+    const receive=async()=>{const r=await fetch(PROXY_URL+path,{method:'POST',headers:{'Content-Type':ctype},body,signal:controller.signal});return new Response(await r.arrayBuffer(),{status:r.status,headers:r.headers});};
+    try{return await speechWait(receive(),10000,'음성 인식 응답이 늦어요. 다시 말해주세요.',()=>controller.abort());}
+    finally{controller.abort();}
+  };
+  // Android supplies a complete WAV. Transcribe it on the existing server,
+  // bypassing device SpeechRecognizer audio-source implementations entirely.
+  let azure=null;
+  if(options.preferAzure){try{azure=await send('/stt');if(azure.ok)return azure;}catch(e){}}
   _sttVia="Azure";
   if(STT_SOFT && Date.now()>_sttSoftOff){
     try{
@@ -566,7 +589,7 @@ async function sttRecognize(raw, actualMime){
     }catch(e){ _sttSoftOff=Date.now()+5*60000; _sttVia="Azure(관대 인식 연결실패)"; }
   } else if(STT_SOFT){ _sttVia="Azure(관대 인식 잠시 중단됨)"; }
   else { _sttVia="Azure(관대 인식 꺼짐)"; }
-  return send("/stt");
+  return azure||send("/stt");
 }
 
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }

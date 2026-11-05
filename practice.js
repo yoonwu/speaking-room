@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.7", APP_BUILD="2026-11-04";
+const APP_VERSION="v4.4.8", APP_BUILD="2026-11-05";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -227,16 +227,37 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null){
   const captureEnded=()=>{if(epoch===micEpoch&&!endCued){endCued=true;micBeepEnd();if(onCaptureEnd)onCaptureEnd();}};
   const cb=(text,meta)=>{if(epoch===micEpoch&&!delivered){delivered=true;micPreparing=false;qzRecording=false;if(!meta?.sttErr)captureEnded();rawCb(text,meta);}};
   try{
-  if(window.srNativeRequest && window.srNativePracticeSpeech==null){
-    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
+  if(window.srNativeRequest && (window.srNativePracticeSpeech==null||window.srNativePracticePlayback==null)){
+    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
     if(epoch!==micEpoch)return;
   }
   if(window.srNativeRequest && !window.srNativePracticeSpeech){cb('',{sttErr:'학습 화면은 최신이지만 설치된 앱의 음성 기능은 이전 버전이에요. Play 스토어에서 앱을 0.5.3 이상으로 업데이트해주세요.'});return;}
+  // Finish the start cue before recording so it cannot be mistaken for speech.
+  const cueWait=Math.max(0,_micCueUntil-Date.now());
+  if(cueWait){await new Promise(resolve=>setTimeout(resolve,cueWait));if(epoch!==micEpoch)return;}
   if(window.srNativePracticeSpeech){
-    qzRecording=true;const startAt=Date.now();
-    try{const result=await window.srNativeRequest('recognize',{recordAnswer:!!refText});if(epoch!==micEpoch)return;cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text,recordingBlob:nativeRecordingBlob(result)});}
+    qzRecording=true;const startAt=Date.now();let captureTimer=null;
+    try{
+      if(window.srNativePracticePlayback){
+        const words=refText.trim().split(/\s+/).filter(Boolean).length;
+        const limit=words?Math.max(8000,Math.min(18000,3500+words*850)):20000;
+        // The installed app already exposes PCM capture with silence detection.
+        // A bounded stop also handles steady background noise; no second tap.
+        captureTimer=setTimeout(()=>{if(epoch===micEpoch&&qzRecording)window.srNativeRequest('recognizeStop').catch(()=>{});},limit);
+        const result=await speechWait(window.srNativeRequest('recordPractice'),limit+5000,'녹음이 응답하지 않아요. 다시 말해주세요.',()=>window.srNativeRequest('recognizeCancel').catch(()=>{}));
+        clearTimeout(captureTimer);if(epoch!==micEpoch)return;
+        const recordingBlob=nativeRecordingBlob(result);if(!recordingBlob)throw new Error('녹음된 소리가 없어요. 다시 말해주세요.');
+        qzRecording=false;micPreparing=true;captureEnded();
+        const meta={startAt,stopAt:Date.now(),speechStartAt:null,spoke:true,recordingBlob};
+        const text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});
+        cb(text,meta);
+      }else{
+        const result=await window.srNativeRequest('recognize',{recordAnswer:!!refText});if(epoch!==micEpoch)return;
+        cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text,recordingBlob:nativeRecordingBlob(result)});
+      }
+    }
     catch(e){cb('',{sttErr:e.message});}
-    finally{if(epoch===micEpoch)qzRecording=false;}
+    finally{if(captureTimer)clearTimeout(captureTimer);if(epoch===micEpoch)qzRecording=false;}
     return;
   }
   try{
@@ -255,11 +276,7 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null){
         const device=await micLiveWait(live,900);if(epoch!==micEpoch)return;
         if(device&&device.text)return cb(device.text,meta);
         if(raw.size<400)return cb('',meta);
-        const response=await sttRecognize(raw,actualMime);if(!response.ok)throw new Error('음성 인식 연결 오류 ('+response.status+')');
-        const data=await response.json();let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
-        if(text&&(!meta.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text.trim()))text='';
-        if(/[\uac00-\ud7af]/.test(text)){const roman=hanRoman(text);text=refText&&phCloseHan(roman,refText)?refText:roman;}
-        cb(String(text).trim(),meta);
+        cb(await practiceTranscribe(raw,actualMime,meta,refText),meta);
       }catch(e){cb('',{...meta,sttErr:e.message});}
     };
     qzMR.start(250);qzRecording=true;

@@ -3,7 +3,7 @@ function setup(seed={}){
  const records=new Map(Object.entries(seed)),elements=new Map();
  function element(){return {style:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,addEventListener(){},setAttribute(){},focus(){},remove(){},insertBefore(){},querySelector:()=>element(),querySelectorAll:()=>[],getTracks:()=>[]};}
  const get=s=>{if(!elements.has(s))elements.set(s,element());return elements.get(s);};
- const context={window:{addEventListener(){}},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob};
+ const context={window:{addEventListener(){},srNativePracticePlayback:false},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob,AbortController,Response};
  vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,'practice-data.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'practice.js'),'utf8'),context);vm.runInContext('speakEn=()=>{}',context);return {run:s=>vm.runInContext(s,context),context,records,elements};
 }
 test('travel grading keeps accepting meaningful variants and rejecting the wrong requested item',()=>{const {run}=setup();assert.equal(run(`travelGrade({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get another towel?'}},'Can I get one more towel?').ok`),true);assert.equal(run(`travelGrade({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get another towel?'}},'Can I get a fork?').ok`),false);});
@@ -127,4 +127,56 @@ test('capture completion sounds immediately while transcription is pending and c
  await run('micFillCb(()=>{})');assert.equal(context.opens,1);
  transcribe({ok:true,json:async()=>({DisplayText:'Can I get water?'})});await pending;
  assert.equal(context.answers.length,1);assert.deepEqual(context.cues,['start','end']);assert.equal(run('micPreparing||qzRecording'),false);
+});
+
+test('installed app captures WAV and uses the server without invoking the failing device recognizer',async()=>{
+ const {run,context}=setup(),actions=[],uploads=[];const audio=Buffer.alloc(644,1);context.atob=s=>Buffer.from(s,'base64').toString('binary');
+ context.window.srNativePracticeSpeech=true;context.window.srNativePracticePlayback=true;
+ context.window.srNativeRequest=async action=>{actions.push(action);assert.equal(action,'recordPractice');return {audioBase64:audio.toString('base64')};};
+ context.fetch=async(url,options)=>{uploads.push({url,options});return new Response(JSON.stringify({DisplayText:'Can I get water?'}),{status:200});};context.answers=[];context.cues=[];context.phases=[];
+ run(`micBeep=()=>cues.push('start');micBeepEnd=()=>cues.push('end');recordedToWav=()=>{throw Error('A native WAV must not wait for Web Audio');};`);
+ await run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?',()=>phases.push('processing'))`);
+ assert.deepEqual(actions,['recordPractice']);assert.equal(uploads.length,1);assert.match(uploads[0].url,/\/stt$/);assert.equal(uploads[0].options.headers['Content-Type'],'audio/wav');
+ assert.deepEqual(Buffer.from(await uploads[0].options.body.arrayBuffer()),audio);assert.equal(context.answers[0].text,'Can I get water?');assert.equal(context.answers[0].meta.recordingBlob.size,644);assert.deepEqual(context.cues,['start','end']);assert.deepEqual(context.phases,['processing']);assert.equal(run('qzRecording||micPreparing'),false);
+});
+
+test('native recording automatically stops at its bound even when background noise prevents silence detection',async()=>{
+ const {run,context}=setup(),clock=audioClock(context,()=>false),actions=[];let captured;context.atob=s=>Buffer.from(s,'base64').toString('binary');context.window.srNativePracticeSpeech=true;context.window.srNativePracticePlayback=true;
+ context.window.srNativeRequest=action=>{actions.push(action);if(action==='recordPractice')return new Promise(resolve=>captured=resolve);if(action==='recognizeStop')captured({audioBase64:Buffer.alloc(644,1).toString('base64')});return Promise.resolve({});};context.answers=[];
+ run(`micBeep=()=>{};practiceTranscribe=async()=> 'Can I get water?'`);const pending=run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?')`);
+ clock.advance(7999);assert.deepEqual(actions,['recordPractice']);clock.advance(1);await pending;
+ assert.deepEqual(actions,['recordPractice','recognizeStop']);assert.equal(context.answers[0].text,'Can I get water?');assert.equal(run('qzRecording||micPreparing'),false);
+});
+
+test('a nonresponsive native recording times out and releases the listening state',async()=>{
+ const {run,context}=setup(),clock=audioClock(context,()=>false),actions=[];context.window.srNativePracticeSpeech=true;context.window.srNativePracticePlayback=true;
+ context.window.srNativeRequest=action=>{actions.push(action);return action==='recordPractice'?new Promise(()=>{}):Promise.resolve({});};context.answers=[];
+ run('micBeep=()=>{}');const pending=run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?')`);clock.advance(13001);await pending;
+ assert.deepEqual(actions,['recordPractice','recognizeStop','recognizeCancel']);assert.match(context.answers[0].meta.sttErr,/녹음이 응답하지/);assert.equal(run('qzRecording||micPreparing'),false);
+});
+
+test('cancelling native PCM capture never uploads or displays the late recording',async()=>{
+ const {run,context}=setup();let captured;context.window.srNativePracticeSpeech=true;context.window.srNativePracticePlayback=true;
+ context.window.srNativeRequest=action=>action==='recordPractice'?new Promise(resolve=>captured=resolve):Promise.resolve({});context.fetch=async()=>{throw Error('Late recording must not be uploaded');};context.answers=[];
+ const pending=run('micFillCb((text,meta)=>answers.push({text,meta}))');run('stopMicrophone()');captured({audioBase64:'unused'});await pending;assert.equal(context.answers.length,0);assert.equal(run('qzRecording||micPreparing'),false);
+});
+
+test('server transcription can fall back after Azure fails and retains the real transcript',async()=>{
+ const {run,context}=setup(),calls=[];
+ context.fetch=async url=>{calls.push(url);return new Response(JSON.stringify(/\/stt$/.test(url)?{error:'temporarily unavailable'}:{DisplayText:'I cannot find my phone.'}),{status:/\/stt$/.test(url)?503:200});};
+ const text=await run(`practiceTranscribe(new Blob([new Uint8Array(644)]),'audio/wav',{spoke:true,startAt:0,stopAt:2000},'',{preferAzure:true})`);
+ assert.equal(text,'I cannot find my phone.');assert.equal(calls.length,2);assert.match(calls[0],/\/stt$/);assert.match(calls[1],/\/stt2$/);
+});
+
+test('fresh native capabilities choose PCM capture even when ChatGPT is not connected',async()=>{
+ const {run,context}=setup(),actions=[];delete context.window.srNativePracticePlayback;context.window.srNativePracticeSpeech=true;context.atob=s=>Buffer.from(s,'base64').toString('binary');context.answers=[];
+ context.window.srNativeRequest=async action=>{actions.push(action);if(action==='status')return {practiceSpeech:true,practicePlayback:true,connected:false,ready:false};assert.equal(action,'recordPractice');return {audioBase64:Buffer.alloc(644,1).toString('base64')};};
+ run(`practiceTranscribe=async()=> 'Can I get water?'`);await run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?')`);
+ assert.deepEqual(actions,['status','recordPractice']);assert.equal(context.answers[0].text,'Can I get water?');
+});
+
+test('the start cue finishes before native capture so it cannot trigger speech detection',async()=>{
+ const {run,context}=setup(),clock=audioClock(context,()=>false),actions=[];context.window.srNativePracticeSpeech=true;context.window.srNativePracticePlayback=true;context.atob=s=>Buffer.from(s,'base64').toString('binary');
+ context.window.srNativeRequest=async action=>{actions.push(action);assert.equal(action,'recordPractice');return {audioBase64:Buffer.alloc(644,1).toString('base64')};};run(`practiceTranscribe=async()=> 'Can I get water?'`);
+ const pending=run(`micFillCb(()=>{},'Can I get water?')`);assert.deepEqual(actions,[]);clock.advance(199);assert.deepEqual(actions,[]);clock.advance(1);await pending;assert.deepEqual(actions,['recordPractice']);
 });
