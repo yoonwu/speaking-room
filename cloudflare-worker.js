@@ -1,6 +1,6 @@
 // ============================================================
-//  스피킹 룸 — Cloudflare Worker 프록시 v6
-//  GET  /version   → 배포 확인용 ("worker-v8" 반환)
+//  스피킹 룸 — Cloudflare Worker 프록시 v9
+//  GET  /version   → 배포 확인용 ("worker-v9" 반환)
 //  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
 //  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
 //  GET  /board     → 전체 사용자 랭킹 요약 목록      ★ v6 신규
@@ -20,7 +20,7 @@
 //     Variable name: USERDATA   /   KV namespace: 새로 만들기(예: speaking-room-data)
 //     (바인딩이 없으면 /u 는 503을 돌려주고, 앱은 기기 저장만으로 정상 동작합니다)
 // ============================================================
-const WORKER_VERSION = "worker-v8";
+const WORKER_VERSION = "worker-v9";
 
 export default {
   async fetch(request, env, ctx) {
@@ -28,6 +28,7 @@ export default {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, X-Pronunciation-Text, X-Pronunciation-Text-B64",
+      "Access-Control-Max-Age": "600",
     };
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
 
@@ -207,15 +208,15 @@ export default {
     // ── ③ Azure STT ───────────────────────────────────────
     if (path === "/stt") {
       try {
-        const audio = await request.arrayBuffer();
         const region = env.AZURE_SPEECH_REGION || "koreacentral";
         const contentType = request.headers.get("Content-Type") || "audio/wav";
         const r = await fetch(
           `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=simple`,
-          { method: "POST", headers: { "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_KEY, "Content-Type": contentType, "Accept": "application/json" }, body: audio }
+          { method: "POST", headers: { "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_KEY, "Content-Type": contentType, "Accept": "application/json" }, body: request.body }
         );
-        // raw 그대로 전달 (json 파싱 실패로 인한 500 방지)
-        return new Response(await r.text(), { status: r.status, headers: { ...cors, "Content-Type": "application/json" } });
+        // Forward both streams without waiting for the microphone or the
+        // provider's complete body. No answer text is synthesized here.
+        return new Response(r.body, { status: r.status, headers: { ...cors, "Content-Type": "application/json" } });
       } catch (e) {
         return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
       }

@@ -1,5 +1,21 @@
 # Installed Android speech input — 2026-11-05
 
+## Prepared streaming update: native 0.5.9 / web v4.4.10 / worker-v9
+
+Status: implementation and automated verification complete; **not yet deployed or verified against the live streaming service**. The Cloudflare dashboard currently requires the owner's sign-in. Do not claim that the handset is below two seconds from these changes alone.
+
+The previous seven-second deadline fixes serial timeout accumulation, but the completed-file REST upload still starts recognition only after capture. Fresh production-server measurements remained around 2.5–2.6 seconds for the short bags fixture, and one subsequent request exceeded twelve seconds. This is not sufficient evidence for a two-second interaction target.
+
+The candidate `streamPractice` action tees the existing microphone's PCM frames into a bounded asynchronous chunked HTTP upload while retaining the original PCM for replay. It opens no second microphone and puts no provider key in the app. A canonical 44-byte open-ended WAV header was accepted by the existing production Azure route with the correct transcript. The candidate Worker forwards the incoming request body as a stream instead of buffering the entire file. It also caches CORS preflight responses for ten minutes.
+
+The native capture-complete event is bound to the request ID, so the end cue and microphone state change before the final recognition result. Only a final transcript is graded. A failed stream or successful NoMatch does not silently upload the recording again; this avoids restoring the long sequence of waits. Older native installations retain the previously published WAV recognition path.
+
+Required release order: deploy and inspect worker-v9, measure the actual Java streaming transport against that live service, publish the immutable web v4.4.10 descriptor, then publish the signed native 0.5.9 AAB. Publishing the AAB while the live descriptor remains v4.4.9 would let startup updates replace its bundled learning screen with the older serial implementation.
+
+Automated checks passed: 75 Node tests, 40 Android JVM tests (including eight real loopback HTTP tests), debug and instrumentation APK compilation, and release lint. The instrumentation APK was compiled, not executed on a handset. The pending-permission cancellation path was reviewed and compiled; no Android permission-dialog interaction was executed.
+
+The actual production `PracticeStreaming` and `PracticeAudio` detector were also run from a desktop JVM, pacing the three English fixtures at 16 kHz and adding silence until automatic capture ended. Against the **existing buffered live Worker**, capture durations were 2617/2803/2900 ms and post-capture waits were **1085/4414/1588 ms**, all with correct transcripts. One case remained well above two seconds, so this candidate is not yet evidence of meeting the interaction target and was not published on that basis. The raw report is `outputs/native-streaming-live-baseline.jsonl`; these are not handset timings.
+
 ## Follow-up: answer-recognition latency, web v4.4.9
 
 The v4.4.8 installed-app transcription path could wait for Azure for ten seconds, then a backup for ten seconds, then retry Azure for ten more seconds. A deterministic timeout reproduction was still pending at 20 seconds and failed at 30 seconds. The local answer grader itself does not make a network request.

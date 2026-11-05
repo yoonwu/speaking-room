@@ -545,7 +545,10 @@ function speechWait(promise,ms,message,onTimeout){
 async function practiceTranscribe(raw,actualMime,meta,refText='',options={}){
   const response=await sttRecognize(raw,actualMime,options);
   if(!response.ok)throw new Error('음성 인식 서버 오류 ('+response.status+'). 잠시 후 다시 말해주세요.');
-  const data=await response.json();let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
+  return practiceTranscriptText(await response.json(),meta,refText);
+}
+function practiceTranscriptText(data,meta,refText=''){
+  let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
   if(text&&(!meta.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text.trim()))text='';
   if(/[\uac00-\ud7af]/.test(text)){const roman=hanRoman(text);text=refText&&phCloseHan(roman,refText)?refText:roman;}
   return String(text).trim();

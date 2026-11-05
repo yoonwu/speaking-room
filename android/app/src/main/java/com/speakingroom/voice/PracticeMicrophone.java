@@ -9,10 +9,14 @@ import android.os.*;
 /** Releases the mic before recognition starts, preventing competing audio captures. */
 final class PracticeMicrophone {
     interface Completion{void accept(byte[] pcm,boolean speech,String error);}
+    interface Frames{void accept(short[] pcm,int count);}
     private final Handler main=new Handler(Looper.getMainLooper());
     private volatile AudioRecord recorder;
     private volatile boolean stopped,cancelled;
     void start(Context context,Completion completion){
+        start(context,null,completion);
+    }
+    void start(Context context,Frames frames,Completion completion){
         if(context.checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){completion.accept(null,false,"마이크 사용을 허용해주세요.");return;}
         try{
             int min=AudioRecord.getMinBufferSize(PracticeAudio.RATE,AudioFormat.CHANNEL_IN_MONO,AudioFormat.ENCODING_PCM_16BIT);
@@ -27,7 +31,7 @@ final class PracticeMicrophone {
                     capture.startRecording();
                     if(capture.getRecordingState()!=AudioRecord.RECORDSTATE_RECORDING)throw new IllegalStateException("Microphone unavailable");
                     short[] buffer=new short[320];
-                    while(!stopped){int n=capture.read(buffer,0,buffer.length,AudioRecord.READ_BLOCKING);if(stopped)break;if(n<=0)throw new IllegalStateException("Microphone read failed");long now=SystemClock.elapsedRealtime();clip.append(buffer,n,now);if(clip.shouldStop(now))break;}
+                    while(!stopped){int n=capture.read(buffer,0,buffer.length,AudioRecord.READ_BLOCKING);if(stopped)break;if(n<=0)throw new IllegalStateException("Microphone read failed");long now=SystemClock.elapsedRealtime();clip.append(buffer,n,now);if(frames!=null)frames.accept(buffer,n);if(clip.shouldStop(now))break;}
                 }catch(Exception e){if(!stopped)error="녹음을 시작하지 못했어요. 다른 앱의 마이크 사용을 멈추고 다시 말해주세요.";}
                 finally{try{capture.stop();}catch(Exception ignored){}capture.release();recorder=null;}
                 final String failure=error;byte[] pcm=clip.pcm();boolean speech=clip.hasSpeech();

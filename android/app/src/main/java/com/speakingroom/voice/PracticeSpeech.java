@@ -14,6 +14,9 @@ final class PracticeSpeech {
     private final Handler main=new Handler(Looper.getMainLooper());
     private SpeechRecognizer recognizer;
     private PracticeMicrophone microphone;
+    private PracticeStreaming streaming;
+    private boolean streamCaptureDone,streamNetworkDone;
+    private String streamText,streamError;
     private Completion completion;
     private ParcelFileDescriptor input,output;
     private byte[] recorded;
@@ -32,6 +35,20 @@ final class PracticeSpeech {
         if(!begin(callback))return;final int epoch=generation;
         capture(epoch,(pcm,speech,error)->{if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}recorded=PracticeAudio.wav(pcm);finish("",null);});
     }
+    void stream(Completion callback,Runnable captured){
+        if(!begin(callback))return;final int epoch=generation;
+        main.removeCallbacks(timeout);main.postDelayed(timeout,35000);
+        streamCaptureDone=false;streamNetworkDone=false;streamText="";streamError=null;
+        PracticeStreaming upload=new PracticeStreaming((text,error)->main.post(()->{
+            if(epoch!=generation||completion==null)return;streamNetworkDone=true;streamText=text;streamError=error;finishStreamIfReady();
+        }));streaming=upload;upload.start();
+        microphone=new PracticeMicrophone();microphone.start(context,upload::append,(pcm,speech,error)->{
+            if(epoch!=generation||completion==null)return;microphone=null;
+            if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}
+            recorded=PracticeAudio.wav(pcm);streamCaptureDone=true;captured.run();upload.finishInput();finishStreamIfReady();
+        });
+    }
+    private void finishStreamIfReady(){if(streamCaptureDone&&streamNetworkDone)finish(streamText,streamError,true);}
     private boolean begin(Completion callback){
         if(completion!=null){callback.accept("","이미 듣고 있어요.",null);return false;}
         completion=callback;recorded=null;segments=new StringBuilder();generation++;main.postDelayed(timeout,30000);return true;
@@ -72,10 +89,14 @@ final class PracticeSpeech {
     void stop(){if(microphone!=null)microphone.stop();else if(recognizer!=null)recognizer.stopListening();}
     void cancel(){finish("","음성 연습을 멈췄어요.");}
     private void finish(String text,String error){
+        finish(text,error,false);
+    }
+    private void finish(String text,String error,boolean keepRecording){
         Completion callback=completion;completion=null;generation++;main.removeCallbacks(timeout);
         if(microphone!=null){microphone.cancel();microphone=null;}
+        if(streaming!=null){streaming.cancel();streaming=null;}
         if(recognizer!=null){SpeechRecognizer old=recognizer;recognizer=null;old.cancel();old.destroy();}
-        close(input);close(output);input=null;output=null;byte[] wav=error==null?recorded:null;recorded=null;
+        close(input);close(output);input=null;output=null;byte[] wav=error==null||keepRecording?recorded:null;recorded=null;
         if(callback!=null)callback.accept(text,error,wav);
     }
     private static void close(ParcelFileDescriptor fd){if(fd!=null)try{fd.close();}catch(IOException ignored){}}

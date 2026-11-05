@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.9", APP_BUILD="2026-11-05";
+const APP_VERSION="v4.4.10", APP_BUILD="2026-11-05";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -228,7 +228,7 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null){
   const cb=(text,meta)=>{if(epoch===micEpoch&&!delivered){delivered=true;micPreparing=false;qzRecording=false;if(!meta?.sttErr)captureEnded();rawCb(text,meta);}};
   try{
   if(window.srNativeRequest && (window.srNativePracticeSpeech==null||window.srNativePracticePlayback==null)){
-    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
+    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;window.srNativePracticeStreaming=!!status.practiceStreaming;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
     if(epoch!==micEpoch)return;
   }
   if(window.srNativeRequest && !window.srNativePracticeSpeech){cb('',{sttErr:'학습 화면은 최신이지만 설치된 앱의 음성 기능은 이전 버전이에요. Play 스토어에서 앱을 0.5.3 이상으로 업데이트해주세요.'});return;}
@@ -239,21 +239,24 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null){
     qzRecording=true;const startAt=Date.now();let captureTimer=null;
     try{
       if(window.srNativePracticePlayback){
+        const streamed=window.srNativePracticeStreaming===true;
+        let capturedAt=null;
+        const endNativeCapture=()=>{if(epoch!==micEpoch||capturedAt!==null)return;capturedAt=Date.now();clearTimeout(captureTimer);qzRecording=false;micPreparing=true;captureEnded();};
         const words=refText.trim().split(/\s+/).filter(Boolean).length;
         const limit=words?Math.max(8000,Math.min(18000,3500+words*850)):20000;
         // The installed app already exposes PCM capture with silence detection.
         // A bounded stop also handles steady background noise; no second tap.
         captureTimer=setTimeout(()=>{if(epoch===micEpoch&&qzRecording)window.srNativeRequest('recognizeStop').catch(()=>{});},limit);
-        const result=await speechWait(window.srNativeRequest('recordPractice'),limit+5000,'녹음이 응답하지 않아요. 다시 말해주세요.',()=>window.srNativeRequest('recognizeCancel').catch(()=>{}));
+        const result=await speechWait(window.srNativeRequest(streamed?'streamPractice':'recordPractice',{},streamed?endNativeCapture:null),limit+(streamed?8000:5000),streamed?'음성 인식이 응답하지 않아요. 다시 말해주세요.':'녹음이 응답하지 않아요. 다시 말해주세요.',()=>window.srNativeRequest('recognizeCancel').catch(()=>{}));
         clearTimeout(captureTimer);if(epoch!==micEpoch)return;
         const recordingBlob=nativeRecordingBlob(result);if(!recordingBlob)throw new Error('녹음된 소리가 없어요. 다시 말해주세요.');
-        qzRecording=false;micPreparing=true;captureEnded();
-        const meta={startAt,stopAt:Date.now(),speechStartAt:null,spoke:true,recordingBlob};
-        const recognizeAt=Date.now();
+        endNativeCapture();
+        const meta={startAt,stopAt:capturedAt,speechStartAt:null,spoke:true,recordingBlob};
+        const recognizeAt=capturedAt;
         const timing={captureMs:recognizeAt-startAt,recognitionMs:null,phase:'recognition'};
         window.srLastSpeechTiming=timing;
         let text;
-        try{text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});timing.phase='complete';}
+        try{if(streamed&&result.streamError)throw new Error(result.streamError);text=streamed?practiceTranscriptText({DisplayText:result.text||''},meta,refText):await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});timing.phase='complete';}
         catch(e){timing.phase='error';throw e;}
         finally{timing.recognitionMs=Date.now()-recognizeAt;}
         cb(text,meta);

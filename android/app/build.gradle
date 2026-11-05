@@ -6,8 +6,8 @@ android {
         applicationId 'com.speakingroom.voice'
         minSdk 26
         targetSdk 36
-        versionCode 13
-        versionName '0.5.8'
+        versionCode 14
+        versionName '0.5.9'
         testInstrumentationRunner 'com.speakingroom.voice.SpeechFlowInstrumentation'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }

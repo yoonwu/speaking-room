@@ -181,6 +181,26 @@ test('the start cue finishes before native capture so it cannot trigger speech d
  const pending=run(`micFillCb(()=>{},'Can I get water?')`);assert.deepEqual(actions,[]);clock.advance(199);assert.deepEqual(actions,[]);clock.advance(1);await pending;assert.deepEqual(actions,['recordPractice']);
 });
 
+test('streaming native audio finishes capture before its final transcript and preserves replay without a second upload',async()=>{
+ const {run,context}=setup();let complete;context.answers=[];context.cues=[];context.atob=s=>Buffer.from(s,'base64').toString('binary');
+ Object.assign(context.window,{srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true});
+ context.fetch=()=>{throw Error('A streamed transcript must not upload the same audio again');};
+ context.window.srNativeRequest=(action,data,onCaptured)=>{assert.equal(action,'streamPractice');onCaptured();onCaptured();return new Promise(resolve=>complete=resolve);};
+ run(`micBeep=()=>cues.push('start');micBeepEnd=()=>cues.push('end');`);
+ const pending=run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I leave my bags here?')`);
+ assert.equal(run('qzRecording'),false);assert.equal(run('micPreparing'),true);assert.deepEqual(context.cues,['start','end']);assert.equal(context.answers.length,0);
+ complete({text:'Can I leave my bags here?',audioBase64:Buffer.alloc(644,1).toString('base64')});await pending;
+ assert.equal(context.answers.length,1);assert.equal(context.answers[0].text,'Can I leave my bags here?');assert.equal(context.answers[0].meta.recordingBlob.size,644);assert.equal(run('qzRecording||micPreparing'),false);assert.equal(context.window.srLastSpeechTiming.phase,'complete');assert.deepEqual(context.cues,['start','end']);
+});
+
+test('streaming failure and successful NoMatch never trigger a hidden second server wait',async()=>{
+ for(const result of [{text:'',streamError:'음성 인식 응답이 늦어요. 다시 말해주세요.'},{text:''}]){
+  const {run,context}=setup();context.answers=[];context.atob=s=>Buffer.from(s,'base64').toString('binary');Object.assign(context.window,{srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true});
+  context.fetch=()=>{throw Error('Unexpected second transcription request');};context.window.srNativeRequest=async(action,data,onCaptured)=>{assert.equal(action,'streamPractice');onCaptured();return {...result,audioBase64:Buffer.alloc(644,1).toString('base64')};};
+  await run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?')`);assert.equal(context.answers.length,1);assert.equal(context.answers[0].text,'');assert.equal(context.answers[0].meta.sttErr,result.streamError);assert.equal(run('qzRecording||micPreparing'),false);
+ }
+});
+
 // Advance wall time and all promise continuations together, without waiting for
 // real network time. Requests retain abort signals even when a server responds late.
 function sttHarness(){
