@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /** Bounded, session-only mono PCM. No disk files or learning-record storage. */
 final class PracticeAudio {
@@ -12,6 +14,10 @@ final class PracticeAudio {
     private final long started;
     private long lastVoice;
     private double noise=100;
+    private final ArrayList<Double> initialNoise=new ArrayList<>();
+    private double initialPeak,initialVoicedQuiet=Double.MAX_VALUE;
+    private int initialSamples,initialVoiced;
+    private boolean calibrated;
     private int voiceFrames;
     private boolean speech;
     PracticeAudio(long started){this.started=started;}
@@ -19,9 +25,42 @@ final class PracticeAudio {
         int n=Math.min(count,(MAX_SAMPLES*2-pcm.size())/2);double energy=0;
         for(int i=0;i<n;i++){short sample=samples[i];pcm.write(sample&255);pcm.write((sample>>8)&255);energy+=(double)sample*sample;}
         if(n==0)return;
-        double rms=Math.sqrt(energy/n),threshold=Math.max(300,noise*2.5);
+        double rms=Math.sqrt(energy/n);
+        if(!calibrated){
+            initialSamples+=n;
+            // Ignore startup zero buffers and keep voiced vowels out of the
+            // ambient estimate when somebody starts answering immediately.
+            if(periodic(samples,n)){initialVoiced++;initialVoicedQuiet=Math.min(initialVoicedQuiet,rms);}
+            else if(rms>1){initialNoise.add(rms);initialPeak=Math.max(initialPeak,rms);}
+            if(initialSamples>=RATE*3/10){
+                calibrated=true;
+                if(initialNoise.size()>=3){
+                    Collections.sort(initialNoise);noise=initialNoise.get(initialNoise.size()/4);
+                    // Loud initial consonants must not raise the threshold
+                    // above the quieter voiced part of the same answer.
+                    if(initialVoiced>=2)noise=Math.min(noise,initialVoicedQuiet*.3);
+                    // A steady fan/road noise can exceed 300 from the very first
+                    // frame. Do not freeze that initial noise as perpetual speech.
+                    if(initialVoiced<2&&noise>300&&initialPeak<noise*2.5){speech=false;voiceFrames=0;lastVoice=0;}
+                }
+                initialNoise.clear();
+            }
+        }
+        double threshold=Math.max(300,noise*2.5);
         if(rms>threshold){lastVoice=now;if(++voiceFrames>=2)speech=true;}
         else{voiceFrames=0;if(!speech)noise=noise*.95+rms*.05;}
+    }
+    private static boolean periodic(short[] samples,int count){
+        int n=Math.min(count,320);if(n<160)return false;
+        double mean=0;for(int i=0;i<n;i++)mean+=samples[i];mean/=n;
+        double energy=0;for(int i=0;i<n;i++){double v=samples[i]-mean;energy+=v*v;}
+        if(energy/n<10000)return false; // DC offsets and very quiet input are not voicing evidence.
+        for(int lag=40;lag<=Math.min(200,n-100);lag++){
+            double cross=0,left=0,right=0;
+            for(int i=lag;i<n;i++){double a=samples[i]-mean,b=samples[i-lag]-mean;cross+=a*b;left+=a*a;right+=b*b;}
+            if(cross>0&&cross*cross>left*right*.64)return true;
+        }
+        return false;
     }
     boolean hasSpeech(){return speech;}
     boolean shouldStop(long now){return pcm.size()>=MAX_SAMPLES*2||now-started>=25000||(!speech&&now-started>=7000)||(speech&&now-lastVoice>=1400);}

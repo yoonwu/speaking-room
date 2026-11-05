@@ -28,4 +28,56 @@ public class PracticeAudioTest {
         assertThrows(IllegalArgumentException.class,()->PracticeAudio.wav(new byte[1]));
         assertThrows(IllegalArgumentException.class,()->PracticeAudio.wav(new byte[PracticeAudio.MAX_SAMPLES*2+2]));
     }
+    @Test public void ambientNoiseAfterSpeechStillAllowsAutomaticEnd(){
+        PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320],voice=new short[320];
+        Arrays.fill(noise,(short)700);Arrays.fill(voice,(short)4000);
+        for(long t=20;t<=500;t+=20)clip.append(noise,320,t);
+        assertFalse("Steady background noise is not an answer",clip.hasSpeech());
+        for(long t=520;t<=1100;t+=20)clip.append(voice,320,t);
+        assertTrue(clip.hasSpeech());
+        for(long t=1120;t<2500;t+=20){clip.append(noise,320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(noise,320,2500);assertTrue("Background noise must not hold the mic open",clip.shouldStop(2500));
+    }
+    @Test public void ambientNoiseWithoutSpeechDoesNotBecomeAnAnswer(){
+        PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320];Arrays.fill(noise,(short)700);
+        for(long t=20;t<=7000;t+=20)clip.append(noise,320,t);
+        assertFalse(clip.hasSpeech());assertTrue(clip.shouldStop(7000));
+    }
+    @Test public void startupZeroDoesNotHideTheFollowingAmbientNoise(){
+        PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320];Arrays.fill(noise,(short)700);
+        clip.append(new short[320],320,20);
+        for(long t=40;t<=7000;t+=20)clip.append(noise,320,t);
+        assertFalse(clip.hasSpeech());assertTrue(clip.shouldStop(7000));
+    }
+    @Test public void immediateVoicedAnswerIsNotCalibratedAway(){
+        PracticeAudio clip=new PracticeAudio(0);
+        for(int frame=0;frame<40;frame++){
+            short[] voice=new short[320];
+            for(int i=0;i<voice.length;i++){
+                double time=(frame*320+i)/16000.0;
+                voice[i]=(short)((2600+900*Math.sin(2*Math.PI*3*time))*Math.sin(2*Math.PI*160*time));
+            }
+            clip.append(voice,320,(frame+1)*20L);
+            if(frame>=1)assertTrue("Immediate voiced input remains speech",clip.hasSpeech());
+            assertFalse(clip.shouldStop((frame+1)*20L));
+        }
+        for(long t=820;t<2200;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(new short[320],320,2200);assertTrue(clip.shouldStop(2200));
+    }
+    @Test public void initialLoudConsonantsDoNotCutOffQuieterVoicedSpeech(){
+        PracticeAudio clip=new PracticeAudio(0);java.util.Random random=new java.util.Random(17);
+        for(int frame=0;frame<120;frame++){
+            short[] voice=new short[320];
+            for(int i=0;i<voice.length;i++){
+                double time=(frame*320+i)/16000.0;
+                voice[i]=(short)(frame<15&&frame%4==0?random.nextGaussian()*3500:
+                    (1900+700*Math.sin(2*Math.PI*3*time))*Math.sin(2*Math.PI*160*time));
+            }
+            clip.append(voice,320,(frame+1)*20L);
+            if(frame>=1)assertTrue(clip.hasSpeech());
+            assertFalse("Quieter voiced speech must not time out",clip.shouldStop((frame+1)*20L));
+        }
+        for(long t=2420;t<3800;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(new short[320],320,3800);assertTrue(clip.shouldStop(3800));
+    }
 }
