@@ -2,6 +2,8 @@
 
 ## Reference-voice recovery: web v4.4.11
 
+Published to the existing learning-screen update channel at immutable revision **5c4cc53f5db4e12ce992581a73104080e2f3f3e9**. GitHub workflow **42175587134** completed successfully, and the live descriptor plus `practice.js`, `practice-data.js`, `android-native.js`, and `index.html` hashes were verified. Native app version remains0.5.9; the home update check can retrieve this web-only correction without a new Play installation.
+
 The result renderer still called the reference voice after both correct and incorrect attempts. The vulnerable path awaited network recognition and then attempted a new HTMLAudio playback while Android WebView requires a media user gesture. A WebSpeech fallback is not sufficient evidence that every Android WebView can play it.
 
 Native-app reference playback now uses the AudioContext unlocked during the learner's gesture for microphone cues. It decodes the actual reference MP3 into a BufferSource and retains the existing generation-based stop/cancel rules. Question display silently prepares the reference MP3, sharing the pending request and bounded cache with playback. A question captures its playback rate so adaptive grading cannot invalidate its prefetched voice. Reference text is sent only to the existing TTS endpoint; recognition requests do not receive the expected answer.
