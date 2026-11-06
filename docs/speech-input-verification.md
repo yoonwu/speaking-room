@@ -1,8 +1,21 @@
-# Installed Android speech input — 2026-11-05
+# Installed Android speech input — 2026-11-06
 
-## Prepared streaming update: native 0.5.9 / web v4.4.10 / worker-v9
+## Streaming update: native 0.5.9 / web v4.4.10 / worker-v9
 
-Status: implementation and automated verification complete; **not yet deployed or verified against the live streaming service**. The Cloudflare dashboard currently requires the owner's sign-in. Do not claim that the handset is below two seconds from these changes alone.
+Status: worker-v9 is deployed to production as Cloudflare version **0fc392a0** and verified through the public version endpoint and actual streamed speech requests. The web and native update publication is in progress. These checks do not establish physical-handset latency or guarantee every request below two seconds.
+
+The Cloudflare editor's saved code was compared character-for-character with the 9,316-character esbuild whitespace-only artifact before deployment. Its Acorn syntax tree matches the repository Worker exactly, and all 75 Node tests also pass against that artifact. The previous live worker-v7 source was backed up before editing; bindings and provider credentials were preserved.
+
+Using the actual production `PracticeStreaming` and `PracticeAudio` classes on a desktop JVM, the same three English fixtures were paced in 20 ms frames into the deployed worker-v9 until automatic silence detection stopped capture:
+
+| Fixture | Capture | Wait after capture | Transcript |
+| --- | ---: | ---: | --- |
+| Can I get some water? | 2616 ms | 3146 ms | Correct |
+| Can I leave my bags here? | 2791 ms | 1534 ms | Correct |
+| I can't find my phone. | 2908 ms | 1653 ms | Correct |
+| First fixture, recheck | 2617 ms | 1543 ms | Correct |
+
+The first request exceeded two seconds. The later three were 1.53–1.65 seconds after capture; this is evidence of a working production streaming path, not a universal latency guarantee or a completed Android handset test. Raw results are in the workspace outputs `native-streaming-worker-v9-results.jsonl` and `native-streaming-worker-v9-phrase1-recheck.jsonl`. Deployment proof is `cloudflare-worker-v9-published.png`.
 
 The previous seven-second deadline fixes serial timeout accumulation, but the completed-file REST upload still starts recognition only after capture. Fresh production-server measurements remained around 2.5–2.6 seconds for the short bags fixture, and one subsequent request exceeded twelve seconds. This is not sufficient evidence for a two-second interaction target.
 
