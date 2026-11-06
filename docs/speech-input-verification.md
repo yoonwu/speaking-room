@@ -2,7 +2,7 @@
 
 ## Streaming update: native 0.5.9 / web v4.4.10 / worker-v9
 
-Status: worker-v9 is deployed to production as Cloudflare version **0fc392a0** and verified through the public version endpoint and actual streamed speech requests. The web and native update publication is in progress. These checks do not establish physical-handset latency or guarantee every request below two seconds.
+Status: worker-v9 is deployed to production as Cloudflare version **0fc392a0** and verified through the public version endpoint and actual streamed speech requests. Web v4.4.10 is live at immutable revision **c9a32c40851e8de003f04c3799e7e4653864b450**; GitHub workflow 42173817656 passed and the descriptor plus four main asset hashes were checked. Native **0.5.9 / versionCode14** was published to the existing Google Play internal-test track as release9 on November6,2026,15:21 KST; Play Console confirmed “내부 테스터에게 제공됨”. Publication proof is `outputs/play-0.5.9-published.png`. A Play Store update to native0.5.9 is required to enable streaming; an in-app web refresh on0.5.8 alone cannot add the native transport. These checks do not establish physical-handset latency or guarantee every request below two seconds.
 
 The Cloudflare editor's saved code was compared character-for-character with the 9,316-character esbuild whitespace-only artifact before deployment. Its Acorn syntax tree matches the repository Worker exactly, and all 75 Node tests also pass against that artifact. The previous live worker-v7 source was backed up before editing; bindings and provider credentials were preserved.
 
