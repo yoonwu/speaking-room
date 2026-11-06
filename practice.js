@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.4.10", APP_BUILD="2026-11-05";
+const APP_VERSION="v4.4.11", APP_BUILD="2026-11-06";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -108,7 +108,8 @@ function startDrill(items,title){
 function autoDrillRender(recall=false){
   if(!autoDrill)return;if(autoDrill.idx>=autoDrill.items.length)return autoDrillDone();
   stopMicrophone();clearAnswerVoice();svStop();if(TTS)TTS.cancel();
-  const it=autoDrill.items[autoDrill.idx];it.recall=recall;
+  const it=autoDrill.items[autoDrill.idx];it.recall=recall;it._voiceRate=levelRate();
+  if(window.SpeakingRoomNative||window.srNativePracticeSpeech){micAudioReady();if(_svPending.size<4)svPrepare(it.ex.en,it._voiceRate).catch(()=>{});}
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   const firstLook=it._intro&&!recall;
   const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
@@ -127,7 +128,7 @@ function autoDrillRender(recall=false){
   autoDrill.t0=Date.now();autoDrill.typedAt=null;pendingReply=false;
   $('#autoExit').onclick=autoDrillDone;
   $('#autoMic').onclick=async()=>{if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}if(pendingReply||micPreparing)return;svStop();if(TTS)TTS.cancel();$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='말을 마치면 자동으로 끝나요.';await micFillCb((text,meta)=>{if(!autoDrill)return;autoDrillFinish(text,meta);},it.ex.en,()=>{$('#autoMic').textContent='말소리 인식 중…';$('#autoStat').textContent='말하기가 끝났어요. 말한 내용을 확인하고 있어요.';});};
-  $('#autoType').onclick=()=>{$('#autoInput').hidden=false;$('#autoInput').focus();};
+  $('#autoType').onclick=()=>{if(window.SpeakingRoomNative||window.srNativePracticeSpeech)micAudioReady();$('#autoInput').hidden=false;$('#autoInput').focus();};
   $('#autoInput').oninput=()=>{if(!autoDrill.typedAt)autoDrill.typedAt=Date.now();};
   $('#autoInput').onkeydown=e=>{if(e.key==='Enter'&&e.target.value.trim()&&!pendingReply){e.preventDefault();autoDrillFinish(e.target.value.trim(),{speechStartAt:autoDrill.typedAt,typed:true});}};
   $('#autoShow').onclick=()=>{stopMicrophone();it._hintUsed=true;autoDrillShowResult(it,true,false);};
@@ -147,6 +148,7 @@ function autoDrillFinish(heard,meta={}){
 }
 function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 말해보세요.'){
   pendingReply=true;
+  const referenceRate=it._voiceRate??levelRate();
   const card=document.querySelector('.auto-card'),old=$('#autoAnswer');if(old)old.remove();
   $('#autoHintRow').hidden=true;
   const intro=card.querySelector('.intro');if(intro)intro.remove();const heading=card.querySelector('h2');if(heading)heading.textContent='상황을 보고 말해보세요';
@@ -159,8 +161,8 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   const coach=$('#autoCoach');coach.className='practice-coach practice-feedback';
   const mascot=coach.querySelector('img');if(mascot)mascot.remove();
   card.insertBefore(answer,coach);
-  $('#answerListen').onclick=()=>speakEn(it.ex.en);
-  $('#answerLoop').onclick=()=>{if(answerLoopTimer){stopAnswerLoop();$('#answerLoop').textContent='🔁 반복 듣기';}else{const play=()=>{if(!answer.isConnected)return stopAnswerLoop();speakEn(it.ex.en);answerLoopTimer=setTimeout(play,Math.max(4500,it.ex.en.length*95));};play();$('#answerLoop').textContent='⏹ 반복 멈추기';}};
+  $('#answerListen').onclick=()=>speakEn(it.ex.en,referenceRate);
+  $('#answerLoop').onclick=()=>{if(answerLoopTimer){stopAnswerLoop();$('#answerLoop').textContent='🔁 반복 듣기';}else{const play=()=>{if(!answer.isConnected)return stopAnswerLoop();speakEn(it.ex.en,referenceRate);answerLoopTimer=setTimeout(play,Math.max(4500,it.ex.en.length*95));};play();$('#answerLoop').textContent='⏹ 반복 멈추기';}};
   $('#answerSay').onclick=()=>autoDrillRender(true);
   answer.querySelectorAll('[data-word]').forEach(b=>b.onclick=()=>{const w=b.dataset.word,info=$('#answerWordInfo'),meaning=FREQ_DICT[w]||FREQ_DICT[w.replace(/s$/,'')]||'';info.hidden=false;info.innerHTML=`<b>${escapeHtml(w)}</b><span>${escapeHtml(meaning||'이 단어의 뜻은 AI 질문에서 물어볼 수 있어요.')}</span><button id="saveAnswerWord">＋ 단어장에 저장</button>`;$('#saveAnswerWord').onclick=()=>{const saved=hGet('speakingroom:answer_vocab',{});saved[w]={en:w,ko:meaning};hSet('speakingroom:answer_vocab',saved);$('#saveAnswerWord').textContent='✓ 저장했어요';};speakEn(w);});
   $('#answerStress').onclick=()=>{const info=$('#answerToolInfo');info.hidden=false;info.innerHTML='<h3>문장에서 힘을 주어 말할 부분</h3><p class="stress-sentence">'+it.ex.en.split(/(\s+)/).map(w=>words.includes(adNorm(w))?`<b>${escapeHtml(w)}</b>`:escapeHtml(w)).join('')+'</p><small>내용을 전달하는 낱말은 또렷하게, 연결하는 말은 가볍게 말해보세요.</small>';};
@@ -169,7 +171,7 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   $('#autoStat').textContent=message+(it._lastHeard?`\n내가 말한 문장: ${it._lastHeard}`:'');
   card.querySelector('.auto-actions').innerHTML=(retry?'<button id="autoRetry" class="primary">가리고 다시 말하기</button>':'')+'<button id="autoNext" class="'+(retry?'quiet':'primary')+'">다음 →</button>';
   if($('#autoRetry'))$('#autoRetry').onclick=()=>autoDrillRender(true);
-  $('#autoNext').onclick=()=>autoDrillAdvance(perfect,it);speakEn(it.ex.en);
+  $('#autoNext').onclick=()=>autoDrillAdvance(perfect,it);speakEn(it.ex.en,referenceRate);
 }
 function autoDrillAdvance(perfect,it){
   const next=autoDrill.idx+1;if(autoDrill.items[next]&&autoDrill.items[next].frame.id===it.frame.id){const swap=autoDrill.items.findIndex((x,i)=>i>next&&x.frame.id!==it.frame.id);if(swap>0)[autoDrill.items[next],autoDrill.items[swap]]=[autoDrill.items[swap],autoDrill.items[next]];}
@@ -219,7 +221,7 @@ async function conversationAdvice(request){
   const epoch=sessionEpoch;setBusy(true);
   try{const history=state.convo.map(t=>({role:t.role,content:t.text}));history.push({role:'user',content:request});const result=await callClaude(rolePrompt(),history);if(epoch===sessionEpoch)addCoachTurn(stripUsedMarker(extractText(result)).clean,false);}catch(e){if(epoch===sessionEpoch)addCoachTurn(e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
-function speakEn(text){if(!text)return;if(qzRecording)stopMicrophone();stopMyVoice();const epoch=sessionEpoch;svSpeak(text,levelRate()).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=levelRate();TTS.speak(u);});}
+function speakEn(text,rate=levelRate()){if(!text)return;if(window.SpeakingRoomNative||window.srNativePracticeSpeech)micAudioReady();if(qzRecording)stopMicrophone();stopMyVoice();const epoch=sessionEpoch;svSpeak(text,rate).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=rate;TTS.speak(u);});}
 async function micFillCb(rawCb,refText='',onCaptureEnd=null){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   if(micPreparing)return;micPreparing=true;micBeep();

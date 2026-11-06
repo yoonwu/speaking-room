@@ -1,10 +1,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');const root=path.resolve(__dirname,'../..');
-function setup(seed={}){
+function setup(seed={},options={}){
  const records=new Map(Object.entries(seed)),elements=new Map();
  function element(){return {style:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,addEventListener(){},setAttribute(){},focus(){},remove(){},insertBefore(){},querySelector:()=>element(),querySelectorAll:()=>[],getTracks:()=>[]};}
  const get=s=>{if(!elements.has(s))elements.set(s,element());return elements.get(s);};
- const context={window:{addEventListener(){},srNativePracticePlayback:false},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob,AbortController,Response};
- vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,'practice-data.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'practice.js'),'utf8'),context);vm.runInContext('speakEn=()=>{}',context);return {run:s=>vm.runInContext(s,context),context,records,elements};
+ const context={window:{addEventListener(){},srNativePracticePlayback:false,...options.window},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob,AbortController,Response};
+ vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,'practice-data.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'practice.js'),'utf8'),context);if(!options.realSpeech)vm.runInContext('speakEn=()=>{}',context);return {run:s=>vm.runInContext(s,context),context,records,elements};
 }
 test('travel grading keeps accepting meaningful variants and rejecting the wrong requested item',()=>{const {run}=setup();assert.equal(run(`travelGrade({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get another towel?'}},'Can I get one more towel?').ok`),true);assert.equal(run(`travelGrade({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get another towel?'}},'Can I get a fork?').ok`),false);});
 test('only selected travel expressions are sampled, with no unrelated learning modes',()=>{const {run}=setup();const ids=run(`travelBuildItems(10,[TRAVEL_FRAMES[0]]).map(it=>it.frame.id)`);assert.equal(new Set(ids).size,1);assert.equal(ids[0],run('TRAVEL_FRAMES[0].id'));for(const name of ['startAutoDrill','startVocab','openPhonics','rankOpen','startReactDrill','openSpeakHub','awardXP'])assert.equal(run(`typeof ${name}`),'undefined');});
@@ -199,6 +199,93 @@ test('streaming failure and successful NoMatch never trigger a hidden second ser
   context.fetch=()=>{throw Error('Unexpected second transcription request');};context.window.srNativeRequest=async(action,data,onCaptured)=>{assert.equal(action,'streamPractice');onCaptured();return {...result,audioBase64:Buffer.alloc(644,1).toString('base64')};};
   await run(`micFillCb((text,meta)=>answers.push({text,meta}),'Can I get water?')`);assert.equal(context.answers.length,1);assert.equal(context.answers[0].text,'');assert.equal(context.answers[0].meta.sttErr,result.streamError);assert.equal(run('qzRecording||micPreparing'),false);
  }
+});
+
+function referenceAudioHarness({delayedTts=false,hungBody=false,fallback=false,timed=false,gestureOnly=false,initialSpeed=30}={}){
+ const fallbacks=[],platform=fallback?{speechSynthesis:{cancel(){},speak(utterance){fallbacks.push(utterance);}},SpeechSynthesisUtterance:class{constructor(text){this.text=text;}}}:{};
+ const app=setup({}, {realSpeech:true,window:platform}),{context}=app,sources=[],requests=[],signals=[],native=[];let finishRecognition,finishTts,htmlPlays=0;
+ const flush=async()=>{for(let i=0;i<40;i++)await Promise.resolve();};
+ let now=0,sequence=0;const timers=new Map();
+ if(timed){context.setTimeout=(fn,ms=0)=>{const id=++sequence;timers.set(id,{at:now+ms,fn});return id;};context.clearTimeout=id=>timers.delete(id);}
+ const clock={async advance(ms){const end=now+ms;await flush();for(;;){let next;for(const entry of timers)if(entry[1].at<=end&&(!next||entry[1].at<next[1].at))next=entry;if(!next)break;now=next[1].at;timers.delete(next[0]);next[1].fn();await flush();}now=end;await flush();},get pending(){return timers.size;}};
+ context.atob=s=>Buffer.from(s,'base64').toString('binary');
+ context.currentSpeed=initialSpeed;context.alGet=()=>({speed:context.currentSpeed});
+ const create=context.document.createElement;context.document.createElement=(...args)=>Object.assign(create(...args),{isConnected:true});
+ Object.assign(context.window,{srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true});
+ context.window.AudioContext=class{
+  constructor(){this.state='suspended';this.destination={};}resume(){if(gestureOnly&&!context.userGesture)return new Promise(()=>{});return Promise.resolve().then(()=>{this.state='running';});}
+  decodeAudioData(bytes,success){assert.ok(bytes.byteLength>=200);const buffer={decodedMp3:true};success?.(buffer);return Promise.resolve(buffer);}
+  createBufferSource(){const source={connect(){},disconnect(){},start(){assert.equal(source.buffer.decodedMp3,true);source.started=true;},stop(){source.stopped=true;}};sources.push(source);return source;}
+ };
+ context.Audio=class{async play(){htmlPlays++;throw Object.assign(Error('user gesture required'),{name:'NotAllowedError'});}pause(){}};
+ const response=()=>({ok:true,status:200,headers:{get:()=> 'audio/mpeg'},blob:async()=>new Blob([new Uint8Array(300)],{type:'audio/mpeg'})});
+ context.fetch=async(url,options)=>{const parsed=new URL(url);requests.push(parsed);signals.push(options.signal);assert.equal(parsed.pathname,'/tts','reference text must only go to speech synthesis');if(hungBody)return {...response(),blob:()=>new Promise(resolve=>finishTts=()=>resolve(new Blob([new Uint8Array(300)],{type:'audio/mpeg'})))};if(delayedTts)return new Promise(resolve=>finishTts=()=>resolve(response()));return response();};
+ context.window.srNativeRequest=(action,data,onCaptured)=>{native.push({action,data});if(action==='streamPractice'){onCaptured();return new Promise(resolve=>finishRecognition=heard=>resolve({text:heard,audioBase64:Buffer.alloc(644,1).toString('base64')}));}return Promise.resolve({});};
+ app.run(`micBeep=()=>{micAudioReady();};micBeepEnd=()=>{};startDrill([{frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get some water?',ko:'물을 달라고 하세요.'},_intro:false}],'기본표현');`);
+ return {...app,sources,requests,signals,native,flush,clock,fallbacks,get htmlPlays(){return htmlPlays;},finish(heard){finishRecognition(heard);},releaseTts(){finishTts();}};
+}
+
+test('a correct or incorrect streamed answer automatically plays the real reference audio once despite HTML autoplay rejection',async()=>{
+ for(const [heard,correct]of [['Can I get some water?',true],['Can I get a towel?',false]]){
+  const h=referenceAudioHarness();await h.flush();assert.equal(h.sources.length,0,'prefetch must remain silent');
+  const pending=h.elements.get('#autoMic').onclick();await h.flush();assert.equal(h.sources.length,0,'no reference is played while recording or recognizing');
+  h.finish(heard);await pending;await h.flush();
+  assert.equal(h.run('autoDrill.results[0].ok'),correct);assert.equal(h.sources.filter(s=>s.started).length,1);assert.equal(h.htmlPlays,0);
+  assert.equal(h.requests.length,1,'prefetch and automatic playback share the same MP3 request');assert.equal(h.requests[0].searchParams.get('text'),'Can I get some water?');
+  assert.equal(JSON.stringify(h.native.filter(call=>call.action==='streamPractice').map(call=>call.data)),'[{}]','recognition gets no reference answer');
+  h.run("autoDrillFinish('Can I get some water?',{})");await h.flush();assert.equal(h.sources.length,1,'a duplicate result cannot speak twice');
+  h.elements.get('#answerListen').onclick();await h.flush();assert.equal(h.sources.filter(s=>s.started).length,2);assert.equal(h.sources[0].stopped,true);assert.equal(h.requests.length,1);
+  h.elements.get('#answerLoop').onclick();await h.flush();assert.equal(h.sources.filter(s=>s.started).length,3);assert.equal(h.sources[1].stopped,true);assert.ok(h.run('answerLoopTimer'));
+  h.elements.get('#answerLoop').onclick();assert.equal(h.run('answerLoopTimer'),null);assert.equal(h.requests.length,1,'repeat playback reuses the prefetched audio');
+  h.elements.get('#answerSay').onclick();await h.flush();assert.equal(h.sources[2].stopped,true,'retry cancels reference playback');assert.equal(h.sources.length,3);
+ }
+});
+
+test('leaving after a streamed result prevents late prefetched reference audio from starting or falling back',async()=>{
+ const h=referenceAudioHarness({delayedTts:true});const pending=h.elements.get('#autoMic').onclick();await h.flush();h.finish('Can I get some water?');await pending;await h.flush();
+ assert.equal(h.sources.length,0);h.run('goToSetup()');h.releaseTts();await h.flush();
+ assert.equal(h.sources.length,0);assert.equal(h.htmlPlays,0);assert.equal(h.run('curScreen'),'setup');assert.equal(h.requests.length,1);
+});
+
+test('adaptive speed changes after grading reuse the prefetched rate and the next question snapshots the new rate',async()=>{
+ const h=referenceAudioHarness({initialSpeed:10});await h.flush();const firstRate=h.requests[0].searchParams.get('rate');
+ h.run(`autoDrill.items.push({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get a towel?',ko:'수건을 달라고 하세요.'},_intro:false});recordPractice=()=>{currentSpeed=50;};`);
+ const pending=h.elements.get('#autoMic').onclick();await h.flush();h.finish('Can I get some water?');await pending;await h.flush();
+ assert.equal(h.requests.length,1,'grading must not refetch the same reference at a newly adapted speed');assert.equal(h.sources.filter(s=>s.started).length,1);
+ h.elements.get('#answerListen').onclick();await h.flush();assert.equal(h.requests.length,1);
+ h.elements.get('#autoNext').onclick();await h.flush();assert.equal(h.requests.length,2);assert.equal(h.requests[1].searchParams.get('text'),'Can I get a towel?');assert.ok(Number(h.requests[1].searchParams.get('rate'))>Number(firstRate));
+ assert.equal(h.sources.filter(s=>s.started).length,2,'drawing the next question only prefetches, without reading it aloud');
+});
+
+test('a hung prefetched MP3 body is aborted at eight seconds, falls back once, and cannot play late or after leaving',async()=>{
+ for(const leave of [false,true]){
+  const h=referenceAudioHarness({hungBody:true,timed:true,fallback:true});await h.flush();
+  const pending=h.elements.get('#autoMic').onclick();await h.flush();h.finish('Can I get some water?');await pending;await h.flush();
+  assert.equal(h.requests.length,1,'grading shares the existing hung prefetch');assert.equal(h.fallbacks.length,0);assert.equal(h.sources.length,0);
+  if(leave)h.run('goToSetup()');
+  await h.clock.advance(7999);assert.equal(h.signals[0].aborted,false);assert.equal(h.fallbacks.length,0);
+  await h.clock.advance(1);assert.equal(h.signals[0].aborted,true);assert.equal(h.run('_svPending.size'),0);assert.equal(h.clock.pending,0);
+  assert.equal(h.fallbacks.length,leave?0:1);if(!leave)assert.equal(h.fallbacks[0].text,'Can I get some water?');
+  h.releaseTts();await h.flush();assert.equal(h.sources.length,0);assert.equal(h.run('_svCache.size'),0);assert.equal(h.fallbacks.length,leave?0:1,'late provider bytes cannot replay the reference or re-run fallback');
+ }
+});
+
+test('typing or manually replaying a first native answer unlocks audio during the gesture before the MP3 await',async()=>{
+ for(const typed of [true,false]){
+  const h=referenceAudioHarness({gestureOnly:true});await h.flush();assert.equal(h.run('_micAudio.state'),'suspended');
+  h.context.userGesture=true;
+  if(typed){h.elements.get('#autoType').onclick();h.elements.get('#autoInput').value='Can I get some water?';h.elements.get('#autoInput').onkeydown({key:'Enter',target:h.elements.get('#autoInput'),preventDefault(){}});}
+  else h.run(`speakEn('Can I get some water?')`);
+  h.context.userGesture=false;await h.flush();
+  assert.equal(h.run('_micAudio.state'),'running');assert.equal(h.sources.filter(s=>s.started).length,1);assert.equal(h.htmlPlays,0);
+  assert.equal(h.requests.length,1);assert.equal(h.native.some(call=>call.action==='streamPractice'),false);
+ }
+});
+
+test('a denied AudioContext resume never traps native playback waiting for an unresolved resume promise',async()=>{
+ const h=referenceAudioHarness({gestureOnly:true});await h.flush();let finished=false;
+ const pending=h.run(`svSpeak('Can I get some water?',levelRate())`).then(ok=>{finished=true;assert.equal(ok,false);});
+ await h.flush();assert.equal(finished,true);assert.equal(h.sources.length,0);assert.equal(h.htmlPlays,1);await pending;
 });
 
 // Advance wall time and all promise continuations together, without waiting for

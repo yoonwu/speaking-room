@@ -93,37 +93,65 @@ const SV_TTS_VOICE="en-US-JennyNeural";
 let _svAudio=null;
 
 const _svCache=new Map();
+const _svPending=new Map(),_svBuffers=new Map();
 
 let _svGeneration=0;
 function svStop(){ _svGeneration++;try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); _svAudio=null; } }catch(e){} }
 
 let _svDead=false;
 
-async function svSpeak(text, rate, onEnd, voice){
-  svStop();const generation=_svGeneration;
+async function svPrepare(text,rate,voice){
   text=String(text||"").trim();
-  if(!text || _svDead || /[\uac00-\ud7a3]/.test(text)) return false;
+  if(!text || _svDead || /[\uac00-\ud7a3]/.test(text)) return null;
   const vc=voice||SV_TTS_VOICE;                       // 말레이어 등 다른 언어를 읽을 때만 바뀐다
   const r100=Math.max(0.4, Math.min(1.4, Number(rate)||1));
   const key=vc+"|"+r100.toFixed(2)+"|"+text;
+  if(_svCache.has(key))return _svCache.get(key);
+  if(_svPending.has(key))return _svPending.get(key);
+  const pending=(async()=>{
+    const controller=new AbortController();
+    const receive=async()=>{
+      const res=await fetch(PROXY_URL+"/tts?voice="+encodeURIComponent(vc)+"&rate="+r100.toFixed(2)+"&text="+encodeURIComponent(text),{signal:controller.signal});
+      if(controller.signal.aborted)return null;
+      if(res.status===404){_svDead=true;return null;}
+      if(!res.ok||(res.headers.get("Content-Type")||"").indexOf("audio")<0)return null;
+      const blob=await res.blob();if(controller.signal.aborted||!blob||blob.size<200)return null;
+      const entry={key,blob,url:URL.createObjectURL(blob)};_svCache.set(key,entry);
+      if(_svCache.size>150){const k0=_svCache.keys().next().value;try{URL.revokeObjectURL(_svCache.get(k0).url);}catch(e){}_svCache.delete(k0);_svBuffers.delete(k0);}
+      return entry;
+    };
+    try{return await speechWait(receive(),8000,'예문 소리를 불러오는 시간이 지났어요.',()=>controller.abort());}
+    finally{controller.abort();}
+  })();
+  _svPending.set(key,pending);
+  try{return await pending;}finally{if(_svPending.get(key)===pending)_svPending.delete(key);}
+}
+async function svSpeak(text, rate, onEnd, voice){
+  svStop();const generation=_svGeneration;
   try{
-    let url=_svCache.get(key);
-    if(!url){
-      const res=await fetch(PROXY_URL+"/tts?voice="+encodeURIComponent(vc)+"&rate="+r100.toFixed(2)+"&text="+encodeURIComponent(text));
-      if(res.status===404){ _svDead=true; return false; }   // 워커에 /tts 없음 → 이번 세션은 폴백 고정
-      if(!res.ok) return false;
-      if((res.headers.get("Content-Type")||"").indexOf("audio")<0) return false;
-      const blob=await res.blob(); if(!blob || blob.size<200) return false;
-      url=URL.createObjectURL(blob); _svCache.set(key,url);
-      if(_svCache.size>150){ const k0=_svCache.keys().next().value; try{ URL.revokeObjectURL(_svCache.get(k0)); }catch(e){} _svCache.delete(k0); }
-    }
+    const entry=await svPrepare(text,rate,voice);if(!entry)return generation!==_svGeneration;
     if(generation!==_svGeneration)return true;
     try{ TTS&&TTS.cancel(); }catch(e){}
-    const a=new Audio(url); _svAudio=a;
+    if(window.SpeakingRoomNative||window.srNativePracticeSpeech){
+      // HTMLAudio loses the microphone tap's user activation while recognition
+      // is pending. Reuse the AudioContext that the tap unlocked for mic cues.
+      const ac=micAudioReady();
+      if(generation!==_svGeneration)return true;
+      if(ac&&ac.state==='running'){
+        let decoded=_svBuffers.get(entry.key);
+        if(!decoded){decoded=entry.blob.arrayBuffer().then(bytes=>decodeAudioCompat(ac,bytes));_svBuffers.set(entry.key,decoded);decoded.catch(()=>{if(_svBuffers.get(entry.key)===decoded)_svBuffers.delete(entry.key);});if(_svBuffers.size>24)_svBuffers.delete(_svBuffers.keys().next().value);}
+        const buffer=await decoded;if(generation!==_svGeneration)return true;
+        const source=ac.createBufferSource();source.buffer=buffer;source.connect(ac.destination);
+        const player={onended:onEnd?()=>setTimeout(onEnd,250):null,pause(){source.onended=null;try{source.stop();}catch(e){}source.disconnect();}};
+        source.onended=()=>{source.disconnect();if(_svAudio===player)_svAudio=null;if(player.onended)player.onended();};
+        _svAudio=player;source.start(0);return true;
+      }
+    }
+    const a=new Audio(entry.url); _svAudio=a;
     if(onEnd) a.onended=()=>setTimeout(onEnd, 250);
     await a.play();   // 자동재생 차단 등 실패 시 catch → 폴백
     return true;
-  }catch(e){ return false; }
+  }catch(e){ return generation!==_svGeneration; }
 }
 
 // Unlock while the microphone button still has a user gesture. Reuse the same
