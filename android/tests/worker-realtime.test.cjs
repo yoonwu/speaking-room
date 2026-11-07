@@ -40,7 +40,7 @@ test('realtime availability requires the existing Azure key and a safe region', 
   let calls = 0; const { worker } = load(async () => { calls++; });
   for (const [config, available] of [[env, true], [{}, false], [{ ...env, AZURE_SPEECH_REGION: 'evil.test/path' }, false]]) {
     const response = await worker.fetch(new Request('https://example.test/practice-realtime/status'), config, {}), body = await response.json();
-    assert.equal(body.available, available); assert.equal(body.version, 'worker-v10'); assert.ok(!JSON.stringify(body).includes(env.AZURE_SPEECH_KEY));
+    assert.equal(body.available, available); assert.equal(body.version, 'worker-v11'); assert.ok(!JSON.stringify(body).includes(env.AZURE_SPEECH_KEY));
   }
   assert.equal(calls, 0);
 });

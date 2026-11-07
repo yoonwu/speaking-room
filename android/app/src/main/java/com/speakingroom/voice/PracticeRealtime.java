@@ -67,7 +67,7 @@ final class PracticeRealtime {
         try{
             if(terminal.get())return;
             // No key/token is shipped: the fixed Worker endpoint authenticates upstream.
-            config=SpeechConfig.fromEndpoint(new URI(ENDPOINT));config.setSpeechRecognitionLanguage("en-US");
+            config=SpeechConfig.fromEndpoint(new URI(ENDPOINT));config.setSpeechRecognitionLanguage("en-US");config.setOutputFormat(OutputFormat.Detailed);
             // Short server segments are stitched; incomplete phrases keep the local long pause.
             config.setProperty(PropertyId.Speech_SegmentationSilenceTimeoutMs,"100");
             config.setProperty(PropertyId.SpeechServiceResponse_StablePartialResultThreshold,"1");
@@ -75,11 +75,11 @@ final class PracticeRealtime {
             push=AudioInputStream.createPushStream();audio=AudioConfig.fromStreamInput(push);recognizer=new SpeechRecognizer(config,audio);
             CountDownLatch connected=new CountDownLatch(1);connection=Connection.fromRecognizer(recognizer);
             connection.connected.addEventListener((sender,event)->{trace("connected",0,"");connected.countDown();});
-            recognizer.recognizing.addEventListener((sender,event)->{if(!terminal.get()){policy.recognizing(event.getResult().getOffset().longValue(),event.getResult().getText());trace("partial",event.getResult().getOffset().longValue(),event.getResult().getText());}});
+            recognizer.recognizing.addEventListener((sender,event)->{if(!terminal.get()){String text=transcript(event.getResult());policy.recognizing(event.getResult().getOffset().longValue(),text);trace("partial",event.getResult().getOffset().longValue(),text);}});
             recognizer.recognized.addEventListener((sender,event)->{
                 if(terminal.get()||event.getResult().getReason()!=ResultReason.RecognizedSpeech)return;
-                policy.recognized(event.getResult().getOffset().longValue(),event.getResult().getText());
-                trace("final",event.getResult().getOffset().longValue(),event.getResult().getText());
+                String text=transcript(event.getResult());policy.recognized(event.getResult().getOffset().longValue(),text);
+                trace("final",event.getResult().getOffset().longValue(),text);
                 if(policy.finalComplete()&&!inputEnded&&completePhrase!=null)completePhrase.run();
             });
             recognizer.canceled.addEventListener((sender,event)->{
@@ -112,5 +112,9 @@ final class PracticeRealtime {
             if(audio!=null)try{audio.close();}catch(Exception ignored){}
             if(config!=null)try{config.close();}catch(Exception ignored){}
         }
+    }
+    private static String transcript(SpeechRecognitionResult result){
+        String json=result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+        return PracticeTranscript.fromJson(json,result.getText());
     }
 }

@@ -1,6 +1,6 @@
 // ============================================================
-//  스피킹 룸 — Cloudflare Worker 프록시 v10
-//  GET  /version   → 배포 확인용 ("worker-v10" 반환)
+//  스피킹 룸 — Cloudflare Worker 프록시 v11
+//  GET  /version   → 배포 확인용 ("worker-v11" 반환)
 //  GET  /u?n=닉네임 → 저장된 학습 데이터 불러오기 ★ v6 신규
 //  POST /u?n=닉네임 → 학습 데이터 저장 (기기 간 연동)  ★ v6 신규
 //  GET  /board     → 전체 사용자 랭킹 요약 목록      ★ v6 신규
@@ -20,7 +20,7 @@
 //     Variable name: USERDATA   /   KV namespace: 새로 만들기(예: speaking-room-data)
 //     (바인딩이 없으면 /u 는 503을 돌려주고, 앱은 기기 저장만으로 정상 동작합니다)
 // ============================================================
-const WORKER_VERSION = "worker-v10";
+const WORKER_VERSION = "worker-v11";
 
 async function practiceRealtimeRoute(request, env, url, cors) {
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
@@ -542,7 +542,7 @@ export default {
         const region = env.AZURE_SPEECH_REGION || "koreacentral";
         const contentType = request.headers.get("Content-Type") || "audio/wav";
         const r = await fetch(
-          `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=simple`,
+          `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`,
           { method: "POST", headers: { "Ocp-Apim-Subscription-Key": env.AZURE_SPEECH_KEY, "Content-Type": contentType, "Accept": "application/json" }, body: request.body }
         );
         // Forward both streams without waiting for the microphone or the

@@ -168,6 +168,64 @@ test('server transcription can fall back after Azure fails and retains the real 
  assert.equal(text,'I cannot find my phone.');assert.equal(calls.length,2);assert.match(calls[0],/\/stt$/);assert.match(calls[1],/\/stt2$/);
 });
 
+test('transcription prefers top lexical words over display formatting without selecting a target-like alternative',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};
+ for(const [data,target,expected]of [
+  [{DisplayText:'Can I change this seat?',NBest:[{Display:'Can I change this seat?',Lexical:'can i change seat'}]},'Can I change my seat?','can i change seat'],
+  [{NBest:[{Display:'I have already reservation.',Lexical:'i have reservation'}]},'I have a reservation.','i have reservation'],
+  [{NBest:[{Lexical:'can i change this seat'},{Lexical:'can i change seat'}]},'Can I change seat','can i change this seat'],
+  [{NBest:[{Lexical:'i have already reservation'},{Lexical:'i have reservation'}]},'I have reservation','i have already reservation']
+ ]){Object.assign(context,{data,target});assert.equal(run('practiceTranscriptText(data,meta,target)'),expected);}
+});
+
+test('an explicitly empty lexical result remains empty and only an absent lexical field permits display fallback',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};
+ for(const lexical of ['',null,undefined]){context.data={DisplayText:'I have a reservation.',NBest:[{Lexical:lexical,Display:'I have a reservation.'}]};assert.equal(run('practiceTranscriptText(data,meta)'),'',String(lexical));}
+ context.data={DisplayText:'I have already reservation.',NBest:[{Display:'Different display.'}]};assert.equal(run('practiceTranscriptText(data,meta)'),'I have already reservation.');context.data={NBest:[{Display:'Can I change this seat?'}]};assert.equal(run('practiceTranscriptText(data,meta)'),'Can I change this seat?');
+});
+
+test('non-success recognition status never falls through to a displayed or lexical answer',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};for(const status of ['NoMatch','InitialSilenceTimeout','BabbleTimeout','Error','success']){context.data={RecognitionStatus:status,DisplayText:'I have a reservation.',Lexical:'i have a reservation',NBest:[{Lexical:'i have a reservation',Words:[{Word:'reservation'}]}]};assert.equal(run(`practiceTranscriptText(data,meta,'I have a reservation.')`),'',status);}
+ context.data={RecognitionStatus:'Success',Lexical:'i have reservation',DisplayText:'I have already reservation.'};assert.equal(run('practiceTranscriptText(data,meta)'),'i have reservation');
+});
+
+test('complete first-hypothesis word lists and top-level lexical fields follow the native raw-transcript priority',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};for(const [data,expected]of [
+  [{Lexical:' i  have reservation ',DisplayText:'I have already reservation.'},'i have reservation'],
+  [{Lexical:'wrong top-level text',DisplayText:'I have already reservation.',NBest:[{Words:[{Word:' i '},{Word:'have'},{Word:'reservation'}]}]},'i have reservation'],
+  [{Lexical:'',DisplayText:'I have already reservation.',NBest:[{Words:[{Word:'i'},{Word:'have'},{Word:'reservation'}]}]},'i have reservation'],
+  [{Lexical:'top lexical',NBest:[{Lexical:'first lexical',Words:[{Word:'other'}]}]},'first lexical'],
+  [{Lexical:'top lexical',NBest:[{Lexical:'',Words:[{Word:'other'}]}]},''],
+  [{Lexical:'',DisplayText:'I have a reservation.'},''],
+  [{Lexical:null,DisplayText:'I have a reservation.'},'']
+ ]){context.data=data;assert.equal(run('practiceTranscriptText(data,meta)'),expected);}
+});
+
+test('incomplete or malformed word lists are never partially reconstructed and retain the existing fallback order',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};for(const words of [[{Word:'i'},{}],[{Word:'i'},{Word:''}],[{Word:'i'},null],['i','have'],[]]){context.data={DisplayText:'I have already reservation.',NBest:[{Words:words,Display:'Different display.'}]};assert.equal(run('practiceTranscriptText(data,meta)'),'I have already reservation.');context.data.Lexical='i have reservation';assert.equal(run('practiceTranscriptText(data,meta)'),'i have reservation');}
+ context.data={NBest:[{Words:[{Word:'i'},{}],Display:'Can I change this seat?'}]};assert.equal(run('practiceTranscriptText(data,meta)'),'Can I change this seat?');
+});
+
+test('transcription never adds, removes or target-repairs English articles, demonstratives or adverbs',()=>{
+ const {run,context}=setup();context.meta={spoke:true,startAt:0,stopAt:2000};
+ for(const heard of ['Can I change seat','Can I change this seat?','I have reservation','I have already reservation.'])for(const target of ['I have a reservation.','Can I change my seat?','An unrelated answer.']){Object.assign(context,{data:{DisplayText:heard},target});assert.equal(run('practiceTranscriptText(data,meta,target)'),heard);}
+ context.data={DisplayText:'I’m at the café.'};assert.equal(run('practiceTranscriptText(data,meta)'),'I’m at the café.','Latin spelling and typographic apostrophes remain provider evidence');
+});
+
+test('non-English or mixed-script recognition becomes an honest NoMatch rather than romanized or target-replaced English',()=>{
+ const {run,context}=setup();for(const heard of ['아이 해브 어 레저베이션','캔 아이 겟 섬 워터','予約があります','我有预订','I need 물','I need ماء','😀','123']){context.data={DisplayText:heard};context.meta={spoke:true,startAt:0,stopAt:2000};assert.equal(run(`practiceTranscriptText(data,meta,'I have a reservation.')`),'',heard);assert.match(context.meta.sttErr,/영어 발화가 분명하게 들리지/);}
+ assert.equal(run('typeof hanRoman'),'function');assert.equal(run('typeof phWordEq'),'function','grading phonetic helpers remain intact');
+});
+
+test('suspected unvoiced boilerplate becomes NoMatch while a voiced complete courtesy phrase is preserved',()=>{
+ const {run,context}=setup();context.data={DisplayText:'Thank you for watching.'};context.meta={spoke:false,startAt:0,stopAt:2000};assert.equal(run('practiceTranscriptText(data,meta)'),'');assert.match(context.meta.sttErr,/다시 말해주세요/);context.data={DisplayText:'Okay.'};context.meta={spoke:true,startAt:0,stopAt:500};assert.equal(run('practiceTranscriptText(data,meta)'),'');context.data={DisplayText:'Thank you.'};context.meta={spoke:true,startAt:0,stopAt:2000};assert.equal(run('practiceTranscriptText(data,meta)'),'Thank you.');
+});
+
+test('REST transcription preserves lexical evidence and sends only the original audio, without target hints',async()=>{
+ const {run,context}=setup(),calls=[];context.fetch=async(url,options)=>{calls.push({url,options});return new Response(JSON.stringify({DisplayText:'I have already reservation.',NBest:[{Lexical:'i have reservation',Display:'I have already reservation.'}]}),{status:200});};context.audio=new Blob([Buffer.alloc(644)],{type:'audio/wav'});
+ const text=await run(`practiceTranscribe(audio,'audio/wav',{spoke:true,startAt:0,stopAt:2000},'I have a reservation.',{preferAzure:true,azureOnly:true})`);assert.equal(text,'i have reservation');assert.equal(calls.length,1);assert.match(calls[0].url,/\/stt$/);assert.equal(calls[0].options.body,context.audio);assert.deepEqual(Object.keys(calls[0].options.headers),['Content-Type']);assert.doesNotMatch(JSON.stringify(calls[0].options.headers),/reservation|reference|prompt/i);
+});
+
 test('fresh native capabilities choose PCM capture even when ChatGPT is not connected',async()=>{
  const {run,context}=setup(),actions=[];delete context.window.srNativePracticePlayback;context.window.srNativePracticeSpeech=true;context.atob=s=>Buffer.from(s,'base64').toString('binary');context.answers=[];
  context.window.srNativeRequest=async action=>{actions.push(action);if(action==='status')return {practiceSpeech:true,practicePlayback:true,connected:false,ready:false};assert.equal(action,'recordPractice');return {audioBase64:Buffer.alloc(644,1).toString('base64')};};

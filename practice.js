@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.7.1", APP_BUILD="2026-11-07";
+const APP_VERSION="v4.7.2", APP_BUILD="2026-11-07";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -277,7 +277,7 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   $('#answerStress').onclick=()=>{const info=$('#answerToolInfo');info.hidden=false;info.innerHTML='<h3>문장에서 힘을 주어 말할 부분</h3><p class="stress-sentence">'+it.ex.en.split(/(\s+)/).map(w=>words.includes(adNorm(w))?`<b>${escapeHtml(w)}</b>`:escapeHtml(w)).join('')+'</p><small>내용을 전달하는 낱말은 또렷하게, 연결하는 말은 가볍게 말해보세요.</small>';};
   $('#answerAi').onclick=()=>{const ov=openSheet('이 표현, 더 알고 싶어요'),host=ov.querySelector('#sheetContent');host.innerHTML=`<p class="question-expression">${escapeHtml(it.ex.en)}</p><textarea id="answerQuestion" placeholder="예: 여기서 for를 쓰는 이유가 뭐예요?"></textarea><button id="askAnswerQuestion" class="primary">질문하기</button><p id="answerQuestionReply" role="status"></p>`;host.querySelector('#askAnswerQuestion').onclick=async()=>{const q=host.querySelector('#answerQuestion').value.trim(),out=host.querySelector('#answerQuestionReply'),button=host.querySelector('#askAnswerQuestion');if(!q)return;if(window.SpeakingRoomNative){let status;try{status=await window.srNativeRequest('status');}catch(e){out.textContent=e.message;return;}if(!status.ready){out.textContent='ChatGPT 연결을 마친 뒤 질문할 수 있어요.';await window.srNativeRequest('settings');return;}}button.disabled=true;out.textContent='설명을 준비하고 있어요…';try{const r=await callClaude('Explain this English expression to a Korean beginner in concise Korean. Expression: '+it.ex.en,[{role:'user',content:q}]);out.textContent=extractText(r);}catch(e){out.textContent=e.message;}finally{button.disabled=false;}};};
   $('#answerVocab').onclick=()=>{const ov=openSheet('내 단어장'),saved=Object.values(hGet('speakingroom:answer_vocab',{})).sort((a,b)=>(b.misses||0)-(a.misses||0)),host=ov.querySelector('#sheetContent');host.innerHTML=saved.length?saved.map(w=>`<button class="vocab-item" data-vocab="${escapeHtml(w.en)}"><b>${escapeHtml(w.en)}</b><span>${escapeHtml(w.ko||'뜻을 확인해보세요')+(w.misses>=2?' · 집중 연습':'')}</span><span>🔊</span></button>`).join(''):'<p class="muted">위의 단어를 누르고 저장하면 여기에 모여요.</p>';host.querySelectorAll('[data-vocab]').forEach(b=>b.onclick=()=>openWordPractice(b.dataset.vocab,it));};
-  $('#autoStat').textContent=message+(it._lastHeard?`\n내가 말한 문장: ${it._lastHeard}`:'');
+  $('#autoStat').textContent=message+(it._lastHeard?`\n이렇게 인식됐어요: ${it._lastHeard}`:'');
   card.querySelector('.auto-actions').innerHTML=(retry?'<button id="autoRetry" class="primary">가리고 다시 말하기</button>':'')+'<button id="autoNext" class="'+(retry?'quiet':'primary')+'">다음 →</button>';
   if($('#autoRetry'))$('#autoRetry').onclick=autoDrillRecall;
   if($('#autoSpeed'))$('#autoSpeed').textContent=perfect?'⚡ 3초 안에 꺼낸 문장':it._lastOk?'✓ 맞혔어요 · 다음 문장으로':it._lastExpressionOnly?'✓ 표현은 맞혔어요 · 단어까지 연습해봐요':'보고 다시 익혀봐요';

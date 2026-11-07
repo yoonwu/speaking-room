@@ -21,6 +21,7 @@ test('speech upload reaches Azure before the microphone stream ends, retaining c
   const worker=loadWorker(async(url,options)=>{
     started=true;
     assert.match(url,/https:\/\/koreacentral\.stt\.speech\.microsoft\.com\//);
+    assert.equal(new URL(url).searchParams.get('format'),'detailed','retain the lexical form instead of only formatted display text');
     assert.equal(options.method,'POST');assert.equal(options.headers['Content-Type'],'audio/wav');
     assert.equal(options.headers['Ocp-Apim-Subscription-Key'],env.AZURE_SPEECH_KEY);
     const reader=options.body.getReader();
@@ -82,5 +83,5 @@ test('preflight is cached for ten minutes and version identifies the streaming p
   assert.match(preflight.headers.get('Access-Control-Allow-Methods'),/POST/);
   assert.match(preflight.headers.get('Access-Control-Allow-Headers'),/Content-Type/);
   const version=await worker.fetch(new Request('https://example.test/version'),env,{});
-  assert.equal(await version.text(),'worker-v10');assert.equal(calls,0);
+  assert.equal(await version.text(),'worker-v11');assert.equal(calls,0);
 });

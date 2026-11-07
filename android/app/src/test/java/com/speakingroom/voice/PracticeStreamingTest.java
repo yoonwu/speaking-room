@@ -74,6 +74,15 @@ public class PracticeStreamingTest {
             Result result=new Result();PracticeStreaming stream=new PracticeStreaming(server.url(),1000,result);stream.start();stream.append(frame(100),320);stream.finishInput();result.await();assertEquals("",result.text);assertTrue(result.error.contains("503"));assertEquals(1,result.calls.get());
         }
     }
+    @Test public void actualHttpUsesRawLexicalWordsAndNeverRepairsAnEmptyRawAnswerFromDisplay()throws Exception{
+        for(String raw:new String[]{"can i change seat",""}){
+            String body=new org.json.JSONObject().put("RecognitionStatus","Success").put("DisplayText","Can I change this seat?")
+                .put("NBest",new org.json.JSONArray().put(new org.json.JSONObject().put("Lexical",raw).put("Display","Can I change this seat?"))).toString();
+            try(Server server=new Server(exchange->{read(exchange.getRequestBody());reply(exchange,200,body);})){
+                Result result=new Result();PracticeStreaming stream=new PracticeStreaming(server.url(),1000,result);stream.start();stream.append(frame(10),320);stream.finishInput();result.await();assertNull(result.error);assertEquals(raw,result.text);assertEquals(1,result.calls.get());
+            }
+        }
+    }
     @Test public void aSuccessfulNoMatchDoesNotInventTextOrRetryTheRequest()throws Exception{
         AtomicInteger requests=new AtomicInteger();try(Server server=new Server(exchange->{requests.incrementAndGet();read(exchange.getRequestBody());reply(exchange,200,"{\"RecognitionStatus\":\"NoMatch\",\"DisplayText\":\"\"}");})){
             Result result=new Result();PracticeStreaming stream=new PracticeStreaming(server.url(),1000,result);stream.start();stream.append(frame(10),320);stream.finishInput();result.await();assertNull(result.error);assertEquals("",result.text);assertEquals(1,requests.get());

@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {generate}=require('../../scripts/android-web-release.cjs');
 const root=path.resolve(__dirname,'../..');
 test('release describes actual immutable web assets and excludes native binaries and secrets',()=>{
-  const m=generate(root,'a'.repeat(40));assert.equal(m.bridgeVersion,1);assert.equal(m.minimumNativeVersion,17);
+  const m=generate(root,'a'.repeat(40));assert.equal(m.bridgeVersion,1);assert.equal(m.minimumNativeVersion,18);
   for(const [name,f] of Object.entries(m.files)){
     assert.match(name,/^[A-Za-z0-9_-]+\.(html|js|css|json|png|webmanifest)$/);
     const b=fs.readFileSync(path.join(root,name));assert.equal(f.size,b.length);assert.equal(f.sha256,crypto.createHash('sha256').update(b).digest('hex'));

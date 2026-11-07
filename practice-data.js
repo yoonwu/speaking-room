@@ -575,11 +575,29 @@ async function practiceTranscribe(raw,actualMime,meta,refText='',options={}){
   if(!response.ok)throw new Error('음성 인식 서버 오류 ('+response.status+'). 잠시 후 다시 말해주세요.');
   return practiceTranscriptText(await response.json(),meta,refText);
 }
-function practiceTranscriptText(data,meta,refText=''){
-  let text=data.DisplayText||(data.NBest&&data.NBest[0]&&(data.NBest[0].Display||data.NBest[0].Lexical))||'';
-  if(text&&(!meta.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text.trim()))text='';
-  if(/[\uac00-\ud7af]/.test(text)){const roman=hanRoman(text);text=refText&&phCloseHan(roman,refText)?refText:roman;}
-  return String(text).trim();
+function practiceTranscriptText(data,meta={}){
+  const status=data?.RecognitionStatus==null?'':String(data.RecognitionStatus);
+  if(status&&status!=='Success')return '';
+  const best=data&&Array.isArray(data.NBest)?data.NBest[0]:null;
+  const clean=value=>typeof value==='string'?value.trim().replace(/\s+/g,' '):'';
+  // Lexical words are recognition evidence; Display can include formatting.
+  // An explicitly empty lexical result must never be replaced by Display.
+  let raw;
+  if(best&&Object.prototype.hasOwnProperty.call(best,'Lexical'))raw=best.Lexical;
+  else{
+    const words=Array.isArray(best?.Words)?best.Words.map(item=>clean(item?.Word)):[];
+    // A partial word list cannot establish the complete spoken sentence.
+    if(words.length&&words.every(Boolean))raw=words.join(' ');
+    else if(data&&Object.prototype.hasOwnProperty.call(data,'Lexical'))raw=data.Lexical;
+    else raw=clean(data?.DisplayText)||clean(best?.Display);
+  }
+  const text=clean(raw);
+  if(!text)return '';
+  const noMatch=()=>{if(meta&&typeof meta==='object'&&!meta.sttErr)meta.sttErr='영어 발화가 분명하게 들리지 않았어요. 다시 말해주세요.';return '';};
+  // Do not romanize non-English output or replace it with the expected answer.
+  if(!/[a-z]/i.test(text)||/\p{L}/u.test(text.replace(/\p{Script=Latin}/gu,'')))return noMatch();
+  if((!meta?.spoke||meta.stopAt-meta.startAt<700)&&STT_HALLUC.test(text))return noMatch();
+  return text;
 }
 // Short practice answers share one deadline. A slow provider must not queue
 // another full timeout (or a second Azure attempt) before returning a result.

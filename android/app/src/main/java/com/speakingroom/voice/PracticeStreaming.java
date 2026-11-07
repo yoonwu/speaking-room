@@ -80,8 +80,7 @@ final class PracticeStreaming {
             if(writeFailure!=null&&!allInputWritten){complete("","음성 전송이 먼저 종료됐어요. 다시 말해주세요.",false);return;}
             JSONObject result=new JSONObject(json);String recognition=result.optString("RecognitionStatus","");
             if(!recognition.isEmpty()&&!recognition.equals("Success")&&!recognition.equals("NoMatch")){complete("","말소리를 인식하지 못했어요. 다시 말해주세요.",false);return;}
-            String text=result.optString("DisplayText","").trim();
-            if(text.isEmpty()){JSONArray best=result.optJSONArray("NBest");if(best!=null&&best.length()>0){JSONObject first=best.optJSONObject(0);if(first!=null)text=first.optString("Display",first.optString("Lexical","")).trim();}}
+            String text=PracticeTranscript.fromJson(result,"");
             complete(text,null,false);
         }catch(Exception e){if(!terminal.get())complete("","말소리 인식 연결을 확인해주세요. 다시 말해주세요.",true);}
         finally{if(active!=null)active.disconnect();connection=null;}
