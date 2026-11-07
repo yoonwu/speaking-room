@@ -41,7 +41,7 @@ function observeProductionCues(h){
 }
 
 test('retry starts one capture immediately and listening appears only after the native ready event',async()=>{
- const h=setup();h.start();h.type('Can I get a towel?');await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),false);
+ const h=setup();h.start();h.type('This is a towel.');await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),false);
  const retry=h.get('#autoRetry').onclick,at=h.now,pending=retry();
  assert.equal(h.captures.length,1);assert.equal(h.now,at,'there is no countdown before retry capture');assert.equal(h.run('autoDrill.items[0].recall'),true);assert.notEqual(h.get('#autoMic').textContent,'■ 듣는 중');assert.equal(h.run('qzRecording'),false);assert.equal(h.run('micPreparing'),true);assert.equal(typeof h.captures[0].onReady,'function');
  await retry();assert.equal(h.captures.length,1,'a duplicate old button handler cannot open another microphone');
@@ -78,7 +78,7 @@ test('a network preparation failure falls back to the established stream before 
 });
 
 test('first wrong then immediate and copied retries share one five-XP allowance while mastery still grows',async()=>{
- const h=setup();h.start();const group=h.run('autoDrill.items[0]._attemptGroupId');h.type('Can I get a towel?');assert.equal(h.run('practiceReward().total'),0);
+ const h=setup();h.start();const group=h.run('autoDrill.items[0]._attemptGroupId');h.type('This is a towel.');assert.equal(h.run('practiceReward().total'),0);
  const pending=h.get('#autoRetry').onclick(),capture=h.captures.at(-1);capture.ready();capture.complete();await pending;await h.flush();
  assert.equal(h.run('practiceReward().total'),5);assert.equal(h.run('autoDrill.results.length'),2);assert.equal(h.run(`learningSentenceMastery('Can I get some water?').score`),4);assert.doesNotMatch(h.get('.auto-actions').innerHTML,/id="autoRetry"/,'a correct covered recall offers only the next main action');
  const before=h.run('supportEvents().length');h.run(`autoDrillFinish('Can I get some water?',{attemptId:'duplicate-delivery'})`);assert.equal(h.run('supportEvents().length'),before,'a duplicate final cannot award twice');
@@ -127,8 +127,8 @@ test('a successful realtime NoMatch remains unscorable without triggering Azure 
 });
 
 test('the observed segmented repetition passes unchanged while a changed object or negation still fails',async()=>{
- for(const [heard,ok]of [["I can't find my. My phone.",true],["I can't find my. My ticket.",false],["I can find my. My phone.",false]]){
-  const h=setup({realtime:true});h.start("I can't find my phone.",'travel_cant_find');await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();h.captures[0].ready();h.captures[0].complete(heard);await pending;await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),ok,heard);assert.equal(h.run('autoDrill.results[0].heard'),heard);assert.equal(h.run('practiceReward().total'),ok?15:0);assert.equal(h.posts().length,0);
+ for(const [heard,ok,xp]of [["I can't find my. My phone.",true,15],["I can't find my. My ticket.",false,10],["I can find my. My phone.",false,0]]){
+  const h=setup({realtime:true});h.start("I can't find my phone.",'travel_cant_find');await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();h.captures[0].ready();h.captures[0].complete(heard);await pending;await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),ok,heard);assert.equal(h.run('autoDrill.results[0].heard'),heard);assert.equal(h.run('practiceReward().total'),xp);assert.equal(h.posts().length,0);
  }
 });
 

@@ -57,8 +57,9 @@ test('a correct covered recall has only Next as the main action; a wrong recall 
   const h=setup();h.start();h.type('Can I get a towel?');assert.match(actions(h),/id="autoRetry"/);
   const pending=h.get('#autoRetry').onclick();await h.flush();const capture=h.captures[0];capture.ready();capture.complete(correct?ANSWER:'Can I get a towel?',{speechStartOffsetMs:100,captureDurationMs:1500});await pending;await h.flush();
   assert.equal(h.lastEvent().ok,correct);assert.match(actions(h),/id="autoNext"/);
-  if(correct){assert.doesNotMatch(actions(h),/id="autoRetry"/);assert.equal((actions(h).match(/<button/g)||[]).length,1);assert.equal(h.run('practiceReward().total'),5);}
-  else{assert.match(actions(h),/id="autoRetry"/);assert.equal(h.run('practiceReward().total'),0);}
+  if(correct){assert.doesNotMatch(actions(h),/id="autoRetry"/);assert.equal((actions(h).match(/<button/g)||[]).length,1);}
+  else assert.match(actions(h),/id="autoRetry"/);
+  assert.equal(h.run('practiceReward().total'),10,'the initial typed pattern-only reward is the group allowance');assert.equal(h.lastEvent().xp,0,'covered retries do not add to a consumed partial allowance');
  }
 });
 
@@ -83,6 +84,28 @@ test('response time includes button delay plus actual native voice onset, exclud
   assert.equal(event.responseMs,scenario.response,JSON.stringify(scenario));assert.equal(event.withinThreeSeconds,scenario.fast);assert.equal(event.speedEligible,true);assert.equal(event.fast,scenario.fast);
   assert.equal(event.xp,scenario.fast?30:15);assert.equal(h.run('practiceReward().total'),scenario.fast?30:15);assert.equal(mastery.score,scenario.fast?18:10);assert.equal(mastery.fastStreak,scenario.fast?1:0);assert.equal(mastery.fullyLearned,false);
  }
+});
+
+test('a first pattern-only voice answer earns fifteen fast or ten slow with encouraging feedback but no full mastery',async()=>{
+ for(const scenario of [{press:1000,onset:500,response:1500,xp:15},{press:2800,onset:400,response:3200,xp:10},{press:3100,onset:0,response:3100,xp:10},{press:1000,preparation:2500,onset:500,response:1500,xp:15}]){
+  const h=setup();h.start();assert.equal(h.run(`travelGrade(autoDrill.items[0],'Can I get a towel?').blockHit`),true);await nativeAnswer(h,{...scenario,text:'Can I get a towel?'});const event=h.lastEvent();
+  assert.equal(event.ok,false);assert.equal(event.expressionOnly,true);assert.equal(event.fast,false,'a fast partial is never a full fast answer');assert.equal(event.responseMs,scenario.response);assert.equal(event.xp,scenario.xp);assert.equal(h.run('practiceReward().total'),scenario.xp);assert.match(h.get('#autoStat').textContent,new RegExp('\\+'+scenario.xp+' XP'));assert.doesNotMatch(h.get('#autoStat').textContent,/\+0 XP/);
+  assert.equal(h.mastery().score,0);assert.equal(h.mastery().correct,0);assert.equal(h.mastery().fastCorrect,0);assert.equal(h.mastery().fullyLearned,false);assert.equal(h.run(`travelStat('travel_can_i_get').ok`),0);assert.ok(h.run('missCount()>0'));assert.match(actions(h),/id="autoRetry"/);assert.equal(typeof h.get('[data-word="water"]').onclick,'function','the missed word remains available for focused practice');
+ }
+});
+
+test('a pattern-only reward is one group allowance across covered retries, copied questions and duplicate delivery',async()=>{
+ for(const fast of [true,false]){
+  const h=setup();h.start();await nativeAnswer(h,{press:fast?1000:3100,onset:100,text:'Can I get a towel?'});const cap=fast?15:10,group=h.lastEvent().attemptGroupId;assert.equal(h.lastEvent().xp,cap);
+  let pending=h.get('#autoRetry').onclick();await h.flush();h.captures.at(-1).ready();h.captures.at(-1).complete('Can I get a towel?',{speechStartOffsetMs:100,captureDurationMs:1000});await pending;assert.equal(h.lastEvent().expressionOnly,true);assert.equal(h.lastEvent().xp,0);assert.match(actions(h),/id="autoRetry"/);
+  pending=h.get('#autoRetry').onclick();await h.flush();h.captures.at(-1).ready();h.captures.at(-1).complete(ANSWER,{speechStartOffsetMs:100,captureDurationMs:1000});await pending;assert.equal(h.lastEvent().ok,true);assert.equal(h.lastEvent().xp,0);assert.equal(h.run('practiceReward().total'),cap);assert.doesNotMatch(actions(h),/id="autoRetry"/);
+  const count=h.run('supportEvents().length');h.run(`autoDrillFinish('Can I get some water?',{attemptId:'duplicate-partial-final'})`);assert.equal(h.run('supportEvents().length'),count);h.get('#autoNext').onclick();assert.equal(h.run('autoDrill.items[autoDrill.idx]._attemptGroupId'),group);h.type(ANSWER);assert.equal(h.lastEvent().xp,0);assert.equal(h.run('practiceReward().total'),cap);
+ }
+});
+
+test('pattern-only practice preserves existing mastery points while breaking a full-answer fast streak',async()=>{
+ const h=setup();h.start();await nativeAnswer(h,{press:100,onset:100});assert.equal(h.mastery().score,18);assert.equal(h.mastery().fastStreak,1);h.start();await nativeAnswer(h,{press:100,onset:100,text:'Can I get a towel?'});
+ assert.equal(h.mastery().score,18,'partial mastery delta is zero');assert.equal(h.mastery().correct,1);assert.equal(h.mastery().fastCorrect,1);assert.equal(h.mastery().fastStreak,0);assert.equal(h.mastery().fullyLearned,false);assert.equal(h.lastEvent().ok,false);assert.equal(h.lastEvent().xp,15);
 });
 
 test('recognition completion and recording length cannot replace first actual voice onset',async()=>{
@@ -110,7 +133,7 @@ test('typed, introduced, hinted and retry answers cannot become fast mastery fro
  for(const kind of ['introduced','hinted','retry']){
   const h=setup();h.start({intro:kind==='introduced'});if(kind==='hinted')h.get('#autoWord').onclick();
   if(kind==='retry'){
-   h.type('Can I get a towel?');const pending=h.get('#autoRetry').onclick();await h.flush();const capture=h.captures[0];capture.ready();capture.complete(ANSWER,{speechStartOffsetMs:100,captureDurationMs:1500});await pending;await h.flush();
+   h.type('This is a towel.');const pending=h.get('#autoRetry').onclick();await h.flush();const capture=h.captures[0];capture.ready();capture.complete(ANSWER,{speechStartOffsetMs:100,captureDurationMs:1500});await pending;await h.flush();
   }else await nativeAnswer(h,{press:100,onset:100});
   assert.equal(h.lastEvent().fast,false,kind);assert.equal(h.lastEvent().xp,kind==='retry'?5:15);assert.equal(h.mastery().fastCorrect,0);
  }
@@ -164,7 +187,7 @@ test('word practice uses one explicit accuracy capture and returns to the same s
  const pending=h.get('#wordPracticeMic').onclick();await h.flush();assert.equal(h.captures.length,1);assert.equal(h.captures[0].action,'streamPractice');assert.equal(h.captures[0].data.expectedWords,1);assert.deepEqual(Object.keys(h.captures[0].data),['expectedWords']);await h.get('#wordPracticeMic').onclick();assert.equal(h.captures.length,1,'duplicate taps cannot start a second word capture');
  h.captures[0].ready();h.captures[0].complete(' WATER! ',{speechStartOffsetMs:100,captureDurationMs:1000});await pending;await h.flush();assert.match(h.get('#wordPracticeStatus').textContent,/✓ water/);assert.match(h.get('#wordPracticeBack').textContent,/문장으로 돌아가 다시 말하기/);assert.equal(sentenceProgress(h),before);assert.equal(h.run(`hGet('speakingroom:answer_vocab',{}).water.practiceCorrect`),1);assert.equal(h.run('answerVoiceUrl'),null);assert.equal(h.requests.filter(request=>request.options.method==='POST').length,0,'focused word practice never calls GPT');
  assert.equal(h.run('PracticeAI.getMode()'),'meaning','word practice does not change the learner setting');h.run(`PracticeAI.setMode('accuracy')`);const returning=h.get('#wordPracticeBack').onclick();await h.flush();assert.equal(h.run('activeWordPractice'),null);assert.equal(h.run('autoDrill.idx'),0);assert.equal(h.run('autoDrill.items[0]._attemptGroupId'),group);assert.equal(h.run('autoDrill.items[0].recall'),true);assert.equal(h.captures.length,2);assert.equal(h.captures[1].data.expectedWords,5);assert.equal(h.run('autoDrill.results.length'),1);
- h.captures[1].ready();h.captures[1].complete();await returning;await h.flush();assert.equal(h.run('autoDrill.results.length'),2);assert.equal(h.run('practiceReward().total'),5,'only the later full-sentence retry earns its existing allowance');
+ h.captures[1].ready();h.captures[1].complete();await returning;await h.flush();assert.equal(h.run('autoDrill.results.length'),2);assert.equal(h.run('practiceReward().total'),10,'word practice and sentence retry cannot add to the consumed partial allowance');assert.equal(h.lastEvent().xp,0);
 });
 
 test('word mismatch and silence remain focused and never change sentence XP, mastery or attempts',async()=>{

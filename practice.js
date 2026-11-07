@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.6.0", APP_BUILD="2026-11-07";
+const APP_VERSION="v4.6.1", APP_BUILD="2026-11-07";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -236,13 +236,14 @@ function autoDrillFinish(heard,meta={}){
 function autoDrillApplyResult(lesson,it,heard,meta,g){
   if(lesson!==autoDrill||!practiceProfileCurrent())return;
   if(g.retry){pendingReply=false;$('#autoMic').textContent='🎤 다시 말하기';$('#autoStat').textContent='말한 내용을 확실히 판단하기 어려워요. 다시 말해주세요. 점수와 숙련도는 바뀌지 않았어요.';return;}
-  const retry=!!(it._hadIncorrect||it._attempts),perfect=g.ok&&!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&meta.withinThreeSeconds===true&&Number.isFinite(meta.responseMs)&&meta.responseMs>=0&&meta.responseMs<=3000;
+  const expressionOnly=!g.ok&&g.blockHit===true;
+  const retry=!!(it._hadIncorrect||it._attempts),quick=!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&meta.withinThreeSeconds===true&&Number.isFinite(meta.responseMs)&&meta.responseMs>=0&&meta.responseMs<=3000,perfect=g.ok&&quick;
   it._attempts=(it._attempts||0)+1;if(!g.ok)it._hadIncorrect=true;
-  it._lastHeard=heard;it._lastOk=g.ok;practiceTrackWordMisses(it,heard,meta,g);
-  travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,perfect,en:it.ex.en,heard});
-  if(typeof recordPractice==='function'){recordPractice({it,heard,ok:g.ok,perfect,meta,started:autoDrill.t0,mode:autoDrill.title,attemptGroupId:it._attemptGroupId,attemptId:meta.attemptId,profileId:autoDrill.profileId,retry});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
+  it._lastHeard=heard;it._lastOk=g.ok;it._lastExpressionOnly=expressionOnly;practiceTrackWordMisses(it,heard,meta,g);
+  travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,expressionOnly,perfect,en:it.ex.en,heard});
+  if(typeof recordPractice==='function'){recordPractice({it,heard,ok:g.ok,perfect,expressionOnly,meta,started:autoDrill.t0,mode:autoDrill.title,attemptGroupId:it._attemptGroupId,attemptId:meta.attemptId,profileId:autoDrill.profileId,retry});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
   if(!perfect&&(it._requeues||0)<2){const again={...it,_intro:false,_hintUsed:false,_requeues:(it._requeues||0)+1,_lastHeard:'',_lastOk:false};if(!it._requeues)autoDrill.items.splice(Math.min(autoDrill.items.length,autoDrill.idx+5+Math.floor(Math.random()*3)),0,again);else autoDrill.items.push(again);}
-  const message=perfect?'⚡ '+(meta.responseMs/1000).toFixed(1)+'초 만에 꺼냈어요!':g.ok?(it.recall||retry?'다시 말해서 맞혔어요. 다음 문장으로 이어가요.':it._intro||it._hintUsed?'표현을 익혔어요. 이번엔 가리고 말해봐요.':'정답이에요. 다음엔 3초 안에 꺼내봐요.'):g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:g.keyMiss?'표현은 맞았어요. 상황에 맞는 핵심 낱말을 넣어보세요.':`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
+  const message=perfect?'⚡ '+(meta.responseMs/1000).toFixed(1)+'초 만에 꺼냈어요!':g.ok?(it.recall||retry?'다시 말해서 맞혔어요. 다음 문장으로 이어가요.':it._intro||it._hintUsed?'표현을 익혔어요. 이번엔 가리고 말해봐요.':'정답이에요. 다음엔 3초 안에 꺼내봐요.'):g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:expressionOnly?(quick?'⚡ 3초 안에 표현을 꺼냈어요! 이번엔 핵심 단어도 넣어보세요.':'표현은 맞혔어요! 이번엔 상황에 맞는 핵심 단어도 넣어보세요.'):`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
   const needsRecall=!g.ok||(!it.recall&&(it._intro||it._hintUsed));
   autoDrillShowResult(it,needsRecall,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
 }
@@ -272,7 +273,7 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   $('#autoStat').textContent=message+(it._lastHeard?`\n내가 말한 문장: ${it._lastHeard}`:'');
   card.querySelector('.auto-actions').innerHTML=(retry?'<button id="autoRetry" class="primary">가리고 다시 말하기</button>':'')+'<button id="autoNext" class="'+(retry?'quiet':'primary')+'">다음 →</button>';
   if($('#autoRetry'))$('#autoRetry').onclick=autoDrillRecall;
-  if($('#autoSpeed'))$('#autoSpeed').textContent=perfect?'⚡ 3초 안에 꺼낸 문장':it._lastOk?'✓ 맞혔어요 · 다음 문장으로':'보고 다시 익혀봐요';
+  if($('#autoSpeed'))$('#autoSpeed').textContent=perfect?'⚡ 3초 안에 꺼낸 문장':it._lastOk?'✓ 맞혔어요 · 다음 문장으로':it._lastExpressionOnly?'✓ 표현은 맞혔어요 · 단어까지 연습해봐요':'보고 다시 익혀봐요';
   $('#autoNext').onclick=()=>autoDrillAdvance(perfect,it);speakEn(it.ex.en,referenceRate);if(retry)prewarmPractice(autoDrill,it);
 }
 function autoDrillAdvance(perfect,it){

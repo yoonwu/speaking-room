@@ -127,3 +127,59 @@ test('fast evidence and fully learned rows survive reload and sync while remaini
 test('growth details show the actual fully learned count, sentence, score and recent fast performance',()=>{
  const h=setup();h.run(`hSet(featureGuideKey('growth'),true);for(let i=0;i<5;i++)answer('Can I get water?','list-'+i);answer('Can I get coffee?','growing',{perfect:false,meta:{responseMs:4200,speedEligible:false,withinThreeSeconds:false}});openGrowth()`);const html=h.elements.get('#sheetContent').innerHTML;assert.match(html,/id="fullyLearnedSentences"/);assert.match(html,/1<small>개 문장이 바로 나와요/);assert.match(html,/Can I get water\?/);assert.match(html,/숙련도 90 \/ 100 · 연속 5회 3초 정답 · 최근 1\.2초/);assert.match(html,/Can I get coffee\?/);assert.match(html,/숙련도 10 \/ 100 · 연속 0회 3초 정답 · 최근 4\.2초/);
 });
+
+test('actual full and expression-only grades earn the four first-answer XP tiers without marking a partial fully correct',()=>{
+ const h=setup();h.run(`const it={frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get water?',ko:'물 주세요.'},_intro:false};
+  const fullGrade=travelGrade(it,'Can I get water?'),partialGrade=travelGrade(it,'Can I get a towel?');
+  const fullFast=answer(it.ex.en,'full-fast',{it,ok:fullGrade.ok});
+  const fullSlow=answer(it.ex.en,'full-slow',{it,ok:fullGrade.ok,perfect:false,meta:{responseMs:4000,speedEligible:true,withinThreeSeconds:false}});
+  const partialFast=answer(it.ex.en,'partial-fast',{it,heard:'Can I get a towel?',ok:partialGrade.ok,perfect:false,expressionOnly:!partialGrade.ok&&partialGrade.blockHit});
+  const partialSlow=answer(it.ex.en,'partial-slow',{it,heard:'Can I get a towel?',ok:partialGrade.ok,perfect:false,expressionOnly:!partialGrade.ok&&partialGrade.blockHit,meta:{responseMs:4000,speedEligible:true,withinThreeSeconds:false}});`);
+ assert.equal(h.run('partialGrade.ok'),false);assert.equal(h.run('partialGrade.blockHit'),true);
+ assert.deepEqual([...h.run('[fullFast.xp,fullSlow.xp,partialFast.xp,partialSlow.xp]')],[30,15,15,10]);
+ assert.equal(h.run('practiceReward().total'),70);
+ for(const name of ['partialFast','partialSlow']){assert.equal(h.run(name+'.fast'),false);assert.equal(h.run(name+'.expressionOnly'),true);}
+ assert.equal(h.run('partialFast.fastExpression'),true);assert.equal(h.run('partialSlow.fastExpression'),false);
+ const fast=plain(h.run(`supportLog()['attempt:partial-fast']`));assert.equal(fast.ok,false);assert.equal(fast.perfect,false);assert.equal(fast.expressionOnly,true);assert.equal(fast.fastExpression,true);assert.equal(fast.responseMs,1200);assert.equal(fast.words,undefined);assert.equal(fast.curriculumTier,undefined);
+ assert.equal(h.run(`learningSentenceMastery(it.ex.en).correct`),2);assert.equal(h.run(`learningSentenceMastery(it.ex.en).score`),28);assert.equal(h.run('learningLearnedSentences().length'),0);
+});
+
+test('a partial preserves earned sentence mastery but clears fast graduation and does not accumulate learned words',()=>{
+ const h=setup();h.run(`for(let i=0;i<5;i++)answer('Can I get water?','known-'+i);const priorWords=supportWordStats();const partial=answer('Can I get water?','partial',{ok:false,perfect:false,expressionOnly:true,heard:'Can I get a towel?'});const row=learningSentenceMastery('Can I get water?'),transaction=hGet(SENTENCE_MASTERY,{}).events['attempt:partial'];`);
+ assert.equal(h.run('partial.xp'),15);assert.equal(h.run('transaction.delta'),0);assert.equal(h.run('transaction.expressionOnly'),true);assert.equal(h.run('transaction.fastExpression'),true);
+ assert.equal(h.run('row.score'),90);assert.equal(h.run('row.correct'),5);assert.equal(h.run('row.fastCorrect'),5);assert.equal(h.run('row.misses'),1);assert.equal(h.run('row.fastStreak'),0);assert.equal(h.run('row.fullyLearned'),false);assert.equal(h.run('learningLearnedSentences().length'),0);
+ assert.deepEqual(plain(h.run('supportWordStats()')),plain(h.run('priorWords')));
+});
+
+test('partial credit survives immediate and copied requeue corrections without farming or reducing its ten or fifteen XP',()=>{
+ for(const quick of [false,true]){
+  const h=setup();h.run(`const original={frame:testFrame,ex:{en:'Can I get water?'},_attemptGroupId:'partial-group',_intro:false};
+   const partial=answer(original.ex.en,'first',{it:original,attemptGroupId:'partial-group',ok:false,perfect:false,expressionOnly:true,meta:{responseMs:${quick?1200:4100},speedEligible:true,withinThreeSeconds:${quick}}});
+   const immediate=answer(original.ex.en,'second',{it:{...original,recall:true},attemptGroupId:'partial-group'});
+   const requeued=answer(original.ex.en,'third',{it:{...original,_requeues:1},attemptGroupId:'partial-group'});
+   const partialAgain=answer(original.ex.en,'fourth',{it:{...original},attemptGroupId:'partial-group',ok:false,perfect:false,expressionOnly:true});`);
+  assert.equal(h.run('partial.xp'),quick?15:10);assert.equal(h.run('immediate.xp+requeued.xp+partialAgain.xp'),0);assert.equal(h.run('practiceReward().total'),quick?15:10);assert.equal(h.run('supportEvents().length'),4);
+  const restored=setup(Object.fromEntries(h.records));restored.run(`const later=answer('Can I get water?','later',{attemptGroupId:'partial-group'});`);assert.equal(restored.run('later.xp'),0);assert.equal(restored.run('practiceReward().total'),quick?15:10);
+ }
+});
+
+test('a first zero-point miss limits later partial and full retries together to five XP',()=>{
+ const h=setup();h.run(`const wrong=answer('Can I get water?','wrong',{attemptGroupId:'zero-group',ok:false,perfect:false});const partial=answer('Can I get water?','partial',{attemptGroupId:'zero-group',ok:false,perfect:false,expressionOnly:true});const full=answer('Can I get water?','full',{attemptGroupId:'zero-group'});const again=answer('Can I get water?','partial-again',{attemptGroupId:'zero-group',ok:false,perfect:false,expressionOnly:true});`);
+ assert.deepEqual([...h.run('[wrong.xp,partial.xp,full.xp,again.xp]')],[0,5,0,0]);assert.equal(h.run('partial.fastExpression'),false);assert.equal(h.run('practiceReward().total'),5);
+ assert.equal(h.run(`learningSentenceMastery('Can I get water?').score`),4);assert.equal(h.run(`learningSentenceMastery('Can I get water?').correct`),1);
+});
+
+test('partial fast credit requires the same real timing and unaided first-attempt evidence as full fast credit',()=>{
+ const h=setup();h.run(`const cases=[{it:{frame:testFrame,ex:{en:'intro'},_intro:true}},{it:{frame:testFrame,ex:{en:'hint'},_hintUsed:true}},{it:{frame:testFrame,ex:{en:'recall'},recall:true}},{meta:{typed:true,responseMs:900,speedEligible:true,withinThreeSeconds:true}},{meta:{responseMs:900,speedEligible:false,withinThreeSeconds:true}},{meta:{speedEligible:true,withinThreeSeconds:true}},{meta:{responseMs:3001,speedEligible:true,withinThreeSeconds:true}},{meta:{responseMs:900,speedEligible:true,withinThreeSeconds:false}}];const results=cases.map((options,i)=>answer('Partial '+i,'excluded-'+i,{ok:false,perfect:false,expressionOnly:true,...options}));const boundary=answer('Boundary partial.','boundary',{ok:false,perfect:false,expressionOnly:true,meta:{responseMs:3000,speedEligible:true,withinThreeSeconds:true}});`);
+ assert.ok(h.run('results.every(r=>r.xp===10&&!r.fast&&!r.fastExpression&&r.mastery.correct===0&&r.mastery.score===0)'));assert.equal(h.run('boundary.xp'),15);assert.equal(h.run('boundary.fastExpression'),true);
+ const typed=h.run(`supportLog()['attempt:excluded-3']`);assert.equal(typed.typed,true);assert.equal(typed.fastExpression,false);
+});
+
+test('partial histories sync idempotently, retain caps and learner isolation, and adapt expression speed without full speaking perfection',()=>{
+ const h=setup();h.run(`const fast=answer('Can I get water?','partial',{attemptGroupId:'group',ok:false,perfect:false,expressionOnly:true});const adaptive=alGet();`);
+ assert.deepEqual([...h.run('adaptive.st.speak.hist')],[.85]);assert.deepEqual([...h.run('adaptive.st.speed.hist')],[1]);
+ const payload=plain(h.run('supportCollect()')),restored=setup();restored.context.snapshot=payload;restored.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot)');assert.equal(restored.run('practiceReward().total'),15);
+ const log=plain(restored.run(`supportLog()['attempt:partial']`));assert.equal(log.expressionOnly,true);assert.equal(log.fastExpression,true);assert.equal(log.ok,false);assert.equal(log.rewardCap,15);
+ assert.equal(restored.run(`hGet(SENTENCE_MASTERY,{}).events['attempt:partial'].delta`),0);restored.run(`const retry=answer('Can I get water?','retry',{attemptGroupId:'group'});`);assert.equal(restored.run('retry.xp'),0);
+ restored.run(`const other=learningProfileCreate('다른 학습자');learningProfileSwitch(other);`);assert.equal(restored.run('practiceReward().total'),0);restored.run(`learningProfileSwitch('legacy');`);assert.equal(restored.run('practiceReward().total'),15);assert.equal(restored.run(`learningSentenceMastery('Can I get water?').seen`),2);
+});
