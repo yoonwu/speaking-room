@@ -82,5 +82,5 @@ test('preflight is cached for ten minutes and version identifies the streaming p
   assert.match(preflight.headers.get('Access-Control-Allow-Methods'),/POST/);
   assert.match(preflight.headers.get('Access-Control-Allow-Headers'),/Content-Type/);
   const version=await worker.fetch(new Request('https://example.test/version'),env,{});
-  assert.equal(await version.text(),'worker-v9');assert.equal(calls,0);
+  assert.equal(await version.text(),'worker-v10');assert.equal(calls,0);
 });

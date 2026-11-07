@@ -6,12 +6,15 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.function.IntSupplier;
 
 /** Bounded, session-only mono PCM. No disk files or learning-record storage. */
 final class PracticeAudio {
     static final int RATE=16000, MAX_SAMPLES=RATE*25;
     private final ByteArrayOutputStream pcm=new ByteArrayOutputStream();
     private final long started;
+    private final int expectedWords;
+    private final IntSupplier heardWords;
     private long lastVoice;
     private double noise=100;
     private final ArrayList<Double> initialNoise=new ArrayList<>();
@@ -20,7 +23,8 @@ final class PracticeAudio {
     private boolean calibrated;
     private int voiceFrames;
     private boolean speech;
-    PracticeAudio(long started){this.started=started;}
+    PracticeAudio(long started){this(started,0,null);}
+    PracticeAudio(long started,int expectedWords,IntSupplier heardWords){this.started=started;this.expectedWords=Math.max(0,Math.min(40,expectedWords));this.heardWords=heardWords;}
     void append(short[] samples,int count,long now){
         int n=Math.min(count,(MAX_SAMPLES*2-pcm.size())/2);double energy=0;
         for(int i=0;i<n;i++){short sample=samples[i];pcm.write(sample&255);pcm.write((sample>>8)&255);energy+=(double)sample*sample;}
@@ -63,7 +67,13 @@ final class PracticeAudio {
         return false;
     }
     boolean hasSpeech(){return speech;}
-    boolean shouldStop(long now){return pcm.size()>=MAX_SAMPLES*2||now-started>=25000||(!speech&&now-started>=7000)||(speech&&now-lastVoice>=1400);}
+    boolean shouldStop(long now){
+        int heard=heardWords==null?0:heardWords.getAsInt();
+        // Only real partial/final ASR words enable the fast tail. An incomplete
+        // phrase keeps more room for a child's pause and its next segment.
+        long quiet=expectedWords>0&&heard>0?(heard>=expectedWords?650:2200):1400;
+        return pcm.size()>=MAX_SAMPLES*2||now-started>=25000||(!speech&&now-started>=7000)||(speech&&now-lastVoice>=quiet);
+    }
     byte[] pcm(){return pcm.toByteArray();}
     static byte[] wav(byte[] pcm){
         if(pcm.length>MAX_SAMPLES*2||(pcm.length&1)!=0)throw new IllegalArgumentException("Invalid PCM length");

@@ -232,7 +232,7 @@ test('a correct or incorrect streamed answer automatically plays the real refere
   h.finish(heard);await pending;await h.flush();
   assert.equal(h.run('autoDrill.results[0].ok'),correct);assert.equal(h.sources.filter(s=>s.started).length,1);assert.equal(h.htmlPlays,0);
   assert.equal(h.requests.length,1,'prefetch and automatic playback share the same MP3 request');assert.equal(h.requests[0].searchParams.get('text'),'Can I get some water?');
-  assert.equal(JSON.stringify(h.native.filter(call=>call.action==='streamPractice').map(call=>call.data)),'[{}]','recognition gets no reference answer');
+  const captureData=h.native.filter(call=>call.action==='streamPractice').map(call=>call.data);assert.ok(captureData.length);for(const data of captureData){assert.deepEqual(Object.keys(data),['expectedWords']);assert.ok(Number.isInteger(data.expectedWords));assert.equal(Object.values(data).some(v=>typeof v==='string'),false,'only a local length hint, never an answer phrase, reaches the native end detector');}
   h.run("autoDrillFinish('Can I get some water?',{})");await h.flush();assert.equal(h.sources.length,1,'a duplicate result cannot speak twice');
   h.elements.get('#answerListen').onclick();await h.flush();assert.equal(h.sources.filter(s=>s.started).length,2);assert.equal(h.sources[0].stopped,true);assert.equal(h.requests.length,1);
   h.elements.get('#answerLoop').onclick();await h.flush();assert.equal(h.sources.filter(s=>s.started).length,3);assert.equal(h.sources[1].stopped,true);assert.ok(h.run('answerLoopTimer'));

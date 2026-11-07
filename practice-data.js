@@ -583,9 +583,9 @@ function practiceTranscriptText(data,meta,refText=''){
 }
 // Short practice answers share one deadline. A slow provider must not queue
 // another full timeout (or a second Azure attempt) before returning a result.
-function sttPreferAzure(body,ctype){
+function sttPreferAzure(body,ctype,options={}){
   return new Promise((resolve,reject)=>{
-    const controllers=new Set(),backupAllowed=STT_SOFT&&Date.now()>_sttSoftOff;
+    const controllers=new Set(),backupAllowed=!options.azureOnly&&STT_SOFT&&Date.now()>_sttSoftOff;
     let settled=false,primaryDone=false,backupStarted=false,backupDone=false,backupTimer,deadline;
     let failure=new Error('음성 인식 연결을 확인해주세요. 다시 말해주세요.');
     const finish=(result,error)=>{
@@ -638,7 +638,7 @@ async function sttRecognize(raw, actualMime,options={}){
   }
   // Android supplies a complete WAV. Transcribe it on the existing server,
   // bypassing device SpeechRecognizer audio-source implementations entirely.
-  if(options.preferAzure)return sttPreferAzure(body,ctype);
+  if(options.preferAzure)return sttPreferAzure(body,ctype,options);
   const send=async path=>{
     const controller=new AbortController();
     const receive=async()=>{const r=await fetch(PROXY_URL+path,{method:'POST',headers:{'Content-Type':ctype},body,signal:controller.signal});return new Response(await r.arrayBuffer(),{status:r.status,headers:r.headers});};

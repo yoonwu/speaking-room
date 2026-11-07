@@ -38,6 +38,8 @@ final class PracticeStreaming {
     }
     void finishInput(){
         if(terminal.get()||inputEnded)return;inputEnded=true;
+        // Wake an idle writer immediately; if full, queued PCM already wakes it.
+        queue.offer(new byte[0]);
         try{deadline.schedule(new TimerTask(){@Override public void run(){complete("","말소리 인식 응답이 늦어요. 다시 말해주세요.",true);}},finishWaitMillis);}catch(IllegalStateException ignored){}
     }
     void cancel(){if(terminal.compareAndSet(false,true)){deadline.cancel();queue.clear();abort();}}
@@ -65,7 +67,7 @@ final class PracticeStreaming {
                 while(!terminal.get()){
                     if(inputEnded&&queue.isEmpty()){allInputWritten=true;break;}
                     byte[] frame=queue.poll(100,TimeUnit.MILLISECONDS);
-                    if(frame!=null){out.write(frame);out.flush();}
+                    if(frame!=null){if(frame.length>0){out.write(frame);out.flush();}}
                     else if(inputEnded){allInputWritten=true;break;}
                 }
             }catch(IOException e){writeFailure=e;}
