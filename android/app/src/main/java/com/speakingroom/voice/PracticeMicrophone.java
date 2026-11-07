@@ -9,7 +9,7 @@ import java.util.function.IntSupplier;
 
 /** Releases the mic before recognition starts, preventing competing audio captures. */
 final class PracticeMicrophone {
-    interface Completion{void accept(byte[] pcm,boolean speech,String error);}
+    interface Completion{void accept(byte[] pcm,boolean speech,String error,PracticeAudio.Timing timing);}
     interface Frames{void accept(short[] pcm,int count);}
     private final Handler main=new Handler(Looper.getMainLooper());
     private final Object lifecycle=new Object();
@@ -25,7 +25,7 @@ final class PracticeMicrophone {
         start(context,frames,ready,expectedWords,null,completion);
     }
     void start(Context context,Frames frames,Runnable ready,int expectedWords,IntSupplier heardWords,Completion completion){
-        if(context.checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){completion.accept(null,false,"마이크 사용을 허용해주세요.");return;}
+        if(context.checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){completion.accept(null,false,"마이크 사용을 허용해주세요.",null);return;}
         new Thread(()->{
             AudioRecord capture=null;PracticeAudio clip=new PracticeAudio(SystemClock.elapsedRealtime(),expectedWords,heardWords);String error=null;
             try{
@@ -45,8 +45,8 @@ final class PracticeMicrophone {
                 }
             }catch(Exception e){if(!stopped)error="녹음을 시작하지 못했어요. 다른 앱의 마이크 사용을 멈추고 다시 말해주세요.";}
             finally{synchronized(lifecycle){if(capture!=null){try{capture.stop();}catch(Exception ignored){}try{capture.release();}catch(Exception ignored){}}recorder=null;}}
-            final String failure=error;byte[] pcm=clip.pcm();boolean speech=clip.hasSpeech();
-            main.post(()->{if(!cancelled)completion.accept(pcm,speech,failure);});
+            final String failure=error;byte[] pcm=clip.pcm();boolean speech=clip.hasSpeech();PracticeAudio.Timing timing=clip.timing();
+            main.post(()->{if(!cancelled)completion.accept(pcm,speech,failure,timing);});
         },"practice-microphone").start();
     }
     void stop(){synchronized(lifecycle){stopped=true;AudioRecord current=recorder;if(current!=null)try{current.stop();}catch(Exception ignored){}}}

@@ -1,9 +1,9 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'../..');
-function setup(){
+function setup(nativeStatus={}){
  const elements=new Map(),calls=[];const el=()=>({hidden:false,textContent:'',onclick:null,setAttribute(){}});
  const get=id=>{if(!elements.has(id))elements.set(id,el());return elements.get(id);};
- const events={},context={window:{addEventListener(name,fn){events[name]=fn;},SpeakingRoomNative:{postMessage(raw){const m=JSON.parse(raw);if(m.action!=='status')calls.push(m);context.window.SpeakingRoomNative.onmessage({data:JSON.stringify({id:m.id,ok:true,result:m.action==='status'?{ready:true,connected:true}: {}})});}}},document:{getElementById:get,addEventListener(name,fn){events[name]=fn;}},setTimeout:()=>1,clearTimeout(){},state:{scn:{},convo:[],busy:false},curScreen:'talk',TTS:{cancel(){}},svStop(){},stopMicrophone(){},rolePrompt:()=> 'scenario',stripUsedMarker:raw=>({clean:raw.split('⟦')[0]}),addMeTurn:t=>calls.push(['user',t]),addCoachTurn:(t,speak)=>calls.push(['assistant',t,speak]),setBusy:b=>{context.state.busy=b;},goToSetup(){context.curScreen='setup';context.state.scn=null;}};
+ const events={},context={window:{addEventListener(name,fn){events[name]=fn;},SpeakingRoomNative:{postMessage(raw){const m=JSON.parse(raw);if(m.action!=='status')calls.push(m);context.window.SpeakingRoomNative.onmessage({data:JSON.stringify({id:m.id,ok:true,result:m.action==='status'?{ready:true,connected:true,...nativeStatus}: {}})});}}},document:{getElementById:get,addEventListener(name,fn){events[name]=fn;}},setTimeout:()=>1,clearTimeout(){},state:{scn:{},convo:[],busy:false},curScreen:'talk',TTS:{cancel(){}},svStop(){},stopMicrophone(){},rolePrompt:()=> 'scenario',stripUsedMarker:raw=>({clean:raw.split('⟦')[0]}),addMeTurn:t=>calls.push(['user',t]),addCoachTurn:(t,speak)=>calls.push(['assistant',t,speak]),setBusy:b=>{context.state.busy=b;},goToSetup(){context.curScreen='setup';context.state.scn=null;}};
  vm.runInNewContext(fs.readFileSync(path.join(root,'android-native.js'),'utf8'),context);return {context,elements,calls,events};
 }
 test('native voice updates the same conversation once without duplicate web speech',()=>{const {context,calls}=setup(),events=JSON.stringify([{id:1,kind:'user',text:'I ordered two slices.'},{id:2,kind:'assistant',raw:'Let me check.⟦USED:ordered⟧'}]);context.window.srNativeEvents(events);context.window.srNativeEvents(events);assert.equal(context.state.convo.length,2);assert.equal(calls.filter(c=>c[0]==='assistant').length,1);assert.equal(calls.find(c=>c[0]==='assistant')[2],false);});
@@ -17,4 +17,17 @@ test('capture completion is tied to the pending native request and cannot fire t
  const {context}=setup();let message,count=0;context.window.SpeakingRoomNative.postMessage=raw=>message=JSON.parse(raw);
  const pending=context.window.srNativeRequest('streamPractice',{},()=>count++);context.window.srPracticeCaptured('unknown');assert.equal(count,0);context.window.srPracticeCaptured(message.id);context.window.srPracticeCaptured(message.id);assert.equal(count,1);
  context.window.SpeakingRoomNative.onmessage({data:JSON.stringify({id:message.id,ok:true,result:{text:'Actual transcript'}})});assert.equal((await pending).text,'Actual transcript');context.window.srPracticeCaptured(message.id);assert.equal(count,1);
+});
+
+test('background preparation and real speech timing require their own advertised native capabilities',async()=>{
+ const fresh=setup({practiceRealtimePreparation:true,practiceBackgroundPreparation:true,practiceSpeechTiming:true});await Promise.resolve();await Promise.resolve();
+ assert.equal(fresh.context.window.srNativePracticeRealtimePreparation,true);assert.equal(fresh.context.window.srNativePracticeBackgroundPreparation,true);assert.equal(fresh.context.window.srNativePracticeSpeechTiming,true);
+ const legacy=setup({practiceRealtimePreparation:true});await Promise.resolve();await Promise.resolve();assert.equal(legacy.context.window.srNativePracticeRealtimePreparation,true);assert.equal(legacy.context.window.srNativePracticeBackgroundPreparation,false);assert.equal(legacy.context.window.srNativePracticeSpeechTiming,false);
+});
+
+test('native capture metadata passes through unchanged while legacy answers gain no invented timing',async()=>{
+ const {context}=setup();let message;context.window.SpeakingRoomNative.postMessage=raw=>message=JSON.parse(raw);
+ const recorded=context.window.srNativeRequest('recordPractice');context.window.SpeakingRoomNative.onmessage({data:JSON.stringify({id:message.id,ok:true,result:{audioBase64:'actual-pcm',speechStartOffsetMs:0,captureDurationMs:940}})});
+ const result=await recorded;assert.equal(result.speechStartOffsetMs,0);assert.equal(result.captureDurationMs,940);
+ const legacy=context.window.srNativeRequest('recognize');context.window.SpeakingRoomNative.onmessage({data:JSON.stringify({id:message.id,ok:true,result:{text:'Actual text'}})});assert.equal('speechStartOffsetMs' in await legacy,false);
 });

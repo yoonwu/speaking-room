@@ -98,6 +98,25 @@ public class PracticeAudioTest {
         for(long now=2220;now<=4200;now+=20){clip.append(new short[320],320,now);assertFalse(clip.shouldStop(now));}assertTrue(clip.shouldStop(4400));
     }
     @Test public void aTranscriptWithoutRealVoiceDoesNotBypassTheNoSpeechTimeout(){
-        PracticeAudio clip=new PracticeAudio(0,5,()->5);clip.append(new short[320],320,660);assertFalse(clip.shouldStop(660));assertFalse(clip.hasSpeech());assertTrue(clip.shouldStop(7000));
+        PracticeAudio clip=new PracticeAudio(0,5,()->5);clip.append(new short[320],320,660);assertFalse(clip.shouldStop(660));assertFalse(clip.hasSpeech());assertNull(clip.timing());assertTrue(clip.shouldStop(7000));
+    }
+    @Test public void speechOnsetUsesRecordedSamplesRatherThanReadOrRecognitionCallbackDelay(){
+        PracticeAudio clip=new PracticeAudio(100000);short[] voice=new short[320];Arrays.fill(voice,(short)2000);
+        for(int i=0;i<10;i++)clip.append(new short[320],320,100020+i*20L);
+        clip.append(voice,320,110000);assertNull("One loud frame is not confirmed speech",clip.timing());
+        clip.append(voice,320,120000);PracticeAudio.Timing timing=clip.timing();assertNotNull(timing);assertEquals(200,timing.speechStartOffsetMs);assertEquals(240,timing.captureDurationMs);
+    }
+    @Test public void immediateConfirmedSpeechHasAValidZeroOffsetThroughCalibration(){
+        PracticeAudio clip=new PracticeAudio(5000);voice(clip,5020,5800);PracticeAudio.Timing timing=clip.timing();assertNotNull(timing);assertEquals(0,timing.speechStartOffsetMs);assertEquals(800,timing.captureDurationMs);
+    }
+    @Test public void anIsolatedClickCannotBeReusedAsALaterSpeechOnset(){
+        PracticeAudio clip=new PracticeAudio(0);short[] loud=new short[320];Arrays.fill(loud,(short)2000);clip.append(loud,320,20);
+        for(long now=40;now<=200;now+=20)clip.append(new short[320],320,now);
+        assertNull(clip.timing());clip.append(loud,320,220);clip.append(loud,320,240);assertEquals(200,clip.timing().speechStartOffsetMs);
+    }
+    @Test public void initialAmbientNoiseDoesNotGetReportedAsTheLaterVoiceStart(){
+        PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320],voice=new short[320];Arrays.fill(noise,(short)700);Arrays.fill(voice,(short)4000);
+        for(long now=20;now<=600;now+=20)clip.append(noise,320,now);assertFalse(clip.hasSpeech());assertNull(clip.timing());
+        clip.append(voice,320,620);clip.append(voice,320,640);assertEquals(600,clip.timing().speechStartOffsetMs);assertEquals(640,clip.timing().captureDurationMs);
     }
 }

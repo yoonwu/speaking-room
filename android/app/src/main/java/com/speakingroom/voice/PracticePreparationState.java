@@ -5,6 +5,7 @@ final class PracticePreparationState {
     private boolean preparing,ready;
     private int words;
     boolean isPreparing(){return preparing;}
+    boolean pendingMatches(int expectedWords){return preparing&&words==clamp(expectedWords);}
     boolean matches(int expectedWords){return ready&&words==clamp(expectedWords);}
     boolean begin(int expectedWords){
         if(preparing)return false;

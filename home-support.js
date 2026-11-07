@@ -16,25 +16,32 @@ function learningProfileList(){const saved=learningRawGet(LEARNING_PROFILES,{});
 function learningProfileCreate(name){name=String(name||'').trim().slice(0,12);if(!name)throw Error('학습자 이름을 입력해주세요.');const id='p_'+learningNewAttemptId(),profiles=learningRawGet(LEARNING_PROFILES,{})||{};profiles[id]={name,createdAt:Date.now()};learningRawSet(LEARNING_PROFILES,profiles);learningRawSet(learningProfileKey('speakingroom:name',id),name);return id;}
 function learningProfileSwitch(id){if(!learningProfileList().some(p=>p.id===id))throw Error('학습자를 찾지 못했어요.');if(id===learningProfileId())return id;if(typeof goToSetup==='function')goToSetup();else{if(typeof stopMicrophone==='function')stopMicrophone();if(typeof svStop==='function')svStop();}clearTimeout(supportSyncTimer);learningRawSet(LEARNING_ACTIVE,id);if(typeof learningProfileChanged==='function')learningProfileChanged(id);if(typeof renderHome==='function')renderHome();return id;}
 function learningSentenceKey(en){return String(en||'').toLowerCase().replace(/’/g,"'").replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();}
+function learningResponseMs(value){return Number.isFinite(value)&&value>=0?value:null;}
+function learningEventFast(event){return !!(event.ok&&event.fast===true&&event.timingVersion===1&&event.speedEligible===true&&event.withinThreeSeconds===true&&learningResponseMs(event.responseMs)!==null&&event.responseMs<=3000&&!event.typed&&!event.intro&&!event.hinted&&!event.recall&&!event.retry);}
+function learningEmptyMastery(){return {en:'',ko:'',score:0,seen:0,correct:0,misses:0,missStreak:0,fastCorrect:0,fastStreak:0,lastResponseMs:null,lastFastResponseMs:null,fullyLearned:false,lastT:0};}
 let learningMasteryCache={};
 function learningMasteryRows(profileId=learningProfileId()){
  const raw=localStorage.getItem(learningProfileKey(SENTENCE_MASTERY,profileId))||'';
  if(learningMasteryCache.raw===raw&&learningMasteryCache.profileId===profileId)return learningMasteryCache.rows;
  let data;try{data=JSON.parse(raw);}catch(_){data={};}const rows=Object.create(null);
  for(const event of Object.values(data?.events||{}).filter(e=>e&&typeof e.en==='string'&&Number.isFinite(e.t)&&Number.isFinite(e.delta)).sort((a,b)=>a.t-b.t||(a.order||0)-(b.order||0)||String(a.id).localeCompare(String(b.id)))){
-  const key=learningSentenceKey(event.en);if(!key)continue;const row=rows[key]||(rows[key]={score:0,seen:0,correct:0,misses:0,missStreak:0,lastT:0});
-  row.score=Math.max(0,Math.min(100,row.score+Math.max(-20,Math.min(20,event.delta))));row.seen++;if(event.ok){row.correct++;row.missStreak=0;}else{row.misses++;row.missStreak++;}row.lastT=Math.max(row.lastT,event.t);
+  const key=learningSentenceKey(event.en);if(!key)continue;const row=rows[key]||(rows[key]=learningEmptyMastery()),fast=learningEventFast(event);
+  row.en=event.en;if(event.ko)row.ko=event.ko;
+  row.score=Math.max(0,Math.min(100,row.score+Math.max(-20,Math.min(20,event.delta))));row.seen++;if(event.ok){row.correct++;row.missStreak=0;}else{row.misses++;row.missStreak++;}
+  row.fastStreak=fast?row.fastStreak+1:0;if(fast){row.fastCorrect++;row.lastFastResponseMs=event.responseMs;}
+  row.lastResponseMs=learningResponseMs(event.responseMs);row.fullyLearned=row.score>80&&row.fastStreak>=3;row.lastT=Math.max(row.lastT,event.t);
  }
  learningMasteryCache={raw,profileId,rows};return rows;
 }
-function learningSentenceMastery(en,profileId=learningProfileId()){return {...(learningMasteryRows(profileId)[learningSentenceKey(en)]||{score:0,seen:0,correct:0,misses:0,missStreak:0,lastT:0})};}
+function learningSentenceMastery(en,profileId=learningProfileId()){return {...(learningMasteryRows(profileId)[learningSentenceKey(en)]||learningEmptyMastery())};}
+function learningLearnedSentences(profileId=learningProfileId()){return Object.values(learningMasteryRows(profileId)).filter(row=>row.fullyLearned).map(row=>({...row})).sort((a,b)=>b.lastT-a.lastT||a.en.localeCompare(b.en));}
 function learningSentenceWeight(en,now=Date.now()){
  const row=learningSentenceMastery(en);if(!row.seen)return 4;
  const days=Math.max(0,(now-row.lastT)/86400000);
- if(row.score>80)return .08+Math.min(3,Math.max(0,days-7)/15);
- return (1.2+(80-row.score)/80*1.8)*(1+Math.min(5,row.missStreak)*.6+Math.min(5,row.misses)*.1);
+ if(row.fullyLearned)return .08+Math.min(3,Math.max(0,days-7)/15);
+ return (1.2+(80-Math.min(80,row.score))/80*1.8)*(1+Math.min(5,row.missStreak)*.6+Math.min(5,row.misses)*.1);
 }
-function learningRecordMastery(event,id){const data=hGet(SENTENCE_MASTERY,{version:1,events:{}})||{},events=data.events||{};if(events[id])return;const en=String(event.en||'');if(!en)return;events[id]={id,en,t:event.t,order:event.order||0,ok:!!event.ok,retry:!!event.retry,delta:event.ok?(event.retry?4:event.perfect&&!event.intro?18:10):-20};hSet(SENTENCE_MASTERY,{version:1,events});}
+function learningRecordMastery(event,id){const data=hGet(SENTENCE_MASTERY,{version:1,events:{}})||{},events=data.events||{};if(events[id])return;const en=String(event.en||'');if(!en)return;events[id]={id,en,ko:event.ko||'',t:event.t,order:event.order||0,ok:!!event.ok,retry:!!event.retry,intro:!!event.intro,hinted:!!event.hinted,recall:!!event.recall,typed:!!event.typed,timingVersion:event.timingVersion||0,responseMs:learningResponseMs(event.responseMs),withinThreeSeconds:event.withinThreeSeconds===true,speedEligible:event.speedEligible===true,fast:learningEventFast(event),delta:event.ok?(event.retry?4:learningEventFast(event)?18:10):-20};hSet(SENTENCE_MASTERY,{version:1,events});}
 const AL_KEY="speakingroom:autolvl";
 const AL_SKILLS=["word","listen","block","speed","speak"];
 const AL_TOAST={
@@ -167,7 +174,7 @@ function getAutoLevels(){
 }
 const PRACTICE_LOG='speakingroom:practice_log_v1';
 const SUPPORT_DAY=()=>new Date().toLocaleDateString('sv-SE');
-const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','speakingroom:name',PRACTICE_LOG,'speakingroom:compact_quest','speakingroom:practice_xpbase',SENTENCE_MASTERY,'speakingroom:pronunciation_mode_v1'];
+const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','speakingroom:name',PRACTICE_LOG,'speakingroom:compact_quest','speakingroom:practice_xpbase',SENTENCE_MASTERY,'speakingroom:pronunciation_mode_v1','speakingroom:answer_vocab'];
 let supportSyncBusy=false;
 function supportLog(){return hGet(PRACTICE_LOG,{})||{};}
 function supportEvents(){return Object.values(supportLog()).filter(e=>e&&Number.isFinite(e.t)).sort((a,b)=>a.t-b.t);}
@@ -189,25 +196,26 @@ function recordPractice({it,heard,ok,perfect,meta={},started=Date.now(),mode,att
   if(log[id]){learningRecordMastery(log[id],id);it._earnedXP=0;return {duplicate:true,xp:0};}
   const previous=Object.values(log).filter(e=>e&&e.rewardVersion===2&&e.attemptGroupId===group);
   const isRetry=previous.length>0||retry;
+  const responseMs=learningResponseMs(meta.responseMs),fast=!!(ok&&perfect&&meta.speedEligible===true&&meta.withinThreeSeconds===true&&responseMs!==null&&responseMs<=3000&&!meta.typed&&!it._intro&&!it._hintUsed&&!it.recall&&!isRetry);
   const firstWrong=previous.some(e=>e.firstWrong)||(!previous.length&&!ok);
-  const cap=previous.length?Math.min(...previous.map(e=>Number(e.rewardCap)||0)):(firstWrong||isRetry?5:ok?15+(perfect?5:0):5);
+  const cap=previous.length?Math.min(...previous.map(e=>Number(e.rewardCap)||0)):(firstWrong||isRetry?5:ok?(fast?30:15):5);
   const awarded=previous.reduce((n,e)=>n+Math.max(0,Number(e.xp)||0),0);
-  const xp=ok?Math.max(0,Math.min(cap-awarded,firstWrong||isRetry?5:15+(perfect?5:0))):0;
-  const reaction=meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
+  const xp=ok?Math.max(0,Math.min(cap-awarded,firstWrong||isRetry?5:fast?30:15)):0;
+  const reaction=responseMs!==null&&!meta.typed?responseMs/1000:meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   const order=Object.values(log).reduce((n,e)=>Math.max(n,Number(e?.order)||0),0)+1;
-  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ok,perfect,intro:!!it._intro,retry:isRetry,attemptGroupId:group,rewardVersion:2,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
-  if(perfect&&!it._intro&&!it.recall&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
+  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ko:it.ex.ko||'',ok,perfect:fast,intro:!!it._intro,hinted:!!it._hintUsed,recall:!!it.recall,retry:isRetry,timingVersion:1,responseMs,withinThreeSeconds:meta.withinThreeSeconds===true,speedEligible:meta.speedEligible===true,fast,attemptGroupId:group,rewardVersion:2,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
+  if(fast&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
   const before=practiceReward();
   if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
   const bonus=mode==='기본표현'&&supportToday().travel>=10&&!supportEvents().some(e=>new Date(e.t).toLocaleDateString('sv-SE')===SUPPORT_DAY()&&e.dailyBonus)?25:0;
   if(bonus)log['dailyBonus:'+SUPPORT_DAY()]={t:Date.now(),kind:'dailyBonus',xp:0,dailyBonus:bonus};
-  if(perfect&&!it._intro&&!it.recall&&heard){const expected=new Set(practiceWords(it.ex.en));log[id].words=practiceWords(heard).filter(w=>expected.has(w));}
-  hSet(PRACTICE_LOG,log);learningRecordMastery(log[id],id);const after=practiceReward();it._earnedXP=xp;
-  it._rewardMessage='+'+xp+' XP'+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
-  autoLvlRecord('speak',perfect?'perfect':ok?'ok':'miss');
-  if(reaction!==null&&!meta.typed)autoLvlRecord('speed',perfect&&reaction<=3?'perfect':ok?'ok':'miss');
+  if(fast&&heard){const expected=new Set(practiceWords(it.ex.en));log[id].words=practiceWords(heard).filter(w=>expected.has(w));}
+  hSet(PRACTICE_LOG,log);learningRecordMastery(log[id],id);const after=practiceReward();it._earnedXP=xp;it._mastery=learningSentenceMastery(it.ex.en);
+  it._rewardMessage='+'+xp+' XP'+(fast?' · ⚡ 3초 안에 바로 말했어요':'')+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
+  autoLvlRecord('speak',fast?'perfect':ok?'ok':'miss');
+  if(reaction!==null&&!meta.typed)autoLvlRecord('speed',fast?'perfect':ok?'ok':'miss');
   supportQueueSync();
-  return {xp,bonus,mastery:learningSentenceMastery(it.ex.en)};
+  return {xp,bonus,fast,mastery:it._mastery};
 }
 let supportTalkAt=Date.now();
 function recordAiPractice(){const log=supportLog(),id=Date.now()+'-'+Math.random();log[id]={t:Date.now(),kind:'talk',seconds:Math.min(90,Math.max(1,(Date.now()-supportTalkAt)/1000))};supportTalkAt=Date.now();hSet(PRACTICE_LOG,log);supportBump('talk');supportQueueSync();}
@@ -282,8 +290,10 @@ function renderSupportHome(){
   $('#growthDetail').onclick=openGrowth;$('#learnedWords').onclick=openLearnedWords;
   $('#syncSummary').textContent=learningLocalGet('speakingroom:sync_nick')?'연결됨 · 기록 관리 ›':'기기 간 이어서 ›';
 }
-function openGrowth(){const ov=openSheet('실력 · 성장 기록'),s=supportStats(),voice=s.voice.slice(-20);const reaction=voice.length?voice.reduce((n,e)=>n+e.reaction,0)/voice.length:null;
-  ov.querySelector('#sheetContent').innerHTML=`<div class="stat-grid"><div class="stat"><span class="se">🎯</span><div><div class="sv">${s.accuracy===null?'—':s.accuracy+'%'}</div><div class="sl">누적 정답률</div></div></div><div class="stat"><span class="se">⚡</span><div><div class="sv">${reaction===null?'—':reaction.toFixed(1)+'초'}</div><div class="sl">최근 말 시작 시간</div></div></div></div><p class="muted">말 시작 시간은 음성 입력의 최근 20회 기준이며, 상황을 읽는 예상 시간을 제외한 값이에요. 직접 입력은 포함하지 않아요.</p><div class="prof-h">표현별 숙련도</div>${TRAVEL_FRAMES.map(f=>{const r=travelStat(f.id),pct=Math.min(100,(r.streak||0)/3*100);return `<div class="mastery-row"><div><b>${escapeHtml(f.frame)}</b><small>${r.ok||0}번 정답 · ${r.miss||0}번 오답</small></div><div class="mastery-track"><i style="width:${pct}%"></i></div></div>`;}).join('')}`;
+function openGrowth(){const ov=openSheet('실력 · 성장 기록'),s=supportStats(),voice=s.events.filter(e=>e.timingVersion===1&&learningResponseMs(e.responseMs)!==null&&!e.typed).slice(-20);const reaction=voice.length?voice.reduce((n,e)=>n+e.responseMs/1000,0)/voice.length:null;
+  const learned=learningLearnedSentences(),growing=Object.values(learningMasteryRows()).filter(row=>row.seen&&!row.fullyLearned).sort((a,b)=>b.lastT-a.lastT||a.en.localeCompare(b.en));
+  const rowHtml=row=>`<div class="mastery-row"><div><b lang="en">${escapeHtml(row.en)}</b>${row.ko?`<small>${escapeHtml(row.ko)}</small>`:''}<small>숙련도 ${row.score} / 100 · 연속 ${row.fastStreak}회 3초 정답${row.lastResponseMs===null?'':` · 최근 ${(row.lastResponseMs/1000).toFixed(1)}초`}</small></div><div class="mastery-track" role="progressbar" aria-label="문장 숙련도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${row.score}"><i style="width:${row.score}%"></i></div></div>`;
+  ov.querySelector('#sheetContent').innerHTML=`<div class="stat-grid"><div class="stat"><span class="se">🎯</span><div><div class="sv">${s.accuracy===null?'—':s.accuracy+'%'}</div><div class="sl">누적 정답률</div></div></div><div class="stat"><span class="se">⚡</span><div><div class="sv">${reaction===null?'—':reaction.toFixed(1)+'초'}</div><div class="sl">최근 말 시작 시간</div></div></div></div><p class="muted">최근 음성 답변 20회의 기록이에요. 마이크 준비와 음성 인식을 기다린 시간, 직접 입력은 3초 기록에 포함하지 않아요.</p><section id="fullyLearnedSentences"><div class="prof-h">⚡ 완전히 익힌 문장</div><div class="word-total">${learned.length}<small>개 문장이 바로 나와요</small></div><p class="muted">문장을 보지 않고 3초 안에 바로 말한 정답이 연속 3회 이상이고, 숙련도가 80을 넘으면 여기에 쌓여요. 오래 걸리거나 틀리면 다시 연습 중으로 돌아가요.</p>${learned.length?learned.map(rowHtml).join(''):'<p class="empty">짧은 한마디를 반복해보세요. 바로 꺼낸 문장이 여기에 쌓여요.</p>'}</section><div class="prof-h">입에 붙이는 중인 문장</div>${growing.length?growing.map(rowHtml).join(''):'<p class="muted">기본표현을 연습하면 문장별 숙련도가 보여요.</p>'}`;
 }
 function openProfile(){const ov=openSheet('내 프로필'),s=supportStats();ov.querySelector('#sheetContent').innerHTML=`<div class="profile-heading"><div class="prof-av">${escapeHtml(supportName().slice(0,1))}</div><div><b>${escapeHtml(supportName())}님</b><small>Lv.${practiceReward().level} · ${practiceReward().total} XP · ${s.total}번 연습 · 기본표현 D${alGet().speak}</small></div></div><label class="field-label" for="learningProfile">학습자</label><select id="learningProfile" class="auto-input">${learningProfileList().map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===learningProfileId()?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select><p class="muted">학습자마다 학습 기록과 숙련도를 따로 저장해요. 기존 기록은 ‘기존 학습자’에 그대로 남아요.</p><input id="newLearningProfile" class="auto-input" maxlength="12" placeholder="새 학습자 이름"><button id="addLearningProfile" class="quiet">학습자 추가</button><p id="learningProfileStatus" class="muted" role="status"></p><label class="field-label" for="profileName">앱에서 부를 이름</label><input id="profileName" class="auto-input" maxlength="12" value="${escapeHtml(supportName())}"><button id="saveName" class="primary">이름 저장</button><section id="pronunciationSettings"></section><div class="prof-h">나의 영어</div><button id="profileGrowth" class="tut-li">🌱 실력 · 성장 기록 <span>›</span></button><button id="profileRank" class="tut-li">🏆 랭킹 <span>›</span></button><div class="prof-h">계정 · 기기 연동</div><button id="profileSync" class="tut-li">☁️ 기록 동기화 <span>›</span></button><div class="prof-h">시작 안내 · 튜토리얼</div><button id="profileGuide" class="tut-li">📖 처음 사용법 다시 보기 <span>›</span></button>`;
   ov.querySelector('#learningProfile').onchange=e=>{learningProfileSwitch(e.target.value);ov.remove();openProfile();};
@@ -296,7 +306,7 @@ const GUIDE=[['✈️','먼저 기본표현부터','상황을 읽고 영어로 �
 function openTutorial(){let index=0;let previousPose=null;const ov=openSheet('처음 사용법');const paint=()=>{const [ico,title,text]=GUIDE[index];ov.querySelector('#sheetContent').innerHTML=`<div class="guide-card"><div class="onb-badge">${ico}</div><div class="onb-dots">${GUIDE.map((_,i)=>`<span class="onb-dot ${i===index?'on':''}"></span>`).join('')}</div><small>${index+1} / ${GUIDE.length}</small><h3>${title}</h3><p class="guide-story">${text}</p></div><div class="guide-actions">${index?'<button id="guideBack" class="quiet">이전</button>':''}<button id="guideNext" class="primary">${index===GUIDE.length-1?'연습 시작하기':'다음'}</button></div>`;if(index)ov.querySelector('#guideBack').onclick=()=>{index--;paint();};ov.querySelector('#guideNext').onclick=()=>{if(index===GUIDE.length-1){hSet('speakingroom:compact_guide_seen',true);ov.remove();}else{index++;paint();}};};paint();}
 function supportMergeLog(a,b){const out={...a};for(const [k,v]of Object.entries(b||{}))if(v&&typeof v==='object'&&Number.isFinite(v.t))out[k]=v;return out;}
 function supportMergeTravel(a,b){const out={...a};for(const [k,v]of Object.entries(b||{})){if(!v||typeof v!=='object')continue;const own=out[k];if(!own){out[k]=v;continue;}const recent=(v.lastT||0)>(own.lastT||0)?v:own;out[k]={...recent,seen:Math.max(own.seen||0,v.seen||0),ok:Math.max(own.ok||0,v.ok||0),miss:Math.max(own.miss||0,v.miss||0),introduced:!!(v.introduced||own.introduced),used:[...new Set([...(own.used||[]),...(v.used||[])])]};}return out;}
-function supportApplySnapshot(data,profileId=learningProfileId()){if(profileId!==learningProfileId())return false;for(const key of SYNC_KEYS){if(typeof data[key]!=='string')continue;let remote;try{remote=JSON.parse(data[key]);}catch(_){continue;}const local=hGet(key,null);if(key===SENTENCE_MASTERY)remote={version:1,events:supportMergeLog(local?.events||{},remote?.events||{})};else if(key===PRACTICE_LOG)remote=supportMergeLog(local||{},remote);else if(key===TRAVEL_KEY)remote=supportMergeTravel(local||{},remote);else if(key===MISS_KEY){const out={...local};for(const [en,r]of Object.entries(remote||{}))if(r&&typeof r==='object'&&(!out[en]||(r.lastT||0)>(out[en].lastT||0)))out[en]=r;remote=out;for(const [en,r]of Object.entries(remote)){const f=(hGet(TRAVEL_KEY,{})||{})[r.fid];if(f&&(f.lastT||0)>=(r.lastT||0)&&(f.streak||0)>=3)delete remote[en];}}else if(key==='speakingroom:compact_quest'){if(local&&local.date===remote.date)remote={...remote,travel:Math.max(local.travel||0,remote.travel||0),miss:Math.max(local.miss||0,remote.miss||0),talk:Math.max(local.talk||0,remote.talk||0)};else if(local&&local.date>remote.date)remote=local;}else if(key==='speakingroom:practice_xpbase'){remote=Math.max(Number(local)||0,Number(remote)||0);}else if(key==='speakingroom:autolvl'&&local){remote={...local,...remote};}hSet(key,remote);}return true;}
+function supportApplySnapshot(data,profileId=learningProfileId()){if(profileId!==learningProfileId())return false;for(const key of SYNC_KEYS){if(typeof data[key]!=='string')continue;let remote;try{remote=JSON.parse(data[key]);}catch(_){continue;}const local=hGet(key,null);if(key===SENTENCE_MASTERY)remote={version:1,events:supportMergeLog(local?.events||{},remote?.events||{})};else if(key===PRACTICE_LOG)remote=supportMergeLog(local||{},remote);else if(key===TRAVEL_KEY)remote=supportMergeTravel(local||{},remote);else if(key==='speakingroom:answer_vocab'){const out={...local};for(const [word,r]of Object.entries(remote||{}))if(/^[a-z]+$/.test(word)&&r&&typeof r==='object'){const old=out[word]||{},recent=(r.lastT||0)>(old.lastT||0)?r:old;out[word]={...r,...old,...recent,en:word,misses:Math.max(old.misses||0,r.misses||0),practiceCorrect:Math.max(old.practiceCorrect||0,r.practiceCorrect||0)};}remote=out;}else if(key===MISS_KEY){const out={...local};for(const [en,r]of Object.entries(remote||{}))if(r&&typeof r==='object'&&(!out[en]||(r.lastT||0)>(out[en].lastT||0)))out[en]=r;remote=out;for(const [en,r]of Object.entries(remote)){const f=(hGet(TRAVEL_KEY,{})||{})[r.fid];if(f&&(f.lastT||0)>=(r.lastT||0)&&(f.streak||0)>=3)delete remote[en];}}else if(key==='speakingroom:compact_quest'){if(local&&local.date===remote.date)remote={...remote,travel:Math.max(local.travel||0,remote.travel||0),miss:Math.max(local.miss||0,remote.miss||0),talk:Math.max(local.talk||0,remote.talk||0)};else if(local&&local.date>remote.date)remote=local;}else if(key==='speakingroom:practice_xpbase'){remote=Math.max(Number(local)||0,Number(remote)||0);}else if(key==='speakingroom:autolvl'&&local){remote={...local,...remote};}hSet(key,remote);}return true;}
 function supportCollect(){const data={};for(const key of SYNC_KEYS){const v=learningLocalGet(key);if(v!==null)data[key]=v;}return data;}
 function supportRankingSummary(){const s=supportStats(),now=Date.now(),week=s.events.filter(e=>e.t>=now-7*86400000),old=hGet('speakingroom:prof',{})||{};return {name:supportName(),xp:practiceReward().total,lv:practiceReward().level,week:learningRewardEvents(s.events).filter(e=>e.t>=now-7*86400000).reduce((n,e)=>n+e.xp,0),streak:s.streak,blocks:s.automatic,lvl:alGet().speak,mins:Math.round(week.reduce((n,e)=>n+(e.seconds||0),0)/60),allMins:Math.round(s.events.reduce((n,e)=>n+(e.seconds||0),0)/60)};}
 async function supportSync(nick){if(supportSyncBusy)throw Error('다른 동기화가 진행 중이에요.');const profileId=learningProfileId();supportSyncBusy=true;try{
@@ -330,9 +340,9 @@ const FEATURE_GUIDES={
  study:{icon:'✓',title:'골라서 연습',steps:[['이 표현만 자꾸 막히나요?','지금 필요한 표현, 입에 잘 안 붙는 표현만 골라봐요. 여러 개를 함께 선택할 수 있어요.'],['선택한 표현으로만 반복해요','연습하기를 누르고 문제 수를 고르면 체크한 표현만 나와요. 기본표현과 같은 방식으로 말하고, 틀린 문장은 다시 연습해요.']]},
  miss:{icon:'↻',title:'자주 틀리는 문장',steps:[['아까 못 꺼낸 말, 다시 해볼까요?','막혔던 문장은 내가 모아둘게요. 답을 읽는 데서 멈추지 말고, 이번엔 직접 꺼내봐요.'],['연속 3번 맞히면 졸업해요','틀린 문장 반복하기를 눌러 연습하세요. 한 문장을 연속 3번 맞히면 목록에서 빠져요.']]},
  ai:{icon:'💬',title:'AI 실전회화',steps:[['연습한 한마디로 대화를 이어봐요','상황을 고르면 상대가 먼저 말을 걸어요. 완벽한 문장을 만들려고 오래 고민하지 말고, 전하고 싶은 뜻부터 말해봐요.'],['막히면 도움을 받아요','막혔어요에서 예시 답변을, 내 표현 확인에서 교정을 볼 수 있어요. Android의 ChatGPT 연결과 음성 대화는 이 화면에서 사용해요.']]},
- growth:{icon:'🌱',title:'실력 · 성장 기록',steps:[['조금씩 쌓인 연습, 눈으로 볼까요?','오늘 꺼내본 말이 기록으로 남아요. 연습 횟수와 정답률, 연속 3번 맞혀 익숙해진 표현을 확인해봐요.'],['말 시작 시간은 음성 답변으로 봐요','최근 20회의 음성 답변을 기준으로 상황 읽는 예상 시간을 제외해 보여줘요. 직접 입력은 말 시작 시간에 포함하지 않아요.']]},
+ growth:{icon:'🌱',title:'실력 · 성장 기록',revision:3,steps:[['바로 나오는 문장이 쌓여요','문장별 숙련도와 3초 정답 기록을 확인해보세요. 숙련도가 80을 넘고 연속 3회 이상 바로 말하면 ‘완전히 익힌 문장’에 쌓여요.'],['천천히 떠올린 문장은 한 번 더','정답이어도 오래 걸리면 아직 입에 붙이는 중이에요. 마이크 준비와 음성 인식을 기다린 시간은 빼고, 내 목소리로 꺼낸 시간을 기록해요. 힌트·직접 입력·바로 재시도는 3초 정답에 포함하지 않아요.']]},
  words:{icon:'📚',title:'익숙해진 단어',steps:[['내가 직접 꺼낸 단어들이에요','예문에 나온 단어를 힌트 없이 맞힌 답변에서 3회 사용하면 여기에 쌓여요. 문장 속에서 직접 써본 단어를 확인해봐요.'],['아직 쌓이는 중인 단어도 보여요','1~2회 맞힌 단어와 3회 이상 맞힌 단어를 구분해서 볼 수 있어요. 답을 보고 따라 한 경우와 한 답변 안의 중복은 세지 않아요.']]},
- xp:{icon:'⭐',title:'학습 레벨 · 경험치',steps:[['꺼낸 한마디가 쌓여요','처음 정답이면 15 XP, 힌트 없이 맞히면 20 XP예요. 처음 틀린 문제는 다시 맞혀도 재시도 전체를 합쳐 최대 5 XP예요. 오늘 기본표현 10회의 +25 XP는 문제 점수와 별도로 받아요.'],['학습 레벨과 D 난이도는 달라요','학습 레벨은 연습량을 보여주고, 기본표현 D는 답변 결과에 맞춘 문장 난이도예요. 틀려도 얻은 XP와 학습 레벨은 줄지 않아요.']]},
+ xp:{icon:'⭐',title:'학습 레벨 · 경험치',revision:3,steps:[['바로 꺼낸 한마디엔 보너스','처음 정답이면 15 XP, 힌트 없이 3초 안에 바로 말한 정답은 30 XP예요. 처음 틀린 문제는 다시 맞혀도 재시도 전체를 합쳐 최대 5 XP예요. 오늘 기본표현 10회의 +25 XP는 문제 점수와 별도로 받아요.'],['학습 레벨과 숙련도는 달라요','학습 레벨은 쌓은 연습량을, 문장 숙련도는 바로 꺼내는 힘을 보여줘요. 틀려도 얻은 XP는 줄지 않지만 문장 숙련도는 내려가 다시 연습해요.']]},
  profile:{icon:'☺',title:'내 프로필',steps:[['나의 기록을 한곳에서 봐요','앱에서 부를 이름을 바꾸고, 학습 레벨과 경험치, 성장 기록을 확인할 수 있어요.'],['필요한 안내를 다시 볼 수 있어요','랭킹과 기록 동기화로 이동하거나 처음 사용법을 다시 열어 각 기능의 안내를 볼 수 있어요.']]},
  rank:{icon:'🏆',title:'랭킹',steps:[['함께 쌓은 기록을 봐요','이번 주와 누적 학습 시간, 익숙한 표현, 연속 학습 기록을 비교할 수 있어요.'],['기록 동기화로 참여해요','연결한 표시 이름과 학습 통계가 랭킹에 공개돼요. 내 기록을 연결하지 않아도 랭킹을 확인할 수 있어요.']]},
  sync:{icon:'☁️',title:'기록 동기화',steps:[['같은 닉네임으로 이어서 해요','다른 기기에서 같은 닉네임을 입력하면 기존 서버의 학습 기록을 불러와 합쳐요. 추측하기 어려운 별명을 사용하세요.'],['무엇이 저장되는지 확인해요','연결하면 학습 기록을 서버에 저장하고 표시 이름과 요약 통계를 랭킹에 공개해요. ChatGPT 로그인 정보와 대화 내용은 보내지 않아요. 자동 동기화를 꺼도 기존 기록은 남아 있어요.']]}

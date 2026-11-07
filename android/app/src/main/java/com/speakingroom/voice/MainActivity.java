@@ -35,7 +35,7 @@ public final class MainActivity extends Activity {
         getSharedPreferences("native", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         getSharedPreferences("plan", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         web = new WebView(this);
-        updater = new WebUpdater(this, 15);
+        updater = new WebUpdater(this, 16);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -91,7 +91,7 @@ public final class MainActivity extends Activity {
                 String action = m.getString("action"); JSONObject data = m.optJSONObject("data"); if (data == null) data = new JSONObject();
                 final JSONObject args = data;
                 switch (action) {
-                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName).put("practiceSpeech",true).put("practicePlayback",true).put("practiceStreaming",true).put("practiceMicReady",true).put("practiceRealtime",true).put("practiceRealtimePreparation",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
+                    case "status": reply(reply, id, new JSONObject().put("nativeVersion",getPackageManager().getPackageInfo(getPackageName(),0).versionName).put("practiceSpeech",true).put("practicePlayback",true).put("practiceStreaming",true).put("practiceMicReady",true).put("practiceRealtime",true).put("practiceRealtimePreparation",true).put("practiceBackgroundPreparation",true).put("practiceSpeechTiming",true).put("connected", plan.connected()).put("ready", ready()).put("account", plan.label()).put("running", VoiceService.running).put("webRevision",updater.revision()).put("updateStatus",updater.status()), null); break;
                     case "webupdate":
                         if(VoiceService.running) throw new IOException("음성 대화를 멈춘 뒤 업데이트해주세요.");
                         reply(reply,id,new JSONObject(),null); checkWebUpdate(true); break;
@@ -101,6 +101,7 @@ public final class MainActivity extends Activity {
                         final int preparedWords=Math.max(0,Math.min(40,args.optInt("expectedWords",0)));
                         Runnable preparePractice=()->practiceSpeech.prepareFast(preparedWords,error->replyPreparation(reply,requestId,error,true));
                         if(checkSelfPermission(Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){
+                            if(args.optBoolean("background",false)){replyPreparation(reply,requestId,null,false);break;}
                             if(pendingVoiceStart!=null)throw new IOException("마이크 허용을 기다리고 있어요.");
                             pendingVoiceStart=preparePractice;
                             pendingVoiceDenied=()->replyPreparation(reply,requestId,"마이크 사용을 허용해주세요.",false);
@@ -123,7 +124,7 @@ public final class MainActivity extends Activity {
                         final boolean fastPractice="streamPracticeFast".equals(action);
                         final boolean streamPractice="streamPractice".equals(action)||fastPractice;
                         final int expectedWords=Math.max(0,Math.min(40,args.optInt("expectedWords",0)));
-                        PracticeSpeech.Completion completed=(text,error,wav)->{try{JSONObject result=new JSONObject().put("text",text);if(wav!=null)result.put("audioBase64",android.util.Base64.encodeToString(wav,android.util.Base64.NO_WRAP));if(streamPractice&&wav!=null&&error!=null){result.put("streamError",error);reply(reply,requestId,result,null);}else reply(reply,requestId,result,error);}catch(Exception ignored){}};
+                        PracticeSpeech.Completion completed=(text,error,wav,timing)->{try{JSONObject result=new JSONObject().put("text",text);if(wav!=null)result.put("audioBase64",android.util.Base64.encodeToString(wav,android.util.Base64.NO_WRAP));if(timing!=null&&wav!=null)result.put("speechStartOffsetMs",timing.speechStartOffsetMs).put("captureDurationMs",timing.captureDurationMs);if(streamPractice&&wav!=null&&error!=null){result.put("streamError",error);reply(reply,requestId,result,null);}else reply(reply,requestId,result,error);}catch(Exception ignored){}};
                         Runnable captured=()->{if(web!=null&&!isDestroyed())web.evaluateJavascript("window.srPracticeCaptured&&window.srPracticeCaptured("+JSONObject.quote(requestId)+")",null);};
                         Runnable started=()->{if(web!=null&&!isDestroyed())web.evaluateJavascript("window.srPracticeStarted&&window.srPracticeStarted("+JSONObject.quote(requestId)+")",null);};
                         Runnable recognize=()->{if(fastPractice)practiceSpeech.fastStream(completed,captured,started,expectedWords);else if(streamPractice)practiceSpeech.stream(completed,captured,started,expectedWords);else if(recordOnly)practiceSpeech.recordOnly(completed,started,expectedWords);else practiceSpeech.start(args.optBoolean("recordAnswer",false),completed);};
@@ -181,7 +182,7 @@ public final class MainActivity extends Activity {
     }
     private void replyPreparation(JavaScriptReplyProxy proxy,String id,String error,boolean permissionGranted){
         try{
-            JSONObject result=new JSONObject().put("prepared",error==null).put("permissionGranted",permissionGranted);
+            JSONObject result=new JSONObject().put("prepared",error==null&&permissionGranted).put("permissionGranted",permissionGranted);
             if(error!=null)result.put("error",error);reply(proxy,id,result,null);
         }catch(Exception ignored){}
     }
@@ -198,7 +199,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,15); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,16); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.

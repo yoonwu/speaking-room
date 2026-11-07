@@ -10,6 +10,10 @@ import java.util.function.IntSupplier;
 
 /** Bounded, session-only mono PCM. No disk files or learning-record storage. */
 final class PracticeAudio {
+    static final class Timing {
+        final long speechStartOffsetMs,captureDurationMs;
+        Timing(long speechStartOffsetMs,long captureDurationMs){this.speechStartOffsetMs=speechStartOffsetMs;this.captureDurationMs=captureDurationMs;}
+    }
     static final int RATE=16000, MAX_SAMPLES=RATE*25;
     private final ByteArrayOutputStream pcm=new ByteArrayOutputStream();
     private final long started;
@@ -22,6 +26,7 @@ final class PracticeAudio {
     private int initialSamples,initialVoiced;
     private boolean calibrated;
     private int voiceFrames;
+    private long candidateSpeechStart=-1,speechStart=-1;
     private boolean speech;
     PracticeAudio(long started){this(started,0,null);}
     PracticeAudio(long started,int expectedWords,IntSupplier heardWords){this.started=started;this.expectedWords=Math.max(0,Math.min(40,expectedWords));this.heardWords=heardWords;}
@@ -45,14 +50,18 @@ final class PracticeAudio {
                     if(initialVoiced>=2)noise=Math.min(noise,initialVoicedQuiet*.3);
                     // A steady fan/road noise can exceed 300 from the very first
                     // frame. Do not freeze that initial noise as perpetual speech.
-                    if(initialVoiced<2&&noise>300&&initialPeak<noise*2.5){speech=false;voiceFrames=0;lastVoice=0;}
+                    if(initialVoiced<2&&noise>300&&initialPeak<noise*2.5){speech=false;voiceFrames=0;lastVoice=0;candidateSpeechStart=-1;speechStart=-1;}
                 }
                 initialNoise.clear();
             }
         }
         double threshold=Math.max(300,noise*2.5);
-        if(rms>threshold){lastVoice=now;if(++voiceFrames>=2)speech=true;}
-        else{voiceFrames=0;if(!speech)noise=noise*.95+rms*.05;}
+        if(rms>threshold){
+            lastVoice=now;
+            // Sample position excludes AudioRecord/SDK startup and delayed read callbacks.
+            if(voiceFrames==0)candidateSpeechStart=(pcm.size()/2L-n)*1000/RATE;
+            if(++voiceFrames>=2){speech=true;if(speechStart<0)speechStart=candidateSpeechStart;}
+        }else{voiceFrames=0;candidateSpeechStart=-1;if(!speech)noise=noise*.95+rms*.05;}
     }
     private static boolean periodic(short[] samples,int count){
         int n=Math.min(count,320);if(n<160)return false;
@@ -67,6 +76,7 @@ final class PracticeAudio {
         return false;
     }
     boolean hasSpeech(){return speech;}
+    Timing timing(){return speech&&speechStart>=0?new Timing(speechStart,pcm.size()/2L*1000/RATE):null;}
     boolean shouldStop(long now){
         int heard=heardWords==null?0:heardWords.getAsInt();
         // Only real partial/final ASR words enable the fast tail. An incomplete

@@ -13,4 +13,8 @@ public class PracticePreparationStateTest {
     @Test public void cancelOrIdleExpiryPreventsLateReadyOrCapture(){
         PracticePreparationState state=new PracticePreparationState();state.begin(5);state.clear();assertFalse(state.markReady());assertFalse(state.consume(5));assertTrue(state.begin(6));state.markReady();state.clear();assertFalse(state.consume(6));
     }
+    @Test public void foregroundAndBackgroundRequestsCanJoinOnlyTheSamePendingWordCount(){
+        PracticePreparationState state=new PracticePreparationState();state.begin(5);assertTrue(state.pendingMatches(5));assertFalse(state.pendingMatches(6));assertFalse(state.consume(5));state.markReady();assertFalse(state.pendingMatches(5));assertTrue(state.consume(5));
+        assertTrue(state.begin(999));assertTrue(state.pendingMatches(40));state.clear();assertFalse(state.pendingMatches(40));
+    }
 }

@@ -9,7 +9,7 @@ import java.util.*;
 
 /** Capture and recognition never compete for the microphone. */
 final class PracticeSpeech {
-    interface Completion { void accept(String text,String error,byte[] wav); }
+    interface Completion { void accept(String text,String error,byte[] wav,PracticeAudio.Timing timing); }
     interface Preparation { void accept(String error); }
     private final Context context;
     private final Handler main=new Handler(Looper.getMainLooper());
@@ -18,12 +18,13 @@ final class PracticeSpeech {
     private PracticeStreaming streaming;
     private PracticeRealtime realtime;
     private final PracticePreparationState preparationState=new PracticePreparationState();
-    private Preparation preparation;
+    private final ArrayList<Preparation> preparations=new ArrayList<>();
     private boolean streamCaptureDone,streamNetworkDone;
     private String streamText,streamError;
     private Completion completion;
     private ParcelFileDescriptor input,output;
     private byte[] recorded;
+    private PracticeAudio.Timing recordedTiming;
     private int generation;
     private StringBuilder segments;
     private final Runnable timeout=()->finish("","음성 인식 시간이 지났어요. 다시 말해주세요.");
@@ -33,7 +34,7 @@ final class PracticeSpeech {
         if(!begin(callback))return;final int epoch=generation;
         if(!SpeechRecognizer.isRecognitionAvailable(context)){finish("","이 기기의 음성 인식 서비스를 사용할 수 없어요.");return;}
         if(recordAnswer&&Build.VERSION.SDK_INT>=33){
-            capture(epoch,(pcm,speech,error)->{if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}recorded=PracticeAudio.wav(pcm);recognize(epoch,pcm);});
+            capture(epoch,(pcm,speech,error,timing)->{if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}recorded=PracticeAudio.wav(pcm);recordedTiming=timing;recognize(epoch,pcm);});
         }else recognize(epoch,null);
     }
     void recordOnly(Completion callback){
@@ -41,7 +42,7 @@ final class PracticeSpeech {
     }
     void recordOnly(Completion callback,Runnable ready,int expectedWords){
         if(!begin(callback))return;final int epoch=generation;
-        capture(epoch,ready,expectedWords,(pcm,speech,error)->{if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}recorded=PracticeAudio.wav(pcm);finish("",null);});
+        capture(epoch,ready,expectedWords,(pcm,speech,error,timing)->{if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}recorded=PracticeAudio.wav(pcm);recordedTiming=timing;finish("",null);});
     }
     void stream(Completion callback,Runnable captured){
         stream(callback,captured,null,0);
@@ -53,53 +54,56 @@ final class PracticeSpeech {
         PracticeStreaming upload=new PracticeStreaming((text,error)->main.post(()->{
             if(epoch!=generation||completion==null)return;streamNetworkDone=true;streamText=text;streamError=error;finishStreamIfReady();
         }));streaming=upload;upload.start();
-        microphone=new PracticeMicrophone();microphone.start(context,upload::append,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,(pcm,speech,error)->{
+        microphone=new PracticeMicrophone();microphone.start(context,upload::append,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,(pcm,speech,error,timing)->{
             if(epoch!=generation||completion==null)return;microphone=null;
             if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}
-            recorded=PracticeAudio.wav(pcm);streamCaptureDone=true;captured.run();upload.finishInput();finishStreamIfReady();
+            recorded=PracticeAudio.wav(pcm);recordedTiming=timing;streamCaptureDone=true;captured.run();upload.finishInput();finishStreamIfReady();
         });
     }
     private void finishStreamIfReady(){if(streamCaptureDone&&streamNetworkDone)finish(streamText,streamError,true);}
     void prepareFast(int expectedWords,Preparation callback){
-        if(completion!=null||preparationState.isPreparing()){callback.accept("이미 말하기를 준비하거나 듣고 있어요.");return;}
+        if(completion!=null){callback.accept("이미 듣고 있어요.");return;}
+        if(preparationState.isPreparing()){
+            if(preparationState.pendingMatches(expectedWords))preparations.add(callback);else callback.accept("다른 문장의 말하기를 준비하고 있어요.");return;
+        }
         if(realtime!=null&&preparationState.matches(expectedWords)){main.removeCallbacks(preparedTimeout);main.postDelayed(preparedTimeout,8000);callback.accept(null);return;}
-        discardPreparation("새로운 말하기를 준비해요.");preparationState.begin(expectedWords);preparation=callback;final int epoch=++generation;
+        discardPreparation("새로운 말하기를 준비해요.");preparationState.begin(expectedWords);preparations.add(callback);final int epoch=++generation;
         PracticeRealtime upload=new PracticeRealtime(expectedWords,(text,error)->main.post(()->{
             if(epoch!=generation)return;
             if(completion==null){finish("",error!=null?error:"음성 연결이 종료됐어요. 다시 시작해주세요.");return;}
             streamNetworkDone=true;streamText=text;streamError=error;finishStreamIfReady();
         }),()->main.post(()->{if(epoch==generation&&completion!=null&&microphone!=null)microphone.stop();}),()->main.post(()->{
             if(epoch!=generation||!preparationState.markReady())return;
-            Preparation prepared=preparation;preparation=null;main.postDelayed(preparedTimeout,8000);if(prepared!=null)prepared.accept(null);
+            ArrayList<Preparation> prepared=new ArrayList<>(preparations);preparations.clear();main.postDelayed(preparedTimeout,8000);for(Preparation listener:prepared)listener.accept(null);
         }));
         realtime=upload;upload.start();
     }
     void fastStream(Completion callback,Runnable captured,Runnable ready,int expectedWords){
-        if(completion!=null){callback.accept("","이미 듣고 있어요.",null);return;}
-        if(realtime==null||!preparationState.consume(expectedWords)){callback.accept("","말하기 준비를 다시 시작해주세요.",null);return;}
-        completion=callback;recorded=null;segments=new StringBuilder();final int epoch=generation;final PracticeRealtime upload=realtime;
+        if(completion!=null){callback.accept("","이미 듣고 있어요.",null,null);return;}
+        if(realtime==null||!preparationState.consume(expectedWords)){callback.accept("","말하기 준비를 다시 시작해주세요.",null,null);return;}
+        completion=callback;recorded=null;recordedTiming=null;segments=new StringBuilder();final int epoch=generation;final PracticeRealtime upload=realtime;
         main.removeCallbacks(preparedTimeout);main.removeCallbacks(timeout);main.postDelayed(timeout,35000);
         streamCaptureDone=false;streamNetworkDone=false;streamText="";streamError=null;
-        microphone=new PracticeMicrophone();microphone.start(context,upload::append,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,upload::heardWords,(pcm,speech,error)->{
+        microphone=new PracticeMicrophone();microphone.start(context,upload::append,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,upload::heardWords,(pcm,speech,error,timing)->{
             if(epoch!=generation||completion==null)return;microphone=null;
             if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}
-            recorded=PracticeAudio.wav(pcm);streamCaptureDone=true;captured.run();upload.finishInput();finishStreamIfReady();
+            recorded=PracticeAudio.wav(pcm);recordedTiming=timing;streamCaptureDone=true;captured.run();upload.finishInput();finishStreamIfReady();
         });
     }
     private boolean begin(Completion callback){
-        if(completion!=null){callback.accept("","이미 듣고 있어요.",null);return false;}
+        if(completion!=null){callback.accept("","이미 듣고 있어요.",null,null);return false;}
         discardPreparation("다른 말하기 연습을 시작했어요.");
-        completion=callback;recorded=null;segments=new StringBuilder();generation++;main.postDelayed(timeout,30000);return true;
+        completion=callback;recorded=null;recordedTiming=null;segments=new StringBuilder();generation++;main.postDelayed(timeout,30000);return true;
     }
     private void discardPreparation(String error){
-        main.removeCallbacks(preparedTimeout);preparationState.clear();Preparation old=preparation;preparation=null;
-        if(realtime!=null){realtime.cancel();realtime=null;}if(old!=null)old.accept(error);
+        main.removeCallbacks(preparedTimeout);preparationState.clear();ArrayList<Preparation> old=new ArrayList<>(preparations);preparations.clear();
+        if(realtime!=null){realtime.cancel();realtime=null;}for(Preparation listener:old)listener.accept(error);
     }
     private void capture(int epoch,PracticeMicrophone.Completion callback){
         capture(epoch,null,0,callback);
     }
     private void capture(int epoch,Runnable ready,int expectedWords,PracticeMicrophone.Completion callback){
-        microphone=new PracticeMicrophone();microphone.start(context,null,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,(pcm,speech,error)->{if(epoch!=generation||completion==null)return;microphone=null;callback.accept(pcm,speech,error);});
+        microphone=new PracticeMicrophone();microphone.start(context,null,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,(pcm,speech,error,timing)->{if(epoch!=generation||completion==null)return;microphone=null;callback.accept(pcm,speech,error,timing);});
     }
     private void recognize(int epoch,byte[] pcm){
         try{
@@ -142,8 +146,8 @@ final class PracticeSpeech {
         if(streaming!=null){streaming.cancel();streaming=null;}
         discardPreparation(error!=null?error:"말하기 연습을 마쳤어요.");
         if(recognizer!=null){SpeechRecognizer old=recognizer;recognizer=null;old.cancel();old.destroy();}
-        close(input);close(output);input=null;output=null;byte[] wav=error==null||keepRecording?recorded:null;recorded=null;
-        if(callback!=null)callback.accept(text,error,wav);
+        close(input);close(output);input=null;output=null;byte[] wav=error==null||keepRecording?recorded:null;PracticeAudio.Timing timing=wav!=null?recordedTiming:null;recorded=null;recordedTiming=null;
+        if(callback!=null)callback.accept(text,error,wav,timing);
     }
     private static void close(ParcelFileDescriptor fd){if(fd!=null)try{fd.close();}catch(IOException ignored){}}
     private static String top(Bundle results){ArrayList<String> words=results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);return words==null||words.isEmpty()?"":words.get(0);}
