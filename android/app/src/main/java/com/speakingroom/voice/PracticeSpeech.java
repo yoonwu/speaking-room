@@ -19,6 +19,7 @@ final class PracticeSpeech {
     private PracticeRealtime realtime;
     private final PracticePreparationState preparationState=new PracticePreparationState();
     private final ArrayList<Preparation> preparations=new ArrayList<>();
+    private boolean immediateCaptureReserved;
     private boolean streamCaptureDone,streamNetworkDone;
     private String streamText,streamError;
     private Completion completion;
@@ -63,27 +64,43 @@ final class PracticeSpeech {
     private void finishStreamIfReady(){if(streamCaptureDone&&streamNetworkDone)finish(streamText,streamError,true);}
     void prepareFast(int expectedWords,Preparation callback){
         if(completion!=null){callback.accept("이미 듣고 있어요.");return;}
+        if(streamNetworkDone&&streamError!=null&&realtime!=null){callback.accept(streamError);return;}
         if(preparationState.isPreparing()){
             if(preparationState.pendingMatches(expectedWords))preparations.add(callback);else callback.accept("다른 문장의 말하기를 준비하고 있어요.");return;
         }
         if(realtime!=null&&preparationState.matches(expectedWords)){main.removeCallbacks(preparedTimeout);main.postDelayed(preparedTimeout,8000);callback.accept(null);return;}
-        discardPreparation("새로운 말하기를 준비해요.");preparationState.begin(expectedWords);preparations.add(callback);final int epoch=++generation;
+        createRealtime(expectedWords,callback,false);
+    }
+    void prepareImmediate(int expectedWords,Preparation callback){
+        if(completion!=null){callback.accept("이미 듣고 있어요.");return;}
+        if(realtime==null||(!preparationState.matches(expectedWords)&&!preparationState.pendingMatches(expectedWords)))createRealtime(expectedWords,null,true);
+        else immediateCaptureReserved=true;
+        // Local permission/capture readiness is independent of network readiness.
+        main.removeCallbacks(preparedTimeout);main.postDelayed(preparedTimeout,8000);callback.accept(null);
+    }
+    private void createRealtime(int expectedWords,Preparation callback,boolean immediate){
+        discardPreparation("새로운 말하기를 준비해요.");preparationState.begin(expectedWords);if(callback!=null)preparations.add(callback);immediateCaptureReserved=immediate;
+        streamCaptureDone=false;streamNetworkDone=false;streamText="";streamError=null;final int epoch=++generation;
         PracticeRealtime upload=new PracticeRealtime(expectedWords,(text,error)->main.post(()->{
             if(epoch!=generation)return;
-            if(completion==null){finish("",error!=null?error:"음성 연결이 종료됐어요. 다시 시작해주세요.");return;}
+            if(completion==null&&!immediateCaptureReserved){finish("",error!=null?error:"음성 연결이 종료됐어요. 다시 시작해주세요.");return;}
+            if(error!=null)notifyPreparations(error);
             streamNetworkDone=true;streamText=text;streamError=error;finishStreamIfReady();
         }),()->main.post(()->{if(epoch==generation&&completion!=null&&microphone!=null)microphone.stop();}),()->main.post(()->{
             if(epoch!=generation||!preparationState.markReady())return;
-            ArrayList<Preparation> prepared=new ArrayList<>(preparations);preparations.clear();main.postDelayed(preparedTimeout,8000);for(Preparation listener:prepared)listener.accept(null);
+            notifyPreparations(null);if(completion==null){main.removeCallbacks(preparedTimeout);main.postDelayed(preparedTimeout,8000);}
         }));
         realtime=upload;upload.start();
     }
     void fastStream(Completion callback,Runnable captured,Runnable ready,int expectedWords){
         if(completion!=null){callback.accept("","이미 듣고 있어요.",null,null);return;}
-        if(realtime==null||!preparationState.consume(expectedWords)){callback.accept("","말하기 준비를 다시 시작해주세요.",null,null);return;}
+        if(realtime==null||!(immediateCaptureReserved?preparationState.consumeImmediately(expectedWords):preparationState.consume(expectedWords))){callback.accept("","말하기 준비를 다시 시작해주세요.",null,null);return;}
+        immediateCaptureReserved=false;
         completion=callback;recorded=null;recordedTiming=null;segments=new StringBuilder();final int epoch=generation;final PracticeRealtime upload=realtime;
         main.removeCallbacks(preparedTimeout);main.removeCallbacks(timeout);main.postDelayed(timeout,35000);
-        streamCaptureDone=false;streamNetworkDone=false;streamText="";streamError=null;
+        // Preserve a network failure that happened during the cue: capture one
+        // real WAV anyway so the established fallback can use it without a second mic.
+        streamCaptureDone=false;
         microphone=new PracticeMicrophone();microphone.start(context,upload::append,()->{if(epoch==generation&&completion!=null&&ready!=null)ready.run();},expectedWords,upload::heardWords,(pcm,speech,error,timing)->{
             if(epoch!=generation||completion==null)return;microphone=null;
             if(error!=null){finish("",error);return;}if(!speech||pcm.length<1600){finish("","잘 들리지 않았어요. 다시 말해주세요.");return;}
@@ -96,9 +113,10 @@ final class PracticeSpeech {
         completion=callback;recorded=null;recordedTiming=null;segments=new StringBuilder();generation++;main.postDelayed(timeout,30000);return true;
     }
     private void discardPreparation(String error){
-        main.removeCallbacks(preparedTimeout);preparationState.clear();ArrayList<Preparation> old=new ArrayList<>(preparations);preparations.clear();
-        if(realtime!=null){realtime.cancel();realtime=null;}for(Preparation listener:old)listener.accept(error);
+        main.removeCallbacks(preparedTimeout);preparationState.clear();immediateCaptureReserved=false;
+        if(realtime!=null){realtime.cancel();realtime=null;}notifyPreparations(error);
     }
+    private void notifyPreparations(String error){ArrayList<Preparation> listeners=new ArrayList<>(preparations);preparations.clear();for(Preparation listener:listeners)listener.accept(error);}
     private void capture(int epoch,PracticeMicrophone.Completion callback){
         capture(epoch,null,0,callback);
     }

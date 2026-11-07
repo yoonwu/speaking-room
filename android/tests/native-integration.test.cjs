@@ -20,9 +20,9 @@ test('capture completion is tied to the pending native request and cannot fire t
 });
 
 test('background preparation and real speech timing require their own advertised native capabilities',async()=>{
- const fresh=setup({practiceRealtimePreparation:true,practiceBackgroundPreparation:true,practiceSpeechTiming:true});await Promise.resolve();await Promise.resolve();
- assert.equal(fresh.context.window.srNativePracticeRealtimePreparation,true);assert.equal(fresh.context.window.srNativePracticeBackgroundPreparation,true);assert.equal(fresh.context.window.srNativePracticeSpeechTiming,true);
- const legacy=setup({practiceRealtimePreparation:true});await Promise.resolve();await Promise.resolve();assert.equal(legacy.context.window.srNativePracticeRealtimePreparation,true);assert.equal(legacy.context.window.srNativePracticeBackgroundPreparation,false);assert.equal(legacy.context.window.srNativePracticeSpeechTiming,false);
+ const fresh=setup({practiceRealtimePreparation:true,practiceBackgroundPreparation:true,practiceSpeechTiming:true,practiceImmediateCapture:true});await Promise.resolve();await Promise.resolve();
+ assert.equal(fresh.context.window.srNativePracticeRealtimePreparation,true);assert.equal(fresh.context.window.srNativePracticeBackgroundPreparation,true);assert.equal(fresh.context.window.srNativePracticeSpeechTiming,true);assert.equal(fresh.context.window.srNativePracticeImmediateCapture,true);
+ const legacy=setup({practiceRealtimePreparation:true});await Promise.resolve();await Promise.resolve();assert.equal(legacy.context.window.srNativePracticeRealtimePreparation,true);assert.equal(legacy.context.window.srNativePracticeBackgroundPreparation,false);assert.equal(legacy.context.window.srNativePracticeSpeechTiming,false);assert.equal(legacy.context.window.srNativePracticeImmediateCapture,false);
 });
 
 test('native capture metadata passes through unchanged while legacy answers gain no invented timing',async()=>{

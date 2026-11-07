@@ -6,7 +6,7 @@ function setup(seed={}){
  const context={window:{addEventListener(){}},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob};
  vm.createContext(context);for(const file of ['practice-data.js','practice.js','home-support.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context);vm.runInContext('speakEn=()=>{}',context);return {run:s=>vm.runInContext(s,context),context,records,elements};
 }
-test('restored home derives progress from actual records and keeps four practice modes',()=>{const {run,elements}=setup({'speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{seen:10,ok:8,streak:3}})});assert.equal(run('supportStats().accuracy'),80);assert.equal(run('supportStats().automatic'),1);assert.match(elements.get('#growthZone').innerHTML,/80%/);assert.match(elements.get('#coreToday').innerHTML,/0 \/ 10회/);assert.equal(run('typeof startVocab'),'undefined');});
+test('restored home keeps legacy accuracy but does not invent expression timing from old full-answer streaks',()=>{const {run,elements}=setup({'speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{seen:10,ok:8,streak:3}})});assert.equal(run('supportStats().accuracy'),80);assert.equal(run('supportStats().automatic'),0);assert.match(elements.get('#growthZone').innerHTML,/80%/);assert.match(elements.get('#coreToday').innerHTML,/0 \/ 10회/);assert.equal(run('typeof startVocab'),'undefined');});
 test('practice drives daily goals, adaptive levels and preserves legacy XP',()=>{const {run,records}=setup({'speakingroom:prof':JSON.stringify({xp:99})});run(`startDrill(travelBuildItems(5,[TRAVEL_FRAMES[0]]),'기본표현');autoDrillFinish(autoDrill.items[0].ex.en,{typed:true});`);assert.equal(run('supportToday().travel'),1);assert.equal(run('supportEvents().length'),1);assert.equal(run('supportStats().voice.length'),0);run(`for(let i=0;i<3;i++)autoLvlRecord('speak','perfect')`);assert.ok(run('alGet().speak')>1);assert.equal(JSON.parse(records.get('speakingroom:prof')).xp,99);});
 test('snapshot merge preserves local learning and ignores auth and unrelated storage',()=>{const {run,records}=setup({'secret-token':'keep','speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{seen:10,ok:8,miss:2,lastT:200,streak:3}})});run(`supportApplySnapshot({'secret-token':'overwrite','speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{seen:3,ok:1,miss:2,lastT:100,streak:0}})});`);assert.equal(run('travelStat("travel_can_i_get").ok'),8);assert.equal(run('travelStat("travel_can_i_get").streak'),3);assert.equal(records.get('secret-token'),'keep');assert.equal(run('supportCollect()["secret-token"]'),undefined);});
 test('sync retains historical server records but does not upload local secrets or conversations',async()=>{const {run,context}=setup({'secret-token':'private','speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{seen:2,ok:2}})});const calls=[];context.fetch=async(url,opts={})=>{calls.push({url,opts});return {ok:true,json:async()=>({d:{'speakingroom:old-vocab':'{"count":10}'},t:1})};};await run('supportSync("synthetic-test")');const body=JSON.parse(calls[1].opts.body);assert.equal(body.d['speakingroom:old-vocab'],'{"count":10}');assert.equal(body.d['secret-token'],undefined);assert.ok(body.d['speakingroom:travelrepeat']);assert.equal(calls.length,2);});
@@ -43,11 +43,11 @@ test('all 761 examples are reviewed and each expression has a short, gradable fi
 
 test('first exposure stays short at high global difficulty and building a queue does not introduce unseen expressions',()=>{
  const {run}=setup();run('const level=alGet();level.speak=60;alSave(level);');
- for(const id of run('TRAVEL_FRAMES.map(f=>f.id)')){
+ for(const id of run('learningAvailableFrames().map(f=>f.id)')){
    assert.equal(run(`travelBuildItems(1,[TRAVEL_BY_ID[${JSON.stringify(id)}]])[0].ex.en`),run(`basicStarterItem(TRAVEL_BY_ID[${JSON.stringify(id)}]).en`));
    assert.equal(run(`!!travelStat(${JSON.stringify(id)}).introduced`),false);
  }
- run(`startDrill(travelBuildItems(10,[TRAVEL_BY_ID.travel_can_i_leave]),'기본표현')`);
+ run(`travelSave({...travelAll(),travel_can_i_leave:{seen:1,introduced:false}});startDrill(travelBuildItems(10,[TRAVEL_BY_ID.travel_can_i_leave]),'기본표현')`);
  assert.equal(run('autoDrill.items[0].ex.en'),'Can I leave my bags here?');assert.equal(run('autoDrill.items[0]._intro'),true);
  assert.equal(run('autoDrill.items.every(it=>it.ex._tier===1)'),true);
 });
@@ -115,7 +115,7 @@ test('old selections and mistakes from stage 2 are hidden without deleting their
 
 test('the core tutorial shows a familiar whole sentence and keeps first-look, recall and playback guidance',()=>{
  const {run}=setup({'speakingroom:feature_guide:v3:basic':'true'});
- assert.equal(run('FEATURE_GUIDES.basic.revision'),4);assert.equal(run('hGet(featureGuideKey("basic"),false)'),false);
+ assert.equal(run('FEATURE_GUIDES.basic.revision'),5);assert.equal(run('hGet(featureGuideKey("basic"),false)'),false);
  const demo=run('featureGuideDemo("familiar-phrase")');assert.match(demo,/이름이 뭐예요/);assert.match(demo,/What's your name\?/);assert.doesNotMatch(demo,/what your name\?/i);
  assert.match(run('FEATURE_GUIDES.basic.steps[0][1]'),/한 덩어리/);assert.equal(run('FEATURE_GUIDES.basic.steps[1][2]'),'first-recall');assert.match(run('featureGuideDemo("answer-tools")'),/내 목소리 듣기/);
 });

@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.6.1", APP_BUILD="2026-11-07";
+const APP_VERSION="v4.7.0", APP_BUILD="2026-11-07";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -101,7 +101,7 @@ function travelCountPick(onPick){
   ov.querySelector('#sheetContent').innerHTML='<p class="muted">틀린 문장은 잠시 뒤 다시 나와요.</p><div class="count-row">'+TRAVEL_COUNTS.map(n=>`<button class="count-choice" data-count="${n}">${n}<small>문제</small></button>`).join('')+'</div>';
   ov.querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{const n=Number(b.dataset.count);hSet(TRAVEL_COUNT_KEY,n);ov.remove();onPick(n);});
 }
-function travelPoolOf(ids){if(!ids||!ids.length)return null;return TRAVEL_FRAMES.filter(f=>ids.includes(f.id));}
+function travelPoolOf(ids){if(!ids||!ids.length)return null;const available=typeof learningAvailableFrames==='function'?learningAvailableFrames():TRAVEL_FRAMES.filter(f=>TRAVEL_INITIAL_IDS.has(f.id));return available.filter(f=>ids.includes(f.id));}
 function travelBuildItems(count,pool){
   const frames=travelPickFrames(count,pool),records=travelAll();
   const introPlanned=new Set();
@@ -115,18 +115,19 @@ function startTravelDrill(count,skipGuide,skipPick,ids){
   startDrill(travelBuildItems(Math.max(3,Math.min(30,count||travelCountGet())),travelPoolOf(ids)),ids?'골라서 연습':'기본표현');
 }
 function openTravelStudyPicker(){
-  const ov=openSheet('골라서 연습'),selected=new Set(travelStudyGet().filter(id=>TRAVEL_BY_ID[id]));
+  const available=typeof learningAvailableFrames==='function'?learningAvailableFrames():TRAVEL_FRAMES.filter(f=>TRAVEL_INITIAL_IDS.has(f.id)),allowed=new Set(available.map(f=>f.id));
+  const ov=openSheet('골라서 연습'),selected=new Set(travelStudyGet().filter(id=>allowed.has(id)));
   const content=ov.querySelector('#sheetContent');
   content.innerHTML='<p class="muted">입에 안 붙는 표현만 체크하세요.</p><div class="selection-actions"><button id="pickWeak" class="quiet">약한 표현</button><button id="pickAll" class="quiet">전체</button><button id="pickNone" class="quiet">해제</button></div><div id="expressionList"></div><button id="pickStart" class="primary"></button>';
   const paint=()=>{
-    content.querySelector('#expressionList').innerHTML=TRAVEL_FRAMES.map(f=>{const display=basicFrameFor(f,basicStarterItem(f));return `<label class="expression-row"><input type="checkbox" value="${f.id}" ${selected.has(f.id)?'checked':''}><span><b>${escapeHtml(display.frame)}</b><small>${escapeHtml(display.ko)}</small></span></label>`;}).join('');
+    content.querySelector('#expressionList').innerHTML=available.map(f=>{const display=basicFrameFor(f,basicStarterItem(f));return `<label class="expression-row"><input type="checkbox" value="${f.id}" ${selected.has(f.id)?'checked':''}><span><b>${escapeHtml(display.frame)}</b><small>${escapeHtml(display.ko)}</small></span></label>`;}).join('');
     content.querySelectorAll('input').forEach(box=>box.onchange=()=>{box.checked?selected.add(box.value):selected.delete(box.value);travelStudySet([...selected]);paint();});
     const start=content.querySelector('#pickStart');start.textContent=selected.size?`${selected.size}개 표현 연습하기`:'표현을 골라주세요';start.disabled=!selected.size;
     start.onclick=()=>{const ids=[...selected];ov.remove();travelCountPick(n=>startTravelDrill(n,true,true,ids));};
   };
   const choose=ids=>{selected.clear();ids.forEach(id=>selected.add(id));travelStudySet([...selected]);paint();};
-  content.querySelector('#pickWeak').onclick=()=>choose(TRAVEL_FRAMES.filter(f=>{const s=travelStat(f.id)||{};return !s.seen||(s.miss||0)>(s.ok||0)||(s.streak||0)<3;}).map(f=>f.id));
-  content.querySelector('#pickAll').onclick=()=>choose(TRAVEL_FRAMES.map(f=>f.id));content.querySelector('#pickNone').onclick=()=>choose([]);paint();
+  content.querySelector('#pickWeak').onclick=()=>choose(available.filter(f=>typeof learningExpressionScore!=='function'||learningExpressionScore(f.id)<8).map(f=>f.id));
+  content.querySelector('#pickAll').onclick=()=>choose(available.map(f=>f.id));content.querySelector('#pickNone').onclick=()=>choose([]);paint();
 }
 function missRecord(it,ok){
   const en=it.ex.en,records=missAll();if(ok&&!records[en])return;
@@ -155,6 +156,7 @@ function autoDrillRender(recall=false){
   if(window.SpeakingRoomNative||window.srNativePracticeSpeech){micAudioReady();if(_svPending.size<4)svPrepare(it.ex.en,it._voiceRate).catch(()=>{});}
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   const firstLook=it._intro&&!recall;
+  if(firstLook)travelMarkIntroduced(it.frame.id);
   const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
   const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card">
     <div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><div class="lesson-progress" aria-label="연습 진행"><i style="width:${autoDrill.idx/autoDrill.items.length*100}%"></i></div><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div>
@@ -195,7 +197,8 @@ function practiceResponseTiming(lesson,it,meta,pressedAt,priorWait){
   const offset=native?meta.speechStartOffsetMs:browser?meta.speechStartAt-meta.startAt:null;
   const pressedMs=Math.max(0,pressedAt-lesson.t0-priorWait),responseMs=offset===null?null:pressedMs+offset;
   const speedEligible=!meta.typed&&!it._intro&&!it._hintUsed&&!it.recall&&!it._attempts&&!it._hadIncorrect&&offset!==null;
-  return {responseMs,speedEligible,withinThreeSeconds:speedEligible&&pressedMs<=3000&&responseMs<=3000};
+  const tapWithinThreeSeconds=pressedMs<=3000,speechWithinOnePointFiveSeconds=offset!==null&&offset<=1500;
+  return {timingVersion:2,tapMs:pressedMs,speechStartDelayMs:offset,tapWithinThreeSeconds,speechWithinOnePointFiveSeconds,responseMs,speedEligible,withinThreeSeconds:speedEligible&&tapWithinThreeSeconds&&speechWithinOnePointFiveSeconds};
 }
 function practiceAttemptId(){return typeof learningNewAttemptId==='function'?learningNewAttemptId():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);}
 function practiceProfileCurrent(){return !autoDrill||typeof learningProfileId!=='function'||autoDrill.profileId===learningProfileId();}
@@ -207,12 +210,12 @@ async function beginAutoMic(){
   const mode=typeof PracticeAI!=='undefined'?PracticeAI.getMode():'accuracy';
   const pressedAt=Date.now(),priorWait=lesson.systemWaitMs||0;let prepared=false;
   stopResponseClock();svStop();if(TTS)TTS.cancel();$('#autoStat').textContent='시작음이 들리면 말해주세요.';
-  if($('#autoSpeed'))$('#autoSpeed').textContent='답변 속도는 실제 말하기 시작으로 확인해요';
+  if($('#autoSpeed'))$('#autoSpeed').textContent='3초 안에 누르기 · 마이크가 켜지면 1.5초 안에 말하기';
   const labelTimer=setTimeout(()=>{if(autoDrill===lesson&&micPreparing&&!qzRecording){$('#autoMic').textContent='마이크 연결 중…';$('#autoStat').textContent='음성을 연결하고 있어요. 이 대기는 응답 시간에서 제외해요.';}},350);
   try{return await micFillCb((text,meta)=>{if(autoDrill!==lesson||!practiceProfileCurrent())return;if(!prepared)lesson.systemWaitMs=priorWait+Date.now()-pressedAt;return autoDrillFinish(text,{...meta,...practiceResponseTiming(lesson,it,meta,pressedAt,priorWait),attemptId,gradingMode:mode});},it.ex.en,()=>{
     clearTimeout(labelTimer);
     if(autoDrill!==lesson)return;$('#autoMic').textContent='말소리 인식 중…';$('#autoStat').textContent='말하기가 끝났어요. 말한 내용을 확인하고 있어요.';
-  },{mode,requestId:attemptId,onReady:()=>{clearTimeout(labelTimer);if(autoDrill!==lesson)return;if(!prepared){prepared=true;lesson.systemWaitMs=priorWait+Date.now()-pressedAt;}$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='말을 마치면 자동으로 끝나요.';}});}finally{clearTimeout(labelTimer);}
+  },{mode,requestId:attemptId,onReady:()=>{clearTimeout(labelTimer);if(autoDrill!==lesson)return;if(!prepared){prepared=true;lesson.systemWaitMs=priorWait+Date.now()-pressedAt;}$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='1.5초 안에 말을 시작해보세요. 말을 마치면 자동으로 끝나요.';}});}finally{clearTimeout(labelTimer);}
 }
 function autoDrillRecall(){if(!autoDrill||!pendingReply||micPreparing||qzRecording)return;autoDrillRender(true);return beginAutoMic();}
 function autoDrillFinish(heard,meta={}){
@@ -237,7 +240,7 @@ function autoDrillApplyResult(lesson,it,heard,meta,g){
   if(lesson!==autoDrill||!practiceProfileCurrent())return;
   if(g.retry){pendingReply=false;$('#autoMic').textContent='🎤 다시 말하기';$('#autoStat').textContent='말한 내용을 확실히 판단하기 어려워요. 다시 말해주세요. 점수와 숙련도는 바뀌지 않았어요.';return;}
   const expressionOnly=!g.ok&&g.blockHit===true;
-  const retry=!!(it._hadIncorrect||it._attempts),quick=!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&meta.withinThreeSeconds===true&&Number.isFinite(meta.responseMs)&&meta.responseMs>=0&&meta.responseMs<=3000,perfect=g.ok&&quick;
+  const retry=!!(it._hadIncorrect||it._attempts),quick=!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&(typeof learningQuickEvidence==='function'?learningQuickEvidence(meta):meta.withinThreeSeconds===true&&Number.isFinite(meta.tapMs)&&meta.tapMs>=0&&meta.tapMs<=3000&&Number.isFinite(meta.speechStartDelayMs)&&meta.speechStartDelayMs>=0&&meta.speechStartDelayMs<=1500),perfect=g.ok&&quick;
   it._attempts=(it._attempts||0)+1;if(!g.ok)it._hadIncorrect=true;
   it._lastHeard=heard;it._lastOk=g.ok;it._lastExpressionOnly=expressionOnly;practiceTrackWordMisses(it,heard,meta,g);
   travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,expressionOnly,perfect,en:it.ex.en,heard});
@@ -340,20 +343,21 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
   try{
   if(meaning){await PracticeAI.ensureReady();if(epoch!==micEpoch)return;}
   if(window.srNativeRequest && (window.srNativePracticeSpeech==null||window.srNativePracticePlayback==null)){
-    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;window.srNativePracticeStreaming=!!status.practiceStreaming;window.srNativePracticeMicReady=!!status.practiceMicReady;window.srNativePracticeRealtime=!!status.practiceRealtime;window.srNativePracticeRealtimePreparation=!!status.practiceRealtimePreparation;window.srNativePracticeBackgroundPreparation=!!status.practiceBackgroundPreparation;window.srNativePracticeSpeechTiming=!!status.practiceSpeechTiming;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
+    try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;window.srNativePracticeStreaming=!!status.practiceStreaming;window.srNativePracticeMicReady=!!status.practiceMicReady;window.srNativePracticeRealtime=!!status.practiceRealtime;window.srNativePracticeRealtimePreparation=!!status.practiceRealtimePreparation;window.srNativePracticeBackgroundPreparation=!!status.practiceBackgroundPreparation;window.srNativePracticeSpeechTiming=!!status.practiceSpeechTiming;window.srNativePracticeImmediateCapture=!!status.practiceImmediateCapture;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}
     if(epoch!==micEpoch)return;
   }
   if(window.srNativeRequest && !window.srNativePracticeSpeech){cb('',{sttErr:'학습 화면은 최신이지만 설치된 앱의 음성 기능은 이전 버전이에요. Play 스토어에서 앱을 0.5.3 이상으로 업데이트해주세요.'});return;}
-  let realtimePrepared=!meaning&&window.srNativePracticeSpeech&&window.srNativePracticePlayback&&window.srNativePracticeRealtime===true&&typeof PracticeAI!=='undefined'&&PracticeAI.realtimeReady();
+  const immediate=window.srNativePracticeImmediateCapture===true;
+  let realtimePrepared=!meaning&&window.srNativePracticeSpeech&&window.srNativePracticePlayback&&window.srNativePracticeRealtime===true&&typeof PracticeAI!=='undefined'&&(immediate&&typeof PracticeAI.realtimeCanStart==='function'?PracticeAI.realtimeCanStart():PracticeAI.realtimeReady());
   if(realtimePrepared){
     let preparationTimedOut=false;
     try{
       // Allow the person to answer Android's permission dialog. The native
       // network preparation itself has a separate five-second deadline.
-      const prepared=await speechWait(window.srNativeRequest('preparePracticeFast',{expectedWords:refText.trim().split(/\s+/).filter(Boolean).length}),30000,'음성 연결 준비가 늦어요. 다시 말하기를 눌러주세요.',()=>{preparationTimedOut=true;window.srNativeRequest('recognizeCancel').catch(()=>{});});
+      const prepared=await speechWait(window.srNativeRequest('preparePracticeFast',{expectedWords:refText.trim().split(/\s+/).filter(Boolean).length,...(immediate?{immediate:true}:{})}),30000,'마이크 사용 준비가 늦어요. 다시 말하기를 눌러주세요.',()=>{preparationTimedOut=true;window.srNativeRequest('recognizeCancel').catch(()=>{});});
       if(epoch!==micEpoch)return;
       if(prepared.permissionGranted===false){cb('',{sttErr:prepared.error||'마이크 사용을 허용해주세요.'});return;}
-      if(prepared.prepared!==true){PracticeAI.disableRealtime();realtimePrepared=false;}
+      if(prepared.prepared!==true&&!(immediate&&prepared.immediateCaptureReady===true)){PracticeAI.disableRealtime();realtimePrepared=false;}
     }catch(e){if(epoch!==micEpoch)return;if(preparationTimedOut){cb('',{sttErr:e.message});return;}PracticeAI.disableRealtime();realtimePrepared=false;}
   }
   if(epoch!==micEpoch)return;

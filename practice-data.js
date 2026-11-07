@@ -2744,6 +2744,15 @@ const TRAVEL_STAGE2_IDS=new Set([
 const TRAVEL_STAGE2_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>TRAVEL_STAGE2_IDS.has(f.id));
 const TRAVEL_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>!TRAVEL_STAGE2_IDS.has(f.id));
 const TRAVEL_ACTIVE_IDS=new Set(TRAVEL_FRAMES.map(f=>f.id));
+const TRAVEL_INITIAL_IDS=new Set([
+  'travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is',
+  'travel_how_much','travel_pay_by_card','travel_have_reservation','travel_cant_find','travel_is_there'
+]);
+const TRAVEL_PROGRESS_ORDER=[...TRAVEL_INITIAL_IDS,
+  'travel_is_included','travel_where_meet','travel_what_recommend','travel_say_again_slowly',
+  'travel_is_this_right','travel_can_we_change','travel_id_like_to','travel_can_i_leave',
+  'travel_do_i_need_to','travel_does_that_mean','travel_how_do_i','travel_how_do_i_get_to','travel_can_i_ask'
+];
 
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 
@@ -2792,32 +2801,26 @@ function travelSeedNew(o){
 }
 
 function travelPickFrames(n, pool){
-  const FR=pool?pool.filter(f=>TRAVEL_ACTIVE_IDS.has(f.id)):TRAVEL_FRAMES;
+  const available=typeof learningAvailableFrames==='function'?learningAvailableFrames():TRAVEL_FRAMES.filter(f=>TRAVEL_INITIAL_IDS.has(f.id));
+  const allowed=new Set(available.map(f=>f.id));
+  const FR=pool?pool.filter(f=>allowed.has(f.id)):available;
   if(!FR.length)return [];
-  const o=travelAll();
-  /* 새로 추가된 프레임의 출발선을 먼저 맞추고 저장한다.
-     기록이 만들어진 뒤에 심으면 늦어서 cost 0 으로 굳어버린다. */
-  try{ if(travelSeedNew(o)) travelSave(o); }catch(e){}
-  const out=[], bump={};
-  let remain=FR.slice();                  // 이번 세션에 아직 안 쓴 프레임
-  /* 고를 때: 비용이 낮은 것부터. 자동화된 프레임은 비용이 빨리 쌓여 뒤로 밀린다.
-     난수(±0.45)는 비용이 비슷한 것들 사이에서만 순서를 흔든다 —
-     차이가 분명하면 난수로 뒤집히지 않는다. */
+  const out=[],bump={},scores=typeof learningExpressionScores==='function'?learningExpressionScores():{};
+  let lastId=hGet(TRAVEL_KEY+':lastFrame','');
+  const unevenPair=FR.length===2&&((scores[FR[0].id]||0)>=8)!==((scores[FR[1].id]||0)>=8);
+  // Reconsider the allowed pool on every draw. A ten-question routine must
+  // be able to skip a mastered frame and repeat a weaker one instead.
   while(out.length<n){
-    if(!remain.length) remain=FR.slice();   // 범위를 한 바퀴 다 썼다 — 그때만 다시 돈다
-    const eff=f=>travelCost(o[f.id]) + (bump[f.id]||0)*travelWeightFor(f.id,o[f.id]) + Math.random()*0.45;
-    let best=remain[0], bv=eff(best);
-    remain.forEach(f=>{ const v=eff(f); if(v<bv){ bv=v; best=f; } });
-    out.push(best); bump[best.id]=(bump[best.id]||0)+1;
-    remain=remain.filter(x=>x.id!==best.id);
+    const candidates=FR.length>1&&!unevenPair?FR.filter(f=>f.id!==(out[out.length-1]?.id||lastId)):FR;
+    const weights=candidates.map(f=>{
+      const score=scores[f.id]||0;
+      return (score>=8 ? .15 : 1+(8-score)/8)/(1+(bump[f.id]||0));
+    });
+    let draw=Math.random()*weights.reduce((a,b)=>a+b,0),best=candidates[candidates.length-1];
+    for(let i=0;i<candidates.length;i++){draw-=weights[i];if(draw<0){best=candidates[i];break;}}
+    out.push(best);bump[best.id]=(bump[best.id]||0)+1;
   }
-  /* 내는 순서는 따로 섞는다 — 비용순으로 나오면 순서를 외워버린다 */
-  for(let i=out.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=out[i]; out[i]=out[j]; out[j]=t; }
-  /* 지난 세션 마지막 문제와 첫 문제가 같은 프레임이면 자리를 바꾼다 —
-     앱을 다시 켰을 때 방금 본 표현이 또 나오는 느낌을 없앤다 */
   try{
-    const lastId=hGet(TRAVEL_KEY+":lastFrame","");
-    if(lastId && out.length>1 && out[0].id===lastId){ const t=out[0]; out[0]=out[1]; out[1]=t; }
     if(out.length) hSet(TRAVEL_KEY+":lastFrame", out[out.length-1].id);
   }catch(e){}
   return out;

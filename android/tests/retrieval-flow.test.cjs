@@ -6,14 +6,14 @@ const wav=(()=>{const b=Buffer.alloc(684);b.write('RIFF');b.writeUInt32LE(b.leng
 
 // Run the real four scripts, grader, reward and mastery code. Only browser and
 // native I/O plus wall-clock time are simulated; no production function is replaced.
-function setup({realtime=false,prepare,route,seed={}}={}){
+function setup({realtime=false,immediate=false,prepare,route,seed={}}={}){
  const records=new Map(Object.entries(seed)),elements=new Map(),native=[],captures=[],requests=[],timers=new Map();
  let now=Date.UTC(2026,10,7),sequence=0,random=71;
  const math=Object.create(Math);math.random=()=>{random=(random*1664525+1013904223)>>>0;return random/4294967296;};
  const element=()=>{const listeners=new Map();return {style:{},dataset:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,isConnected:true,addEventListener(name,callback){listeners.set(name,callback);},setAttribute(){},focus(){},remove(){this.isConnected=false;},insertBefore(){},appendChild(child){if(child.id)elements.set('#'+child.id,child);},showModal(){this.open=true;},close(){this.open=false;listeners.get('close')?.();this.onclose?.();},querySelector:selector=>get(selector),querySelectorAll(selector){if(selector!=='[data-word]')return [];return [...this.innerHTML.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)].flatMap(([,attributes,text])=>{const word=attributes.match(/data-word="([^"]+)"/);if(!word)return [];const button=get('[data-word="'+word[1]+'"]');button.dataset.word=word[1];button.textContent=text.replace(/<[^>]*>/g,'');button.className=attributes.match(/class="([^"]*)"/)?.[1]||'';return [button];});},getTracks:()=>[]};};
  const get=selector=>{if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);};
  const clockDate=class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};
- const context={window:{addEventListener(){},srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true,srNativePracticeMicReady:true,srNativePracticeRealtime:realtime,srNativePracticeBackgroundPreparation:realtime},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(child){if(child.id)elements.set('#'+child.id,child);}}},navigator:{},localStorage:{getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,String(value))},setTimeout:(fn,ms=0)=>{const id=++sequence;timers.set(id,{at:now+ms,fn});return id;},clearTimeout:id=>timers.delete(id),location:{reload(){}},console,Date:clockDate,Math:math,URL,Blob,AbortController,Response,atob:s=>Buffer.from(s,'base64').toString('binary')};
+ const context={window:{addEventListener(){},srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true,srNativePracticeMicReady:true,srNativePracticeRealtime:realtime,srNativePracticeImmediateCapture:immediate,srNativePracticeBackgroundPreparation:realtime},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(child){if(child.id)elements.set('#'+child.id,child);}}},navigator:{},localStorage:{getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,String(value))},setTimeout:(fn,ms=0)=>{const id=++sequence;timers.set(id,{at:now+ms,fn});return id;},clearTimeout:id=>timers.delete(id),location:{reload(){}},console,Date:clockDate,Math:math,URL,Blob,AbortController,Response,atob:s=>Buffer.from(s,'base64').toString('binary')};
  context.fetch=async(url,options={})=>{const request={url:String(url),path:new URL(url,'https://app.test').pathname,options};requests.push(request);if(route){const response=await route(request);if(response!==undefined)return response;}if(request.path==='/practice-ai/status')return json({enabled:true,creditsVerified:true});if(request.path==='/practice-realtime/status')return json({available:realtime});return new Response('{}',{status:404});};
  context.window.srNativeRequest=(action,data,onCaptured,onReady)=>{
   native.push({action,data,at:now});
@@ -75,19 +75,24 @@ test('response time includes button delay plus actual native voice onset, exclud
  const cases=[
   {press:1000,onset:500,preparation:0,response:1500,fast:true},
   {press:2800,onset:200,preparation:0,response:3000,fast:true},
-  {press:2800,onset:400,preparation:0,response:3200,fast:false},
+  {press:2800,onset:400,preparation:0,response:3200,fast:true},
+  {press:2800,onset:1400,captureDuration:2000,response:4200,fast:true},
+  {press:3000,onset:1500,captureDuration:2000,response:4500,fast:true},
+  {press:3001,onset:100,response:3101,fast:false},
+  {press:2800,onset:1501,captureDuration:2000,response:4301,fast:false},
   {press:3100,onset:0,preparation:0,response:3100,fast:false},
   {press:1000,onset:500,preparation:2500,response:1500,fast:true},
  ];
  for(const scenario of cases){
   const h=setup();h.start();await nativeAnswer(h,scenario);const event=h.lastEvent(),mastery=h.mastery();
   assert.equal(event.responseMs,scenario.response,JSON.stringify(scenario));assert.equal(event.withinThreeSeconds,scenario.fast);assert.equal(event.speedEligible,true);assert.equal(event.fast,scenario.fast);
+  assert.equal(event.timingVersion,2);assert.equal(event.tapMs,scenario.press);assert.equal(event.speechStartDelayMs,scenario.onset);assert.equal(event.tapWithinThreeSeconds,scenario.press<=3000);assert.equal(event.speechWithinOnePointFiveSeconds,scenario.onset<=1500);
   assert.equal(event.xp,scenario.fast?30:15);assert.equal(h.run('practiceReward().total'),scenario.fast?30:15);assert.equal(mastery.score,scenario.fast?18:10);assert.equal(mastery.fastStreak,scenario.fast?1:0);assert.equal(mastery.fullyLearned,false);
  }
 });
 
 test('a first pattern-only voice answer earns fifteen fast or ten slow with encouraging feedback but no full mastery',async()=>{
- for(const scenario of [{press:1000,onset:500,response:1500,xp:15},{press:2800,onset:400,response:3200,xp:10},{press:3100,onset:0,response:3100,xp:10},{press:1000,preparation:2500,onset:500,response:1500,xp:15}]){
+ for(const scenario of [{press:1000,onset:500,response:1500,xp:15},{press:2800,onset:1400,captureDuration:2000,response:4200,xp:15},{press:3000,onset:1500,captureDuration:2000,response:4500,xp:15},{press:3001,onset:100,response:3101,xp:10},{press:2800,onset:1501,captureDuration:2000,response:4301,xp:10},{press:3100,onset:0,response:3100,xp:10},{press:1000,preparation:2500,onset:500,response:1500,xp:15}]){
   const h=setup();h.start();assert.equal(h.run(`travelGrade(autoDrill.items[0],'Can I get a towel?').blockHit`),true);await nativeAnswer(h,{...scenario,text:'Can I get a towel?'});const event=h.lastEvent();
   assert.equal(event.ok,false);assert.equal(event.expressionOnly,true);assert.equal(event.fast,false,'a fast partial is never a full fast answer');assert.equal(event.responseMs,scenario.response);assert.equal(event.xp,scenario.xp);assert.equal(h.run('practiceReward().total'),scenario.xp);assert.match(h.get('#autoStat').textContent,new RegExp('\\+'+scenario.xp+' XP'));assert.doesNotMatch(h.get('#autoStat').textContent,/\+0 XP/);
   assert.equal(h.mastery().score,0);assert.equal(h.mastery().correct,0);assert.equal(h.mastery().fastCorrect,0);assert.equal(h.mastery().fullyLearned,false);assert.equal(h.run(`travelStat('travel_can_i_get').ok`),0);assert.ok(h.run('missCount()>0'));assert.match(actions(h),/id="autoRetry"/);assert.equal(typeof h.get('[data-word="water"]').onclick,'function','the missed word remains available for focused practice');
@@ -114,10 +119,10 @@ test('recognition completion and recording length cannot replace first actual vo
 });
 
 test('browser answers use real VAD onset rather than tap, recognition completion or recording end',async()=>{
- for(const press of [1000,2800]){
+ for(const press of [1000,2800,3001]){
   const h=setup(),audio=browserAudio(h);h.start();await h.advance(press);const pending=h.get('#autoMic').onclick();await h.advance(200);await pending;
   assert.equal(audio.recorders.length,1);assert.equal(h.run('qzRecording'),true);await h.advance(300);audio.loud=true;await h.advance(30);await h.advance(1800);
-  audio.recognizers[0].final();await h.flush();const event=h.lastEvent();assert.ok(event);assert.equal(event.responseMs,press+330);assert.equal(event.speedEligible,true);assert.equal(event.fast,press===1000);assert.equal(event.xp,press===1000?30:15);
+  audio.recognizers[0].final();await h.flush();const event=h.lastEvent();assert.ok(event);assert.equal(event.responseMs,press+330);assert.equal(event.speedEligible,true);assert.equal(event.fast,press<=3000);assert.equal(event.xp,press<=3000?30:15);
   assert.equal(h.requests.filter(request=>request.options.method==='POST').length,0,'the browser recognizer supplies text while the real VAD supplies onset');
  }
 });
@@ -148,6 +153,24 @@ test('question prewarm is background-only and cannot record, cue or request fore
 test('a background-prepared microphone still validates foreground readiness and permission on the tap',async()=>{
  const h=setup({realtime:true,prepare:data=>data.background?{prepared:true,permissionGranted:true}:{prepared:false,permissionGranted:false,error:'마이크 사용을 허용해주세요.'}}),cues=observeCues(h);h.start();await h.flush();await h.advance(1000);await h.get('#autoMic').onclick();await h.flush();
  const foreground=h.native.filter(call=>call.action==='preparePracticeFast'&&call.data.background!==true);assert.equal(foreground.length,1);assert.equal(h.captures.length,0);assert.equal(cues.length,0);assert.match(h.get('#autoStat').textContent,/마이크 사용을 허용/);assert.equal(h.run('practiceReward().total'),0);
+});
+
+test('advertised immediate capture starts after permission and the cue while backend status remains pending',async()=>{
+ const status=deferred(),h=setup({realtime:true,immediate:true,prepare:{prepared:true,immediateCaptureReady:true,permissionGranted:true},route:request=>request.path==='/practice-realtime/status'?status.promise:undefined}),cues=observeCues(h);h.start();await h.flush();assert.ok(h.requests.some(request=>request.path==='/practice-realtime/status'));assert.equal(h.run('PracticeAI.realtimeReady()'),false);await h.advance(1000);
+ const pending=h.get('#autoMic').onclick();await h.flush();const preparation=h.native.find(call=>call.action==='preparePracticeFast'&&call.data.background!==true);assert.ok(preparation);assert.equal(preparation.data.immediate,true);assert.equal(preparation.data.expectedWords,5);assert.equal(cues.length,1);assert.equal(h.captures.length,0);assert.equal(h.run('qzRecording'),false);
+ await h.advance(199);assert.equal(h.captures.length,0,'the real start cue completes before capture');await h.advance(1);assert.equal(h.captures.length,1);assert.equal(h.captures[0].action,'streamPracticeFast');assert.equal(h.run('PracticeAI.realtimeReady()'),false,'capture is not blocked by the pending status response');assert.equal(h.run('qzRecording'),false,'a capture request alone is not microphone readiness');assert.equal(h.run('micPreparing'),true);
+ h.captures[0].ready();assert.equal(h.run('qzRecording'),true);assert.equal(h.run('micPreparing'),false);await h.advance(1000);h.captures[0].complete(ANSWER,{speechStartOffsetMs:500,captureDurationMs:1000});await pending;await h.flush();assert.equal(h.lastEvent().xp,30);assert.equal(h.lastEvent().tapMs,1000);assert.equal(h.lastEvent().speechStartDelayMs,500);assert.equal(h.requests.filter(request=>request.options.method==='POST').length,0);status.resolve(json({available:false}));await h.flush();assert.equal(h.captures.length,1);
+});
+
+test('immediate capture permission refusal produces no cue or capture even while server readiness is unknown',async()=>{
+ const status=deferred(),h=setup({realtime:true,immediate:true,prepare:{prepared:false,immediateCaptureReady:false,permissionGranted:false,error:'마이크 사용을 허용해주세요.'},route:request=>request.path==='/practice-realtime/status'?status.promise:undefined}),cues=observeCues(h);h.start();await h.flush();await h.get('#autoMic').onclick();await h.flush();const preparations=h.native.filter(call=>call.action==='preparePracticeFast'&&call.data.background!==true);assert.equal(preparations.length,1);assert.equal(preparations[0].data.immediate,true);assert.equal(cues.length,0);assert.equal(h.captures.length,0);assert.equal(h.run('qzRecording||micPreparing'),false);assert.match(h.get('#autoStat').textContent,/마이크 사용을 허용/);assert.equal(h.run('supportEvents().length'),0);status.resolve(json({available:false}));await h.flush();assert.equal(h.captures.length,0);
+});
+
+test('older native capabilities never receive immediate preparation and still wait for network-prepared readiness',async()=>{
+ for(const advertised of [false,undefined]){
+  const network=deferred(),h=setup({realtime:true,prepare:()=>network.promise}),cues=observeCues(h);if(advertised===undefined)delete h.context.window.srNativePracticeImmediateCapture;h.start();await h.flush();assert.equal(h.run('PracticeAI.realtimeReady()'),true);const pending=h.get('#autoMic').onclick();await h.flush();await h.advance(1000);assert.equal(cues.length,0);assert.equal(h.captures.length,0);assert.ok(h.native.some(call=>call.action==='preparePracticeFast'&&call.data.background!==true));assert.ok(h.native.filter(call=>call.action==='preparePracticeFast').every(call=>!Object.hasOwn(call.data,'immediate')));
+  network.resolve({prepared:true,permissionGranted:true});await h.flush();assert.equal(cues.length,1);await h.advance(200);assert.equal(h.captures.length,1);assert.equal(h.captures[0].action,'streamPracticeFast');assert.equal(h.run('qzRecording'),false);h.captures[0].ready();h.captures[0].complete();await pending;assert.equal(h.lastEvent().ok,true);
+ }
 });
 
 test('Next cancels the old background preparation and a late reply cannot capture or overwrite the new prompt',async()=>{

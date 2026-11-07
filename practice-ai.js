@@ -32,6 +32,7 @@ const PracticeAI=(()=>{
   function prepareRealtime(){if(Date.now()<realtimeCooldown)return Promise.resolve({available:false});if(realtimeCache&&Date.now()-realtimeAt<60000)return Promise.resolve(realtimeCache);if(realtimePending)return realtimePending;realtimePending=receive('/practice-realtime/status',{},4000,false).then(s=>{realtimeCache=s;realtimeAt=Date.now();return s;}).finally(()=>{realtimePending=null;});return realtimePending;}
   function disableRealtime(){realtimeCooldown=Date.now()+300000;}
   const realtimeReady=()=>Date.now()>=realtimeCooldown&&realtimeCache?.available===true&&Date.now()-realtimeAt<120000;
+  const realtimeCanStart=()=>Date.now()>=realtimeCooldown&&(!realtimeCache||Date.now()-realtimeAt>=60000||realtimeCache.available===true);
   function recordUsage(requestId,kind,usage){
     if(!usage)return;const events=hGet(USAGE_KEY,{})||{},key=kind+':'+requestId;if(events[key])return;
     events[key]={t:Date.now(),kind,estimatedUsd:Math.max(0,Math.min(1,Number(usage.estimatedUsd)||0)),model:String(usage.model||'').slice(0,80),elapsedMs:Math.max(0,Number(usage.elapsedMs)||0),calls:Number.isFinite(usage.calls)?Math.max(0,usage.calls):1};
@@ -83,7 +84,7 @@ const PracticeAI=(()=>{
       return {decided:true,ok:data.pass&&!data.retry,retry:data.retry,reason:data.reason||'uncertain',local:false};
     });
   }
-  return {getMode,setMode,cancel,status,ensureReady,prepareRealtime,realtimeReady,disableRealtime,transcribe,localDecision,judge,usage,newId,reasonText};
+  return {getMode,setMode,cancel,status,ensureReady,prepareRealtime,realtimeReady,realtimeCanStart,disableRealtime,transcribe,localDecision,judge,usage,newId,reasonText};
 })();
 window.PracticeAI=PracticeAI;
 
