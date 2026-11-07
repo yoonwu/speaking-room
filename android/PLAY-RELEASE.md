@@ -1,8 +1,8 @@
 # Play 스토어 배포 준비
 
-현재 상태: 2026-10-02 서명된 0.5.0 AAB의 bundleRelease, testDebugUnitTest, lintRelease 및 웹 테스트 25개 통과. Play 내부 테스트 출시명·출시 노트 초안 저장. 브라우저 파일 업로드 권한 제한으로 운영자의 AAB 선택을 기다리는 중. Play Console 업로드, 계정별 로그인/음성 실기기 검증, 스토어 심사는 완료되지 않았습니다. APK 직접 설치나 보안 해제를 사용자 배포 경로로 안내하지 않습니다.
+현재 상태: 2026-11-07 14:09 KST **0.6.0/code 15를 Play 내부 테스터에게 게시**했습니다. 서명된 AAB, JVM 60개·Node 146개 테스트와 출시 lint를 통과했습니다. 실제 SDK/운영 서버에 합성 음성을 전송해 인식·지연을 확인했으며, 실제 Android 휴대폰 검증과 공개 프로덕션 출시는 완료되지 않았습니다. 변경사항·검증·Pro 크레딧 설정은 [통합 구현 보고](../docs/integrated-improvements-2026-11-07.md)를 참고하세요. 테스트 링크: https://play.google.com/apps/internaltest/4701513271479137806
 
-앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.5.0 / code 5. Android 8 이상, target API 36. 기본표현·골라서 연습·자주 틀리는 문장·AI 실전회화만 포함하며 이후 학습 화면은 [자동 배포](WEB-UPDATES.md)로 갱신합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다.
+앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.6.0 / code 15. Android 8 이상, target API 36. 기본표현·골라서 연습·자주 틀리는 문장·AI 실전회화만 포함하며 이후 학습 화면은 [자동 배포](WEB-UPDATES.md)로 갱신합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다. 선택형 의미 중심 판정은 별도로 서버의 Pro 제공 크레딧 확인을 요구하며 기본 비활성입니다.
 
 ## AAB 빌드와 서명
 
@@ -46,4 +46,4 @@ Play App Signing을 사용하면 Google이 배포 서명을 관리하고 개발�
 2026-09-30 기준 확인. 심사 통과나 모든 계정의 구독 사용을 보장하지 않습니다.
 
 ## 업로드 키 보관
-업로드 키는 Git 외부의 작업 폴더 private-release/speaking-room-upload.p12에 보관하고 비밀번호는 Windows DPAPI로 보호합니다. Git에 키·비밀번호를 업로드하지 않습니다. Play 업로드 파일은 outputs/speaking-room-0.5.0-play.aab입니다.
+업로드 키는 Git 외부의 작업 폴더 private-release/speaking-room-upload.p12에 보관하고 비밀번호는 Windows DPAPI로 보호합니다. Git에 키·비밀번호를 업로드하지 않습니다. Play 업로드 파일은 outputs/speaking-room-0.6.0-play.aab입니다.
