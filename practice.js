@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.7.0", APP_BUILD="2026-11-07";
+const APP_VERSION="v4.7.1", APP_BUILD="2026-11-07";
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -146,8 +146,11 @@ function startMissDrill(list){const items=missBuildItems(list);for(let i=items.l
 function startDrill(items,title){
   goToSetup();const profileId=typeof learningProfileId==='function'?learningProfileId():'legacy';
   items=items.map(it=>({...it,_attemptGroupId:practiceAttemptId(),_attempts:0,_hadIncorrect:false}));
-  autoDrill={items,idx:0,results:[],title,t0:0,typedAt:null,profileId};
+  autoDrill={items,plannedCount:items.length,idx:0,results:[],title,t0:0,typedAt:null,profileId,baseline:practiceSessionSnapshot()};
   curScreen='sprint';setup.hidden=true;setup.style.display='none';$('#sprint').hidden=false;autoDrillRender();
+}
+function practiceSessionSnapshot(){
+  return {profileId:typeof learningProfileId==='function'?learningProfileId():'legacy',expressionScores:typeof learningExpressionScores==='function'?learningExpressionScores():{},masteryRows:typeof learningMasteryRows==='function'?JSON.parse(JSON.stringify(learningMasteryRows())):{},xpTotal:typeof practiceReward==='function'?practiceReward().total:0,level:typeof practiceReward==='function'?practiceReward().level:1};
 }
 function autoDrillRender(recall=false){
   if(!autoDrill)return;if(autoDrill.idx>=autoDrill.items.length)return autoDrillDone();
@@ -243,9 +246,10 @@ function autoDrillApplyResult(lesson,it,heard,meta,g){
   const retry=!!(it._hadIncorrect||it._attempts),quick=!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&(typeof learningQuickEvidence==='function'?learningQuickEvidence(meta):meta.withinThreeSeconds===true&&Number.isFinite(meta.tapMs)&&meta.tapMs>=0&&meta.tapMs<=3000&&Number.isFinite(meta.speechStartDelayMs)&&meta.speechStartDelayMs>=0&&meta.speechStartDelayMs<=1500),perfect=g.ok&&quick;
   it._attempts=(it._attempts||0)+1;if(!g.ok)it._hadIncorrect=true;
   it._lastHeard=heard;it._lastOk=g.ok;it._lastExpressionOnly=expressionOnly;practiceTrackWordMisses(it,heard,meta,g);
-  travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);autoDrill.results.push({ok:g.ok,expressionOnly,perfect,en:it.ex.en,heard});
-  if(typeof recordPractice==='function'){recordPractice({it,heard,ok:g.ok,perfect,expressionOnly,meta,started:autoDrill.t0,mode:autoDrill.title,attemptGroupId:it._attemptGroupId,attemptId:meta.attemptId,profileId:autoDrill.profileId,retry});autoDrill.results[autoDrill.results.length-1].xp=it._earnedXP||0;}
-  if(!perfect&&(it._requeues||0)<2){const again={...it,_intro:false,_hintUsed:false,_requeues:(it._requeues||0)+1,_lastHeard:'',_lastOk:false};if(!it._requeues)autoDrill.items.splice(Math.min(autoDrill.items.length,autoDrill.idx+5+Math.floor(Math.random()*3)),0,again);else autoDrill.items.push(again);}
+  travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);
+  const result={attemptId:meta.attemptId||practiceAttemptId(),attemptGroupId:it._attemptGroupId,ok:g.ok,expressionOnly,perfect,en:it.ex.en,ko:it.ex.ko,fid:it.frame.id,heard,retry,recall:!!it.recall,intro:!!it._intro,hinted:!!it._hintUsed,typed:!!meta.typed,timingVersion:meta.timingVersion,tapMs:meta.tapMs,speechStartDelayMs:meta.speechStartDelayMs,responseMs:meta.responseMs,speedEligible:meta.speedEligible===true,withinThreeSeconds:meta.withinThreeSeconds===true,tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true};
+  autoDrill.results.push(result);
+  if(typeof recordPractice==='function'){const reward=recordPractice({it,heard,ok:g.ok,perfect,expressionOnly,meta,started:autoDrill.t0,mode:autoDrill.title,attemptGroupId:it._attemptGroupId,attemptId:result.attemptId,profileId:autoDrill.profileId,retry})||{};result.xp=reward.xp||0;result.bonus=reward.bonus||0;}
   const message=perfect?'⚡ '+(meta.responseMs/1000).toFixed(1)+'초 만에 꺼냈어요!':g.ok?(it.recall||retry?'다시 말해서 맞혔어요. 다음 문장으로 이어가요.':it._intro||it._hintUsed?'표현을 익혔어요. 이번엔 가리고 말해봐요.':'정답이에요. 다음엔 3초 안에 꺼내봐요.'):g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:expressionOnly?(quick?'⚡ 3초 안에 표현을 꺼냈어요! 이번엔 핵심 단어도 넣어보세요.':'표현은 맞혔어요! 이번엔 상황에 맞는 핵심 단어도 넣어보세요.'):`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
   const needsRecall=!g.ok||(!it.recall&&(it._intro||it._hintUsed));
   autoDrillShowResult(it,needsRecall,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
@@ -288,9 +292,21 @@ function autoDrillDone(){
   stopResponseClock();
   if(typeof PracticeAI!=='undefined')PracticeAI.cancel();
   sessionEpoch++;stopMicrophone();clearAnswerVoice();svStop();if(TTS)TTS.cancel();
-  const rows=autoDrill.results,title=autoDrill.title,correct=rows.filter(r=>r.ok).length;
+  const lesson=autoDrill,after=practiceSessionSnapshot(),report=PracticeSessionSummary.build({results:lesson.results,baseline:lesson.baseline,after,completed:lesson.idx>=lesson.plannedCount,totalPlanned:lesson.plannedCount});
   autoDrill=null;pendingReply=false;
-  $('#sprintScroll').innerHTML=`<div class="done"><p class="eyebrow">${escapeHtml(title)}</p><h2>${rows.length?'연습을 마쳤어요':'다음에 이어서 연습해요'}</h2>${rows.length?`<p>${rows.length}번 중 ${correct}번 상황에 맞게 말했어요.</p>${rows.some(r=>r.xp)?`<div class="session-reward"><b>+${rows.reduce((n,r)=>n+(r.xp||0),0)} XP</b><span>이번 연습에서 쌓은 경험치</span></div>`:''}<p class="muted">틀린 문장은 ‘자주 틀리는 문장’에서 다시 연습할 수 있어요.</p>`:''}<button id="doneHome" class="primary">홈으로</button></div>`;$('#doneHome').onclick=goToSetup;renderHome();
+  $('#sprintScroll').innerHTML=practiceSessionResultHTML(report,lesson.title,lesson.baseline,after);
+  $('#doneHome').onclick=goToSetup;
+  const review=$('#doneReview');if(review)review.onclick=()=>{const items=report.needsPractice.map(r=>{const f=TRAVEL_BY_ID[r.fid];if(!f)return null;const ex={...(basicCoreItems(f)||[]).find(ex=>learningSentenceKey(ex.en)===r.key),en:r.en,ko:r.ko||travelKrOf(r.en)||f.ko},frame=basicFrameFor(f,ex);return {_travel:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};}).filter(Boolean);if(items.length)startDrill(items,'한 번 더 연습');};
+  renderHome();
+}
+function practiceSessionResultHTML(report,title,before,after){
+  const e=escapeHtml,rows=(list,kind)=>list.map(r=>{let note=kind==='quick'?(r.finalOutcome==='partial'?'표현을 바로 꺼냈어요 · 단어는 한 번 더':'3초 안에 누르고 바로 말했어요'):kind==='recovered'?'다시 도전해서 끝내 맞혔어요':kind==='improved'?`문장 익숙함 ${r.beforeScore} → ${r.afterScore}`:kind==='needs'?(r.finalOutcome==='partial'?'표현은 맞았어요 · 핵심 단어만 더 연습해요':'다음 연습에서 한 번 더 꺼내봐요'):'상황에 맞게 문장을 완성했어요';return `<li><b>${e(r.en)}</b>${r.ko?`<span>${e(r.ko)}</span>`:''}<small>${e(note)}</small>${kind==='improved'?`<em>+${e(String(r.scoreDelta))}</em>`:''}</li>`;}).join('');
+  const section=(heading,copy,list,kind)=>!list.length?'':`<section class="session-section session-${kind}"><h3>${heading}<span>${list.length}</span></h3><p>${copy}</p><ul>${rows(list.slice(0,3),kind)}</ul>${list.length>3?`<details><summary>나머지 ${list.length-3}문장 보기</summary><ul>${rows(list.slice(3),kind)}</ul></details>`:''}</section>`;
+  if(!report.attempts)return `<div class="done session-done"><div class="session-hero"><img src="mascot-guide.png" width="100" height="100" alt=""><p class="eyebrow">${e(title)}</p><h2>다음에 이어서 연습해요</h2><p>짧게라도 다시 꺼내 말하면,<br>그만큼 입에 붙어요.</p></div><button id="doneHome" class="primary">홈으로</button></div>`;
+  const quick=report.sentences.filter(r=>r.firstFastExpression),steady=report.sentences.filter(r=>r.finalOutcome==='full'&&!r.firstFastExpression&&!r.recovered),levelUp=after.level>before.level;
+  const changes=report.expressionChanges.filter(r=>r.improved||r.isNew&&r.afterScore>0);
+  const progress=changes.length?`<section class="session-section session-growth"><h3>표현이 더 익숙해졌어요<span>${changes.length}</span></h3><p>3초 안에 꺼내는 연습이 이렇게 쌓였어요.</p>${changes.map(r=>`<div class="session-expression"><div><b>${e(TRAVEL_BY_ID[r.fid]?.frame||r.fid)}</b><span>${r.isNew?'새로 쌓은 기록':e(String(r.beforeScore))+' →'} <strong>${e(String(r.afterScore))}</strong><small> / 10</small></span></div><div class="session-meter"><i style="width:${Math.max(0,Math.min(100,r.afterScore*10))}%"></i></div></div>`).join('')}</section>`:'';
+  return `<div class="done session-done"><div class="session-hero"><img src="mascot-cheer.png" width="108" height="108" alt="기뻐하는 삼초"><p class="eyebrow">${e(title)} · ${report.completed?'연습 완료':'여기까지 연습'}</p><h2>${report.completed?'오늘의 한 걸음, 해냈어요!':'여기까지도 차곡차곡 쌓였어요'}</h2><p><strong>${report.uniqueSentences}문장</strong>을 연습했어요.<br>다시 말한 한 번도, 내 영어가 되는 중이에요.</p></div><div class="session-xp"><div><span>이번에 쌓은 경험치</span><b>+${report.xp} <small>XP</small></b>${report.bonusXP?`<p>오늘의 10회 목표 보너스 +${report.bonusXP} 포함</p>`:''}</div><span class="session-level">${levelUp?'레벨 업! ':''}Lv.${after.level}</span></div><div class="session-numbers"><div><b>${quick.length}<small>문장</small></b><span>바로 꺼낸 표현</span></div><div><b>${report.recovered.length}<small>문장</small></b><span>다시 도전해 성공</span></div><div><b>${report.attemptedQuestions}<small> / ${report.totalPlanned}</small></b><span>연습한 문제</span></div></div>${progress}${section('지난번보다 늘었어요','지난 연습 기록보다 문장 익숙함이 올라갔어요.',report.improved,'improved')}${section('바로 꺼낸 문장','생각이 영어로 바로 이어진 순간이에요.',quick,'quick')}${section('다시 말해, 해냈어요','처음에 막혀도 괜찮아요. 결국 내 입으로 완성했어요.',report.recovered,'recovered')}${section('차근차근 맞힌 문장','천천히 완성한 문장도 차곡차곡 쌓여요.',steady,'steady')}${section('다음엔 더 편해질 문장','어려웠던 문장은 다음 연습의 작은 목표로 남겨요.',report.needsPractice,'needs')}<p class="session-footer-note">${report.counts.fullCorrect?`${report.counts.fullCorrect}문장을 끝내 완성했어요. `:''}오늘 연습한 기록은 성장 기록에도 쌓였어요.</p>${report.needsPractice.length?'<button id="doneReview" class="primary">이 문장만 한 번 더 연습하기</button>':''}<button id="doneHome" class="${report.needsPractice.length?'quiet':'primary'}">홈으로</button></div>`;
 }
 function openSurvival(){
   const ov=openSheet('AI 실전회화'),content=ov.querySelector('#sheetContent');

@@ -237,22 +237,23 @@ function recordPractice({it,heard,ok,perfect,expressionOnly=false,meta={},starte
   if(profileId!==learningProfileId()){it._earnedXP=0;return {ignored:true};}
   const log=supportLog(),id='attempt:'+String(attemptId||learningNewAttemptId()),group=String(attemptGroupId||it._attemptGroupId||learningNewAttemptId());
   if(log[id]){learningRecordMastery(log[id],id);learningProgressRefresh();it._earnedXP=0;return {duplicate:true,xp:0};}
-  const previous=Object.values(log).filter(e=>e&&e.rewardVersion===2&&e.attemptGroupId===group);
+  const previous=Object.values(log).filter(e=>e&&(e.rewardVersion===2||e.rewardVersion===3)&&e.attemptGroupId===group);
   const isRetry=previous.length>0||retry;
   const responseMs=learningResponseMs(meta.responseMs),partial=!!(!ok&&expressionOnly);
   const quickEvidence=learningQuickEvidence(meta)&&!it._intro&&!it._hintUsed&&!it.recall&&!isRetry;
   const fast=!!(ok&&perfect&&quickEvidence),fastExpression=!!(partial&&quickEvidence);
   const firstWrong=previous.some(e=>e.firstWrong)||(!previous.length&&!ok&&!partial);
   const firstReward=ok?(fast?30:15):partial?(fastExpression?15:10):0;
-  // The first credited answer consumes this question's budget. A partial
-  // answer keeps its 10/15 XP when requeued, while a zero-point miss can
-  // still earn at most 5 XP from all later retries together.
-  const cap=previous.length?Math.min(...previous.map(e=>Number(e.rewardCap)||0)):(firstWrong||isRetry?5:firstReward||5);
-  const awarded=previous.reduce((n,e)=>n+Math.max(0,Number(e.xp)||0),0);
-  const xp=ok||partial?Math.max(0,Math.min(cap-awarded,firstWrong||isRetry?5:firstReward)):0;
+  // Keep the original first-answer award and allow one additional successful
+  // retry bonus. Historical v2 retry credit consumes the same five-point slot.
+  const credited=learningRewardEvents(previous),baseXP=isRetry?0:firstReward;
+  const creditedRetry=credited.reduce((sum,event)=>sum+(event.rewardVersion===3?event.retryBonusXP:event.retry||event.firstWrong?event.xp:0),0);
+  const retryBonusXP=isRetry&&(ok||partial&&firstWrong)?Math.max(0,5-creditedRetry):0;
+  const creditedBase=credited.reduce((sum,event)=>sum+(event.rewardVersion===3?event.baseXP:event.retry||event.firstWrong?0:event.xp),0);
+  const cap=creditedBase+baseXP+5,xp=baseXP+retryBonusXP;
   const reaction=responseMs!==null&&!meta.typed?responseMs/1000:meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   const order=Object.values(log).reduce((n,e)=>Math.max(n,Number(e?.order)||0),0)+1;
-  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ko:it.ex.ko||'',ok,perfect:fast,expressionOnly:partial,fastExpression,intro:!!it._intro,hinted:!!it._hintUsed,recall:!!it.recall,retry:isRetry,timingVersion:meta.timingVersion===2?2:1,responseMs,tapMs:learningResponseMs(meta.tapMs),speechStartDelayMs:learningResponseMs(meta.speechStartDelayMs),tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:meta.withinThreeSeconds===true,speedEligible:meta.speedEligible===true,fast,attemptGroupId:group,rewardVersion:2,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
+  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ko:it.ex.ko||'',ok,perfect:fast,expressionOnly:partial,fastExpression,intro:!!it._intro,hinted:!!it._hintUsed,recall:!!it.recall,retry:isRetry,timingVersion:meta.timingVersion===2?2:1,responseMs,tapMs:learningResponseMs(meta.tapMs),speechStartDelayMs:learningResponseMs(meta.speechStartDelayMs),tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:meta.withinThreeSeconds===true,speedEligible:meta.speedEligible===true,fast,attemptGroupId:group,rewardVersion:3,baseXP,retryBonusXP,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
   if(fast&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
   const before=practiceReward();
   if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
@@ -260,11 +261,11 @@ function recordPractice({it,heard,ok,perfect,expressionOnly=false,meta={},starte
   if(bonus)log['dailyBonus:'+SUPPORT_DAY()]={t:Date.now(),kind:'dailyBonus',xp:0,dailyBonus:bonus};
   if(fast&&heard){const expected=new Set(practiceWords(it.ex.en));log[id].words=practiceWords(heard).filter(w=>expected.has(w));}
   hSet(PRACTICE_LOG,log);learningRecordMastery(log[id],id);learningProgressRefresh();const after=practiceReward();it._earnedXP=xp;it._mastery=learningSentenceMastery(it.ex.en);
-  it._rewardMessage='+'+xp+' XP'+(fast?' · ⚡ 빠르게 꺼내 말했어요':fastExpression?' · ⚡ 표현을 빠르게 꺼냈어요':'')+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
+  it._rewardMessage='+'+xp+' XP'+(retryBonusXP?' · 다시 말하기 정답 보너스':isRetry&&ok?' · 다시 말하기 보너스는 이미 받았어요':fast?' · ⚡ 빠르게 꺼내 말했어요':fastExpression?' · ⚡ 표현을 빠르게 꺼냈어요':'')+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
   autoLvlRecord('speak',fast?'perfect':ok||partial?'ok':'miss');
   if(reaction!==null&&!meta.typed)autoLvlRecord('speed',fast||fastExpression?'perfect':ok||partial?'ok':'miss');
   supportQueueSync();
-  return {xp,bonus,fast,expressionOnly:partial,fastExpression,mastery:it._mastery};
+  return {xp,bonus,baseXP,retryBonusXP,fast,expressionOnly:partial,fastExpression,mastery:it._mastery};
 }
 let supportTalkAt=Date.now();
 function recordAiPractice(){const log=supportLog(),id=Date.now()+'-'+Math.random();log[id]={t:Date.now(),kind:'talk',seconds:Math.min(90,Math.max(1,(Date.now()-supportTalkAt)/1000))};supportTalkAt=Date.now();hSet(PRACTICE_LOG,log);supportBump('talk');supportQueueSync();}
@@ -308,7 +309,15 @@ travelWeightFor=function(id,stat){const f=TRAVEL_BY_ID[id],factor=learningFrameW
 travelPickFrames=function(n,pool){const available=learningAvailableFrames(),ids=new Set(available.map(f=>f.id)),allowed=pool?pool.filter(f=>ids.has(f.id)):available;const previous=learningFrameWeightSnapshot,events=supportEvents(),context={n:alGet().speak,events,expressionScores:learningExpressionScores(events)};learningFrameWeightSnapshot=new Map(allowed.map(f=>[f.id,learningFrameCostFactor(f,context)]));try{return learningOriginalFramePicker(n,allowed);}finally{learningFrameWeightSnapshot=previous;}};
 function learningRewardEvents(events){
  const caps=Object.create(null),used=Object.create(null);for(const e of events)if(e.rewardVersion===2&&e.attemptGroupId)caps[e.attemptGroupId]=Math.min(caps[e.attemptGroupId]??Infinity,Math.max(0,Number(e.rewardCap)||0));
- return events.map(e=>{let xp=Math.max(0,Number(e.xp)||0);if(e.rewardVersion===2&&e.attemptGroupId){const group=e.attemptGroupId;xp=Math.min(xp,Math.max(0,caps[group]-(used[group]||0)));used[group]=(used[group]||0)+xp;}return {...e,xp};});
+ const normalized=events.map(e=>{let xp=Math.max(0,Number(e.xp)||0);if(e.rewardVersion===2&&e.attemptGroupId){const group=e.attemptGroupId;xp=Math.min(xp,Math.max(0,caps[group]-(used[group]||0)));used[group]=(used[group]||0)+xp;}return {...e,xp};});
+ const oldBase=Object.create(null),oldRetry=Object.create(null),baseCaps=Object.create(null),newBase=Object.create(null),newRetry=Object.create(null);
+ for(const event of normalized){const group=event.attemptGroupId;if(!group)continue;if(event.rewardVersion===2){const totals=event.retry||event.firstWrong?oldRetry:oldBase;totals[group]=(totals[group]||0)+event.xp;}else if(event.rewardVersion===3&&!event.retry)baseCaps[group]=Math.max(baseCaps[group]||0,Math.max(0,Math.min(30,Number(event.baseXP)||0)));}
+ return normalized.map(event=>{if(event.rewardVersion!==3||!event.attemptGroupId)return event;const group=event.attemptGroupId;
+  const baseXP=!event.retry?Math.max(0,Math.min(30,Number(event.baseXP)||0,(baseCaps[group]||0)-(oldBase[group]||0)-(newBase[group]||0))):0;
+  const retryBonusXP=event.retry&&(event.ok||event.expressionOnly&&event.firstWrong)?Math.max(0,Math.min(5,Number(event.retryBonusXP)||0,5-(oldRetry[group]||0)-(newRetry[group]||0))):0;
+  newBase[group]=(newBase[group]||0)+baseXP;newRetry[group]=(newRetry[group]||0)+retryBonusXP;
+  return {...event,baseXP,retryBonusXP,xp:baseXP+retryBonusXP};
+ });
 }
 function practiceReward(){
   let base=hGet('speakingroom:practice_xpbase',null);
@@ -393,7 +402,7 @@ const FEATURE_GUIDES={
  ai:{icon:'💬',title:'AI 실전회화',steps:[['연습한 한마디로 대화를 이어봐요','상황을 고르면 상대가 먼저 말을 걸어요. 완벽한 문장을 만들려고 오래 고민하지 말고, 전하고 싶은 뜻부터 말해봐요.'],['막히면 도움을 받아요','막혔어요에서 예시 답변을, 내 표현 확인에서 교정을 볼 수 있어요. Android의 ChatGPT 연결과 음성 대화는 이 화면에서 사용해요.']]},
  growth:{icon:'🌱',title:'실력 · 성장 기록',revision:4,steps:[['표현이 바로 나오는 힘을 봐요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작해보세요. 표현이 맞으면 내용 단어를 놓쳐도 표현 익숙함에 똑같이 쌓여요. 최근 5회의 평균이 8점이 되면 다음 표현이 하나 열려요.'],['한번 열린 표현은 계속 남아요','익숙한 표현은 덜 자주 나오고, 다시 막히면 연습 비중이 돌아와요. 힌트·처음 보고 따라 말하기·직접 입력·바로 재시도는 표현 익숙함에 포함하지 않아요. 내용 단어까지 맞히는 문장 숙련도는 따로 확인할 수 있어요.']]},
  words:{icon:'📚',title:'익숙해진 단어',steps:[['내가 직접 꺼낸 단어들이에요','예문에 나온 단어를 힌트 없이 맞힌 답변에서 3회 사용하면 여기에 쌓여요. 문장 속에서 직접 써본 단어를 확인해봐요.'],['아직 쌓이는 중인 단어도 보여요','1~2회 맞힌 단어와 3회 이상 맞힌 단어를 구분해서 볼 수 있어요. 답을 보고 따라 한 경우와 한 답변 안의 중복은 세지 않아요.']]},
- xp:{icon:'⭐',title:'학습 레벨 · 경험치',revision:5,steps:[['꺼낸 만큼, 빠른 만큼 쌓여요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작하면 빠른 답이에요. 처음 답할 때 문장 전체를 맞히면 빠른 답 30 XP·일반 답 15 XP, 표현은 맞고 단어를 놓쳤다면 빠른 답 15 XP·일반 답 10 XP예요. 같은 문제를 다시 풀어도 점수가 더 쌓이지는 않아요. 점수 없이 틀린 문제는 재시도 전체를 합쳐 최대 5 XP, 오늘 10회 목표는 별도로 +25 XP예요.'],['표현 익숙함과 문장 숙련도는 달라요','표현을 바로 꺼내면 내용 단어를 놓쳐도 표현 익숙함에는 똑같이 쌓여요. 내용 단어까지 맞히면 문장 숙련도도 올라요. 학습 레벨은 XP로 쌓은 연습량을 보여주고, 틀려도 이미 얻은 XP는 줄지 않아요.']]},
+ xp:{icon:'⭐',title:'학습 레벨 · 경험치',revision:6,steps:[['꺼낸 만큼, 빠른 만큼 쌓여요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작하면 빠른 답이에요. 처음 답할 때 문장 전체를 맞히면 빠른 답 30 XP·일반 답 15 XP, 표현은 맞고 단어를 놓쳤다면 빠른 답 15 XP·일반 답 10 XP예요. 다시 말해서 문장 전체를 맞히면 처음 점수와 별도로 +5 XP를 한 문제당 한 번 받아요. 처음 틀렸어도 다시 맞히면 5 XP예요. 오늘 10회 목표는 별도로 +25 XP예요.'],['표현 익숙함과 문장 숙련도는 달라요','표현을 바로 꺼내면 내용 단어를 놓쳐도 표현 익숙함에는 똑같이 쌓여요. 내용 단어까지 맞히면 문장 숙련도도 올라요. 재시도 보너스는 표현 익숙함을 올리지는 않아요. 학습 레벨은 XP로 쌓은 연습량을 보여주고, 틀려도 이미 얻은 XP는 줄지 않아요.']]},
  profile:{icon:'☺',title:'내 프로필',steps:[['나의 기록을 한곳에서 봐요','앱에서 부를 이름을 바꾸고, 학습 레벨과 경험치, 성장 기록을 확인할 수 있어요.'],['필요한 안내를 다시 볼 수 있어요','랭킹과 기록 동기화로 이동하거나 처음 사용법을 다시 열어 각 기능의 안내를 볼 수 있어요.']]},
  rank:{icon:'🏆',title:'랭킹',steps:[['함께 쌓은 기록을 봐요','이번 주와 누적 학습 시간, 익숙한 표현, 연속 학습 기록을 비교할 수 있어요.'],['기록 동기화로 참여해요','연결한 표시 이름과 학습 통계가 랭킹에 공개돼요. 내 기록을 연결하지 않아도 랭킹을 확인할 수 있어요.']]},
  sync:{icon:'☁️',title:'기록 동기화',steps:[['같은 닉네임으로 이어서 해요','다른 기기에서 같은 닉네임을 입력하면 기존 서버의 학습 기록을 불러와 합쳐요. 추측하기 어려운 별명을 사용하세요.'],['무엇이 저장되는지 확인해요','연결하면 학습 기록을 서버에 저장하고 표시 이름과 요약 통계를 랭킹에 공개해요. ChatGPT 로그인 정보와 대화 내용은 보내지 않아요. 자동 동기화를 꺼도 기존 기록은 남아 있어요.']]}

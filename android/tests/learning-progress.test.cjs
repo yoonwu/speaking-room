@@ -53,9 +53,9 @@ test('verified expression mastery reduces whole-frame appearances while keeping 
  h.run(`for(let i=0;i<30;i++){const f=travelPickFrames(1,[mastered])[0];if(f.id!==mastered.id)throw Error('unselected expression');const ex=travelPickItem(f,travelAll(),{introduce:true});if(ex.en!==basicStarterItem(f).en)throw Error('intro must retain the short starter');}`);
 });
 
-test('a first answer after viewing a hint keeps normal hinted XP without creating a retry farming path',()=>{
+test('a first answer after viewing a hint keeps normal hinted XP and one separate retry-success bonus',()=>{
  const h=setup();h.run(`const viewed={frame:testFrame,ex:{en:'Can I get water?',ko:'water'},_hintUsed:true,recall:true};const first=answer(viewed.ex.en,'shown-1',{it:viewed,attemptGroupId:'shown',perfect:false});const next=answer(viewed.ex.en,'shown-2',{it:{...viewed},attemptGroupId:'shown',perfect:false});`);
- assert.equal(h.run('first.xp'),15);assert.equal(h.run('next.xp'),0);assert.equal(h.run('practiceReward().total'),15);
+ assert.equal(h.run('first.xp'),15);assert.equal(h.run('next.xp'),5);assert.equal(h.run('practiceReward().total'),20);
 });
 
 test('legacy records remain intact while learner mastery, XP, settings and sync metadata are isolated through reload',()=>{
@@ -151,19 +151,19 @@ test('a partial preserves earned sentence mastery but clears fast graduation and
  assert.deepEqual(plain(h.run('supportWordStats()')),plain(h.run('priorWords')));
 });
 
-test('partial credit survives immediate and copied requeue corrections without farming or reducing its ten or fifteen XP',()=>{
+test('partial credit gains one five-XP correction bonus without farming or reducing its ten or fifteen XP',()=>{
  for(const quick of [false,true]){
   const h=setup();h.run(`const original={frame:testFrame,ex:{en:'Can I get water?'},_attemptGroupId:'partial-group',_intro:false};
    const partial=answer(original.ex.en,'first',{it:original,attemptGroupId:'partial-group',ok:false,perfect:false,expressionOnly:true,meta:{responseMs:${quick?1200:4100},speedEligible:true,withinThreeSeconds:${quick}}});
    const immediate=answer(original.ex.en,'second',{it:{...original,recall:true},attemptGroupId:'partial-group'});
    const requeued=answer(original.ex.en,'third',{it:{...original,_requeues:1},attemptGroupId:'partial-group'});
    const partialAgain=answer(original.ex.en,'fourth',{it:{...original},attemptGroupId:'partial-group',ok:false,perfect:false,expressionOnly:true});`);
-  assert.equal(h.run('partial.xp'),quick?15:10);assert.equal(h.run('immediate.xp+requeued.xp+partialAgain.xp'),0);assert.equal(h.run('practiceReward().total'),quick?15:10);assert.equal(h.run('supportEvents().length'),4);
-  const restored=setup(Object.fromEntries(h.records));restored.run(`const later=answer('Can I get water?','later',{attemptGroupId:'partial-group'});`);assert.equal(restored.run('later.xp'),0);assert.equal(restored.run('practiceReward().total'),quick?15:10);
+  assert.equal(h.run('partial.xp'),quick?15:10);assert.equal(h.run('immediate.xp'),5);assert.equal(h.run('requeued.xp+partialAgain.xp'),0);assert.equal(h.run('practiceReward().total'),quick?20:15);assert.equal(h.run('supportEvents().length'),4);
+  const restored=setup(Object.fromEntries(h.records));restored.run(`const later=answer('Can I get water?','later',{attemptGroupId:'partial-group'});`);assert.equal(restored.run('later.xp'),0);assert.equal(restored.run('practiceReward().total'),quick?20:15);
  }
 });
 
-test('a first zero-point miss limits later partial and full retries together to five XP',()=>{
+test('a first zero-point miss preserves five-XP partial retry credit and shares that slot with later full corrections',()=>{
  const h=setup();h.run(`const wrong=answer('Can I get water?','wrong',{attemptGroupId:'zero-group',ok:false,perfect:false});const partial=answer('Can I get water?','partial',{attemptGroupId:'zero-group',ok:false,perfect:false,expressionOnly:true});const full=answer('Can I get water?','full',{attemptGroupId:'zero-group'});const again=answer('Can I get water?','partial-again',{attemptGroupId:'zero-group',ok:false,perfect:false,expressionOnly:true});`);
  assert.deepEqual([...h.run('[wrong.xp,partial.xp,full.xp,again.xp]')],[0,5,0,0]);assert.equal(h.run('partial.fastExpression'),false);assert.equal(h.run('practiceReward().total'),5);
  assert.equal(h.run(`learningSentenceMastery('Can I get water?').score`),4);assert.equal(h.run(`learningSentenceMastery('Can I get water?').correct`),1);
@@ -179,9 +179,9 @@ test('partial histories sync idempotently, retain caps and learner isolation, an
  const h=setup();h.run(`const fast=answer('Can I get water?','partial',{attemptGroupId:'group',ok:false,perfect:false,expressionOnly:true});const adaptive=alGet();`);
  assert.deepEqual([...h.run('adaptive.st.speak.hist')],[.85]);assert.deepEqual([...h.run('adaptive.st.speed.hist')],[1]);
  const payload=plain(h.run('supportCollect()')),restored=setup();restored.context.snapshot=payload;restored.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot)');assert.equal(restored.run('practiceReward().total'),15);
- const log=plain(restored.run(`supportLog()['attempt:partial']`));assert.equal(log.expressionOnly,true);assert.equal(log.fastExpression,true);assert.equal(log.ok,false);assert.equal(log.rewardCap,15);
- assert.equal(restored.run(`hGet(SENTENCE_MASTERY,{}).events['attempt:partial'].delta`),0);restored.run(`const retry=answer('Can I get water?','retry',{attemptGroupId:'group'});`);assert.equal(restored.run('retry.xp'),0);
- restored.run(`const other=learningProfileCreate('다른 학습자');learningProfileSwitch(other);`);assert.equal(restored.run('practiceReward().total'),0);restored.run(`learningProfileSwitch('legacy');`);assert.equal(restored.run('practiceReward().total'),15);assert.equal(restored.run(`learningSentenceMastery('Can I get water?').seen`),2);
+ const log=plain(restored.run(`supportLog()['attempt:partial']`));assert.equal(log.expressionOnly,true);assert.equal(log.fastExpression,true);assert.equal(log.ok,false);assert.equal(log.rewardCap,20);
+ assert.equal(restored.run(`hGet(SENTENCE_MASTERY,{}).events['attempt:partial'].delta`),0);restored.run(`const retry=answer('Can I get water?','retry',{attemptGroupId:'group'});`);assert.equal(restored.run('retry.xp'),5);
+ restored.run(`const other=learningProfileCreate('다른 학습자');learningProfileSwitch(other);`);assert.equal(restored.run('practiceReward().total'),0);restored.run(`learningProfileSwitch('legacy');`);assert.equal(restored.run('practiceReward().total'),20);assert.equal(restored.run(`learningSentenceMastery('Can I get water?').seen`),2);
 });
 
 test('split timing permits a four-and-a-half second total while independently enforcing tap and speech-start deadlines',()=>{
@@ -205,4 +205,51 @@ test('same earned source on devices with different legacy availability merges wi
 test('growth shows current expression scores and split timing while retaining full-sentence mastery as a separate record',()=>{
  const h=setup();h.run(`hSet(featureGuideKey('growth'),true);const frame=TRAVEL_BY_ID.travel_can_i_get,it={frame,ex:basicStarterItem(frame),_intro:false},meta={timingVersion:2,tapMs:2800,speechStartDelayMs:1400,tapWithinThreeSeconds:true,speechWithinOnePointFiveSeconds:true,responseMs:4200,withinThreeSeconds:true,speedEligible:true};for(let i=0;i<4;i++)answer(it.ex.en,'expression-'+i,{it,ok:false,perfect:false,expressionOnly:true,meta});openGrowth();`);
  const html=h.elements.get('#sheetContent').innerHTML;assert.match(html,/id="expressionProgress"/);assert.match(html,/표현 익숙함 8\.0 \/ 10/);assert.match(html,/1<small>개 표현이 익숙해졌어요 · 11 \/ 23개 열림/);assert.match(html,/3초 안에 마이크를 누르고/);assert.match(html,/1\.5초 안에 말을 시작/);assert.match(html,/id="fullyLearnedSentences"/);assert.equal(h.run('learningLearnedSentences().length'),0);assert.equal(h.run('supportStats().automatic'),1);
+});
+
+test('an initially correct answer can earn one separate five-XP retry bonus while further successes and duplicate delivery earn none',()=>{
+ for(const quick of [true,false]){
+  const h=setup();h.run(`const it={frame:testFrame,ex:{en:'Can I get water?'},_attemptGroupId:'correct-group',_intro:false};const first=answer(it.ex.en,'correct-first',{it,attemptGroupId:'correct-group',perfect:${quick}});const retryItem={...it,recall:true};const retry=answer(it.ex.en,'correct-retry',{it:retryItem,attemptGroupId:'correct-group'});const retryMessage=retryItem._rewardMessage;const again=answer(it.ex.en,'correct-again',{it,attemptGroupId:'correct-group'});const duplicate=answer(it.ex.en,'correct-retry',{it,attemptGroupId:'correct-group'});`);
+  assert.equal(h.run('first.xp'),quick?30:15);assert.equal(h.run('first.baseXP'),quick?30:15);assert.equal(h.run('retry.xp'),5);assert.equal(h.run('retry.baseXP'),0);assert.equal(h.run('retry.retryBonusXP'),5);assert.equal(h.run('again.xp'),0);assert.equal(h.run('duplicate.duplicate'),true);assert.equal(h.run('practiceReward().total'),quick?35:20);assert.equal(h.run('supportEvents().length'),3);
+  const log=plain(h.run(`supportLog()['attempt:correct-retry']`));assert.equal(log.rewardVersion,3);assert.equal(log.baseXP,0);assert.equal(log.retryBonusXP,5);assert.equal(log.ok,true);assert.equal(log.perfect,false);
+  assert.match(h.run('retryMessage'),/^\+5 XP · 다시 말하기 정답 보너스/);assert.match(h.run(`it._rewardMessage`),/보너스는 이미 받았어요/);
+ }
+});
+
+test('independent devices can award the same retry bonus locally but sync and reload credit only five XP per question',()=>{
+ const first=setup();first.run(`answer('Can I get water?','first',{attemptGroupId:'shared'});`);const seed=Object.fromEntries(first.records),a=setup(seed),b=setup(seed);
+ a.run(`const retry=answer('Can I get water?','device-a',{attemptGroupId:'shared'});`);b.run(`const retry=answer('Can I get water?','device-b',{attemptGroupId:'shared'});`);assert.equal(a.run('retry.xp'),5);assert.equal(b.run('retry.xp'),5);
+ a.context.snapshot=plain(b.run('supportCollect()'));a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot)');assert.equal(a.run('practiceReward().total'),35);assert.equal(a.run('practiceReward().todayXP'),35);assert.equal(a.run('supportRankingSummary().week'),35);assert.equal(a.run('supportEvents().length'),3);
+ const restored=setup(Object.fromEntries(a.records));assert.equal(restored.run('practiceReward().total'),35);assert.equal(restored.run(`answer('Can I get water?','after-reload',{attemptGroupId:'shared'}).xp`),0);
+ restored.run(`const other=learningProfileCreate('다른 학습자');learningProfileSwitch(other);`);assert.equal(restored.run('practiceReward().total'),0);assert.equal(restored.run(`answer('Can I get water?','same-name',{attemptGroupId:'shared'}).xp`),30);restored.run(`learningProfileSwitch('legacy');`);assert.equal(restored.run('practiceReward().total'),35);
+});
+
+test('historical v2 first-answer XP remains intact and receives its new retry bonus without old caps erasing it',()=>{
+ for(const originalXP of [10,15,30]){
+  const first={t:Date.now()-10,order:1,fid:'travel_can_i_get',en:'Can I get water?',ok:originalXP===30,expressionOnly:originalXP!==30,retry:false,rewardVersion:2,attemptGroupId:'old-group',rewardCap:originalXP,firstWrong:false,xp:originalXP},h=setup({'speakingroom:practice_log_v1':JSON.stringify({'attempt:old':first})});
+  h.run(`const retry=answer('Can I get water?','new-retry',{attemptGroupId:'old-group'});const again=answer('Can I get water?','new-again',{attemptGroupId:'old-group'});`);assert.equal(h.run('retry.xp'),5);assert.equal(h.run('again.xp'),0);assert.equal(h.run('practiceReward().total'),originalXP+5);assert.deepEqual(plain(h.run(`supportLog()['attempt:old']`)),first);
+ }
+});
+
+test('a historical v2 partial retry already credited five XP consumes the same slot and does not lose its reward',()=>{
+ const first={t:1,order:1,fid:'travel_can_i_get',en:'Can I get water?',ok:false,retry:false,firstWrong:true,attemptGroupId:'old-wrong',rewardVersion:2,rewardCap:5,xp:0},partial={...first,t:2,order:2,retry:true,expressionOnly:true,xp:5},h=setup({'speakingroom:practice_log_v1':JSON.stringify({'attempt:old-wrong':first,'attempt:old-partial':partial})});
+ h.run(`const correct=answer('Can I get water?','new-correct',{attemptGroupId:'old-wrong'});`);assert.equal(h.run('correct.xp'),0);assert.equal(h.run('practiceReward().total'),5);assert.equal(h.run(`supportLog()['attempt:old-partial'].xp`),5);
+});
+
+test('mixed v2 and v3 retry transactions sync without duplicating the success bonus or reducing first-answer credit',()=>{
+ const h=setup();h.run(`answer('Can I get water?','first',{attemptGroupId:'mixed'});answer('Can I get water?','new-retry',{attemptGroupId:'mixed'});const oldFirst={...supportLog()['attempt:first'],rewardVersion:2,rewardCap:30,xp:30};delete oldFirst.baseXP;delete oldFirst.retryBonusXP;const remoteLog={'attempt:old-first':oldFirst};const snapshot={[PRACTICE_LOG]:JSON.stringify(remoteLog)};supportApplySnapshot(snapshot);supportApplySnapshot(snapshot);`);assert.equal(h.run('practiceReward().total'),35);
+ const oldWrong={t:1,fid:'travel_can_i_get',en:'Can I get water?',ok:false,retry:false,firstWrong:true,attemptGroupId:'mixed-wrong',rewardVersion:2,rewardCap:5,xp:0},oldRetry={...oldWrong,t:2,ok:true,retry:true,xp:5},other=setup();other.run(`answer('Can I get water?','wrong',{attemptGroupId:'mixed-wrong',ok:false,perfect:false});answer('Can I get water?','new-retry',{attemptGroupId:'mixed-wrong'});`);other.context.snapshot={'speakingroom:practice_log_v1':JSON.stringify({'attempt:old-wrong':oldWrong,'attempt:old-retry':oldRetry})};other.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot)');assert.equal(other.run('practiceReward().total'),5);
+});
+
+test('retry XP never raises expression mastery, creates an unlock, or accumulates learned-word successes',()=>{
+ const h=setup();h.run(`const frame=TRAVEL_BY_ID.travel_can_i_get,it={frame,ex:basicStarterItem(frame),_intro:false,_attemptGroupId:'expression-group'},meta={timingVersion:2,tapMs:1000,speechStartDelayMs:500,tapWithinThreeSeconds:true,speechWithinOnePointFiveSeconds:true,responseMs:1500,withinThreeSeconds:true,speedEligible:true};answer(it.ex.en,'first',{it,attemptGroupId:'expression-group',meta});const wordsBefore=supportWordStats();for(let i=0;i<10;i++)answer(it.ex.en,'retry-'+i,{it,attemptGroupId:'expression-group',meta});`);
+ assert.equal(h.run('practiceReward().total'),35);assert.equal(h.run('learningExpressionScore(frame.id)'),2);assert.equal(h.run('learningAvailableFrames().length'),10);assert.equal(h.run('Object.keys(learningProgressRefresh().earned).length'),0);assert.deepEqual(plain(h.run('supportWordStats()')),plain(h.run('wordsBefore')));
+});
+
+test('partial retries retain the prior zero-first reward without farming after a credited partial first answer or cross-device sync',()=>{
+ const partialFirst=setup();partialFirst.run(`const first=answer('Can I get water?','first',{attemptGroupId:'partial-first',ok:false,perfect:false,expressionOnly:true});const partialRetry=answer('Can I get water?','partial-retry',{attemptGroupId:'partial-first',ok:false,perfect:false,expressionOnly:true});const fullRetry=answer('Can I get water?','full-retry',{attemptGroupId:'partial-first'});`);
+ assert.deepEqual([...partialFirst.run('[first.xp,partialRetry.xp,fullRetry.xp]')],[15,0,5]);assert.equal(partialFirst.run('practiceReward().total'),20);
+ const firstWrong=setup();firstWrong.run(`answer('Can I get water?','wrong',{attemptGroupId:'shared-wrong',ok:false,perfect:false});`);const seed=Object.fromEntries(firstWrong.records),a=setup(seed),b=setup(seed);
+ a.run(`const partial=answer('Can I get water?','partial-device',{attemptGroupId:'shared-wrong',ok:false,perfect:false,expressionOnly:true});`);b.run(`const full=answer('Can I get water?','full-device',{attemptGroupId:'shared-wrong'});`);assert.equal(a.run('partial.xp'),5);assert.equal(b.run('full.xp'),5);assert.equal(a.run(`supportLog()['attempt:partial-device'].retryBonusXP`),5);
+ a.context.snapshot=plain(b.run('supportCollect()'));a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot)');assert.equal(a.run('practiceReward().total'),5);assert.equal(a.run(`answer('Can I get water?','full-later',{attemptGroupId:'shared-wrong'}).xp`),0);assert.equal(a.run('practiceReward().total'),5);
 });

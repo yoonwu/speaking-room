@@ -6,7 +6,7 @@ const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:
 const enabled={ok:true,enabled:true,creditsVerified:true};
 const wav=(()=>{const b=Buffer.alloc(684);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(16000,24);b.writeUInt32LE(32000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(b.length-44,40);for(let i=44;i<b.length;i+=2)b.writeInt16LE(Math.round(Math.sin(i/11)*900),i);return b;})();
 
-// All four app scripts execute unchanged. Only browser/Android I/O is simulated.
+// All app scripts execute unchanged. Only browser/Android I/O is simulated.
 function setup({seed={},route,status=enabled,realtime=false,prepare}={}){
  const records=new Map(Object.entries(seed)),elements=new Map(),requests=[],native=[],captures=[],timers=new Map();
  let now=Date.UTC(2026,10,7),sequence=0,random=71;
@@ -25,7 +25,7 @@ function setup({seed={},route,status=enabled,realtime=false,prepare}={}){
   if(action==='status')return Promise.resolve({practiceSpeech:true,practicePlayback:true,practiceStreaming:true,practiceMicReady:true,practiceRealtime:realtime});
   return Promise.resolve({});
  };
- vm.createContext(context);for(const file of ['practice-data.js','practice-ai.js','practice.js','home-support.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
+ vm.createContext(context);for(const file of ['practice-data.js','practice-ai.js','practice-session.js','practice.js','home-support.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
  const run=source=>vm.runInContext(source,context);
  const flush=async()=>{for(let i=0;i<80;i++)await Promise.resolve();};
  const advance=async ms=>{const end=now+ms;await flush();for(;;){let next;for(const entry of timers)if(entry[1].at<=end&&(!next||entry[1].at<next[1].at))next=entry;if(!next)break;now=next[1].at;timers.delete(next[0]);next[1].fn();await flush();}now=end;await flush();};
@@ -77,13 +77,30 @@ test('a network preparation failure falls back to the established stream before 
  }
 });
 
-test('first wrong then immediate and copied retries share one five-XP allowance while mastery still grows',async()=>{
- const h=setup();h.start();const group=h.run('autoDrill.items[0]._attemptGroupId');h.type('This is a towel.');assert.equal(h.run('practiceReward().total'),0);
+test('first wrong then immediate and explicitly copied retries share one five-XP allowance while mastery still grows',async()=>{
+ const h=setup();h.run(`startDrill(Array.from({length:2},()=>({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get some water?',ko:'물 한 잔을 부탁해보세요.'},_intro:false})),'기본표현');autoDrill.items[1]._attemptGroupId=autoDrill.items[0]._attemptGroupId;`);const group=h.run('autoDrill.items[0]._attemptGroupId');h.type('This is a towel.');assert.equal(h.run('practiceReward().total'),0);
  const pending=h.get('#autoRetry').onclick(),capture=h.captures.at(-1);capture.ready();capture.complete();await pending;await h.flush();
  assert.equal(h.run('practiceReward().total'),5);assert.equal(h.run('autoDrill.results.length'),2);assert.equal(h.run(`learningSentenceMastery('Can I get some water?').score`),4);assert.doesNotMatch(h.get('.auto-actions').innerHTML,/id="autoRetry"/,'a correct covered recall offers only the next main action');
  const before=h.run('supportEvents().length');h.run(`autoDrillFinish('Can I get some water?',{attemptId:'duplicate-delivery'})`);assert.equal(h.run('supportEvents().length'),before,'a duplicate final cannot award twice');
- h.get('#autoNext').onclick();assert.equal(h.run('autoDrill.items[autoDrill.idx]._attemptGroupId'),group);h.type('Can I get some water?');
+ assert.equal(h.run('autoDrill.items.length'),2,'wrong and retry answers do not insert another copy');h.get('#autoNext').onclick();assert.equal(h.run('autoDrill.items[autoDrill.idx]._attemptGroupId'),group);h.type('Can I get some water?');
  assert.equal(h.run('practiceReward().total'),5);assert.equal(h.run('autoDrill.results.length'),3);assert.equal(h.run(`learningSentenceMastery('Can I get some water?').score`),8);assert.deepEqual([...h.run('autoDrill.results.map(x=>x.xp)')],[0,5,0]);
+});
+
+test('twenty-eight planned questions keep their denominator after wrong answers and repeated same-question retries',async()=>{
+ const h=setup();h.run(`startDrill(Array.from({length:28},()=>({frame:TRAVEL_BY_ID.travel_can_i_get,ex:{en:'Can I get some water?',ko:'물 한 잔을 부탁해보세요.'},_intro:false})),'기본표현');`);
+ const groups=[...h.run('autoDrill.items.map(it=>it._attemptGroupId)')];assert.equal(new Set(groups).size,28);assert.equal(h.run('autoDrill.plannedCount'),28);
+ for(let index=0;index<28;index++){
+  assert.equal(h.run('autoDrill.idx'),index);assert.equal(h.run('autoDrill.items.length'),28);assert.equal(h.run('autoDrill.plannedCount'),28);assert.match(h.get('#sprintScroll').innerHTML,new RegExp('>'+String(index+1)+' / 28</span>'));
+  h.type('This is a towel.');assert.equal(h.run('autoDrill.items.length'),28,'an incorrect answer never grows the session');
+  if(index===14){
+   for(const text of ['This is a towel.','Can I get a towel?','Can I get some water?']){
+    const pending=h.get('#autoRetry').onclick();await h.flush();const capture=h.captures.at(-1);capture.ready();capture.complete(text,{speechStartOffsetMs:100,captureDurationMs:1000});await pending;await h.flush();assert.equal(h.run('autoDrill.idx'),14);assert.equal(h.run('autoDrill.items.length'),28);assert.equal(h.run('autoDrill.plannedCount'),28);assert.match(h.get('#sprintScroll').innerHTML,/>15 \/ 28<\/span>/);
+   }
+   assert.doesNotMatch(h.get('.auto-actions').innerHTML,/id="autoRetry"/,'a full correct retry leaves Next as the only main action');assert.equal(h.run('supportEvents().filter(e=>e.fid).reduce((sum,e)=>sum+e.xp,0)'),5,'the one retry bonus is separate from the daily ten-attempt goal bonus');
+  }
+  assert.deepEqual([...h.run('autoDrill.items.map(it=>it._attemptGroupId)')],groups,'only the initially planned questions remain');h.get('#autoNext').onclick();
+ }
+ assert.equal(h.run('autoDrill'),null,'Next completes the session immediately after the twenty-eighth question');assert.equal(h.run('supportEvents().filter(e=>e.fid).length'),31,'all three extra attempts belong to the original fifteenth question');assert.match(h.get('#sprintScroll').innerHTML,/연습 완료/);assert.match(h.get('#sprintScroll').innerHTML,/28<small> \/ 28<\/small>/);
 });
 
 test('leaving or switching learners discards a late native result before decoding, scoring or displaying it',async()=>{
