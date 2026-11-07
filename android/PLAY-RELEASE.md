@@ -1,8 +1,10 @@
 # Play 스토어 배포 준비
 
-현재 상태: 2026-11-07 14:09 KST **0.6.0/code 15를 Play 내부 테스터에게 게시**했습니다. 서명된 AAB, JVM 60개·Node 146개 테스트와 출시 lint를 통과했습니다. 실제 SDK/운영 서버에 합성 음성을 전송해 인식·지연을 확인했으며, 실제 Android 휴대폰 검증과 공개 프로덕션 출시는 완료되지 않았습니다. 변경사항·검증·Pro 크레딧 설정은 [통합 구현 보고](../docs/integrated-improvements-2026-11-07.md)를 참고하세요. 테스트 링크: https://play.google.com/apps/internaltest/4701513271479137806
+현재 Play 내부 테스트는 **0.6.1/code 16, 출시 11**입니다. **2026-11-07 18:15 KST에 ‘내부 테스터에게 제공됨’을 확인**했으며 작업 폴더 `outputs/play-0.6.1-published.png`에 증거를 보관했습니다. 설치 파일에 포함된 학습 화면은 **v4.6.0**이며 Node 173개·JVM 65개 검사와 출시 lint를 통과한 기존 AAB/APK·해시를 유지합니다. [0.6.1 변경사항·아티팩트 해시·검증 절차](../docs/release-0.6.1.md)를 참고하세요.
 
-앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.6.0 / code 15. Android 8 이상, target API 36. 기본표현·골라서 연습·자주 틀리는 문장·AI 실전회화만 포함하며 이후 학습 화면은 [자동 배포](WEB-UPDATES.md)로 갱신합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다. 선택형 의미 중심 판정은 별도로 서버의 Pro 제공 크레딧 확인을 요구하며 기본 비활성입니다.
+별도 학습 화면 수정 **v4.6.1**은 전체 정답 30/15 XP와 표현만 맞힌 답 15/10 XP, 부분 정답 숙련도 변화 0을 반영합니다. 소스는 `a5cac183aad2584ca1983982af92f5599d9f676f`, 최소 앱 코드는 16이며 Node **182/182**를 통과했습니다. **웹 배포 Actions 42359338013 성공, 라이브 descriptor와 주요 파일 8개 해시 일치를 2026-11-07 18:26 KST에 확인**했습니다. 이 JavaScript 수정이 기존 AAB에 포함돼 있다고 표시하지 않습니다. 실제 휴대폰 검증과 공개 프로덕션 출시는 완료되지 않았습니다. 이전 0.6.0의 SDK/합성 음성 검증 이력은 [통합 구현 보고](../docs/integrated-improvements-2026-11-07.md)에 보존합니다. 테스트 링크: https://play.google.com/apps/internaltest/4701513271479137806
+
+앱 이름: 3초영어. 패키지: com.speakingroom.voice. 버전: 0.6.1 / code 16. Android 8 이상, target API 36. 기본표현·골라서 연습·자주 틀리는 문장·AI 실전회화만 포함하며 이후 학습 화면은 [자동 배포](WEB-UPDATES.md)로 갱신합니다. 사용자는 각자의 ChatGPT 계정으로 공식 로그인하고 앱 사용을 승인합니다. 선택형 의미 중심 판정은 별도로 서버의 Pro 제공 크레딧 확인을 요구하며 기본 비활성입니다.
 
 ## AAB 빌드와 서명
 
@@ -46,4 +48,4 @@ Play App Signing을 사용하면 Google이 배포 서명을 관리하고 개발�
 2026-09-30 기준 확인. 심사 통과나 모든 계정의 구독 사용을 보장하지 않습니다.
 
 ## 업로드 키 보관
-업로드 키는 Git 외부의 작업 폴더 private-release/speaking-room-upload.p12에 보관하고 비밀번호는 Windows DPAPI로 보호합니다. Git에 키·비밀번호를 업로드하지 않습니다. Play 업로드 파일은 outputs/speaking-room-0.6.0-play.aab입니다.
+업로드 키는 Git 외부의 작업 폴더 private-release/speaking-room-upload.p12에 보관하고 비밀번호는 Windows DPAPI로 보호합니다. Git에 키·비밀번호를 업로드하지 않습니다. 게시된 0.6.1의 원본 파일은 outputs/speaking-room-0.6.1-play.aab와 outputs/speaking-room-0.6.1-release.apk입니다. 포함 화면은 v4.6.0이며 서명·버전·자산·해시는 별도 0.6.1 빌드 검증 기록을 따릅니다. 이후 v4.6.1 웹 수정으로 새 AAB를 만들거나 원본 해시를 바꾸지 않았습니다. Play 게시 완료는 별도 Console 제공 상태로 확인했습니다.
