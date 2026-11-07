@@ -1,6 +1,8 @@
 # v4.7.1 — 고정된 연습 분량과 완료 기록
 
-대상: 기존 Android 0.6.2 / code 17의 별도 학습 화면. 네이티브·마이크·음성 서버 변경은 없으며 새 AAB 없이 적용한다. minimumNativeVersion 17을 유지한다. 배포 확인은 아래 기록에 추가한다.
+대상: 기존 Android 0.6.2 / code 17의 별도 학습 화면. 네이티브·마이크·음성 서버 변경은 없으며 새 AAB 없이 적용한다. minimumNativeVersion 17을 유지한다.
+
+**배포 완료:** 소스 `789a4c675df269659c9ce42ff101a780b01a6f6c`, [Actions 42362589165](https://github.com/yoonwu/speaking-room/actions/runs/42362589165) 성공. 실제 `android-web-live` descriptor가 이 소스를 가리키며, 새 `practice-session.js`를 포함한 17개 파일의 크기·SHA-256·고정 소스 바이트 일치를 확인했다. 앱 홈의 업데이트 확인으로 적용한다. 증거는 `outputs/web-v4.7.1-published.json`에 보관했다. Play 0.6.2 출시 12의 설치 파일을 다시 게시한 변경은 아니다.
 
 ## 달라진 동작
 
