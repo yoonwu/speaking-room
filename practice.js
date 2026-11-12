@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.7.3", APP_BUILD="2026-11-12";
+const APP_VERSION="v4.7.4", APP_BUILD="2026-11-12";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
@@ -43,7 +43,16 @@ async function listenMyVoice(){
   player.onerror=()=>{if(answerVoicePlayer!==player)return;stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 다시 말하며 녹음해주세요.';};
   try{await player.play();}catch(e){if(epoch===micEpoch&&answerVoicePlayer===player){stopMyVoice();out.hidden=false;out.textContent='녹음을 재생하지 못했어요. 내 목소리 듣기를 다시 눌러주세요.';}}
 }
-function stopMicrophone(preservePreparation=false){ stopAnswerLoop();stopMyVoice(); micEpoch++;micPreparing=false; if(window.srNativePracticeSpeech&&!preservePreparation)window.srNativeRequest("recognizeCancel").catch(()=>{}); vadCancel(); micLiveStop(_micLive); if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){} qzRecording=false;micStreamRelease(); }
+function stopMicrophone(preservePreparation=false){
+  stopAnswerLoop();stopMyVoice();micEpoch++;micPreparing=false;
+  if(!preservePreparation){
+    if(autoDrill)autoDrill.preparingWords=null;
+    if(window.srNativePracticeSpeech)window.srNativeRequest("recognizeCancel").catch(()=>{});
+  }
+  vadCancel();micLiveStop(_micLive);
+  if(qzMR&&qzMR.state!=="inactive")try{qzMR.stop();}catch(_){}
+  qzRecording=false;micStreamRelease();
+}
 function goToSetup(){
   if(activeWordPractice)activeWordPractice.sheet.remove();
   stopResponseClock();
@@ -156,8 +165,10 @@ function practiceSessionSnapshot(){
 }
 function autoDrillRender(recall=false){
   if(!autoDrill)return;if(autoDrill.idx>=autoDrill.items.length)return autoDrillDone();
-  stopResponseClock();stopMicrophone(recall&&pendingReply&&!qzRecording&&!micPreparing);clearAnswerVoice();svStop();if(TTS)TTS.cancel();
-  const it=autoDrill.items[autoDrill.idx];it.recall=recall;it._voiceRate=levelRate();
+  const it=autoDrill.items[autoDrill.idx];
+  const preservePreparation=pendingReply&&!qzRecording&&!micPreparing&&autoDrill.preparingWords===practiceExpectedWords(it.ex.en);
+  stopResponseClock();stopMicrophone(preservePreparation);clearAnswerVoice();svStop();if(TTS)TTS.cancel();
+  it.recall=recall;it._voiceRate=levelRate();
   if(window.SpeakingRoomNative||window.srNativePracticeSpeech){micAudioReady();if(_svPending.size<4)svPrepare(it.ex.en,it._voiceRate).catch(()=>{});}
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   const firstLook=it._intro&&!recall;
@@ -191,10 +202,23 @@ function startResponseClock(lesson,it){
   if(it._intro||it.recall||it._hintUsed||it._attempts){out.textContent='보고 익힌 뒤, 다음엔 3초 안에 꺼내봐요';return;}
   const tick=()=>{if(autoDrill!==lesson||pendingReply)return;const left=Math.max(0,3000-(Date.now()-lesson.t0-(lesson.systemWaitMs||0)));out.textContent=left>0?'⚡ '+(left/1000).toFixed(1)+'초 · 생각나면 바로 말해요':'익히는 중 · 맞히면 15 XP, 빠른 정답은 30 XP';if(left>0)autoDrillClock=setTimeout(tick,100);};tick();
 }
+function practiceExpectedWords(text){return text.trim().split(/\s+/).filter(Boolean).length;}
 function prewarmPractice(lesson,it){
-  if(!window.srNativePracticeBackgroundPreparation||!window.srNativeRequest||typeof PracticeAI==='undefined'||PracticeAI.getMode()!=='accuracy')return;
+  if(!it||!window.srNativePracticeBackgroundPreparation||!window.srNativeRequest||typeof PracticeAI==='undefined'||PracticeAI.getMode()!=='accuracy')return;
   const epoch=micEpoch;
-  return PracticeAI.prepareRealtime().then(s=>{if(autoDrill!==lesson||epoch!==micEpoch||!s.available||PracticeAI.getMode()!=='accuracy')return;return window.srNativeRequest('preparePracticeFast',{background:true,expectedWords:it.ex.en.trim().split(/\s+/).filter(Boolean).length});}).catch(()=>{});
+  const prepare=()=>{
+    if(autoDrill!==lesson||epoch!==micEpoch||qzRecording||micPreparing||PracticeAI.getMode()!=='accuracy')return;
+    const expectedWords=practiceExpectedWords(it.ex.en);
+    lesson.preparingWords=expectedWords;
+    return window.srNativeRequest('preparePracticeFast',{background:true,expectedWords});
+  };
+  const status=PracticeAI.prepareRealtime();
+  if(window.srNativePracticeImmediateCapture===true){
+    status.catch(()=>{});
+    if(PracticeAI.realtimeCanStart())return prepare()?.catch(()=>{});
+    return;
+  }
+  return status.then(s=>{if(s.available)return prepare();}).catch(()=>{});
 }
 function practiceResponseTiming(lesson,it,meta,pressedAt,priorWait){
   const native=Number.isFinite(meta.speechStartOffsetMs)&&Number.isFinite(meta.captureDurationMs)&&meta.speechStartOffsetMs>=0&&meta.speechStartOffsetMs<=meta.captureDurationMs;
@@ -283,11 +307,20 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
   card.querySelector('.auto-actions').innerHTML=(retry?'<button id="autoRetry" class="primary">가리고 다시 말하기</button>':'')+'<button id="autoNext" class="'+(retry?'quiet':'primary')+'">다음 →</button>';
   if($('#autoRetry'))$('#autoRetry').onclick=autoDrillRecall;
   if($('#autoSpeed'))$('#autoSpeed').textContent=perfect?'⚡ 3초 안에 꺼낸 문장':it._lastOk?'✓ 맞혔어요 · 다음 문장으로':it._lastExpressionOnly?'✓ 표현은 맞혔어요 · 단어까지 연습해봐요':'보고 다시 익혀봐요';
-  $('#autoNext').onclick=()=>autoDrillAdvance(perfect,it);speakEn(it.ex.en,referenceRate);if(retry)prewarmPractice(autoDrill,it);
+  $('#autoNext').onclick=()=>autoDrillAdvance(it);
+  prewarmPractice(autoDrill,retry?it:autoDrill.items[autoDrillNextIndex(autoDrill,it)]);
+  speakEn(it.ex.en,referenceRate);
 }
-function autoDrillAdvance(perfect,it){
-  const next=autoDrill.idx+1;if(autoDrill.items[next]&&autoDrill.items[next].frame.id===it.frame.id){const swap=autoDrill.items.findIndex((x,i)=>i>next&&x.frame.id!==it.frame.id);if(swap>0)[autoDrill.items[next],autoDrill.items[swap]]=[autoDrill.items[swap],autoDrill.items[next]];}
-  autoDrill.idx++;autoDrillRender();
+function autoDrillNextIndex(lesson,it){
+  const next=lesson.idx+1;
+  if(lesson.items[next]?.frame.id!==it.frame.id)return next;
+  const alternate=lesson.items.findIndex((item,i)=>i>next&&item.frame.id!==it.frame.id);
+  return alternate<0?next:alternate;
+}
+function autoDrillAdvance(it){
+  const next=autoDrill.idx+1,selected=autoDrillNextIndex(autoDrill,it);
+  if(selected!==next)[autoDrill.items[next],autoDrill.items[selected]]=[autoDrill.items[selected],autoDrill.items[next]];
+  autoDrill.idx=next;autoDrillRender();
 }
 function autoDrillDone(){
   if(!autoDrill)return;
@@ -372,7 +405,7 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
     try{
       // Allow the person to answer Android's permission dialog. The native
       // network preparation itself has a separate five-second deadline.
-      const prepared=await speechWait(window.srNativeRequest('preparePracticeFast',{expectedWords:refText.trim().split(/\s+/).filter(Boolean).length,...(immediate?{immediate:true}:{})}),30000,'마이크 사용 준비가 늦어요. 다시 말하기를 눌러주세요.',()=>{preparationTimedOut=true;window.srNativeRequest('recognizeCancel').catch(()=>{});});
+      const prepared=await speechWait(window.srNativeRequest('preparePracticeFast',{expectedWords:practiceExpectedWords(refText),...(immediate?{immediate:true}:{})}),30000,'마이크 사용 준비가 늦어요. 다시 말하기를 눌러주세요.',()=>{preparationTimedOut=true;if(epoch===micEpoch)window.srNativeRequest('recognizeCancel').catch(()=>{});});
       if(epoch!==micEpoch)return;
       if(prepared.permissionGranted===false){cb('',{sttErr:prepared.error||'마이크 사용을 허용해주세요.'});return;}
       if(prepared.prepared!==true&&!(immediate&&prepared.immediateCaptureReady===true)){PracticeAI.disableRealtime();realtimePrepared=false;}
@@ -403,7 +436,7 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
             window.srNativeRequest('recognizeCancel').catch(()=>{});
           },PRACTICE_RECOGNITION_BUDGET_MS);
         };
-        const words=refText.trim().split(/\s+/).filter(Boolean).length;
+        const words=practiceExpectedWords(refText);
         const limit=words?Math.max(8000,Math.min(18000,3500+words*850)):20000;
         // The installed app already exposes PCM capture with silence detection.
         // A bounded stop also handles steady background noise; no second tap.

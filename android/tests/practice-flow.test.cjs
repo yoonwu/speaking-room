@@ -7,14 +7,14 @@ const enabled={ok:true,enabled:true,creditsVerified:true};
 const wav=(()=>{const b=Buffer.alloc(684);b.write('RIFF');b.writeUInt32LE(b.length-8,4);b.write('WAVEfmt ',8);b.writeUInt32LE(16,16);b.writeUInt16LE(1,20);b.writeUInt16LE(1,22);b.writeUInt32LE(16000,24);b.writeUInt32LE(32000,28);b.writeUInt16LE(2,32);b.writeUInt16LE(16,34);b.write('data',36);b.writeUInt32LE(b.length-44,40);for(let i=44;i<b.length;i+=2)b.writeInt16LE(Math.round(Math.sin(i/11)*900),i);return b;})();
 
 // All app scripts execute unchanged. Only browser/Android I/O is simulated.
-function setup({seed={},route,status=enabled,realtime=false,prepare}={}){
+function setup({seed={},route,status=enabled,realtime=false,immediate=false,prepare}={}){
  const records=new Map(Object.entries(seed)),elements=new Map(),requests=[],native=[],captures=[],timers=new Map();
  let now=Date.UTC(2026,10,7),sequence=0,random=71;
  const math=Object.create(Math);math.random=()=>{random=(random*1664525+1013904223)>>>0;return random/4294967296;};
  const element=()=>({style:{},dataset:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,isConnected:true,addEventListener(){},setAttribute(){},focus(){},remove(){this.isConnected=false;},insertBefore(){},appendChild(){},showModal(){},querySelector:selector=>get(selector),querySelectorAll:()=>[],getTracks:()=>[]});
  const get=selector=>{if(!elements.has(selector))elements.set(selector,element());return elements.get(selector);};
  const clockDate=class extends Date{constructor(...args){super(...(args.length?args:[now]));}static now(){return now;}};
- const context={window:{addEventListener(){},srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true,srNativePracticeMicReady:true,srNativePracticeRealtime:realtime,srNativePracticeBackgroundPreparation:realtime},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,String(value))},setTimeout:(fn,ms=0)=>{const id=++sequence;timers.set(id,{at:now+ms,fn});return id;},clearTimeout:id=>timers.delete(id),location:{reload(){}},console,Date:clockDate,Math:math,URL,Blob,AbortController,Response,atob:s=>Buffer.from(s,'base64').toString('binary')};
+ const context={window:{addEventListener(){},srNativePracticeSpeech:true,srNativePracticePlayback:true,srNativePracticeStreaming:true,srNativePracticeMicReady:true,srNativePracticeRealtime:realtime,srNativePracticeBackgroundPreparation:realtime,srNativePracticeImmediateCapture:immediate},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:key=>records.get(key)??null,setItem:(key,value)=>records.set(key,String(value))},setTimeout:(fn,ms=0)=>{const id=++sequence;timers.set(id,{at:now+ms,fn});return id;},clearTimeout:id=>timers.delete(id),location:{reload(){}},console,Date:clockDate,Math:math,URL,Blob,AbortController,Response,atob:s=>Buffer.from(s,'base64').toString('binary')};
  context.fetch=async(url,options={})=>{const request={url:String(url),path:new URL(url,'https://app.test').pathname,options};requests.push(request);if(route){const response=await route(request);if(response!==undefined)return response;}if(request.path==='/practice-ai/status')return json(status);if(request.path==='/practice-realtime/status')return json({available:realtime});return json({ok:false},404);};
  context.window.srNativeRequest=(action,data,onCaptured,onReady)=>{
   native.push({action,data});
@@ -22,7 +22,7 @@ function setup({seed={},route,status=enabled,realtime=false,prepare}={}){
   if(['streamPractice','streamPracticeFast','recordPractice'].includes(action)){
    const pending=deferred(),capture={action,data,onCaptured,onReady,...pending,ready(){onReady?.();},end(){onCaptured?.();},complete(text='Can I get some water?',extra={}){onCaptured?.();pending.resolve({text,audioBase64:wav.toString('base64'),...extra});}};captures.push(capture);return pending.promise;
   }
-  if(action==='status')return Promise.resolve({practiceSpeech:true,practicePlayback:true,practiceStreaming:true,practiceMicReady:true,practiceRealtime:realtime});
+  if(action==='status')return Promise.resolve({practiceSpeech:true,practicePlayback:true,practiceStreaming:true,practiceMicReady:true,practiceRealtime:realtime,practiceImmediateCapture:immediate});
   return Promise.resolve({});
  };
  vm.createContext(context);for(const file of ['practice-data.js','practice-ai.js','practice-session.js','practice.js','home-support.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context,{filename:file});
@@ -144,6 +144,59 @@ test('a realtime stream failure reuses the one original recording for bounded Az
 
 test('unavailable realtime status keeps the established native stream with no second capture or transcription request',async()=>{
  const h=setup({realtime:true,route:r=>{if(r.path==='/practice-realtime/status')throw Error('status network failure');}});h.start();await h.flush();assert.equal(h.run('PracticeAI.realtimeReady()'),false);const pending=h.get('#autoMic').onclick();assert.equal(h.captures.length,1);assert.equal(h.captures[0].action,'streamPractice');h.captures[0].ready();h.captures[0].complete();await pending;await h.flush();assert.equal(h.posts().length,0);assert.equal(h.captures.length,1);assert.equal(h.run('autoDrill.results[0].ok'),true);
+});
+
+const backgroundCalls=h=>h.native.filter(call=>call.action==='preparePracticeFast'&&call.data.background===true);
+const cancelCalls=h=>h.native.filter(call=>call.action==='recognizeCancel').length;
+const nativeReady={prepared:true,permissionGranted:true,immediateCaptureReady:true};
+function startPrewarmLesson(h,{sameFrame=false}={}){
+ const items=[['travel_can_i_get','Can I get some water?'],...(sameFrame?[['travel_can_i_get','Can I get another towel?']]:[]),['travel_where_is','Where is the gate?']];
+ h.run(`startDrill(${JSON.stringify(items)}.map(([id,en])=>({frame:TRAVEL_BY_ID[id],ex:{en,ko:'상황을 보고 영어로 말하세요.'},_intro:false})),'기본표현')`);
+}
+async function finishPrewarmAnswer(h,heard){
+ const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures.at(-1);assert.equal(capture.action,'streamPracticeFast');capture.ready();capture.complete(heard);await pending;await h.flush();
+}
+
+test('immediate native prewarm starts before unknown backend status resolves but respects known unavailability',async()=>{
+ const status=deferred(),h=setup({realtime:true,immediate:true,route:request=>request.path==='/practice-realtime/status'?status.promise:undefined});h.start();await h.flush();
+ const probe=h.requests.find(request=>request.path==='/practice-realtime/status'),preload=backgroundCalls(h)[0];assert.ok(probe);assert.equal(probe.options.signal.aborted,false);assert.equal(h.run('PracticeAI.realtimeReady()'),false);assert.ok(preload,'native warm-up does not wait for status');assert.deepEqual(plain(preload.data),{background:true,expectedWords:5});assert.equal(h.captures.length,0);
+ status.resolve(json({available:true}));await h.flush();assert.equal(h.run('PracticeAI.realtimeReady()'),true);
+ const off=setup({realtime:true,immediate:true,route:request=>request.path==='/practice-realtime/status'?json({available:false}):undefined});await off.run('PracticeAI.prepareRealtime()');off.start();await off.flush();assert.equal(backgroundCalls(off).length,0);
+ const pending=off.get('#autoMic').onclick();await off.flush();assert.equal(off.captures[0].action,'streamPractice');assert.equal(off.native.some(call=>call.action==='preparePracticeFast'&&call.data.immediate),false);off.captures[0].ready();off.captures[0].complete();await pending;
+});
+
+test('a normal result prewarms the actual next question after a same-frame swap and Next retains that preparation',async()=>{
+ const warm=deferred(),h=setup({realtime:true,immediate:true,prepare:data=>data.background&&data.expectedWords===4?warm.promise:nativeReady});startPrewarmLesson(h,{sameFrame:true});await h.flush();
+ await finishPrewarmAnswer(h,'Can I get some water?');assert.equal(h.run('autoDrill.idx'),0);assert.doesNotMatch(h.get('.auto-actions').innerHTML,/id="autoRetry"/);assert.equal(backgroundCalls(h).at(-1)?.data.expectedWords,4,'the result warms the next distinct frame before Next is pressed');
+ warm.resolve(nativeReady);await h.flush();const before=cancelCalls(h);h.get('#autoNext').onclick();await h.flush();assert.equal(h.run('autoDrill.items[autoDrill.idx].ex.en'),'Where is the gate?');assert.equal(cancelCalls(h),before,'Next preserves the already-prepared matching item');
+ const pending=h.get('#autoMic').onclick();await h.flush();assert.equal(h.captures.length,2);assert.equal(h.captures[1].action,'streamPracticeFast');assert.equal(h.captures[1].data.expectedWords,4);assert.equal(cancelCalls(h),before);assert.ok(h.native.some(call=>call.action==='preparePracticeFast'&&call.data.immediate===true&&call.data.expectedWords===4));h.captures[1].ready();h.captures[1].complete('Where is the gate?');await pending;
+});
+
+test('a result with covered recall prioritizes the same question and starts it without cancelling its preparation',async()=>{
+ const warm=deferred();let answerPhase=false;const h=setup({realtime:true,immediate:true,prepare:data=>data.background&&answerPhase?warm.promise:nativeReady});startPrewarmLesson(h);await h.flush();const initial=backgroundCalls(h).length;answerPhase=true;
+ await finishPrewarmAnswer(h,'This is a towel.');assert.match(h.get('.auto-actions').innerHTML,/id="autoRetry"/);const resultWarm=backgroundCalls(h).slice(initial);assert.ok(resultWarm.length);assert.ok(resultWarm.every(call=>call.data.expectedWords===5),'retry remains the primary prepared action');
+ warm.resolve(nativeReady);await h.flush();const before=cancelCalls(h);const retry=h.get('#autoRetry').onclick();await h.flush();assert.equal(h.run('autoDrill.idx'),0);assert.equal(h.run('autoDrill.items[0].recall'),true);assert.equal(cancelCalls(h),before);assert.equal(h.captures.length,2);assert.equal(h.captures[1].action,'streamPracticeFast');assert.equal(h.captures[1].data.expectedWords,5);h.captures[1].ready();h.captures[1].complete();await retry;
+});
+
+test('skipping a pending recall preparation cancels it and a late reply cannot replace the next question’s warm-up',async()=>{
+ const old=deferred();let answerPhase=false;const h=setup({realtime:true,immediate:true,prepare:data=>data.background&&data.expectedWords===5&&answerPhase?old.promise:nativeReady});startPrewarmLesson(h);await h.flush();answerPhase=true;await finishPrewarmAnswer(h,'This is a towel.');assert.equal(backgroundCalls(h).at(-1)?.data.expectedWords,5);
+ const before=cancelCalls(h);h.get('#autoNext').onclick();await h.flush();assert.equal(h.run('autoDrill.items[autoDrill.idx].ex.en'),'Where is the gate?');assert.ok(cancelCalls(h)>before,'Next cancels a preparation reserved for recall');assert.equal(backgroundCalls(h).at(-1)?.data.expectedWords,4);
+ const requests=h.native.length;old.resolve(nativeReady);await h.flush();assert.equal(h.native.length,requests,'abandoned completion cannot restart or cancel another preparation');assert.equal(h.captures.length,1);assert.equal(h.run('autoDrill.idx'),1);
+});
+
+test('leaving or switching learners discards a late status and preparation without rewarming the abandoned question',async()=>{
+ for(const leave of ["goToSetup()","learningProfileSwitch(learningProfileCreate('다른 학습자'))"]){
+  const status=deferred(),old=deferred();let waitOld=true;const h=setup({realtime:true,immediate:true,prepare:data=>data.background&&waitOld?old.promise:nativeReady,route:request=>request.path==='/practice-realtime/status'?status.promise:undefined});h.start();await h.flush();assert.equal(backgroundCalls(h).length,1);const before=cancelCalls(h);h.run(leave);assert.ok(cancelCalls(h)>before);
+  const requests=h.native.length;status.resolve(json({available:true}));old.resolve(nativeReady);await h.flush();assert.equal(h.native.length,requests);assert.equal(h.run('autoDrill'),null);assert.equal(h.captures.length,0);
+  waitOld=false;h.start();await h.flush();assert.equal(backgroundCalls(h).length,2,'a new lesson still requests its own preparation even for the same word count');
+ }
+});
+
+test('an abandoned foreground permission timeout cannot cancel a newer learner’s active capture',async()=>{
+ const old=deferred();let holdOld=true;const h=setup({realtime:true,immediate:true,prepare:data=>!data.background&&holdOld?old.promise:nativeReady});h.start();await h.flush();const abandoned=h.get('#autoMic').onclick();await h.flush();
+ await h.advance(29900);assert.equal(h.captures.length,0);assert.equal(h.run('micPreparing'),true);h.run("learningProfileSwitch(learningProfileCreate('다른 학습자'))");holdOld=false;h.start();await h.flush();const current=h.get('#autoMic').onclick();await h.flush();assert.equal(h.captures.length,1);h.captures[0].ready();assert.equal(h.run('qzRecording'),true);
+ const before=cancelCalls(h);await h.advance(100);await abandoned;assert.equal(cancelCalls(h),before,'the old 30-second timer must not send a native cancel for the current capture');assert.equal(h.run('qzRecording'),true);assert.equal(h.run('supportEvents().length'),0);
+ old.resolve(nativeReady);await h.flush();assert.equal(h.captures.length,1);h.captures[0].complete();await current;assert.equal(h.run('autoDrill.results[0].ok'),true);
 });
 
 test('a late SDK error and hung REST fallback share six seconds from capture end with no extra capture or paid backup',async()=>{

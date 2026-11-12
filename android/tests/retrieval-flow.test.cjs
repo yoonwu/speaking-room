@@ -197,10 +197,13 @@ test('older native capabilities never receive immediate preparation and still wa
  }
 });
 
-test('Next cancels the old background preparation and a late reply cannot capture or overwrite the new prompt',async()=>{
+test('the result replaces the old preparation and late replies cannot capture or overwrite the next prompt',async()=>{
  const preparations=[],h=setup({realtime:true,prepare:data=>{const pending=deferred();preparations.push({data,...pending});return pending.promise;}}),cues=observeCues(h);h.start({two:true});await h.flush();
- h.type(ANSWER);await h.flush();const old=preparations.slice(),before=h.native.filter(call=>call.action==='recognizeCancel').length;h.get('#autoNext').onclick();await h.flush();
- assert.equal(h.run('autoDrill.idx'),1);assert.equal(h.run('autoDrill.items[1].ex.en'),"I can't find my phone.");assert.ok(h.native.filter(call=>call.action==='recognizeCancel').length>before,'new question cancels old prepared resources');
+ const cancellations=()=>h.native.filter(call=>call.action==='recognizeCancel').length,initial=cancellations();
+ h.type(ANSWER);await h.flush();const old=preparations.slice(),beforeNext=cancellations();
+ assert.equal(beforeNext,initial+1,'the current question is canceled before prewarming the next one');
+ h.get('#autoNext').onclick();await h.flush();
+ assert.equal(h.run('autoDrill.idx'),1);assert.equal(h.run('autoDrill.items[1].ex.en'),"I can't find my phone.");assert.equal(cancellations(),beforeNext,'Next preserves the new preparation');
  const prompt=h.get('#sprintScroll').innerHTML;for(const pending of old)pending.resolve({prepared:true,permissionGranted:true});await h.flush();
  assert.equal(h.get('#sprintScroll').innerHTML,prompt);assert.equal(h.run('autoDrill.idx'),1);assert.equal(h.captures.length,0);assert.equal(cues.length,0);assert.equal(h.run('supportEvents().filter(e=>e.fid).length'),1);
 });
