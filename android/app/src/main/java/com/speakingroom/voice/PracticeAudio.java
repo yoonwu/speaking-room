@@ -28,6 +28,9 @@ final class PracticeAudio {
     private int voiceFrames;
     private long candidateSpeechStart=-1,speechStart=-1;
     private boolean speech;
+    private boolean heardVoicing;
+    private long stableNoiseStart=-1,voiceBeforeStableNoise;
+    private double stableNoiseMin,stableNoiseMax;
     PracticeAudio(long started){this(started,0,null);}
     PracticeAudio(long started,int expectedWords,IntSupplier heardWords){this.started=started;this.expectedWords=Math.max(0,Math.min(40,expectedWords));this.heardWords=heardWords;}
     void append(short[] samples,int count,long now){
@@ -35,11 +38,12 @@ final class PracticeAudio {
         for(int i=0;i<n;i++){short sample=samples[i];pcm.write(sample&255);pcm.write((sample>>8)&255);energy+=(double)sample*sample;}
         if(n==0)return;
         double rms=Math.sqrt(energy/n);
+        boolean voicedFrame=(!calibrated||rms>Math.max(300,noise*2.5))&&periodic(samples,n);
         if(!calibrated){
             initialSamples+=n;
             // Ignore startup zero buffers and keep voiced vowels out of the
             // ambient estimate when somebody starts answering immediately.
-            if(periodic(samples,n)){initialVoiced++;initialVoicedQuiet=Math.min(initialVoicedQuiet,rms);}
+            if(voicedFrame){initialVoiced++;initialVoicedQuiet=Math.min(initialVoicedQuiet,rms);}
             else if(rms>1){initialNoise.add(rms);initialPeak=Math.max(initialPeak,rms);}
             if(initialSamples>=RATE*3/10){
                 calibrated=true;
@@ -56,12 +60,31 @@ final class PracticeAudio {
             }
         }
         double threshold=Math.max(300,noise*2.5);
-        if(rms>threshold){
+        boolean loud=rms>threshold;
+        if(voicedFrame||!loud)stableNoiseStart=-1;
+        if(loud&&voicedFrame)heardVoicing=true;
+        boolean steadyNoise=calibrated&&speech&&heardVoicing&&loud&&!voicedFrame&&steadyBackground(rms,now);
+        if(loud&&!steadyNoise){
             lastVoice=now;
             // Sample position excludes AudioRecord/SDK startup and delayed read callbacks.
             if(voiceFrames==0)candidateSpeechStart=(pcm.size()/2L-n)*1000/RATE;
             if(++voiceFrames>=2){speech=true;if(speechStart<0)speechStart=candidateSpeechStart;}
         }else{voiceFrames=0;candidateSpeechStart=-1;if(!speech)noise=noise*.95+rms*.05;}
+    }
+    private boolean steadyBackground(double rms,long now){
+        if(stableNoiseStart<0||rms>stableNoiseMin*1.35||rms*1.35<stableNoiseMax){
+            stableNoiseStart=now;
+            voiceBeforeStableNoise=lastVoice;
+            stableNoiseMin=stableNoiseMax=rms;
+            return false;
+        }
+        stableNoiseMin=Math.min(stableNoiseMin,rms);
+        stableNoiseMax=Math.max(stableNoiseMax,rms);
+        // A newly steady noise floor should not keep refreshing the quiet timer.
+        // Leave the PCM and onset intact, and restart on voicing or a level change.
+        if(now-stableNoiseStart<400)return false;
+        lastVoice=voiceBeforeStableNoise;
+        return true;
     }
     private static boolean periodic(short[] samples,int count){
         int n=Math.min(count,320);if(n<160)return false;

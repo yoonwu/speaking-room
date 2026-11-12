@@ -38,6 +38,27 @@ public class PracticeAudioTest {
         for(long t=1120;t<2300;t+=20){clip.append(noise,320,t);assertFalse(clip.shouldStop(t));}
         clip.append(noise,320,2300);assertTrue("Background noise must not hold the mic open",clip.shouldStop(2300));
     }
+    @Test public void aSteadyBroadbandNoiseFloorStartingAfterCalibrationDoesNotHoldTheMicOpen(){
+        PracticeAudio clip=new PracticeAudio(0);java.util.Random random=new java.util.Random(97031);
+        short[] frame=new short[320];
+        for(long t=20;t<=300;t+=20)clip.append(frame,320,t);
+        voice(clip,320,900);
+        assertTrue("The first spoken phrase was detected",clip.hasSpeech());
+        for(long t=920;t<=1800;t+=20){
+            for(int i=0;i<frame.length;i++)frame[i]=(short)(random.nextGaussian()*700);
+            clip.append(frame,320,t);
+            assertFalse("Keep a 900 ms middle pause even when background noise starts",clip.shouldStop(t));
+        }
+        voice(clip,1820,2400);
+        assertFalse("A second spoken phrase resets end detection",clip.shouldStop(2400));
+        boolean ended=false;
+        for(long t=2420;t<=4900;t+=20){
+            for(int i=0;i<frame.length;i++)frame[i]=(short)(random.nextGaussian()*700);
+            clip.append(frame,320,t);
+            if(clip.shouldStop(t)){ended=true;break;}
+        }
+        assertTrue("Steady noise above the old threshold must not keep listening past 2.5 seconds after the phrase",ended);
+    }
     @Test public void ambientNoiseWithoutSpeechDoesNotBecomeAnAnswer(){
         PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320];Arrays.fill(noise,(short)700);
         for(long t=20;t<=7000;t+=20)clip.append(noise,320,t);
