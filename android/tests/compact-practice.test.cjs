@@ -106,6 +106,14 @@ test('silence detection resumes suspended audio, tolerates pauses, then stops wi
  assert.equal(clock.resumes,1);clock.advance(1150);assert.equal(context.stops,0);clock.advance(700);assert.equal(context.stops,0);clock.advance(1000);assert.equal(context.stops,1);assert.ok(clock.disconnects>=2);clock.advance(30000);assert.equal(context.stops,1);
 });
 
+test('browser VAD keeps a resumed phrase during either quiet tail without delaying an uncontested stop',()=>{
+ for(const {words,resumeAt,endAt,originalStop}of [{words:2,resumeAt:1680,endAt:2500,originalStop:1870},{words:5,resumeAt:2460,endAt:3400,originalStop:2650}]){
+  const arm=resume=>{const {run,context}=setup(),clock=audioClock(context,t=>(t>=300&&t<1000)||(resume&&t>=resumeAt&&t<endAt));context.stopAt=null;run(`attachVAD({},()=>{stopAt=Date.now();},{silenceMs:600,maxSilenceMs:1400,expectWords:${words},maxMs:25000,noSpeechMs:7000})`);return {context,clock};};
+  const quiet=arm(false);quiet.clock.advance(originalStop-1);assert.equal(quiet.context.stopAt,null);quiet.clock.advance(1);assert.equal(quiet.context.stopAt,originalStop,'uninterrupted quiet retains the existing deadline');
+  const resumed=arm(true);resumed.clock.advance(originalStop);assert.equal(resumed.context.stopAt,null,'the old deadline must not cut newly audible speech');resumed.clock.advance(endAt-originalStop);assert.equal(resumed.context.stopAt,null);resumed.clock.advance(1800);assert.ok(resumed.context.stopAt>endAt,'the complete resumed phrase is preserved and recording still ends automatically');
+ }
+});
+
 test('cancelling during the silence tail prevents late auto-submit and no-speech input also ends automatically',()=>{
  const first=setup(),clock=audioClock(first.context,t=>t>=300&&t<900);first.context.stops=0;
  first.run('cancelVAD=attachVAD({},()=>stops++,{silenceMs:600,maxMs:25000,noSpeechMs:7000})');clock.advance(1600);first.run('cancelVAD()');clock.advance(1000);assert.equal(first.context.stops,0);

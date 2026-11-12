@@ -81,7 +81,7 @@ final class PracticeAudio {
         int heard=heardWords==null?0:heardWords.getAsInt();
         // Only real partial/final ASR words enable the fast tail. An incomplete
         // phrase keeps more room for a child's pause and its next segment.
-        long quiet=expectedWords>0&&heard>0?(heard>=expectedWords?650:2200):1400;
+        long quiet=expectedWords>0&&heard>0?(heard>=expectedWords?650:1600):1200;
         return pcm.size()>=MAX_SAMPLES*2||now-started>=25000||(!speech&&now-started>=7000)||(speech&&now-lastVoice>=quiet);
     }
     byte[] pcm(){return pcm.toByteArray();}

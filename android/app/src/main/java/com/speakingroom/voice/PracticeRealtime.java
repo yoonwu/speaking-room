@@ -12,6 +12,8 @@ final class PracticeRealtime {
     interface Completion{void accept(String text,String error);}
     interface Trace{void event(String phase,long offset,String text);}
     private static final String ENDPOINT="wss://speaking-room.thdghkstlr.workers.dev/practice-realtime?language=en-US&format=detailed";
+    private static final long POST_CAPTURE_TIMEOUT_MS=2600;
+    private static final long COLD_POST_CAPTURE_TIMEOUT_MS=4000;
     static final int QUEUE_FRAMES=256;
     private final ArrayBlockingQueue<byte[]> queue=new ArrayBlockingQueue<>(QUEUE_FRAMES);
     private final AtomicBoolean terminal=new AtomicBoolean();
@@ -23,15 +25,17 @@ final class PracticeRealtime {
     private final Completion completion;
     private final Runnable completePhrase;
     private final Runnable prepared;
-    private final long finishWaitMillis;
+    private final long finishWaitMillis,coldFinishWaitMillis;
     private volatile boolean inputEnded;
+    private volatile boolean providerReady;
     private TimerTask preparationDeadline;
     private Thread worker;
     private volatile Trace trace;
-    PracticeRealtime(int expectedWords,Completion completion,Runnable completePhrase){this(expectedWords,7000,completion,completePhrase,null);}
-    PracticeRealtime(int expectedWords,Completion completion,Runnable completePhrase,Runnable prepared){this(expectedWords,7000,completion,completePhrase,prepared);}
+    PracticeRealtime(int expectedWords,Completion completion,Runnable completePhrase){this(expectedWords,completion,completePhrase,null);}
+    PracticeRealtime(int expectedWords,Completion completion,Runnable completePhrase,Runnable prepared){this(expectedWords,POST_CAPTURE_TIMEOUT_MS,COLD_POST_CAPTURE_TIMEOUT_MS,completion,completePhrase,prepared);}
     PracticeRealtime(int expectedWords,long finishWaitMillis,Completion completion,Runnable completePhrase){this(expectedWords,finishWaitMillis,completion,completePhrase,null);}
-    PracticeRealtime(int expectedWords,long finishWaitMillis,Completion completion,Runnable completePhrase,Runnable prepared){this.policy=new PracticeCompletionPolicy(expectedWords);this.finishWaitMillis=finishWaitMillis;this.completion=completion;this.completePhrase=completePhrase;this.prepared=prepared;}
+    PracticeRealtime(int expectedWords,long finishWaitMillis,Completion completion,Runnable completePhrase,Runnable prepared){this(expectedWords,finishWaitMillis,finishWaitMillis,completion,completePhrase,prepared);}
+    private PracticeRealtime(int expectedWords,long finishWaitMillis,long coldFinishWaitMillis,Completion completion,Runnable completePhrase,Runnable prepared){this.policy=new PracticeCompletionPolicy(expectedWords);this.finishWaitMillis=finishWaitMillis;this.coldFinishWaitMillis=coldFinishWaitMillis;this.completion=completion;this.completePhrase=completePhrase;this.prepared=prepared;}
     int heardWords(){return policy.heardWords();}
     void setTrace(Trace trace){this.trace=trace;}
     private void trace(String phase,long offset,String text){Trace listener=trace;if(listener!=null)try{listener.event(phase,offset,text);}catch(RuntimeException ignored){}}
@@ -49,7 +53,11 @@ final class PracticeRealtime {
     }
     void finishInput(){
         if(terminal.get()||inputEnded)return;inputEnded=true;trace("input-ended",0,"");queue.offer(new byte[0]);
-        try{deadline.schedule(new TimerTask(){@Override public void run(){complete("","말소리 인식 응답이 늦어요. 다시 말해주세요.");}},finishWaitMillis);}catch(IllegalStateException ignored){}
+        // AudioRecord can finish before a cold SDK has connected or drained
+        // its queue. Give only that case a little more room within the UI's
+        // shared recognition budget.
+        long remaining=providerReady?finishWaitMillis:coldFinishWaitMillis;
+        try{deadline.schedule(new TimerTask(){@Override public void run(){complete("","말소리 인식 응답이 늦어요. 다시 말해주세요.");}},remaining);}catch(IllegalStateException ignored){}
     }
     void cancel(){if(terminal.compareAndSet(false,true)){deadline.cancel();queue.clear();finished.countDown();Thread running=worker;if(running!=null)running.interrupt();}}
     private void complete(String text,String error){
@@ -92,7 +100,7 @@ final class PracticeRealtime {
             });
             recognizer.startContinuousRecognitionAsync().get(5,TimeUnit.SECONDS);
             if(!connected.await(5,TimeUnit.SECONDS))throw new TimeoutException("Speech connection was not ready");
-            if(terminal.get())return;preparationDeadline.cancel();trace("prepared",0,"");if(prepared!=null)prepared.run();
+            if(terminal.get())return;providerReady=true;preparationDeadline.cancel();trace("prepared",0,"");if(prepared!=null)prepared.run();
             while(!terminal.get()){
                 if(inputEnded&&queue.isEmpty())break;
                 byte[] frame=queue.poll(100,TimeUnit.MILLISECONDS);if(frame!=null&&frame.length>0)push.write(frame);
@@ -102,7 +110,7 @@ final class PracticeRealtime {
                 inputCompletion.inputDrained();
                 // A synchronous end event from close waits for a successful EOF send.
                 push.close();push=null;completeAfterInput(inputCompletion.eofSent());
-                finished.await(finishWaitMillis+1000,TimeUnit.MILLISECONDS);if(!terminal.get())complete("","말소리 인식 응답이 늦어요. 다시 말해주세요.");
+                finished.await(coldFinishWaitMillis+1000,TimeUnit.MILLISECONDS);if(!terminal.get())complete("","말소리 인식 응답이 늦어요. 다시 말해주세요.");
             }
         }catch(Exception|LinkageError failure){if(!terminal.get())complete("","실시간 음성 인식을 시작하지 못했어요. 앱과 연결을 확인해주세요.");}
         finally{

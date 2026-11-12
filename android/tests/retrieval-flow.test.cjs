@@ -139,6 +139,18 @@ test('browser answers use real VAD onset rather than tap, recognition completion
  }
 });
 
+test('a stalled browser recognizer and HTTP fallback share the capture-end budget without a second provider',async()=>{
+ const h=setup({route:r=>r.path==='/stt'?new Promise(()=>{}):undefined}),audio=browserAudio(h);h.start();
+ const pending=h.get('#autoMic').onclick();await h.advance(200);await pending;audio.recognizers[0].stop=()=>{};
+ audio.recorders[0].stop();await h.advance(449);
+ const posts=()=>h.requests.filter(r=>r.options.method==='POST');
+ assert.equal(posts().length,0);await h.advance(1);assert.deepEqual(posts().map(r=>r.path),['/stt']);
+ await h.advance(5549);assert.equal(posts()[0].options.signal.aborted,false);
+ await h.advance(1);assert.equal(posts()[0].options.signal.aborted,true);
+ assert.deepEqual(posts().map(r=>r.path),['/stt']);assert.equal(h.run('qzRecording||micPreparing'),false);assert.equal(h.lastEvent(),undefined);
+ assert.match(h.get('#autoStat').textContent,/음성 인식 응답이 늦어요/);
+});
+
 test('missing, invalid or out-of-capture native onset evidence never receives a fast reward',async()=>{
  for(const onset of [undefined,null,-1,NaN,Infinity,1501]){
   const h=setup();h.start();await nativeAnswer(h,{press:100,onset,captureDuration:1500});assert.equal(h.lastEvent().fast,false,String(onset));assert.equal(h.lastEvent().xp,15);assert.equal(h.mastery().fastCorrect,0);

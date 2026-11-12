@@ -30,7 +30,7 @@ const PracticeAI=(()=>{
   }
   async function ensureReady(){const s=await status();if(!s.enabled||!s.creditsVerified)throw Object.assign(Error(reasonText(s.reason)),{code:s.reason||'ai_disabled'});return s;}
   function prepareRealtime(){if(Date.now()<realtimeCooldown)return Promise.resolve({available:false});if(realtimeCache&&Date.now()-realtimeAt<60000)return Promise.resolve(realtimeCache);if(realtimePending)return realtimePending;realtimePending=receive('/practice-realtime/status',{},4000,false).then(s=>{realtimeCache=s;realtimeAt=Date.now();return s;}).finally(()=>{realtimePending=null;});return realtimePending;}
-  function disableRealtime(){realtimeCooldown=Date.now()+300000;}
+  function disableRealtime(){realtimeCooldown=Date.now()+12000;}
   const realtimeReady=()=>Date.now()>=realtimeCooldown&&realtimeCache?.available===true&&Date.now()-realtimeAt<120000;
   const realtimeCanStart=()=>Date.now()>=realtimeCooldown&&(!realtimeCache||Date.now()-realtimeAt>=60000||realtimeCache.available===true);
   function recordUsage(requestId,kind,usage){

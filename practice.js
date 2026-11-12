@@ -1,5 +1,7 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.7.2", APP_BUILD="2026-11-07";
+const APP_VERSION="v4.7.3", APP_BUILD="2026-11-12";
+const PRACTICE_RECOGNITION_BUDGET_MS=6000;
+const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
 const setup=$("#setup"), stage=$("#stage"), msg=$("#msg"), threadInner=$("#threadInner");
 const state={mode:"talk",engine:"survival",scn:null,convo:[],ttsOn:true,busy:false};
@@ -383,13 +385,24 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
   const cueWait=Math.max(0,_micCueUntil-Date.now());
   if(cueWait){await new Promise(resolve=>setTimeout(resolve,cueWait));if(epoch!==micEpoch)return;}
   if(window.srNativePracticeSpeech){
-    const startAt=Date.now();let captureTimer=null;
+    const startAt=Date.now();let captureTimer=null,recognitionTimer=null,timing=null,capturedAt=null;
     try{
       if(window.srNativePracticePlayback){
         const realtime=realtimePrepared;
         const streamed=!meaning&&(realtime||window.srNativePracticeStreaming===true);
-        let capturedAt=null,readyAt=null;
-        const endNativeCapture=()=>{if(epoch!==micEpoch||capturedAt!==null)return;capturedAt=Date.now();clearTimeout(captureTimer);qzRecording=false;micPreparing=true;captureEnded();};
+        let readyAt=null,rejectRecognition;
+        const recognitionTimeout=new Promise((_,reject)=>{rejectRecognition=reject;});
+        const endNativeCapture=(waitForResult=true)=>{
+          if(epoch!==micEpoch||capturedAt!==null)return;
+          capturedAt=Date.now();clearTimeout(captureTimer);qzRecording=false;micPreparing=true;
+          timing={preparationMs:readyAt===null?null:readyAt-startAt,captureMs:capturedAt-(readyAt??startAt),recognitionMs:null,phase:'recognition',mode:meaning?'meaning':realtime?'realtime':'accuracy'};
+          window.srLastSpeechTiming=timing;captureEnded();
+          if(streamed&&waitForResult)recognitionTimer=setTimeout(()=>{
+            if(epoch!==micEpoch)return;
+            rejectRecognition(new Error(PRACTICE_RECOGNITION_TIMEOUT));
+            window.srNativeRequest('recognizeCancel').catch(()=>{});
+          },PRACTICE_RECOGNITION_BUDGET_MS);
+        };
         const words=refText.trim().split(/\s+/).filter(Boolean).length;
         const limit=words?Math.max(8000,Math.min(18000,3500+words*850)):20000;
         // The installed app already exposes PCM capture with silence detection.
@@ -398,19 +411,20 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
         const nativeReady=()=>{if(epoch!==micEpoch||capturedAt!==null||delivered)return;readyAt=Date.now();armCaptureLimit();ready();};
         if(!window.srNativePracticeMicReady)armCaptureLimit();
         const action=realtime?'streamPracticeFast':streamed?'streamPractice':'recordPractice';
-        const result=await speechWait(window.srNativeRequest(action,{expectedWords:words},streamed?endNativeCapture:null,nativeReady),limit+(streamed?8000:5000)+(realtime?6000:0),streamed?'음성 인식이 응답하지 않아요. 다시 말해주세요.':'녹음이 응답하지 않아요. 다시 말해주세요.',()=>window.srNativeRequest('recognizeCancel').catch(()=>{}));
+        const nativeResult=window.srNativeRequest(action,{expectedWords:words},streamed?endNativeCapture:null,nativeReady);
+        const result=await speechWait(Promise.race([nativeResult,recognitionTimeout]),limit+(streamed?8000:5000)+(realtime?6000:0),streamed?'음성 인식이 응답하지 않아요. 다시 말해주세요.':'녹음이 응답하지 않아요. 다시 말해주세요.',()=>{if(epoch===micEpoch)window.srNativeRequest('recognizeCancel').catch(()=>{});});
+        clearTimeout(recognitionTimer);recognitionTimer=null;
         clearTimeout(captureTimer);if(epoch!==micEpoch)return;
         const recordingBlob=nativeRecordingBlob(result);if(!recordingBlob)throw new Error('녹음된 소리가 없어요. 다시 말해주세요.');
-        endNativeCapture();
+        endNativeCapture(false);
         const meta={startAt:readyAt??startAt,stopAt:capturedAt,speechStartAt:null,spoke:true,recordingBlob};
         if(Number.isFinite(result.speechStartOffsetMs)&&Number.isFinite(result.captureDurationMs)&&result.speechStartOffsetMs>=0&&result.speechStartOffsetMs<=result.captureDurationMs){meta.speechStartOffsetMs=result.speechStartOffsetMs;meta.captureDurationMs=result.captureDurationMs;meta.speechStartAt=meta.startAt+result.speechStartOffsetMs;}
         const recognizeAt=capturedAt;
-        const timing={preparationMs:readyAt===null?null:readyAt-startAt,captureMs:recognizeAt-(readyAt??startAt),recognitionMs:null,phase:'recognition',mode:meaning?'meaning':realtime?'realtime':'accuracy'};
-        window.srLastSpeechTiming=timing;
+        const deadlineAt=recognizeAt+PRACTICE_RECOGNITION_BUDGET_MS;
         let text;
         try{
-          if(realtime&&result.streamError){PracticeAI.disableRealtime();timing.mode='accuracy-fallback';text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true,azureOnly:true});}
-          else{if(streamed&&result.streamError)throw new Error(result.streamError);text=meaning?await PracticeAI.transcribe(recordingBlob,meta,options.requestId):streamed?practiceTranscriptText({DisplayText:result.text||''},meta,refText):await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true});}
+          if(realtime&&result.streamError){PracticeAI.disableRealtime();timing.mode='accuracy-fallback';text=await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true,azureOnly:true,deadlineAt});}
+          else{if(streamed&&result.streamError)throw new Error(result.streamError);text=meaning?await PracticeAI.transcribe(recordingBlob,meta,options.requestId):streamed?practiceTranscriptText({DisplayText:result.text||''},meta,refText):await practiceTranscribe(recordingBlob,'audio/wav',meta,refText,{preferAzure:true,azureOnly:true,deadlineAt});}
           timing.phase='complete';
         }
         catch(e){timing.phase='error';throw e;}
@@ -422,8 +436,8 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
         cb(result.text||'',{startAt,speechStartAt:null,spoke:!!result.text,recordingBlob:nativeRecordingBlob(result)});
       }
     }
-    catch(e){cb('',{sttErr:e.message});}
-    finally{if(captureTimer)clearTimeout(captureTimer);if(epoch===micEpoch)qzRecording=false;}
+    catch(e){if(timing&&timing.phase==='recognition'){timing.phase='error';timing.recognitionMs=Date.now()-capturedAt;}cb('',{sttErr:e.message});}
+    finally{clearTimeout(captureTimer);clearTimeout(recognitionTimer);if(epoch===micEpoch)qzRecording=false;}
     return;
   }
   try{
@@ -436,14 +450,15 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
     qzMR.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
     qzMR.onstop=async()=>{
       if(epoch!==micEpoch){micLiveStop(live);return;}
-      if(live)live.onFinal=null;vadCancel();qzRecording=false;micPreparing=true;captureEnded();micStartCooldown();micStreamIdle();meta.stopAt=Date.now();
+      if(live)live.onFinal=null;vadCancel();qzRecording=false;micPreparing=true;meta.stopAt=Date.now();captureEnded();micStartCooldown();micStreamIdle();
+      const deadlineAt=meta.stopAt+PRACTICE_RECOGNITION_BUDGET_MS;
       try{
         const raw=new Blob(chunks,{type:actualMime});if(raw.size>=400)meta.recordingBlob=raw;
-        const device=await micLiveWait(live,900);if(epoch!==micEpoch)return;
+        const device=await micLiveWait(live,450);if(epoch!==micEpoch)return;
         if(device&&device.text)return cb(device.text,meta);
         if(raw.size<400)return cb('',meta);
         if(meaning){const wav=/^audio\/wav\b/i.test(actualMime)?raw:await speechWait(recordedToWav(raw),3000,'녹음을 변환하지 못했어요. 다시 말해주세요.');cb(await PracticeAI.transcribe(wav,meta,options.requestId),meta);}
-        else cb(await practiceTranscribe(raw,actualMime,meta,refText),meta);
+        else cb(await practiceTranscribe(raw,actualMime,meta,refText,{preferAzure:true,azureOnly:true,deadlineAt}),meta);
       }catch(e){cb('',{...meta,sttErr:e.message});}
     };
     qzMR.start(250);ready();

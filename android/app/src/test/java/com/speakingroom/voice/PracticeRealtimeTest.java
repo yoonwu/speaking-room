@@ -20,6 +20,24 @@ public class PracticeRealtimeTest {
     @Test public void aMissingFinalResultHasOneBoundedPostCaptureDeadline()throws Exception{
         CountDownLatch done=new CountDownLatch(1);AtomicInteger calls=new AtomicInteger();PracticeRealtime stream=new PracticeRealtime(5,30,(text,error)->{assertEquals("",text);assertNotNull(error);calls.incrementAndGet();done.countDown();},()->fail("No ASR result"));stream.append(new short[320],320);stream.finishInput();assertTrue(done.await(1,TimeUnit.SECONDS));stream.finishInput();stream.cancel();Thread.sleep(50);assertEquals(1,calls.get());
     }
+    @Test public void productionDeadlinesLeaveTimeForFallbackAndAllowColdQueueDrain()throws Exception{
+        CountDownLatch warmDone=new CountDownLatch(1),coldDone=new CountDownLatch(1);
+        AtomicLong warmAt=new AtomicLong(),coldAt=new AtomicLong();
+        AtomicReference<String> warmError=new AtomicReference<>(),coldError=new AtomicReference<>();
+        PracticeRealtime warm=new PracticeRealtime(5,(text,error)->{assertEquals("",text);warmError.set(error);warmAt.set(System.nanoTime());warmDone.countDown();},()->fail("No ASR result"));
+        PracticeRealtime cold=new PracticeRealtime(5,(text,error)->{assertEquals("",text);coldError.set(error);coldAt.set(System.nanoTime());coldDone.countDown();},()->fail("No ASR result"));
+        try{
+            // Simulate the SDK's connected callback without opening JNI or a socket.
+            Field ready=PracticeRealtime.class.getDeclaredField("providerReady");ready.setAccessible(true);ready.setBoolean(warm,true);
+            long started=System.nanoTime();
+            warm.append(new short[320],320);cold.append(new short[320],320);warm.finishInput();cold.finishInput();
+            assertTrue("A ready provider cannot consume the entire fallback budget",warmDone.await(3600,TimeUnit.MILLISECONDS));
+            assertTrue("Cold connections must still expire under the shared UI deadline",coldDone.await(1800,TimeUnit.MILLISECONDS));
+            assertTrue(TimeUnit.NANOSECONDS.toMillis(warmAt.get()-started)>=2400);
+            assertTrue("Cold PCM gets extra time to reach the provider",TimeUnit.NANOSECONDS.toMillis(coldAt.get()-warmAt.get())>=800);
+            assertNotNull(warmError.get());assertNotNull(coldError.get());
+        }finally{warm.cancel();cold.cancel();}
+    }
     @SuppressWarnings("unchecked") private static ArrayBlockingQueue<byte[]> queued(PracticeRealtime stream)throws Exception{Field field=PracticeRealtime.class.getDeclaredField("queue");field.setAccessible(true);return (ArrayBlockingQueue<byte[]>)field.get(stream);}
     @Test public void immediatePcmIsQueuedBeforeSdkPreparationInExactOrderThroughCaptureEof()throws Exception{
         AtomicInteger calls=new AtomicInteger();PracticeRealtime stream=new PracticeRealtime(5,(text,error)->calls.incrementAndGet(),()->fail("No ASR result"));

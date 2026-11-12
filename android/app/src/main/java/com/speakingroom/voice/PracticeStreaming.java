@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class PracticeStreaming {
     interface Completion { void accept(String text,String error); }
     static final int FRAME_SAMPLES=320, QUEUE_FRAMES=128;
+    private static final long POST_CAPTURE_TIMEOUT_MS=5500;
     private static final String ENDPOINT="https://speaking-room.thdghkstlr.workers.dev/stt";
     private final URL endpoint;
     private final long finishWaitMillis;
@@ -24,7 +25,7 @@ final class PracticeStreaming {
     private volatile boolean inputEnded;
     private Thread worker;
 
-    PracticeStreaming(Completion completion){this(url(),7000,completion);}
+    PracticeStreaming(Completion completion){this(url(),POST_CAPTURE_TIMEOUT_MS,completion);}
     // Package-private transport and deadline injection for real loopback HTTP tests.
     PracticeStreaming(URL endpoint,long finishWaitMillis,Completion completion){this.endpoint=endpoint;this.finishWaitMillis=finishWaitMillis;this.completion=completion;}
     private static URL url(){try{return new URL(ENDPOINT);}catch(MalformedURLException e){throw new AssertionError(e);}}

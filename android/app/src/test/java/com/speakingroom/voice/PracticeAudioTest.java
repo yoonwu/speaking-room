@@ -16,7 +16,7 @@ public class PracticeAudioTest {
     @Test public void silenceStopsButShortPausesDoNotCutAnAnswer(){
         PracticeAudio clip=new PracticeAudio(0);short[] voice=new short[320];Arrays.fill(voice,(short)2000);
         clip.append(voice,320,20);clip.append(voice,320,40);assertTrue(clip.hasSpeech());
-        clip.append(new short[320],320,800);assertFalse(clip.shouldStop(800));assertTrue(clip.shouldStop(1440));
+        clip.append(new short[320],320,800);assertFalse(clip.shouldStop(800));assertFalse(clip.shouldStop(1239));assertTrue(clip.shouldStop(1240));
         PracticeAudio quiet=new PracticeAudio(0);assertFalse(quiet.shouldStop(6999));assertTrue(quiet.shouldStop(7000));
     }
     @Test public void aContinuousAnswerCannotGrowBeyondTwentyFiveSeconds(){
@@ -35,8 +35,8 @@ public class PracticeAudioTest {
         assertFalse("Steady background noise is not an answer",clip.hasSpeech());
         for(long t=520;t<=1100;t+=20)clip.append(voice,320,t);
         assertTrue(clip.hasSpeech());
-        for(long t=1120;t<2500;t+=20){clip.append(noise,320,t);assertFalse(clip.shouldStop(t));}
-        clip.append(noise,320,2500);assertTrue("Background noise must not hold the mic open",clip.shouldStop(2500));
+        for(long t=1120;t<2300;t+=20){clip.append(noise,320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(noise,320,2300);assertTrue("Background noise must not hold the mic open",clip.shouldStop(2300));
     }
     @Test public void ambientNoiseWithoutSpeechDoesNotBecomeAnAnswer(){
         PracticeAudio clip=new PracticeAudio(0);short[] noise=new short[320];Arrays.fill(noise,(short)700);
@@ -61,8 +61,8 @@ public class PracticeAudioTest {
             if(frame>=1)assertTrue("Immediate voiced input remains speech",clip.hasSpeech());
             assertFalse(clip.shouldStop((frame+1)*20L));
         }
-        for(long t=820;t<2200;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
-        clip.append(new short[320],320,2200);assertTrue(clip.shouldStop(2200));
+        for(long t=820;t<2000;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(new short[320],320,2000);assertTrue(clip.shouldStop(2000));
     }
     @Test public void initialLoudConsonantsDoNotCutOffQuieterVoicedSpeech(){
         PracticeAudio clip=new PracticeAudio(0);java.util.Random random=new java.util.Random(17);
@@ -77,16 +77,22 @@ public class PracticeAudioTest {
             if(frame>=1)assertTrue(clip.hasSpeech());
             assertFalse("Quieter voiced speech must not time out",clip.shouldStop((frame+1)*20L));
         }
-        for(long t=2420;t<3800;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
-        clip.append(new short[320],320,3800);assertTrue(clip.shouldStop(3800));
+        for(long t=2420;t<3600;t+=20){clip.append(new short[320],320,t);assertFalse(clip.shouldStop(t));}
+        clip.append(new short[320],320,3600);assertTrue(clip.shouldStop(3600));
     }
     private static void voice(PracticeAudio clip,long from,long to){
         for(long now=from;now<=to;now+=20){short[] frame=new short[320];for(int i=0;i<frame.length;i++)frame[i]=(short)(2500*Math.sin(2*Math.PI*160*((now-20)/1000.0+i/16000.0)));clip.append(frame,320,now);}
     }
-    @Test public void actualRecognizedWordsEnableASixHundredFiftyMillisecondTailWithoutChangingLegacyCapture(){
+    @Test public void actualRecognizedWordsEnableASixHundredFiftyMillisecondTail(){
         PracticeCompletionPolicy p=new PracticeCompletionPolicy(5);PracticeAudio fast=new PracticeAudio(0,5,p::heardWords);voice(fast,20,800);p.recognizing(0,"I can't find my phone");
         fast.append(new short[320],320,1440);assertFalse(fast.shouldStop(1440));fast.append(new short[320],320,1460);assertTrue(fast.shouldStop(1460));
-        PracticeAudio legacy=new PracticeAudio(0);voice(legacy,20,800);assertFalse(legacy.shouldStop(1460));assertTrue(legacy.shouldStop(2200));
+        PracticeAudio legacy=new PracticeAudio(0);voice(legacy,20,800);assertFalse(legacy.shouldStop(1460));assertFalse(legacy.shouldStop(1999));assertTrue(legacy.shouldStop(2000));
+    }
+    @Test public void aColdSdkWithoutAnyWordsStillKeepsANineHundredMillisecondMiddlePause(){
+        PracticeAudio clip=new PracticeAudio(0,5,()->0);voice(clip,20,500);
+        for(long now=520;now<=1400;now+=20){clip.append(new short[320],320,now);assertFalse(clip.shouldStop(now));}
+        voice(clip,1420,1900);assertFalse(clip.shouldStop(3099));assertTrue(clip.shouldStop(3100));
+        assertEquals(0,clip.timing().speechStartOffsetMs);
     }
     @Test public void aPauseAfterThreeOfFiveWordsIsNotCutEvenWhenSpeechWasRapid(){
         PracticeCompletionPolicy p=new PracticeCompletionPolicy(5);PracticeAudio clip=new PracticeAudio(0,5,p::heardWords);voice(clip,20,500);p.recognized(0,"I can't find");
@@ -95,7 +101,7 @@ public class PracticeAudioTest {
     }
     @Test public void slowPolysyllabicIncompleteSpeechRetainsTheLongerPauseAndDoesNotUseVowelCounts(){
         PracticeCompletionPolicy p=new PracticeCompletionPolicy(5);PracticeAudio clip=new PracticeAudio(0,5,p::heardWords);voice(clip,20,2200);p.recognizing(0,"international information processing");
-        for(long now=2220;now<=4200;now+=20){clip.append(new short[320],320,now);assertFalse(clip.shouldStop(now));}assertTrue(clip.shouldStop(4400));
+        for(long now=2220;now<3800;now+=20){clip.append(new short[320],320,now);assertFalse(clip.shouldStop(now));}assertFalse(clip.shouldStop(3799));assertTrue(clip.shouldStop(3800));
     }
     @Test public void aTranscriptWithoutRealVoiceDoesNotBypassTheNoSpeechTimeout(){
         PracticeAudio clip=new PracticeAudio(0,5,()->5);clip.append(new short[320],320,660);assertFalse(clip.shouldStop(660));assertFalse(clip.hasSpeech());assertNull(clip.timing());assertTrue(clip.shouldStop(7000));

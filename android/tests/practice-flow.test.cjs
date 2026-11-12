@@ -52,7 +52,16 @@ test('retry starts one capture immediately and listening appears only after the 
 });
 
 test('SDK preparation does not consume the speaking window or the post-capture result deadline',async()=>{
- const h=setup({realtime:true});h.start();await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures[0];assert.equal(capture.action,'streamPracticeFast');await h.advance(4000);assert.equal(h.get('#autoMic').textContent,'마이크 연결 중…');capture.ready();await h.advance(7999);assert.equal(h.native.filter(r=>r.action==='recognizeStop').length,0,'the full eight-second speaking window begins at microphone readiness');await h.advance(1);assert.equal(h.native.filter(r=>r.action==='recognizeStop').length,1);capture.end();await h.advance(6000);assert.equal(h.run('autoDrill.results.length'),0);assert.equal(h.get('#autoMic').textContent,'말소리 인식 중…','the allowed provider tail must remain active after bounded SDK preparation');capture.complete();await pending;await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),true);assert.equal(h.run('practiceReward().total'),15);
+ const h=setup({realtime:true});h.start();await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures[0];assert.equal(capture.action,'streamPracticeFast');await h.advance(4000);assert.equal(h.get('#autoMic').textContent,'마이크 연결 중…');capture.ready();await h.advance(7999);assert.equal(h.native.filter(r=>r.action==='recognizeStop').length,0,'the full eight-second speaking window begins at microphone readiness');await h.advance(1);assert.equal(h.native.filter(r=>r.action==='recognizeStop').length,1);capture.end();await h.advance(4500);assert.equal(h.run('autoDrill.results.length'),0);assert.equal(h.get('#autoMic').textContent,'말소리 인식 중…','the allowed provider tail must remain active after bounded SDK preparation');capture.complete();await pending;await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),true);assert.equal(h.run('practiceReward().total'),15);
+});
+
+test('a hung native result releases the practice screen six seconds after capture ends and ignores a late final',async()=>{
+ const h=setup({realtime:true});h.start();await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures[0];capture.ready();await h.advance(1200);capture.end();
+ assert.equal(h.context.window.srLastSpeechTiming.phase,'recognition');const cancellations=h.native.filter(r=>r.action==='recognizeCancel').length;
+ await h.advance(5999);assert.equal(h.get('#autoMic').textContent,'말소리 인식 중…');
+ await h.advance(1);await pending;assert.equal(h.native.filter(r=>r.action==='recognizeCancel').length,cancellations+1);
+ assert.equal(h.context.window.srLastSpeechTiming.phase,'error');assert.equal(h.context.window.srLastSpeechTiming.recognitionMs,6000);assert.equal(h.run('qzRecording||micPreparing'),false);assert.equal(h.posts().length,0);
+ capture.complete();await h.flush();assert.equal(h.run('supportEvents().length'),0);
 });
 
 test('real start-cue synthesis waits for SDK preparation, finishes before capture, and does not reopen on duplicate taps',async()=>{
@@ -129,14 +138,18 @@ test('a realtime stream failure reuses the one original recording for bounded Az
  assert.equal(h.captures.length,1,'fallback must reuse PCM instead of reopening the microphone');assert.equal(h.posts().length,1);const request=h.posts()[0];assert.equal(request.path,'/stt');assert.equal(request.options.headers['Content-Type'],'audio/wav');assert.deepEqual(Buffer.from(await request.options.body.arrayBuffer()),wav);assert.equal(h.run('PracticeAI.realtimeReady()'),false);
  await h.advance(2100);assert.equal(h.posts().length,1,'the normal two-second OpenAI hedge must be disabled for this fallback');fallback.resolve(json({DisplayText:'Can I get some water?'}));await pending;await h.flush();assert.equal(h.run('autoDrill.results[0].ok'),true);assert.equal(h.run('practiceReward().total'),15);assert.equal(h.captures.length,1);
  h.start();await h.flush();const second=h.get('#autoMic').onclick();assert.equal(h.captures[1].action,'streamPractice','subsequent capture during cooldown uses the previous streaming route');h.captures[1].ready();h.captures[1].complete();await second;await h.flush();assert.equal(h.posts().length,1);assert.equal(h.run('autoDrill.results[0].ok'),true);
+ await h.advance(12000);h.start();await h.flush();const recovered=h.get('#autoMic').onclick();await h.flush();
+ assert.equal(h.captures[2].action,'streamPracticeFast','one error cannot keep subsequent sessions on the slower route for minutes');h.captures[2].ready();h.captures[2].complete();await recovered;
 });
 
 test('unavailable realtime status keeps the established native stream with no second capture or transcription request',async()=>{
  const h=setup({realtime:true,route:r=>{if(r.path==='/practice-realtime/status')throw Error('status network failure');}});h.start();await h.flush();assert.equal(h.run('PracticeAI.realtimeReady()'),false);const pending=h.get('#autoMic').onclick();assert.equal(h.captures.length,1);assert.equal(h.captures[0].action,'streamPractice');h.captures[0].ready();h.captures[0].complete();await pending;await h.flush();assert.equal(h.posts().length,0);assert.equal(h.captures.length,1);assert.equal(h.run('autoDrill.results[0].ok'),true);
 });
 
-test('a hung realtime fallback ends after seven seconds without a paid backup, a guessed answer or extra capture',async()=>{
- const delayed=deferred(),h=setup({realtime:true,route:r=>r.path==='/stt'?delayed.promise:undefined});h.start();await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();h.captures[0].ready();h.captures[0].complete('',{streamError:'실시간 연결 실패'});await h.flush();const fallback=h.posts()[0];await h.advance(6999);assert.equal(h.posts().length,1);assert.equal(fallback.options.signal.aborted,false);await h.advance(1);await pending;assert.equal(fallback.options.signal.aborted,true);assert.equal(h.posts().length,1);assert.equal(h.captures.length,1);assert.equal(h.run('supportEvents().length'),0);assert.equal(h.run('practiceReward().total'),0);assert.equal(h.run('qzRecording||micPreparing'),false);assert.match(h.get('#autoStat').textContent,/음성 인식 응답이 늦어요/);delayed.resolve(json({DisplayText:'Can I get some water?'}));await h.flush();assert.equal(h.run('supportEvents().length'),0);
+test('a late SDK error and hung REST fallback share six seconds from capture end with no extra capture or paid backup',async()=>{
+ const delayed=deferred(),h=setup({realtime:true,route:r=>r.path==='/stt'?delayed.promise:undefined});h.start();await h.flush();const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures[0];capture.ready();capture.end();await h.advance(2600);
+ capture.complete('',{streamError:'실시간 연결 실패'});await h.flush();const fallback=h.posts()[0];assert.equal(fallback.path,'/stt');await h.advance(3399);assert.equal(h.posts().length,1);assert.equal(fallback.options.signal.aborted,false);await h.advance(1);await pending;
+ assert.equal(fallback.options.signal.aborted,true);assert.equal(h.context.window.srLastSpeechTiming.recognitionMs,6000);assert.equal(h.posts().length,1);assert.equal(h.captures.length,1);assert.equal(h.run('supportEvents().length'),0);assert.equal(h.run('practiceReward().total'),0);assert.equal(h.run('qzRecording||micPreparing'),false);assert.match(h.get('#autoStat').textContent,/음성 인식 응답이 늦어요/);delayed.resolve(json({DisplayText:'Can I get some water?'}));await h.flush();assert.equal(h.run('supportEvents().length'),0);
 });
 
 test('a successful realtime NoMatch remains unscorable without triggering Azure fallback or another microphone',async()=>{

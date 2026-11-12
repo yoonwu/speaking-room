@@ -210,12 +210,12 @@ function attachVAD(stream, onStop, opts){
       return false;
     }
     // Poll on a timer instead of animation frames; retain a wall-clock backstop.
-    let timer=null,guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000),tail=null;
+    let timer=null,guard=setTimeout(()=>{ guard=null; fin(); }, maxMs+2000),tail=null,quietTailAt=null;
     // 말이 끝났다고 판단한 순간 바로 끊으면 마지막 자음(-t, -k, -s)이 잘려 인식이 나빠진다.
     const tailMs = (opts.tailMs!=null) ? opts.tailMs : 250;
     function release(){if(timer)clearTimeout(timer);if(guard)clearTimeout(guard);try{src.disconnect();an.disconnect();}catch(e){}}
-    function fin(){ if(done)return; done=true;release();
-      if(tailMs>0)tail=setTimeout(onStop,tailMs);else onStop(); }
+    function fin(tailAlreadyElapsed=false){ if(done)return; done=true;release();
+      if(tailMs>0&&!tailAlreadyElapsed)tail=setTimeout(onStop,tailMs);else onStop(); }
     function tick(){
       if(done)return;
       an.getByteTimeDomainData(buf);
@@ -223,6 +223,7 @@ function attachVAD(stream, onStop, opts){
       const rms=Math.sqrt(sum/buf.length), now=Date.now();
       const dt=Math.min(120, now-lastTick); lastTick=now;
       if(rms>thresh){
+        quietTailAt=null;
         if(!inBurst){ inBurst=true; bursts++; }        // 말 덩어리 개수 (단어를 끊어 말한 횟수)
         lastLoud=now; voicedMs+=dt;                    // 쉬는 시간은 빼고 '말한 시간'만 누적
         if(!started && now-t0>minSpeechMs){ started=true; if(onSpeechStart) onSpeechStart(now); }
@@ -235,10 +236,14 @@ function attachVAD(stream, onStop, opts){
         // 녹음이 너무 짧으면 STT 가 아무것도 못 돌려준다("안 들렸어요"의 흔한 원인).
         // 말이 끝난 것 같아도 최소 길이는 채우고 끊는다.
         if(now-t0 < MIN_REC_MS) { timer=setTimeout(tick,30); return; }
-        // 다 말한 것 같으면 곧바로 종료 → 빨리 말한 사람이 기다리지 않음
-        if(quiet>silenceMs && looksDone()) return fin();
-        // 덜 말한 것 같아도 오래 조용하면 종료 (중간에 멈춘 경우)
-        if(quiet>maxSilenceMs) return fin();
+        if((quiet>silenceMs&&looksDone())||quiet>maxSilenceMs){
+          // Keep checking the existing tail. Speech resuming during it
+          // cancels the provisional stop instead of being clipped.
+          if(tailMs<=0)return fin(true);
+          if(quietTailAt===null)quietTailAt=now+Number(tailMs);
+          if(now>=quietTailAt)return fin(true);
+          timer=setTimeout(tick,Math.min(30,quietTailAt-now));return;
+        }
       }
       if(!spoke && noSpeechMs && (now-t0)>noSpeechMs){ return fin(); }   // 말이 없으면 그만 기다림
       if(now-t0>maxMs){ return fin(); }
@@ -602,6 +607,8 @@ function practiceTranscriptText(data,meta={}){
 // Short practice answers share one deadline. A slow provider must not queue
 // another full timeout (or a second Azure attempt) before returning a result.
 function sttPreferAzure(body,ctype,options={}){
+  const timeout=Number.isFinite(options.deadlineAt)?Math.min(7000,options.deadlineAt-Date.now()):7000;
+  if(timeout<=0)return Promise.reject(new Error('음성 인식 응답이 늦어요. 다시 말해주세요.'));
   return new Promise((resolve,reject)=>{
     const controllers=new Set(),backupAllowed=!options.azureOnly&&STT_SOFT&&Date.now()>_sttSoftOff;
     let settled=false,primaryDone=false,backupStarted=false,backupDone=false,backupTimer,deadline;
@@ -638,14 +645,16 @@ function sttPreferAzure(body,ctype,options={}){
     deadline=setTimeout(()=>{
       if(backupStarted&&!backupDone)_sttSoftOff=Date.now()+5*60000;
       finish(null,new Error('음성 인식 응답이 늦어요. 다시 말해주세요.'));
-    },7000);
+    },timeout);
     if(backupAllowed)backupTimer=setTimeout(startBackup,2000);
     _sttVia='Azure';send('/stt',false);
   });
 }
 async function sttRecognize(raw, actualMime,options={}){
   let body, ctype;
-  try{ body=/^audio\/wav\b/i.test(actualMime)?raw:await speechWait(recordedToWav(raw),3000,'녹음 변환 시간이 지났어요.'); ctype="audio/wav"; }
+  const remaining=Number.isFinite(options.deadlineAt)?options.deadlineAt-Date.now():Infinity;
+  if(remaining<=0)throw new Error('음성 인식 응답이 늦어요. 다시 말해주세요.');
+  try{ body=/^audio\/wav\b/i.test(actualMime)?raw:await speechWait(recordedToWav(raw),Math.min(3000,remaining),'녹음 변환 시간이 지났어요.'); ctype="audio/wav"; }
   catch(_){
     // 디코드 실패 기기 → 원본 컨테이너 그대로 전송
     body=raw;
