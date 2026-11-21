@@ -2758,6 +2758,85 @@ function basicFrameFor(f,ex){
   const rule=basicCurriculumRule(f);if(!rule||ex._tier!==1)return f;
   return {...f,frame:rule.pattern||f.frame,ko:rule.ko||f.ko,tip:rule.tip,parts:rule.parts,pnote:''};
 }
+// Ordered from short everyday questions to forms with more auxiliaries or a longer slot.
+// Each example supplies a situation, a natural Korean answer and the content to listen for.
+const DAILY_QUESTIONS=[
+  ['how_much','How much is ~?','~ 얼마예요?',/^how much (?:is|are)\b/,[
+    ['How much is this?','가격표가 없는 물건을 가리켜 가격을 물어보세요.','이건 얼마예요?','this'],
+    ['How much is the cake?','빵집에서 케이크 가격을 물어보세요.','케이크는 얼마예요?','cake']]],
+  ['wh_what_is',"What's ~?",'~ 뭐예요?',/^what(?: is| s)\b/,[
+    ["What's going on?",'문밖이 소란스러워요. 무슨 일인지 물어보세요.','무슨 일이에요?','going on'],
+    ["What's your name?",'옆자리에 앉은 사람에게 이름을 물어보세요.','이름이 뭐예요?','name']]],
+  ['wh_when_is','When is ~?','~ 언제예요?',/^when is\b/,[
+    ['When is your birthday?','친구에게 생일이 언제인지 물어보세요.','생일이 언제예요?','birthday'],
+    ['When is the party?','초대를 받았어요. 파티가 언제인지 물어보세요.','파티는 언제예요?','party']]],
+  ['wh_which_is','Which one is ~?','어느 게 ~해요?',/^which one is\b/,[
+    ['Which one is better?','이어폰 두 개를 보고 있어요. 어느 게 더 좋은지 물어보세요.','어느 게 더 좋아요?','better'],
+    ['Which one is yours?','우산 두 개 중에 어느 게 친구 것인지 물어보세요.','어느 게 네 거야?','yours']]],
+  ['wh_what_do','What do you ~?','무엇을 ~해요?',/^what do you\b/,[
+    ['What do you mean?','친구 말이 잘 이해되지 않아요. 무슨 뜻인지 물어보세요.','무슨 뜻이에요?','mean'],
+    ['What do you need?','장을 보러 가요. 상대에게 필요한 게 뭔지 물어보세요.','뭐가 필요해요?','need']]],
+  ['wh_what_ing','What are you ~ing?','무엇을 하고 있어요?',/^what are you(?:$| \w+ing\b)/,[
+    ['What are you doing?','친구에게 지금 뭐 하는지 물어보세요.','지금 뭐 해요?','doing'],
+    ['What are you reading?','친구가 책을 보고 있어요. 무엇을 읽는지 물어보세요.','뭐 읽고 있어요?','reading']]],
+  ['how_do_i','How do I ~?','어떻게 ~해요?',/^how do i\b/,[
+    ['How do I use this?','처음 보는 기기를 건네받았어요. 사용법을 물어보세요.','이거 어떻게 써요?','use'],
+    ['How do I pay?','무인 매장에서 결제 방법을 물어보세요.','어떻게 결제해요?','pay']]],
+  ['wh_when_do','When do you ~?','언제 ~해요?',/^when do you\b/,[
+    ['When do you get off work?','퇴근 후에 만나고 싶어요. 친구에게 퇴근 시간을 물어보세요.','언제 퇴근해요?','off work'],
+    ['When do you eat lunch?','같이 점심을 먹고 싶어요. 보통 언제 먹는지 물어보세요.','점심은 언제 먹어요?','lunch']]],
+  ['wh_which_do','Which one do you ~?','어느 것을 ~해요?',/^which one do you\b/,[
+    ['Which one do you want?','간식 두 가지를 보여주며 어느 걸 원하는지 물어보세요.','어느 걸 원해요?','want'],
+    ['Which one do you like?','사진 두 장을 보여주며 어느 게 마음에 드는지 물어보세요.','어느 게 마음에 들어요?','like']]],
+  ['wh_how_can','How can I ~?','어떻게 ~할 수 있어요?',/^how can i\b/,[
+    ['How can I help you?','곤란해 보이는 손님에게 어떻게 도와드리면 좋을지 물어보세요.','어떻게 도와드릴까요?','help'],
+    ['How can I reach you?','다시 연락하고 싶어요. 연락 방법을 물어보세요.','어떻게 연락하면 돼요?','reach']]],
+  ['wh_what_did','What did you ~?','무엇을 ~했어요?',/^what did you\b/,[
+    ['What did you say?','방금 친구 말을 놓쳤어요. 뭐라고 했는지 물어보세요.','뭐라고 했어요?','say'],
+    ['What did you buy?','친구가 쇼핑백을 들고 왔어요. 뭘 샀는지 물어보세요.','뭐 샀어요?','buy']]],
+  ['wh_when_can','When can I/we ~?','언제 ~할 수 있어요?',/^when can (?:i|we)\b/,[
+    ['When can we meet?','친구와 약속을 잡으려고 해요. 언제 만날 수 있는지 물어보세요.','우리 언제 만날 수 있어요?','meet'],
+    ['When can I call?','통화하기 편한 때를 알고 싶어요. 언제 전화하면 되는지 물어보세요.','언제 전화해도 돼요?','call']]],
+  ['wh_when_ing','When are you ~ing?','언제 ~할 예정이에요?',/^when are you(?:$| \w+ing\b)/,[
+    ['When are you leaving?','친구가 짐을 다 쌌어요. 언제 출발하는지 물어보세요.','언제 떠나요?','leaving'],
+    ['When are you coming?','집에 놀러 오기로 한 친구에게 언제 오는지 물어보세요.','언제 와요?','coming']]],
+  ['wh_what_should','What should I ~?','무엇을 ~하면 좋을까요?',/^what should i\b/,[
+    ['What should I do?','집 열쇠를 잃어버렸어요. 어떻게 하면 좋을지 물어보세요.','어떻게 해야 해요?','do'],
+    ['What should I bring?','저녁 초대를 받았어요. 뭘 가져가면 좋을지 물어보세요.','뭘 가져갈까요?','bring']]],
+  ['wh_which_want','Which ~ do you want?','어떤 ~을 원해요?',/^which \w+ do you want\b/,[
+    ['Which color do you want?','같은 티셔츠가 여러 색이에요. 원하는 색을 물어보세요.','어떤 색을 원해요?','color'],
+    ['Which size do you want?','음료를 주문받고 있어요. 원하는 크기를 물어보세요.','어떤 크기를 원해요?','size']]],
+  ['wh_when_did','When did you ~?','언제 ~했어요?',/^when did you\b/,[
+    ['When did you get here?','친구가 먼저 도착해 있어요. 언제 왔는지 물어보세요.','여기 언제 왔어요?','get here'],
+    ['When did you move?','친구의 새집에 왔어요. 언제 이사했는지 물어보세요.','언제 이사했어요?','move']]],
+  ['wh_which_should','Which one should I ~?','어느 걸 ~할까요?',/^which one should i\b/,[
+    ['Which one should I choose?','둘 중 결정을 못 하겠어요. 어느 걸 고를지 물어보세요.','어느 걸 고를까요?','choose'],
+    ['Which one should I wear?','옷 두 벌을 보여주며 어느 걸 입을지 물어보세요.','어느 걸 입을까요?','wear']]],
+  ['wh_how_often','How often do you ~?','얼마나 자주 ~해요?',/^how often do you\b/,[
+    ['How often do you work out?','운동을 좋아하는 친구에게 얼마나 자주 운동하는지 물어보세요.','얼마나 자주 운동해요?','work out'],
+    ['How often do you cook?','친구에게 얼마나 자주 요리하는지 물어보세요.','얼마나 자주 요리해요?','cook']]],
+  ['wh_which_way','Which way should we ~?','어느 쪽으로 ~할까요?',/^which way should we\b/,[
+    ['Which way should we go?','갈림길에서 어느 쪽으로 가야 할지 물어보세요.','우리 어느 쪽으로 갈까요?','go'],
+    ['Which way should we turn?','교차로에 왔어요. 어느 쪽으로 돌아야 할지 물어보세요.','어느 쪽으로 돌까요?','turn']]],
+  ['wh_how_long','How long does it take ~?','~하는 데 얼마나 걸려요?',/^how long does it take\b/,[
+    ['How long does it take to get there?','목적지까지 가는 데 걸리는 시간을 물어보세요.','거기까지 얼마나 걸려요?','get there'],
+    ['How long does it take to cook?','냄비에 음식을 넣었어요. 조리 시간을 물어보세요.','요리하는 데 얼마나 걸려요?','cook']]]
+];
+for(const [id,pattern,meaning,structure,examples] of DAILY_QUESTIONS){
+  let frame=TRAVEL_ALL_FRAMES.find(f=>f.id==='travel_'+id);
+  if(!frame){
+    frame={id:'travel_'+id,frame:pattern,ko:meaning,purpose:meaning,re:structure.source,items:[]};
+    TRAVEL_ALL_FRAMES.push(frame);
+    BASIC_CURRICULUM[id]={starter:0,core:[],complex:[],tip:meaning};
+  }
+  for(const [en,ko,answerKo,keywords] of examples){
+    let index=frame.items.findIndex(item=>item.en===en);
+    if(index<0){index=frame.items.length;frame.items.push({en,ko});}
+    frame.items[index].keywords=keywords.split(' ');
+    if(!BASIC_CURRICULUM[id].core.includes(index))BASIC_CURRICULUM[id].core.push(index);
+    TRAVEL_KR[en]=answerKo;
+  }
+}
 // Register new short-answer translations for saved mistake practice as well.
 for(const f of TRAVEL_ALL_FRAMES)for(const ex of basicCoreItems(f)||[])if(ex._answerKo&&!TRAVEL_KR[ex.en])TRAVEL_KR[ex.en]=ex._answerKo;
 
@@ -2780,6 +2859,10 @@ const TRAVEL_PROGRESS_ORDER=[...TRAVEL_INITIAL_IDS,
   'travel_is_this_right','travel_can_we_change','travel_id_like_to','travel_can_i_leave',
   'travel_do_i_need_to','travel_does_that_mean','travel_how_do_i','travel_how_do_i_get_to','travel_can_i_ask'
 ];
+// Alternate established expressions with everyday questions, then increase complexity.
+const TRAVEL_GRADUAL_QUESTION_IDS=new Set(DAILY_QUESTIONS.map(([id])=>'travel_'+id).filter(id=>!TRAVEL_INITIAL_IDS.has(id)));
+const everydayIds=[...TRAVEL_GRADUAL_QUESTION_IDS].filter(id=>!TRAVEL_PROGRESS_ORDER.includes(id));
+everydayIds.forEach((id,index)=>TRAVEL_PROGRESS_ORDER.splice(12+2*index,0,id));
 
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 
@@ -3009,7 +3092,7 @@ function travelKeyOf(it){
   travelReWords(it.frame).forEach(w=>frameWords.add(w));
   const want=adWords((it.ex&&it.ex.en)||"").filter(w=>!frameWords.has(w)&&!TRAVEL_SKIP_WORDS.has(w));
   const solid=want.filter(w=>!TRAVEL_FILLER_WORDS.has(w));
-  const key=solid.filter(w=>!TRAVEL_LIGHT_VERBS.has(w));
+  const key=it.ex?.keywords||solid.filter(w=>!TRAVEL_LIGHT_VERBS.has(w));
   /* 실전 반응은 '상대의 말'이 유일한 단서다.
      거기에 안 나온 낱말까지 요구하면 알 방법이 없는 문제가 된다 —
      상대가 말한 낱말일 때만 필수로 본다. */
@@ -3114,7 +3197,7 @@ function travelGrade(it, heard){
   /* 핵심 낱말 — 하나라도 들어가야 정답.
      전부를 요구하지는 않는다: "another towel" 을 "one more towel" 로 바꿔 말한 건 맞는 답이다.
      하지만 towel 자리에 fork 를 넣으면 다른 말이라 오답이다. */
-  const keyMissing=K.key.filter(w=>!hasW(w));
+  const keyMissing=K.key.filter(w=>it.ex?.keywords?!hw.some(x=>x===w||travelSynEq(x,w)):!hasW(w));
   const keyHit = !K.key.length || keyMissing.length===0;
   /* 프레임에 ~ 가 있으면 뒤에 뭔가는 붙여야 한다(Can I get ~?).
      문장 자체가 프레임이면(Hello. / How long does it take?) 그대로 말해도 정답이다. */

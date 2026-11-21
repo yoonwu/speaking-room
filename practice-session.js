@@ -51,7 +51,7 @@
         firstOutcome:outcome(first),finalOutcome,firstFullCorrect:first.ok===true,allFullCorrect:outcomes.every(value=>value==='full'),hasFullCorrect:outcomes.includes('full'),hasPartial:outcomes.includes('partial'),hasWrong:outcomes.includes('wrong'),
         firstFastExpression:fastExpression(first),firstUnaidedExpression:outcome(first)!=='wrong'&&unaidedVoice(first),
         intro:group.results.some(result=>result.intro===true),hinted:group.results.some(result=>result.hinted===true),typed:group.results.some(result=>result.typed===true),recall:group.results.some(result=>result.recall===true),
-        recovered:finalOutcome==='full'&&outcomes.slice(0,-1).some(value=>value!=='full'),unresolved:finalOutcome!=='full',
+        recovered:finalOutcome==='full'&&outcomes.slice(0,-1).some(value=>value!=='full'),unresolved:finalOutcome==='wrong',
         beforeScore,afterScore,scoreDelta,improved:scoreDelta!==null&&scoreDelta>0,newlyPracticed:comparable&&(!before||Number(before.seen)<=0)&&afterScore!==null};
     });
     const expressionIds=new Set();for(const group of grouped.values())for(const result of group.results)if(text(result.fid))expressionIds.add(text(result.fid));

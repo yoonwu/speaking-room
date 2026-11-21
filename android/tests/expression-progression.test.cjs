@@ -44,19 +44,19 @@ test('a new learner starts with exactly ten existing expressions and locked/stag
 test('full and partial fast answers have identical expression progress despite their separate XP rewards',()=>{
  const curves=[];
  for(const kind of ['full-fast','partial-fast']){
-  const h=setup(),curve=[];for(let i=0;i<4;i++){h.answer('travel_can_i_get',kind+'-'+i,kind);curve.push(score(h));assert.equal(ids(h).length,i===3?11:10);}
-  curves.push(curve);assert.deepEqual(curve,[2,4,6,8]);assert.equal(h.run('practiceReward().total'),kind==='full-fast'?120:60);const progress=plain(h.run('learningProgressRefresh()'));assert.equal(progress.earned.travel_can_i_get,true);assert.equal(Object.keys(progress.earned).length,1);assert.deepEqual(Object.keys(progress.unlocked),['travel_is_included']);
+  const h=setup(),curve=[];for(let i=0;i<4;i++){h.answer('travel_can_i_get',kind+'-'+i,kind);curve.push(score(h));assert.equal(ids(h).length,i>=2?11:10);}
+  curves.push(curve);assert.deepEqual(curve,[2,4,6,8]);assert.equal(h.run('practiceReward().total'),kind==='full-fast'?120:80);const progress=plain(h.run('learningProgressRefresh()'));assert.equal(progress.earned.travel_can_i_get,true);assert.equal(Object.keys(progress.earned).length,1);assert.deepEqual(Object.keys(progress.unlocked),['travel_is_included']);
   for(let i=0;i<5;i++)h.run('learningProgressRefresh()');h.answer('travel_can_i_get',kind+'-3',kind);assert.equal(score(h),8);assert.equal(ids(h).length,11,'one source expression earns one permanent unlock');
  }
  assert.deepEqual(curves[0],curves[1]);
 });
 
-test('the real native partial flow unlocks from four independent fast first attempts even when combined response exceeds three seconds',async()=>{
+test('the real native partial flow unlocks from three independent fast first attempts even when combined response exceeds three seconds',async()=>{
  const h=setup();for(let i=0;i<4;i++){
   h.run(`startDrill([{frame:TRAVEL_BY_ID.travel_can_i_get,ex:basicStarterItem(TRAVEL_BY_ID.travel_can_i_get),_intro:false}],'기본표현')`);await h.advance(2800);const pending=h.get('#autoMic').onclick();await h.flush();const capture=h.captures.at(-1);assert.ok(capture);capture.ready();await h.advance(2000);capture.complete('Can I get a towel?',{speechStartOffsetMs:1400,captureDurationMs:2000});await pending;await h.flush();
-  assert.equal(h.run('autoDrill.results[0].ok'),false);assert.equal(h.run('autoDrill.results[0].xp'),15);assert.equal(score(h),(i+1)*2);assert.equal(ids(h).length,i===3?11:10);
+  assert.equal(h.run('autoDrill.results[0].ok'),false);assert.equal(h.run('autoDrill.results[0].xp'),20);assert.equal(score(h),(i+1)*2);assert.equal(ids(h).length,i>=2?11:10);
  }
- assert.equal(h.run(`learningSentenceMastery(basicStarterItem(TRAVEL_BY_ID.travel_can_i_get).en).correct`),0);
+ assert.equal(h.run(`learningSentenceMastery(basicStarterItem(TRAVEL_BY_ID.travel_can_i_get).en).correct`),4);
 });
 
 test('slow expression success tops out at five while a timed wrong expression contributes zero and consumes the latest-five window',()=>{
@@ -67,7 +67,7 @@ test('slow expression success tops out at five while a timed wrong expression co
 test('intro, hints, recall, retries, typing, invalid onset and legacy timing cannot contribute or displace eligible first-voice scores',()=>{
  const h=setup();repeat(h,'travel_can_i_get',3,'partial-fast');assert.equal(score(h),6);
  const excluded=[{it:{_intro:true}},{it:{_hintUsed:true}},{it:{recall:true}},{retry:true},{meta:{typed:true}},{meta:{speedEligible:false}},{meta:{responseMs:null}},{meta:{responseMs:-1}},{meta:{tapMs:null}},{meta:{speechStartDelayMs:null}},{meta:{speechStartDelayMs:-1}},{meta:{timingVersion:1}}];
- for(let i=0;i<excluded.length;i++){h.answer('travel_can_i_get','excluded-'+i,'full-fast',excluded[i]);assert.equal(score(h),6,'excluded case '+i);assert.equal(ids(h).length,10);}
+ for(let i=0;i<excluded.length;i++){h.answer('travel_can_i_get','excluded-'+i,'full-fast',excluded[i]);assert.equal(score(h),6,'excluded case '+i);assert.equal(ids(h).length,11);}
  h.answer('travel_can_i_get','fourth-real','partial-fast');assert.equal(score(h),8);assert.equal(ids(h).length,11);
 });
 
@@ -98,13 +98,96 @@ test('reload and sync union retain distinct earned sources idempotently while ke
  const restored=setup(Object.fromEntries(a.records));assert.equal(ids(restored).length,12);assert.equal(score(restored,'travel_can_i_get'),8);assert.equal(score(restored,'travel_can_you'),8);const other=restored.run(`learningProfileCreate('진도 없는 학습자')`);restored.run(`learningProfileSwitch(${JSON.stringify(other)})`);assert.equal(ids(restored).length,10);assert.equal(score(restored),0);restored.context.snapshot=snapshot;assert.equal(restored.run(`supportApplySnapshot(snapshot,'legacy')`),false);assert.equal(ids(restored).length,10);restored.run(`learningProfileSwitch('legacy')`);assert.equal(ids(restored).length,12);
 });
 
-test('successive earned expressions open exactly one existing expression in course order until all twenty-three are available',()=>{
- const h=setup();for(let i=0;i<LATER.length;i++){
-  const before=ids(h),earned=plain(h.run('learningProgressRefresh().earned')),source=before.find(id=>!earned[id]);assert.ok(source);repeat(h,source,4,'partial-fast','course-'+i);const after=ids(h);assert.equal(after.length,before.length+1);assert.deepEqual(after.filter(id=>!before.includes(id)),[LATER[i]]);
+test('earning one source at a time opens the curriculum in order, with no more than two pending new question forms',()=>{
+ const h=setup(),order=Array.from(h.run('TRAVEL_PROGRESS_ORDER.slice(10)'));
+ assert.deepEqual(order.filter(id=>LATER.includes(id)),LATER);
+ for(const expected of order){
+  const before=ids(h),earned=plain(h.run('learningProgressRefresh().earned'));
+  const source=before.find(id=>h.run('TRAVEL_GRADUAL_QUESTION_IDS').has(id)&&!earned[id])||before.find(id=>!earned[id]);
+  repeat(h,source,3,'partial-fast',source);
+  const after=ids(h);
+  assert.deepEqual(after.filter(id=>!before.includes(id)),[expected]);
+  assert.ok(after.filter(id=>h.run('TRAVEL_GRADUAL_QUESTION_IDS').has(id)&&!h.run('learningProgressRefresh().earned')[id]).length<=2);
  }
- assert.equal(ids(h).length,23);repeat(h,'travel_can_i_get',8,'full-fast','already-complete');assert.equal(ids(h).length,23);assert.equal(h.run('learningAvailableFrames().some(frame=>TRAVEL_STAGE2_IDS.has(frame.id))'),false);assert.equal(h.run('travelBuildItems(100).some(item=>TRAVEL_STAGE2_IDS.has(item.frame.id))'),false);
+ assert.equal(ids(h).length,41);repeat(h,'travel_can_i_get',8,'full-fast','done');assert.equal(ids(h).length,41);
+ assert.equal(h.run('travelBuildItems(100).some(item=>TRAVEL_STAGE2_IDS.has(item.frame.id))'),false);
 });
 
 test('untrusted progression snapshots cannot unlock unknown or stage-two expressions',()=>{
  const h=setup();h.context.snapshot={[PROGRESS]:JSON.stringify({version:1,earned:{travel_how_long:true,unknown:true},unlocked:{travel_how_long:true,unknown:true},legacy:{travel_how_long:true,unknown:true}})};h.run('supportApplySnapshot(snapshot);learningProgressRefresh()');assert.deepEqual(ids(h).sort(),[...INITIAL].sort());assert.equal(h.run('travelBuildItems(100).some(item=>TRAVEL_STAGE2_IDS.has(item.frame.id))'),false);
+});
+
+test('the twenty specified daily structures accept all forty situated examples and separate a wrong slot from a wrong starting structure',()=>{
+ const h=setup(),catalog=plain(h.run('DAILY_QUESTIONS.map(([id,pattern,,,examples])=>({id,pattern,examples}))'));
+ const requested=[
+  'When do you get off work?','When are you leaving?','When did you get here?','When can we meet?','When is your birthday?',
+  'What do you mean?','What are you doing?','What did you say?','What should I do?',"What's going on?",
+  'Which one do you want?','Which one is better?','Which color do you want?','Which way should we go?','Which one should I choose?',
+  'How do I use this?','How can I help you?','How long does it take to get there?','How much is this?','How often do you work out?'
+ ];
+ assert.deepEqual(catalog.map(r=>r.examples[0][0]).sort(),requested.sort());
+ assert.equal(new Set(catalog.map(r=>r.id)).size,20);
+ for(const {id,examples} of catalog){
+  assert.equal(examples.length,2);
+  for(const [en,ko,translation] of examples){
+   h.context.example=en;h.context.fid='travel_'+id;
+   const result=h.run("(()=>{const frame=TRAVEL_BY_ID[fid],ex=basicCoreItems(frame).find(ex=>ex.en===example);return {grade:travelGrade({frame:basicFrameFor(frame,ex),ex},example),translation:travelKrOf(example)};})()");
+   assert.ok(ko.length>4);assert.equal(result.translation,translation);assert.equal(result.grade.ok,true,en);
+  }
+ }
+ for(const [fid,wrong] of [['wh_what_did','What did you buy?'],['wh_which_want','Which size do you want?'],['wh_what_ing','What are you cooking?'],['wh_how_often','How often do you cook?']]){
+  h.context.fid='travel_'+fid;h.context.wrong=wrong;
+  const grade=h.run("(()=>{const frame=TRAVEL_BY_ID[fid],ex=basicStarterItem(frame);return travelGrade({frame,ex},wrong);})()");
+  assert.equal(grade.blockHit,true,wrong);assert.equal(grade.ok,false,wrong);
+ }
+});
+
+test('identical core retrievals give identical mastery, difficulty, unlocks and next ten sentences despite different XP',()=>{
+ function exercise(kind){
+  const h=setup();
+  for(const fid of INITIAL.slice(0,4)){
+   h.run('travelMarkIntroduced('+JSON.stringify(fid)+')');
+   repeat(h,fid,5,kind,fid);
+  }
+  return {xp:h.run('practiceReward().total'),rating:h.run('supportEvents()[0].structureRating'),
+   mastery:plain(h.run('learningMasteryRows()')),levels:plain(h.run('getAutoLevels()')),unlocked:ids(h),
+   next:Array.from(h.run('travelBuildItems(10).map(p=>p.ex.en)'))};
+ }
+ const {xp:full,...a}=exercise('full-fast'),{xp:partial,...b}=exercise('partial-fast');
+ assert.equal(full,600);assert.equal(partial,400);assert.equal(a.rating,30);assert.deepEqual(a,b);
+});
+
+test('ten-question routines adapt the number of genuinely new sentences and preserve the review pool',()=>{
+ for(const [strength,fresh] of [['weak',2],['normal',3],['strong',5]]){
+  const h=setup();
+  for(const fid of INITIAL){
+   h.run('travelMarkIntroduced('+JSON.stringify(fid)+')');
+   repeat(h,fid,strength==='strong'?5:1,strength==='weak'?'wrong':'full-fast',fid);
+  }
+  const sampled=plain(h.run('travelBuildItems(10).map(it=>({en:it.ex.en,seen:learningSentenceMastery(it.ex.en).seen}))'));
+  assert.equal(sampled.length,10);assert.equal(new Set(sampled.map(item=>item.en)).size,10);
+  assert.equal(sampled.filter(item=>!item.seen).length,fresh,strength);
+ }
+});
+
+test('a bank of old unlock credits permits only two outstanding question forms, and unlimited legacy access still introduces at most two per session',()=>{
+ const h=setup();
+ h.run('hSet(EXPRESSION_PROGRESS,{earned:Object.fromEntries([...TRAVEL_INITIAL_IDS].map(id=>[id,true]))})');
+ const pending=()=>Array.from(h.run('learningAvailableFrames().filter(f=>TRAVEL_GRADUAL_QUESTION_IDS.has(f.id)&&!learningProgressRefresh().earned[f.id]).map(f=>f.id)'));
+ const first=pending();assert.equal(first.length,2);
+ repeat(h,first[0],3,'partial-fast','first-question');assert.ok(pending().length<=2);
+ const allLegacy=setup();allLegacy.run('hSet(EXPRESSION_PROGRESS,{legacy:Object.fromEntries([...TRAVEL_GRADUAL_QUESTION_IDS].map(id=>[id,true]))})');
+ assert.equal(allLegacy.run('new Set(travelBuildItems(30).map(it=>it.frame.id).filter(id=>TRAVEL_GRADUAL_QUESTION_IDS.has(id))).size'),2);
+});
+
+test('established sentence mastery opens new material after two verified quick recalls even before the expression average reaches six',()=>{
+ for(const kind of ['partial-fast','full-fast']){
+  const fid=INITIAL[0];
+  // Assisted learning contributes sentence experience but cannot itself unlock a frame.
+  const seeded=setup();for(let i=0;i<2;i++)seeded.answer(fid,'typed-'+i,'full-slow',{meta:{typed:true}});
+  assert.equal(ids(seeded).length,10);seeded.answer(fid,'verified1',kind);assert.equal(ids(seeded).length,10);
+  seeded.answer(fid,'verified2',kind);assert.equal(score(seeded,fid),4);
+  assert.equal(seeded.run('learningSentenceMastery(basicStarterItem(TRAVEL_BY_ID.travel_can_i_get).en).score'),56);
+  assert.equal(ids(seeded).length,11);
+ }
 });

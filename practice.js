@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.7.5", APP_BUILD="2026-11-13";
+const APP_VERSION="v4.8.0", APP_BUILD="2026-11-21";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
@@ -114,9 +114,15 @@ function travelCountPick(onPick){
 }
 function travelPoolOf(ids){if(!ids||!ids.length)return null;const available=typeof learningAvailableFrames==='function'?learningAvailableFrames():TRAVEL_FRAMES.filter(f=>TRAVEL_INITIAL_IDS.has(f.id));return available.filter(f=>ids.includes(f.id));}
 function travelBuildItems(count,pool){
-  const frames=travelPickFrames(count,pool),records=travelAll();
+  const records=travelAll();
+  const plan=typeof learningSessionPlan==='function'?learningSessionPlan(count,pool,records):null;
+  const frames=plan?plan.map(p=>p.frame):travelPickFrames(count,pool);
   const introPlanned=new Set();
-  const items=frames.map(f=>{const introduce=!records[f.id]?.introduced&&!introPlanned.has(f.id);introPlanned.add(f.id);const ex=travelPickItem(f,records,{introduce}),frame=basicFrameFor(f,ex);return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame,block:{id:f.id,block:frame.frame},ex:{...ex,situation:f.purpose},limit:3};});
+  const items=frames.map((f,i)=>{
+    const introduce=!records[f.id]?.introduced&&!introPlanned.has(f.id);introPlanned.add(f.id);
+    const ex=plan?plan[i].ex:travelPickItem(f,records,{introduce}),frame=basicFrameFor(f,ex);
+    return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame,block:{id:f.id,block:frame.frame},ex:{...ex,situation:f.purpose},limit:3};
+  });
   travelSave(records);travelMarkShown(frames.map(f=>f.id));return items;
 }
 function travelReadMs(it){return Math.max(2500,Math.min(7000,String(it.ex.ko||'').replace(/\s/g,'').length*220));}
@@ -200,7 +206,7 @@ function stopResponseClock(){if(autoDrillClock!==null)clearTimeout(autoDrillCloc
 function startResponseClock(lesson,it){
   stopResponseClock();const out=$('#autoSpeed');if(!out)return;
   if(it._intro||it.recall||it._hintUsed||it._attempts){out.textContent='보고 익힌 뒤, 다음엔 3초 안에 꺼내봐요';return;}
-  const tick=()=>{if(autoDrill!==lesson||pendingReply)return;const left=Math.max(0,3000-(Date.now()-lesson.t0-(lesson.systemWaitMs||0)));out.textContent=left>0?'⚡ '+(left/1000).toFixed(1)+'초 · 생각나면 바로 말해요':'익히는 중 · 맞히면 15 XP, 빠른 정답은 30 XP';if(left>0)autoDrillClock=setTimeout(tick,100);};tick();
+  const tick=()=>{if(autoDrill!==lesson||pendingReply)return;const left=Math.max(0,3000-(Date.now()-lesson.t0-(lesson.systemWaitMs||0)));out.textContent=left>0?'⚡ '+(left/1000).toFixed(1)+'초 · 생각나면 바로 말해요':'익히는 중 · 표현 20 XP, 단어까지 30 XP';if(left>0)autoDrillClock=setTimeout(tick,100);};tick();
 }
 function practiceExpectedWords(text){return text.trim().split(/\s+/).filter(Boolean).length;}
 function prewarmPractice(lesson,it){
@@ -255,10 +261,10 @@ function autoDrillFinish(heard,meta={}){
   const mode=meta.gradingMode||(typeof PracticeAI!=='undefined'?PracticeAI.getMode():'accuracy');
   if(mode==='meaning'&&typeof PracticeAI!=='undefined'){
     const local=PracticeAI.localDecision(it,heard);
-    if(local.decided)return autoDrillApplyResult(lesson,it,heard,{...meta,attemptId:requestId},local);
+    if(local.decided)return autoDrillApplyResult(lesson,it,heard,{...meta,gradingMode:mode,attemptId:requestId},local);
     $('#autoMic').textContent='뜻 확인 중…';$('#autoStat').textContent='말한 문장의 뜻을 확인하고 있어요.';
     const epoch=sessionEpoch;
-    return PracticeAI.judge(it,heard,requestId).then(g=>{if(lesson===autoDrill&&epoch===sessionEpoch&&practiceProfileCurrent())autoDrillApplyResult(lesson,it,heard,{...meta,attemptId:requestId},g);}).catch(e=>{
+    return PracticeAI.judge(it,heard,requestId).then(g=>{if(lesson===autoDrill&&epoch===sessionEpoch&&practiceProfileCurrent())autoDrillApplyResult(lesson,it,heard,{...meta,gradingMode:mode,attemptId:requestId},g);}).catch(e=>{
       if(lesson!==autoDrill||epoch!==sessionEpoch||!practiceProfileCurrent())return;
       pendingReply=false;$('#autoMic').textContent='🎤 다시 말하기';$('#autoStat').textContent=e.message+' 점수와 숙련도는 바뀌지 않았어요.';
     });
@@ -268,16 +274,16 @@ function autoDrillFinish(heard,meta={}){
 function autoDrillApplyResult(lesson,it,heard,meta,g){
   if(lesson!==autoDrill||!practiceProfileCurrent())return;
   if(g.retry){pendingReply=false;$('#autoMic').textContent='🎤 다시 말하기';$('#autoStat').textContent='말한 내용을 확실히 판단하기 어려워요. 다시 말해주세요. 점수와 숙련도는 바뀌지 않았어요.';return;}
-  const expressionOnly=!g.ok&&g.blockHit===true;
+  const expressionOnly=!g.ok&&(g.blockHit===true||(meta.gradingMode==='meaning'&&travelGrade(it,heard).blockHit));
   const retry=!!(it._hadIncorrect||it._attempts),quick=!it._intro&&!it._hintUsed&&!it.recall&&!retry&&meta.speedEligible===true&&(typeof learningQuickEvidence==='function'?learningQuickEvidence(meta):meta.withinThreeSeconds===true&&Number.isFinite(meta.tapMs)&&meta.tapMs>=0&&meta.tapMs<=3000&&Number.isFinite(meta.speechStartDelayMs)&&meta.speechStartDelayMs>=0&&meta.speechStartDelayMs<=1500),perfect=g.ok&&quick;
-  it._attempts=(it._attempts||0)+1;if(!g.ok)it._hadIncorrect=true;
+  it._attempts=(it._attempts||0)+1;if(!g.ok&&!expressionOnly)it._hadIncorrect=true;
   it._lastHeard=heard;it._lastOk=g.ok;it._lastExpressionOnly=expressionOnly;practiceTrackWordMisses(it,heard,meta,g);
-  travelRecord(it.frame.id,g.ok);missRecord(it,g.ok);
+  travelRecord(it.frame.id,g.ok||expressionOnly);missRecord(it,g.ok||expressionOnly);
   const result={attemptId:meta.attemptId||practiceAttemptId(),attemptGroupId:it._attemptGroupId,ok:g.ok,expressionOnly,perfect,en:it.ex.en,ko:it.ex.ko,fid:it.frame.id,heard,retry,recall:!!it.recall,intro:!!it._intro,hinted:!!it._hintUsed,typed:!!meta.typed,timingVersion:meta.timingVersion,tapMs:meta.tapMs,speechStartDelayMs:meta.speechStartDelayMs,responseMs:meta.responseMs,speedEligible:meta.speedEligible===true,withinThreeSeconds:meta.withinThreeSeconds===true,tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true};
   autoDrill.results.push(result);
   if(typeof recordPractice==='function'){const reward=recordPractice({it,heard,ok:g.ok,perfect,expressionOnly,meta,started:autoDrill.t0,mode:autoDrill.title,attemptGroupId:it._attemptGroupId,attemptId:result.attemptId,profileId:autoDrill.profileId,retry})||{};result.xp=reward.xp||0;result.bonus=reward.bonus||0;}
   const message=perfect?'⚡ '+(meta.responseMs/1000).toFixed(1)+'초 만에 꺼냈어요!':g.ok?(it.recall||retry?'다시 말해서 맞혔어요. 다음 문장으로 이어가요.':it._intro||it._hintUsed?'표현을 익혔어요. 이번엔 가리고 말해봐요.':'정답이에요. 다음엔 3초 안에 꺼내봐요.'):g.meaningOnly?`뜻은 통하지만 이번에는 ${it.frame.frame} 표현으로 연습해보세요.`:expressionOnly?(quick?'⚡ 3초 안에 표현을 꺼냈어요! 이번엔 핵심 단어도 넣어보세요.':'표현은 맞혔어요! 이번엔 상황에 맞는 핵심 단어도 넣어보세요.'):`이번에는 ${it.frame.frame} 표현으로 말해보세요.`;
-  const needsRecall=!g.ok||(!it.recall&&(it._intro||it._hintUsed));
+  const needsRecall=(!g.ok&&!expressionOnly)||(!it.recall&&(it._intro||it._hintUsed));
   autoDrillShowResult(it,needsRecall,perfect,message+(it._rewardMessage?'\n'+it._rewardMessage:''));
 }
 function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 말해보세요.'){
@@ -345,7 +351,7 @@ function practiceSessionResultHTML(report,title,before,after){
     <strong>익숙해지면 새 문장이 나와요</strong>
     <p>입에 붙은 표현은 덜 자주 나오고, 기본표현 연습에 새로운 문장이 조금씩 더해져요.</p>
   </aside>`;
-  return `<div class="done session-done"><div class="session-hero"><img src="mascot-cheer.png" width="108" height="108" alt="기뻐하는 삼초"><p class="eyebrow">${e(title)} · ${report.completed?'연습 완료':'여기까지 연습'}</p><h2>${report.completed?'오늘의 한 걸음, 해냈어요!':'여기까지도 차곡차곡 쌓였어요'}</h2><p><strong>${report.uniqueSentences}문장</strong>을 연습했어요.<br>다시 말한 한 번도, 내 영어가 되는 중이에요.</p></div><div class="session-xp"><div><span>이번에 쌓은 경험치</span><b>+${report.xp} <small>XP</small></b>${report.bonusXP?`<p>오늘의 10회 목표 보너스 +${report.bonusXP} 포함</p>`:''}</div><span class="session-level">${levelUp?'레벨 업! ':''}Lv.${after.level}</span></div><div class="session-numbers"><div><b>${quick.length}<small>문장</small></b><span>바로 꺼낸 표현</span></div><div><b>${report.recovered.length}<small>문장</small></b><span>다시 도전해 성공</span></div><div><b>${report.attemptedQuestions}<small> / ${report.totalPlanned}</small></b><span>연습한 문제</span></div></div>${nextPractice}${progress}${section('지난번보다 늘었어요','지난 연습 기록보다 문장 익숙함이 올라갔어요.',report.improved,'improved')}${section('바로 꺼낸 문장','생각이 영어로 바로 이어진 순간이에요.',quick,'quick')}${section('다시 말해, 해냈어요','처음에 막혀도 괜찮아요. 결국 내 입으로 완성했어요.',report.recovered,'recovered')}${section('차근차근 맞힌 문장','천천히 완성한 문장도 차곡차곡 쌓여요.',steady,'steady')}${section('다음엔 더 편해질 문장','어려웠던 문장은 다음 연습의 작은 목표로 남겨요.',report.needsPractice,'needs')}<p class="session-footer-note">${report.counts.fullCorrect?`${report.counts.fullCorrect}문장을 끝내 완성했어요. `:''}오늘 연습한 기록은 성장 기록에도 쌓였어요.</p>${report.needsPractice.length?'<button id="doneReview" class="primary">이 문장만 한 번 더 연습하기</button>':''}<button id="doneHome" class="${report.needsPractice.length?'quiet':'primary'}">홈으로</button></div>`;
+  return `<div class="done session-done"><div class="session-hero"><img src="mascot-cheer.png" width="108" height="108" alt="기뻐하는 삼초"><p class="eyebrow">${e(title)} · ${report.completed?'연습 완료':'여기까지 연습'}</p><h2>${report.completed?'오늘의 한 걸음, 해냈어요!':'여기까지도 차곡차곡 쌓였어요'}</h2><p><strong>${report.uniqueSentences}문장</strong>을 연습했어요.<br>${report.newlyPracticed.length?'이번에 처음 연습한 문장은 '+report.newlyPracticed.length+'개예요.':report.uniqueSentences?'전에 배운 문장을 다시 꺼내 말했어요.':''}</p></div><div class="session-xp"><div><span>이번에 쌓은 경험치</span><b>+${report.xp} <small>XP</small></b>${report.bonusXP?`<p>오늘의 10회 목표 보너스 +${report.bonusXP} 포함</p>`:''}</div><span class="session-level">${levelUp?'레벨 업! ':''}Lv.${after.level}</span></div><div class="session-numbers"><div><b>${quick.length}<small>문장</small></b><span>바로 꺼낸 표현</span></div><div><b>${report.recovered.length}<small>문장</small></b><span>다시 도전해 성공</span></div><div><b>${report.attemptedQuestions}<small> / ${report.totalPlanned}</small></b><span>연습한 문제</span></div></div>${nextPractice}${progress}${section('지난번보다 늘었어요','지난 연습 기록보다 문장 익숙함이 올라갔어요.',report.improved,'improved')}${section('바로 꺼낸 문장','생각이 영어로 바로 이어진 순간이에요.',quick,'quick')}${section('다시 말해, 해냈어요','처음에 막혀도 괜찮아요. 결국 내 입으로 완성했어요.',report.recovered,'recovered')}${section('차근차근 맞힌 문장','천천히 완성한 문장도 차곡차곡 쌓여요.',steady,'steady')}${section('다음엔 더 편해질 문장','어려웠던 문장은 다음 연습의 작은 목표로 남겨요.',report.needsPractice,'needs')}<p class="session-footer-note">${report.counts.fullCorrect?`${report.counts.fullCorrect}문장을 끝내 완성했어요. `:''}오늘 연습한 기록은 성장 기록에도 쌓였어요.</p>${report.needsPractice.length?'<button id="doneReview" class="primary">이 문장만 한 번 더 연습하기</button>':''}<button id="doneHome" class="${report.needsPractice.length?'quiet':'primary'}">홈으로</button></div>`;
 }
 function openSurvival(){
   const ov=openSheet('AI 실전회화'),content=ov.querySelector('#sheetContent');

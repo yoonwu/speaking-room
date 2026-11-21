@@ -41,12 +41,19 @@ function learningMasteryRows(profileId=learningProfileId()){
 function learningSentenceMastery(en,profileId=learningProfileId()){return {...(learningMasteryRows(profileId)[learningSentenceKey(en)]||learningEmptyMastery())};}
 function learningLearnedSentences(profileId=learningProfileId()){return Object.values(learningMasteryRows(profileId)).filter(row=>row.fullyLearned).map(row=>({...row})).sort((a,b)=>b.lastT-a.lastT||a.en.localeCompare(b.en));}
 function learningSentenceWeight(en,now=Date.now()){
- const row=learningSentenceMastery(en);if(!row.seen)return 4;
- const days=Math.max(0,(now-row.lastT)/86400000);
- if(row.fullyLearned)return .08+Math.min(3,Math.max(0,days-7)/15);
- return (1.2+(80-Math.min(80,row.score))/80*1.8)*(1+Math.min(5,row.missStreak)*.6+Math.min(5,row.misses)*.1);
+ return learningReviewWeight(learningSentenceMastery(en),now);
 }
-function learningRecordMastery(event,id){const data=hGet(SENTENCE_MASTERY,{version:1,events:{}})||{},events=data.events||{};if(events[id])return;const en=String(event.en||'');if(!en)return;events[id]={id,en,ko:event.ko||'',t:event.t,order:event.order||0,ok:!!event.ok,expressionOnly:!!(!event.ok&&event.expressionOnly),fastExpression:!!(!event.ok&&event.expressionOnly&&event.fastExpression),retry:!!event.retry,intro:!!event.intro,hinted:!!event.hinted,recall:!!event.recall,typed:!!event.typed,timingVersion:event.timingVersion||0,responseMs:learningResponseMs(event.responseMs),tapMs:learningResponseMs(event.tapMs),speechStartDelayMs:learningResponseMs(event.speechStartDelayMs),tapWithinThreeSeconds:event.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:event.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:event.withinThreeSeconds===true,speedEligible:event.speedEligible===true,fast:learningEventFast(event),delta:event.ok?(event.retry?4:learningEventFast(event)?18:10):event.expressionOnly?0:-20};hSet(SENTENCE_MASTERY,{version:1,events});}
+function learningReviewWeight(row,now){
+ if(!row?.seen)return 4;
+ const days=Math.max(0,(now-row.lastT)/86400000);
+ const interval=row.score>=80?14:row.score>=50?4:1;
+ const base=row.score>=80?(row.fullyLearned ? .08 : .20):row.score>=50?.9:2.4;
+ return base+1.5*Math.min(3,row.missStreak)+Math.min(5,days/interval);
+}
+function learningRecordMastery(event,id){const data=hGet(SENTENCE_MASTERY,{version:1,events:{}})||{},events=data.events||{};if(events[id])return;const en=String(event.en||'');if(!en)return;// Old transactions retain their original deltas when replayed or repaired on sync.
+ const structureCorrect=event.structureRating==null?event.ok:event.structureRating>0;
+ const masteryFast=event.structureRating==null?learningEventFast(event):event.structureRating===30;
+ events[id]={id,en,ko:event.ko||'',t:event.t,order:event.order||0,ok:!!structureCorrect,expressionOnly:!!(!event.ok&&event.expressionOnly),fastExpression:!!(!event.ok&&event.expressionOnly&&event.fastExpression),retry:!!event.retry,intro:!!event.intro,hinted:!!event.hinted,recall:!!event.recall,typed:!!event.typed,timingVersion:event.timingVersion||0,responseMs:learningResponseMs(event.responseMs),tapMs:learningResponseMs(event.tapMs),speechStartDelayMs:learningResponseMs(event.speechStartDelayMs),tapWithinThreeSeconds:event.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:event.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:event.withinThreeSeconds===true,speedEligible:event.speedEligible===true,fast:masteryFast,delta:structureCorrect?(event.retry?4:masteryFast?18:10):event.expressionOnly?0:-20};hSet(SENTENCE_MASTERY,{version:1,events});}
 const AL_KEY="speakingroom:autolvl";
 const AL_SKILLS=["word","listen","block","speed","speak"];
 const AL_TOAST={
@@ -193,8 +200,10 @@ function learningExpressionResults(events){
   if(!TRAVEL_ACTIVE_IDS.has(event.fid)||event.timingVersion!==2||event.speedEligible!==true||learningResponseMs(event.responseMs)===null||learningResponseMs(event.tapMs)===null||learningResponseMs(event.speechStartDelayMs)===null||event.typed||event.intro||event.hinted||event.recall||event.retry)continue;
   if(event.attemptGroupId){if(groups.has(event.attemptGroupId))continue;groups.add(event.attemptGroupId);}
   const row=rows[event.fid]||(rows[event.fid]={score:0,attempts:0,earned:false,recent:[]});
-  row.recent.push(event.ok||event.expressionOnly?(learningQuickEvidence(event)?10:5):0);if(row.recent.length>5)row.recent.shift();
-  row.attempts++;row.score=row.recent.reduce((sum,value)=>sum+value,0)/5;if(row.score>=8)row.earned=true;
+  const performance=event.ok||event.expressionOnly?(learningQuickEvidence(event)?10:5):0;
+  row.lastFastSentence=performance===10?learningSentenceKey(event.en):null;
+  row.recent.push(performance);if(row.recent.length>5)row.recent.shift();
+  row.attempts++;row.score=row.recent.reduce((sum,value)=>sum+value,0)/5;if(row.score>=6)row.earned=true;
  }
  if(cacheKey)learningExpressionCache={...cacheKey,rows};return rows;
 }
@@ -211,11 +220,24 @@ function learningProgressRefresh(){
  // Already studied expressions stay accessible. Newly introduced expressions
  // from this course are already in unlocked, so they cannot mint free credits.
  for(const frame of TRAVEL_FRAMES)if(!initial.has(frame.id)&&!state.unlocked[frame.id]&&(travel[frame.id]?.introduced||Number(travel[frame.id]?.seen)>0))state.legacy[frame.id]=true;
+ const sentences=learningMasteryRows();
  for(let pass=0;pass<=TRAVEL_FRAMES.length;pass++){
   let changed=false;
-  for(const frame of TRAVEL_FRAMES)if(!state.earned[frame.id]&&results[frame.id]?.earned&&(initial.has(frame.id)||state.legacy[frame.id]||state.unlocked[frame.id])){state.earned[frame.id]=true;changed=true;}
+  for(const {id} of TRAVEL_FRAMES){
+   if(state.earned[id]||!(initial.has(id)||state.legacy[id]||state.unlocked[id]))continue;
+   const result=results[id],sentence=sentences[result?.lastFastSentence];
+   if(result?.earned||(sentence?.score>=50&&sentence.fastStreak>=2)){state.earned[id]=true;changed=true;}
+  }
   const budget=Object.keys(state.earned).length;let spent=Object.keys(state.unlocked).filter(fid=>!state.legacy[fid]).length;
-  for(const frame of learningExpressionOrder())if(spent<budget&&!initial.has(frame.id)&&!state.legacy[frame.id]&&!state.unlocked[frame.id]){state.unlocked[frame.id]=true;spent++;changed=true;}
+  const ordered=learningExpressionOrder();
+  let pendingQuestions=ordered.filter(f=>TRAVEL_GRADUAL_QUESTION_IDS.has(f.id)&&(state.unlocked[f.id]||state.legacy[f.id])&&!state.earned[f.id]).length;
+  for(const frame of ordered){
+   if(spent>=budget)break;
+   if(initial.has(frame.id)||state.legacy[frame.id]||state.unlocked[frame.id])continue;
+   const question=TRAVEL_GRADUAL_QUESTION_IDS.has(frame.id);
+   if(question&&pendingQuestions>=2)continue;
+   state.unlocked[frame.id]=true;spent++;changed=true;if(question)pendingQuestions++;
+  }
   if(!changed)break;
  }
  const normalized=learningProgressState(state);if(JSON.stringify(saved)!==JSON.stringify(normalized))hSet(EXPRESSION_PROGRESS,normalized);return normalized;
@@ -243,7 +265,10 @@ function recordPractice({it,heard,ok,perfect,expressionOnly=false,meta={},starte
   const quickEvidence=learningQuickEvidence(meta)&&!it._intro&&!it._hintUsed&&!it.recall&&!isRetry;
   const fast=!!(ok&&perfect&&quickEvidence),fastExpression=!!(partial&&quickEvidence);
   const firstWrong=previous.some(e=>e.firstWrong)||(!previous.length&&!ok&&!partial);
-  const firstReward=ok?(fast?30:15):partial?(fastExpression?15:10):0;
+  const structureCorrect=ok||partial;
+  const structureXP=structureCorrect?20:0,wordXP=ok?10:0;
+  const firstReward=structureXP+wordXP;
+  const structureRating=structureCorrect?(fast||fastExpression?30:15):0;
   // Keep the original first-answer award and allow one additional successful
   // retry bonus. Historical v2 retry credit consumes the same five-point slot.
   const credited=learningRewardEvents(previous),baseXP=isRetry?0:firstReward;
@@ -253,16 +278,16 @@ function recordPractice({it,heard,ok,perfect,expressionOnly=false,meta={},starte
   const cap=creditedBase+baseXP+5,xp=baseXP+retryBonusXP;
   const reaction=responseMs!==null&&!meta.typed?responseMs/1000:meta.speechStartAt?Math.max(0,(meta.speechStartAt-started-travelReadMs(it))/1000):null;
   const order=Object.values(log).reduce((n,e)=>Math.max(n,Number(e?.order)||0),0)+1;
-  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ko:it.ex.ko||'',ok,perfect:fast,expressionOnly:partial,fastExpression,intro:!!it._intro,hinted:!!it._hintUsed,recall:!!it.recall,retry:isRetry,timingVersion:meta.timingVersion===2?2:1,responseMs,tapMs:learningResponseMs(meta.tapMs),speechStartDelayMs:learningResponseMs(meta.speechStartDelayMs),tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:meta.withinThreeSeconds===true,speedEligible:meta.speedEligible===true,fast,attemptGroupId:group,rewardVersion:3,baseXP,retryBonusXP,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
-  if(fast&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
+  log[id]={t:Date.now(),order,fid:it.frame.id,en:it.ex.en,ko:it.ex.ko||'',ok,perfect:fast,expressionOnly:partial,fastExpression,intro:!!it._intro,hinted:!!it._hintUsed,recall:!!it.recall,retry:isRetry,timingVersion:meta.timingVersion===2?2:1,responseMs,tapMs:learningResponseMs(meta.tapMs),speechStartDelayMs:learningResponseMs(meta.speechStartDelayMs),tapWithinThreeSeconds:meta.tapWithinThreeSeconds===true,speechWithinOnePointFiveSeconds:meta.speechWithinOnePointFiveSeconds===true,withinThreeSeconds:meta.withinThreeSeconds===true,speedEligible:meta.speedEligible===true,fast,attemptGroupId:group,rewardVersion:3,structureRating,baseXP,retryBonusXP,rewardCap:cap,firstWrong,typed:!!meta.typed,reaction,seconds:Math.min(90,Math.max(1,(Date.now()-started)/1000)),kind:mode==='자주 틀리는 문장'?'miss':'travel',xp};
+  if((fast||fastExpression)&&it.ex._tier)log[id].curriculumTier=it.ex._tier;
   const before=practiceReward();
   if(mode==='기본표현')supportBump('travel');else if(mode==='자주 틀리는 문장')supportBump('miss');
   const bonus=mode==='기본표현'&&supportToday().travel>=10&&!supportEvents().some(e=>new Date(e.t).toLocaleDateString('sv-SE')===SUPPORT_DAY()&&e.dailyBonus)?25:0;
   if(bonus)log['dailyBonus:'+SUPPORT_DAY()]={t:Date.now(),kind:'dailyBonus',xp:0,dailyBonus:bonus};
   if(fast&&heard){const expected=new Set(practiceWords(it.ex.en));log[id].words=practiceWords(heard).filter(w=>expected.has(w));}
   hSet(PRACTICE_LOG,log);learningRecordMastery(log[id],id);learningProgressRefresh();const after=practiceReward();it._earnedXP=xp;it._mastery=learningSentenceMastery(it.ex.en);
-  it._rewardMessage='+'+xp+' XP'+(retryBonusXP?' · 다시 말하기 정답 보너스':isRetry&&ok?' · 다시 말하기 보너스는 이미 받았어요':fast?' · ⚡ 빠르게 꺼내 말했어요':fastExpression?' · ⚡ 표현을 빠르게 꺼냈어요':'')+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
-  autoLvlRecord('speak',fast?'perfect':ok||partial?'ok':'miss');
+  it._rewardMessage='+'+xp+' XP'+(!isRetry&&wordXP?' · 표현 20 + 단어 10':'')+(retryBonusXP?' · 다시 말하기 정답 보너스':isRetry&&ok?' · 다시 말하기 보너스는 이미 받았어요':fast?' · ⚡ 빠르게 꺼내 말했어요':fastExpression?' · ⚡ 표현을 빠르게 꺼냈어요':'')+(bonus?' · 오늘의 10회 목표 +25 XP':'')+(after.level>before.level?' · 레벨 업! Lv.'+after.level:'');
+  autoLvlRecord('speak',fast||fastExpression?'perfect':ok||partial?'ok':'miss');
   if(reaction!==null&&!meta.typed)autoLvlRecord('speed',fast||fastExpression?'perfect':ok||partial?'ok':'miss');
   supportQueueSync();
   return {xp,bonus,baseXP,retryBonusXP,fast,expressionOnly:partial,fastExpression,mastery:it._mastery};
@@ -280,7 +305,7 @@ function learningPickItem(f,o){
   const st=o[f.id]||(o[f.id]={seen:0,ok:0,miss:0,lastT:0});st.used=[...new Set([...(Array.isArray(st.used)?st.used:[]),pick.ko])];st.lastKo=pick.ko;return pick;
 }
 function basicCurriculumStage(f,context){
-  const n=context?.n??alGet().speak,events=(context?.events||supportEvents()).filter(e=>e.fid===f.id&&e.perfect);
+  const n=context?.n??alGet().speak,events=(context?.events||supportEvents()).filter(e=>e.fid===f.id&&(e.structureRating===30||e.perfect));
   if(n<15||events.filter(e=>e.curriculumTier===1).length<3)return 1;
   return n>=35&&events.filter(e=>e.curriculumTier===2).length>=3?3:2;
 }
@@ -307,6 +332,55 @@ let learningFrameWeightSnapshot=null;
 function learningFrameCostFactor(f,context){return (context?.expressionScores?.[f.id]??learningExpressionScore(f.id))>=8?8:1;}
 travelWeightFor=function(id,stat){const f=TRAVEL_BY_ID[id],factor=learningFrameWeightSnapshot?.get(id)??(f?learningFrameCostFactor(f):1);return learningOriginalFrameWeight(id,stat)*factor;};
 travelPickFrames=function(n,pool){const available=learningAvailableFrames(),ids=new Set(available.map(f=>f.id)),allowed=pool?pool.filter(f=>ids.has(f.id)):available;const previous=learningFrameWeightSnapshot,events=supportEvents(),context={n:alGet().speak,events,expressionScores:learningExpressionScores(events)};learningFrameWeightSnapshot=new Map(allowed.map(f=>[f.id,learningFrameCostFactor(f,context)]));try{return learningOriginalFramePicker(n,allowed);}finally{learningFrameWeightSnapshot=previous;}};
+// Balance actual sentences, since several situations can share one expression.
+function learningSessionPlan(count,pool,records){
+ const available=learningAvailableFrames(),allowed=new Set(available.map(f=>f.id));
+ const frames=pool?pool.filter(f=>allowed.has(f.id)):available;
+ if(!frames.length)return [];
+ const events=supportEvents(),scores=learningExpressionScores(events),context={n:alGet().speak,events};
+ const rows=learningMasteryRows(),now=Date.now(),candidates=[];
+ const answered=new Set(events.filter(e=>e.fid&&e.en).map(e=>learningSentenceKey(e.en)));
+ for(const frame of frames){
+  const starter=basicStarterItem(frame),starterKey=learningSentenceKey(starter.en),unique=new Set();
+  for(const ex of [starter,...learningEligibleItems(frame,{},context)]){
+   const key=learningSentenceKey(ex.en);if(unique.has(key))continue;unique.add(key);
+   const row=rows[key],first=key===starterKey;
+   candidates.push({frame,ex,key,first,row,seen:!!row?.seen||answered.has(key)||first&&!!records[frame.id]?.introduced&&records[frame.id]?.seen>0});
+  }
+ }
+ const reviewed=candidates.filter(c=>c.seen),mean=reviewed.reduce((n,c)=>n+(c.row?.score||0),0)/Math.max(1,reviewed.length);
+ const recent=events.filter(e=>allowed.has(e.fid)&&!e.retry&&!e.intro&&!e.recall&&!e.hinted).slice(-10);
+ const struggling=recent.length>=3&&recent.filter(e=>!e.ok&&!e.expressionOnly).length>=recent.length/2;
+ const ratio=struggling ? .15 : mean>=80 ? .5 : mean>=50 ? .4 : .3;
+ const target=Math.round(count*ratio),picks=[],used=new Set(),planned=new Set(),newQuestions=new Set(),frequency=new Map();
+ let previous=hGet(TRAVEL_KEY+':lastFrame',''),newCount=0;
+ for(let i=0;i<count;i++){
+  const eligible=candidates.filter(c=>(c.first||records[c.frame.id]?.introduced||planned.has(c.frame.id))&&
+   (!TRAVEL_GRADUAL_QUESTION_IDS.has(c.frame.id)||records[c.frame.id]?.introduced||newQuestions.has(c.frame.id)||newQuestions.size<2));
+  if(!eligible.length)break;
+  const wantNew=newCount<Math.round((i+1)*target/count);
+  const preferred=eligible.filter(c=>!used.has(c.key)&&c.seen!==wantNew);
+  const choices=preferred.length?preferred:eligible.filter(c=>!used.has(c.key));
+  const poolNow=choices.length?choices:eligible;
+  const firstRound=!reviewed.length?poolNow.filter(c=>c.first&&!planned.has(c.frame.id)):[];
+  const round=firstRound.length?firstRound:poolNow;
+  const drawFrom=round;
+  // Normalize per frame so a large catalogue cannot crowd out a short pattern.
+  const sizes=new Map();for(const c of drawFrom)sizes.set(c.frame.id,(sizes.get(c.frame.id)||0)+1);
+  const weights=drawFrom.map(c=>{
+   const fid=c.frame.id,review=c.seen?learningReviewWeight(c.row,now):1;
+   return review*(scores[fid]>=8 ? .2 : 1)*(fid===previous ? .35 : 1)/sizes.get(fid)/(1+(frequency.get(fid)||0));
+  });
+  let draw=Math.random()*weights.reduce((n,w)=>n+w,0),idx=0;
+  while(idx<weights.length-1&&(draw-=weights[idx])>=0)idx++;
+  const pick=drawFrom[idx],fid=pick.frame.id;
+  if(!pick.seen&&!used.has(pick.key))newCount++;
+  if(TRAVEL_GRADUAL_QUESTION_IDS.has(fid)&&!records[fid]?.introduced)newQuestions.add(fid);
+  picks.push(pick);used.add(pick.key);planned.add(fid);frequency.set(fid,(frequency.get(fid)||0)+1);previous=fid;
+ }
+ if(picks.length)hSet(TRAVEL_KEY+':lastFrame',previous);
+ return picks;
+}
 function learningRewardEvents(events){
  const caps=Object.create(null),used=Object.create(null);for(const e of events)if(e.rewardVersion===2&&e.attemptGroupId)caps[e.attemptGroupId]=Math.min(caps[e.attemptGroupId]??Infinity,Math.max(0,Number(e.rewardCap)||0));
  const normalized=events.map(e=>{let xp=Math.max(0,Number(e.xp)||0);if(e.rewardVersion===2&&e.attemptGroupId){const group=e.attemptGroupId;xp=Math.min(xp,Math.max(0,caps[group]-(used[group]||0)));used[group]=(used[group]||0)+xp;}return {...e,xp};});
@@ -344,7 +418,7 @@ function renderSupportHome(){
   $('#profileBtn').textContent=supportName().slice(0,1);
   $('#coreStartLabel').textContent=done?'한 번 더 10회 연습':'10회 연습 시작';
   $('#coreToday').innerHTML=`<span>${done?'오늘의 목표 완료 ✓':'오늘의 연습'} <b>${Math.min(10,q.travel||0)} / 10회</b></span><span class="core-progress"><i style="width:${Math.min(100,(q.travel||0)/10*100)}%"></i></span>`;
-  $('#growthZone').innerHTML=`<div class="panel-title"><span>🌱 말하기가 쌓이고 있어요</span><button id="growthDetail" class="quiet">기록 보기 ›</button></div><div class="growth-grid"><div><b>${s.accuracy===null?'—':s.accuracy+'%'}</b><span>문장 전체 정답률</span></div><div><b>${s.automatic}<small>개</small></b><span>익숙해진 표현</span></div><button id="learnedWords" class="word-stat"><b>${learnedWords.length}<small>개</small></b><span>익숙해진 단어 ›</span></button><div><b>${s.total}<small>번</small></b><span>누적 말하기 연습</span></div></div><div class="adaptive-line"><span>말하기 난이도 · 자동 조절</span><b id="autoLvlLine">말하기 D${d.speak} · 속도 D${d.speed}</b></div><p class="routine-sub">답변에 맞춰 문장 길이와 듣기 속도를 조절해요.</p>`;
+  $('#growthZone').innerHTML=`<div class="panel-title"><span>🌱 말하기가 쌓이고 있어요</span><button id="growthDetail" class="quiet">기록 보기 ›</button></div><div class="growth-grid"><div><b>${s.accuracy===null?'—':s.accuracy+'%'}</b><span>학습 정답률</span></div><div><b>${s.automatic}<small>개</small></b><span>익숙해진 표현</span></div><button id="learnedWords" class="word-stat"><b>${learnedWords.length}<small>개</small></b><span>익숙해진 단어 ›</span></button><div><b>${s.total}<small>번</small></b><span>누적 말하기 연습</span></div></div><div class="adaptive-line"><span>말하기 난이도 · 자동 조절</span><b id="autoLvlLine">말하기 D${d.speak} · 속도 D${d.speed}</b></div><p class="routine-sub">답변에 맞춰 문장 길이와 듣기 속도를 조절해요.</p>`;
   $('#growthDetail').onclick=openGrowth;$('#learnedWords').onclick=openLearnedWords;
   $('#syncSummary').textContent=learningLocalGet('speakingroom:sync_nick')?'연결됨 · 기록 관리 ›':'기기 간 이어서 ›';
 }
@@ -353,7 +427,7 @@ function openGrowth(){const ov=openSheet('실력 · 성장 기록'),s=supportSta
   const rowHtml=row=>`<div class="mastery-row"><div><b lang="en">${escapeHtml(row.en)}</b>${row.ko?`<small>${escapeHtml(row.ko)}</small>`:''}<small>숙련도 ${row.score} / 100 · 연속 ${row.fastStreak}회 빠른 정답${row.lastResponseMs===null?'':` · 최근 반응 ${(row.lastResponseMs/1000).toFixed(1)}초`}</small></div><div class="mastery-track" role="progressbar" aria-label="문장 숙련도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${row.score}"><i style="width:${row.score}%"></i></div></div>`;
   const expressionScores=learningExpressionScores(s.events),available=learningAvailableFrames();
   const expressions=available.map(frame=>{const score=expressionScores[frame.id]||0;return `<div class="mastery-row"><div><b lang="en">${escapeHtml(frame.frame)}</b><small>표현 익숙함 ${score.toFixed(1)} / 10${score>=8?' · 익숙해졌어요':''}</small></div><div class="mastery-track" role="progressbar" aria-label="표현 익숙함" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${score}"><i style="width:${score*10}%"></i></div></div>`;}).join('');
-  ov.querySelector('#sheetContent').innerHTML=`<div class="stat-grid"><div class="stat"><span class="se">🎯</span><div><div class="sv">${s.accuracy===null?'—':s.accuracy+'%'}</div><div class="sl">문장 전체 정답률</div></div></div><div class="stat"><span class="se">⚡</span><div><div class="sv">${reaction===null?'—':reaction.toFixed(1)+'초'}</div><div class="sl">최근 반응 시간</div></div></div></div><p class="muted">빠른 답은 문제를 보고 3초 안에 마이크를 누르고, 마이크가 준비되면 1.5초 안에 말을 시작한 답이에요. 앱 준비와 인식 대기는 제외해요. 최근 반응 시간은 누르기까지와 말 시작까지 걸린 시간을 더한 값이에요.</p><section id="expressionProgress"><div class="prof-h">⚡ 바로 꺼내는 기본표현</div><div class="word-total">${s.automatic}<small>개 표현이 익숙해졌어요 · ${available.length} / ${TRAVEL_FRAMES.length}개 열림</small></div><p class="muted">처음에는 10개 표현부터 시작해요. 힌트 없이 처음 말한 최근 5회의 표현을 기준으로, 빠르게 꺼내면 10점·천천히 꺼내면 5점·표현이 다르면 0점이에요. 아직 안 한 회차는 0점으로 계산해요. 평균 8점부터 새 표현이 하나씩 열려요. 내용 단어를 놓쳐도 표현이 맞으면 같게 인정해요. 한번 열린 표현은 계속 남고, 익숙한 표현은 덜 자주 나와요.</p>${expressions}</section><section id="fullyLearnedSentences"><div class="prof-h">문장 전체까지 익힌 기록</div><div class="word-total">${learned.length}<small>개 문장이 바로 나와요</small></div><p class="muted">표현 익숙함과는 별도로, 내용 단어까지 맞힌 빠른 정답이 연속 3회 이상이고 문장 숙련도가 80을 넘으면 여기에 쌓여요. 오래 걸리거나 틀리면 다시 연습 중으로 돌아가요.</p>${learned.length?learned.map(rowHtml).join(''):'<p class="empty">짧은 한마디를 반복해보세요. 바로 꺼낸 문장이 여기에 쌓여요.</p>'}</section><div class="prof-h">입에 붙이는 중인 문장</div>${growing.length?growing.map(rowHtml).join(''):'<p class="muted">기본표현을 연습하면 문장별 숙련도가 보여요.</p>'}`;
+  ov.querySelector('#sheetContent').innerHTML=`<div class="stat-grid"><div class="stat"><span class="se">🎯</span><div><div class="sv">${s.accuracy===null?'—':s.accuracy+'%'}</div><div class="sl">학습 정답률</div></div></div><div class="stat"><span class="se">⚡</span><div><div class="sv">${reaction===null?'—':reaction.toFixed(1)+'초'}</div><div class="sl">최근 반응 시간</div></div></div></div><p class="muted">빠른 답은 문제를 보고 3초 안에 마이크를 누르고, 마이크가 준비되면 1.5초 안에 말을 시작한 답이에요. 앱 준비와 인식 대기는 제외해요. 최근 반응 시간은 누르기까지와 말 시작까지 걸린 시간을 더한 값이에요.</p><section id="expressionProgress"><div class="prof-h">⚡ 바로 꺼내는 기본표현</div><div class="word-total">${s.automatic}<small>개 표현이 익숙해졌어요 · ${available.length} / ${TRAVEL_FRAMES.length}개 열림</small></div><p class="muted">처음에는 10개 표현부터 시작해요. 힌트 없이 처음 말한 최근 5회의 표현을 기준으로, 빠르게 꺼내면 10점·천천히 꺼내면 5점·표현이 다르면 0점이에요. 아직 안 한 회차는 0점으로 계산해요. 평균이 6점에 닿으면 새 표현이 열려요. 한 문장의 숙련도가 50 이상이고 최근 두 번 연속 빠르게 꺼냈을 때도 열려요. 내용 단어를 놓쳐도 표현이 맞으면 같게 인정해요. 한번 열린 표현은 계속 남고, 익숙한 표현은 덜 자주 나와요.</p>${expressions}</section><section id="fullyLearnedSentences"><div class="prof-h">입에 붙은 문장</div><div class="word-total">${learned.length}<small>개 문장이 바로 나와요</small></div><p class="muted">핵심 표현을 빠르게 말한 정답이 연속 3회 이상이고 문장 숙련도가 80을 넘으면 여기에 쌓여요. 오래 걸리거나 틀리면 다시 연습 중으로 돌아가요.</p>${learned.length?learned.map(rowHtml).join(''):'<p class="empty">짧은 한마디를 반복해보세요. 바로 꺼낸 문장이 여기에 쌓여요.</p>'}</section><div class="prof-h">입에 붙이는 중인 문장</div>${growing.length?growing.map(rowHtml).join(''):'<p class="muted">기본표현을 연습하면 문장별 숙련도가 보여요.</p>'}`;
 }
 function openProfile(){const ov=openSheet('내 프로필'),s=supportStats();ov.querySelector('#sheetContent').innerHTML=`<div class="profile-heading"><div class="prof-av">${escapeHtml(supportName().slice(0,1))}</div><div><b>${escapeHtml(supportName())}님</b><small>Lv.${practiceReward().level} · ${practiceReward().total} XP · ${s.total}번 연습 · 기본표현 D${alGet().speak}</small></div></div><label class="field-label" for="learningProfile">학습자</label><select id="learningProfile" class="auto-input">${learningProfileList().map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===learningProfileId()?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}</select><p class="muted">학습자마다 학습 기록과 숙련도를 따로 저장해요. 기존 기록은 ‘기존 학습자’에 그대로 남아요.</p><input id="newLearningProfile" class="auto-input" maxlength="12" placeholder="새 학습자 이름"><button id="addLearningProfile" class="quiet">학습자 추가</button><p id="learningProfileStatus" class="muted" role="status"></p><label class="field-label" for="profileName">앱에서 부를 이름</label><input id="profileName" class="auto-input" maxlength="12" value="${escapeHtml(supportName())}"><button id="saveName" class="primary">이름 저장</button><section id="pronunciationSettings"></section><div class="prof-h">나의 영어</div><button id="profileGrowth" class="tut-li">🌱 실력 · 성장 기록 <span>›</span></button><button id="profileRank" class="tut-li">🏆 랭킹 <span>›</span></button><div class="prof-h">계정 · 기기 연동</div><button id="profileSync" class="tut-li">☁️ 기록 동기화 <span>›</span></button><div class="prof-h">시작 안내 · 튜토리얼</div><button id="profileGuide" class="tut-li">📖 처음 사용법 다시 보기 <span>›</span></button>`;
   ov.querySelector('#learningProfile').onchange=e=>{learningProfileSwitch(e.target.value);ov.remove();openProfile();};
@@ -400,9 +474,9 @@ const FEATURE_GUIDES={
  study:{icon:'✓',title:'골라서 연습',steps:[['이 표현만 자꾸 막히나요?','지금 필요한 표현, 입에 잘 안 붙는 표현만 골라봐요. 여러 개를 함께 선택할 수 있어요.'],['선택한 표현으로만 반복해요','연습하기를 누르고 문제 수를 고르면 체크한 표현만 나와요. 기본표현과 같은 방식으로 말하고, 틀린 문장은 다시 연습해요.']]},
  miss:{icon:'↻',title:'자주 틀리는 문장',steps:[['아까 못 꺼낸 말, 다시 해볼까요?','막혔던 문장은 내가 모아둘게요. 답을 읽는 데서 멈추지 말고, 이번엔 직접 꺼내봐요.'],['연속 3번 맞히면 졸업해요','틀린 문장 반복하기를 눌러 연습하세요. 한 문장을 연속 3번 맞히면 목록에서 빠져요.']]},
  ai:{icon:'💬',title:'AI 실전회화',steps:[['연습한 한마디로 대화를 이어봐요','상황을 고르면 상대가 먼저 말을 걸어요. 완벽한 문장을 만들려고 오래 고민하지 말고, 전하고 싶은 뜻부터 말해봐요.'],['막히면 도움을 받아요','막혔어요에서 예시 답변을, 내 표현 확인에서 교정을 볼 수 있어요. Android의 ChatGPT 연결과 음성 대화는 이 화면에서 사용해요.']]},
- growth:{icon:'🌱',title:'실력 · 성장 기록',revision:4,steps:[['표현이 바로 나오는 힘을 봐요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작해보세요. 표현이 맞으면 내용 단어를 놓쳐도 표현 익숙함에 똑같이 쌓여요. 최근 5회의 평균이 8점이 되면 다음 표현이 하나 열려요.'],['한번 열린 표현은 계속 남아요','익숙한 표현은 덜 자주 나오고, 다시 막히면 연습 비중이 돌아와요. 힌트·처음 보고 따라 말하기·직접 입력·바로 재시도는 표현 익숙함에 포함하지 않아요. 내용 단어까지 맞히는 문장 숙련도는 따로 확인할 수 있어요.']]},
+ growth:{icon:'🌱',title:'실력 · 성장 기록',revision:4,steps:[['표현이 바로 나오는 힘을 봐요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작해보세요. 표현이 맞으면 내용 단어를 놓쳐도 표현 익숙함에 똑같이 쌓여요. 최근 표현 평균이 6점에 이르거나 같은 문장이 입에 붙기 시작하면 다음 표현이 열려요.'],['한번 열린 표현은 계속 남아요','익숙한 표현은 덜 자주 나오고, 다시 막히면 연습 비중이 돌아와요. 힌트·처음 보고 따라 말하기·직접 입력·바로 재시도는 표현 익숙함에 포함하지 않아요. 연습한 문장별 숙련도도 확인할 수 있어요.']]},
  words:{icon:'📚',title:'익숙해진 단어',steps:[['내가 직접 꺼낸 단어들이에요','예문에 나온 단어를 힌트 없이 맞힌 답변에서 3회 사용하면 여기에 쌓여요. 문장 속에서 직접 써본 단어를 확인해봐요.'],['아직 쌓이는 중인 단어도 보여요','1~2회 맞힌 단어와 3회 이상 맞힌 단어를 구분해서 볼 수 있어요. 답을 보고 따라 한 경우와 한 답변 안의 중복은 세지 않아요.']]},
- xp:{icon:'⭐',title:'학습 레벨 · 경험치',revision:6,steps:[['꺼낸 만큼, 빠른 만큼 쌓여요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작하면 빠른 답이에요. 처음 답할 때 문장 전체를 맞히면 빠른 답 30 XP·일반 답 15 XP, 표현은 맞고 단어를 놓쳤다면 빠른 답 15 XP·일반 답 10 XP예요. 다시 말해서 문장 전체를 맞히면 처음 점수와 별도로 +5 XP를 한 문제당 한 번 받아요. 처음 틀렸어도 다시 맞히면 5 XP예요. 오늘 10회 목표는 별도로 +25 XP예요.'],['표현 익숙함과 문장 숙련도는 달라요','표현을 바로 꺼내면 내용 단어를 놓쳐도 표현 익숙함에는 똑같이 쌓여요. 내용 단어까지 맞히면 문장 숙련도도 올라요. 재시도 보너스는 표현 익숙함을 올리지는 않아요. 학습 레벨은 XP로 쌓은 연습량을 보여주고, 틀려도 이미 얻은 XP는 줄지 않아요.']]},
+ xp:{icon:'⭐',title:'학습 레벨 · 경험치',revision:6,steps:[['꺼낸 만큼, 빠른 만큼 쌓여요','문제를 보고 3초 안에 누르고, 마이크 준비 뒤 1.5초 안에 말을 시작하면 빠른 답이에요. 첫 답변에서 핵심 표현을 맞히면 20 XP, 내용 단어까지 맞히면 10 XP를 더 받아요. 다시 말해서 문장 전체를 맞히면 처음 점수와 별도로 +5 XP를 한 문제당 한 번 받아요. 처음 틀렸어도 다시 맞히면 5 XP예요. 오늘 10회 목표는 별도로 +25 XP예요.'],['표현 익숙함과 문장 숙련도는 달라요','표현을 바로 꺼내면 내용 단어를 놓쳐도 표현 익숙함에는 똑같이 쌓여요. 문장 숙련도도 핵심 표현의 정확도와 속도로 평가해요. 재시도 보너스는 표현 익숙함을 올리지는 않아요. 학습 레벨은 XP로 쌓은 연습량을 보여주고, 틀려도 이미 얻은 XP는 줄지 않아요.']]},
  profile:{icon:'☺',title:'내 프로필',steps:[['나의 기록을 한곳에서 봐요','앱에서 부를 이름을 바꾸고, 학습 레벨과 경험치, 성장 기록을 확인할 수 있어요.'],['필요한 안내를 다시 볼 수 있어요','랭킹과 기록 동기화로 이동하거나 처음 사용법을 다시 열어 각 기능의 안내를 볼 수 있어요.']]},
  rank:{icon:'🏆',title:'랭킹',steps:[['함께 쌓은 기록을 봐요','이번 주와 누적 학습 시간, 익숙한 표현, 연속 학습 기록을 비교할 수 있어요.'],['기록 동기화로 참여해요','연결한 표시 이름과 학습 통계가 랭킹에 공개돼요. 내 기록을 연결하지 않아도 랭킹을 확인할 수 있어요.']]},
  sync:{icon:'☁️',title:'기록 동기화',steps:[['같은 닉네임으로 이어서 해요','다른 기기에서 같은 닉네임을 입력하면 기존 서버의 학습 기록을 불러와 합쳐요. 추측하기 어려운 별명을 사용하세요.'],['무엇이 저장되는지 확인해요','연결하면 학습 기록을 서버에 저장하고 표시 이름과 요약 통계를 랭킹에 공개해요. ChatGPT 로그인 정보와 대화 내용은 보내지 않아요. 자동 동기화를 꺼도 기존 기록은 남아 있어요.']]}
