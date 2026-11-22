@@ -190,7 +190,7 @@ const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','sp
 let supportSyncBusy=false;
 function supportLog(){return hGet(PRACTICE_LOG,{})||{};}
 function supportEvents(){return Object.values(supportLog()).filter(e=>e&&Number.isFinite(e.t)).sort((a,b)=>a.t-b.t);}
-function learningInitialExpressionIds(){return typeof TRAVEL_INITIAL_IDS!=='undefined'?TRAVEL_INITIAL_IDS:new Set(['travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is','travel_how_much','travel_pay_by_card','travel_have_reservation','travel_cant_find','travel_is_there']);}
+function learningInitialExpressionIds(){return typeof TRAVEL_INITIAL_IDS!=='undefined'?TRAVEL_INITIAL_IDS:new Set(['travel_daily_need','travel_daily_can','travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is','travel_how_much','travel_cant_find','travel_is_there']);}
 function learningExpressionOrder(){return typeof TRAVEL_PROGRESS_ORDER!=='undefined'?TRAVEL_PROGRESS_ORDER.map(fid=>TRAVEL_BY_ID[fid]).filter(frame=>frame&&TRAVEL_ACTIVE_IDS.has(frame.id)):TRAVEL_FRAMES;}
 let learningExpressionCache={};
 function learningExpressionResults(events){
@@ -246,7 +246,7 @@ function learningProgressRefresh(){
  }
  const normalized=learningProgressState(state);if(JSON.stringify(saved)!==JSON.stringify(normalized))hSet(EXPRESSION_PROGRESS,normalized);return normalized;
 }
-function learningAvailableFrames(state=learningProgressRefresh()){const initial=learningInitialExpressionIds();return TRAVEL_FRAMES.filter(frame=>initial.has(frame.id)||state.legacy[frame.id]||state.unlocked[frame.id]);}
+function learningAvailableFrames(state=learningProgressRefresh()){const initial=learningInitialExpressionIds();return learningExpressionOrder().filter(frame=>initial.has(frame.id)||state.legacy[frame.id]||state.unlocked[frame.id]);}
 function supportStats(){
   const records=Object.values(travelAll()).filter(x=>x&&typeof x==='object');
   const total=records.reduce((n,r)=>n+(Number(r.seen)||0),0),right=records.reduce((n,r)=>n+(Number(r.ok)||0),0);
@@ -372,7 +372,8 @@ function learningSessionPlan(count,pool,records){
   const choices=preferred.length?preferred:eligible.filter(c=>!used.has(c.key));
   const poolNow=choices.length?choices:eligible;
   const firstRound=!reviewed.length?poolNow.filter(c=>c.first&&!planned.has(c.frame.id)):[];
-  const roundPool=firstRound.length?firstRound:poolNow;
+  const openingItem=!pool&&firstRound.find(c=>c.frame.id===TRAVEL_OPENING_IDS[i]);
+  const roundPool=openingItem?[openingItem]:firstRound.length?firstRound:poolNow;
   const different=!pool&&TRAVEL_QUESTION_IDS.has(previous)?roundPool.filter(c=>!TRAVEL_QUESTION_IDS.has(c.frame.id)):[];
   const round=different.length?different:roundPool;
   const daily=wantNew&&dailyNew<Math.ceil((newCount+1)/2)

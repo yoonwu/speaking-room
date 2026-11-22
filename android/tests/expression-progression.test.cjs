@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'../..'),PROGRESS='speakingroom:expression_progress_v1';
-const INITIAL=['can_i_get','can_you','can_i_we','do_you_have','where_is','how_much','pay_by_card','have_reservation','cant_find','is_there'].map(id=>'travel_'+id);
+const INITIAL=['daily_need','daily_can','can_i_get','can_you','can_i_we','do_you_have','where_is','how_much','cant_find','is_there'].map(id=>'travel_'+id);
 const LATER=['is_included','where_meet','what_recommend','say_again_slowly','is_this_right','can_we_change','id_like_to','can_i_leave','do_i_need_to','does_that_mean','how_do_i','how_do_i_get_to','can_i_ask'].map(id=>'travel_'+id);
 const plain=value=>JSON.parse(JSON.stringify(value));
 const wav=(()=>{const bytes=Buffer.alloc(684);bytes.write('RIFF');bytes.writeUInt32LE(bytes.length-8,4);bytes.write('WAVEfmt ',8);bytes.writeUInt32LE(16,16);bytes.writeUInt16LE(1,20);bytes.writeUInt16LE(1,22);bytes.writeUInt32LE(16000,24);bytes.writeUInt32LE(32000,28);bytes.writeUInt16LE(2,32);bytes.writeUInt16LE(16,34);bytes.write('data',36);bytes.writeUInt32LE(bytes.length-44,40);return bytes;})();
@@ -94,7 +94,7 @@ test('legacy introduced or previously studied expressions remain open without ex
 });
 
 test('reload and sync union retain distinct earned sources idempotently while keeping progress profile-scoped',()=>{
- const a=setup(),b=setup();repeat(a,'travel_can_i_get',4,'partial-fast','device-a');repeat(b,'travel_can_you',4,'full-fast','device-b');const snapshot=plain(b.run('supportCollect()'));assert.ok(snapshot[PROGRESS]);a.context.snapshot=snapshot;a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot);learningProgressRefresh()');assert.equal(ids(a).length,12);assert.equal(a.run('Object.keys(learningProgressRefresh().earned).length'),2);assert.deepEqual(Array.from(a.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included','travel_daily_need']);
+ const a=setup(),b=setup();repeat(a,'travel_can_i_get',4,'partial-fast','device-a');repeat(b,'travel_can_you',4,'full-fast','device-b');const snapshot=plain(b.run('supportCollect()'));assert.ok(snapshot[PROGRESS]);a.context.snapshot=snapshot;a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot);learningProgressRefresh()');assert.equal(ids(a).length,12);assert.equal(a.run('Object.keys(learningProgressRefresh().earned).length'),2);assert.deepEqual(Array.from(a.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included','travel_is_this_right']);
  const restored=setup(Object.fromEntries(a.records));assert.equal(ids(restored).length,12);assert.equal(score(restored,'travel_can_i_get'),8);assert.equal(score(restored,'travel_can_you'),8);const other=restored.run(`learningProfileCreate('진도 없는 학습자')`);restored.run(`learningProfileSwitch(${JSON.stringify(other)})`);assert.equal(ids(restored).length,10);assert.equal(score(restored),0);restored.context.snapshot=snapshot;assert.equal(restored.run(`supportApplySnapshot(snapshot,'legacy')`),false);assert.equal(ids(restored).length,10);restored.run(`learningProfileSwitch('legacy')`);assert.equal(ids(restored).length,12);
 });
 
@@ -185,7 +185,7 @@ test('banked credits and previously open advanced questions respect beginner pac
 
 test('established sentence mastery opens new material after two verified quick recalls even before the expression average reaches six',()=>{
  for(const kind of ['partial-fast','full-fast']){
-  const fid=INITIAL[0];
+  const fid='travel_can_i_get';
   // Assisted learning contributes sentence experience but cannot itself unlock a frame.
   const seeded=setup();for(let i=0;i<2;i++)seeded.answer(fid,'typed-'+i,'full-slow',{meta:{typed:true}});
   assert.equal(ids(seeded).length,10);seeded.answer(fid,'verified1',kind);assert.equal(ids(seeded).length,10);
@@ -260,4 +260,24 @@ test('long automatic routines spread question forms across ten-question blocks, 
   assert.ok(wh.slice(0,10).filter(Boolean).length<=2);assert.ok(wh.slice(10,20).filter(Boolean).length<=2);
   assert.ok(wh.slice(20).filter(Boolean).length<=1);
  }
+});
+
+test('the first automatic routine starts with a need and an ability, while card payment and reservations unlock at the end of beginner practice',()=>{
+ const h=setup();assert.deepEqual(ids(h),INITIAL);
+ const items=plain(h.run('travelBuildItems(10).map(it=>({id:it.frame.id,en:it.ex.en}))'));
+ assert.deepEqual(items.slice(0,2).map(item=>item.en),['I need a minute.','I can help.']);
+ assert.deepEqual(items.map(item=>item.id).sort(),[...INITIAL].sort());
+ assert.deepEqual(Array.from(h.run('TRAVEL_PROGRESS_ORDER.slice(29,31)')),['travel_pay_by_card','travel_have_reservation']);
+ assert.equal(h.run('new Set(TRAVEL_PROGRESS_ORDER).size'),65);assert.equal(h.run('TRAVEL_PROGRESS_ORDER.length'),65);
+ assert.equal(h.run('travelBuildItems(3,[TRAVEL_BY_ID.travel_can_you]).every(it=>it.frame.id==="travel_can_you")'),true);
+});
+
+test('upgrading keeps studied former starters and does not spend an unlock credit on either promoted starter',()=>{
+ const fid='travel_pay_by_card',h=setup({'speakingroom:travelrepeat':JSON.stringify({[fid]:{introduced:true,seen:3,ok:2}}),
+  [PROGRESS]:JSON.stringify({version:1,earned:{[fid]:true},unlocked:{travel_daily_need:true}})});
+ assert.ok(ids(h).includes(fid));assert.ok(!ids(h).includes('travel_have_reservation'));
+ assert.deepEqual(Array.from(h.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included']);
+ assert.equal(h.run('travelStat("travel_pay_by_card").seen'),3);
+ assert.equal(h.run('travelBuildItems(3,travelPoolOf(["travel_pay_by_card"])).length'),3);
+ assert.deepEqual(ids(setup(Object.fromEntries(h.records))),ids(h));
 });

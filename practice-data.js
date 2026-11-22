@@ -3001,14 +3001,15 @@ const TRAVEL_STAGE2_IDS=new Set([
 const TRAVEL_STAGE2_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>TRAVEL_STAGE2_IDS.has(f.id));
 const TRAVEL_FRAMES=TRAVEL_ALL_FRAMES.filter(f=>!TRAVEL_STAGE2_IDS.has(f.id));
 const TRAVEL_ACTIVE_IDS=new Set(TRAVEL_FRAMES.map(f=>f.id));
+const TRAVEL_OPENING_IDS=['travel_daily_need','travel_daily_can'];
 const TRAVEL_INITIAL_IDS=new Set([
-  'travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is',
-  'travel_how_much','travel_pay_by_card','travel_have_reservation','travel_cant_find','travel_is_there'
+  ...TRAVEL_OPENING_IDS,'travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is',
+  'travel_how_much','travel_cant_find','travel_is_there'
 ]);
 // Each group adds at most two WH forms. Unlocks also need a credit from a
 // different learned expression; reaching a speaking level alone grants none.
 const PRACTICE_BANDS=[
- {level:1,earned:0,ids:'is_included daily_need daily_can is_this_right daily_like wh_what_is daily_not_sure say_again_slowly daily_lets daily_have_to can_we_change daily_looking_for wh_when_is daily_prefer can_i_leave id_like_to daily_works do_i_need_to daily_way daily_free daily_will'},
+ {level:1,earned:0,ids:'is_included is_this_right daily_like wh_what_is daily_not_sure say_again_slowly daily_lets daily_have_to can_we_change daily_looking_for wh_when_is daily_prefer can_i_leave id_like_to daily_works do_i_need_to daily_way daily_free daily_will pay_by_card have_reservation'},
  {level:15,earned:18,ids:'where_meet daily_just wh_which_is daily_usually'},
  {level:15,earned:22,ids:'what_recommend daily_forgot wh_what_do daily_already'},
  {level:15,earned:26,ids:'how_do_i does_that_mean wh_what_ing daily_think'},
