@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.8.0", APP_BUILD="2026-11-21";
+const APP_VERSION="v4.9.0", APP_BUILD="2026-11-22";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
@@ -121,7 +121,7 @@ function travelBuildItems(count,pool){
   const items=frames.map((f,i)=>{
     const introduce=!records[f.id]?.introduced&&!introPlanned.has(f.id);introPlanned.add(f.id);
     const ex=plan?plan[i].ex:travelPickItem(f,records,{introduce}),frame=basicFrameFor(f,ex);
-    return {_travel:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame,block:{id:f.id,block:frame.frame},ex:{...ex,situation:f.purpose},limit:3};
+    return {_travel:true,_varyCue:true,_difficulty:typeof alGet==='function'?alGet().speak:1,frame,block:{id:f.id,block:frame.frame},ex:{...ex,situation:f.purpose},limit:3};
   });
   travelSave(records);travelMarkShown(frames.map(f=>f.id));return items;
 }
@@ -169,11 +169,25 @@ function startDrill(items,title){
 function practiceSessionSnapshot(){
   return {profileId:typeof learningProfileId==='function'?learningProfileId():'legacy',expressionScores:typeof learningExpressionScores==='function'?learningExpressionScores():{},masteryRows:typeof learningMasteryRows==='function'?JSON.parse(JSON.stringify(learningMasteryRows())):{},xpTotal:typeof practiceReward==='function'?practiceReward().total:0,level:typeof practiceReward==='function'?practiceReward().level:1};
 }
+function practiceSituation(it){
+  const extra=EVERYDAY_CUES.get(it.ex.en);
+  if(!extra)return it.ex.ko;
+  const cues=[...new Set([...extra,it.ex.ko])];
+  // count answered encounters, not previews. A recall stays in the current scene.
+  const events=typeof supportEvents==='function'?supportEvents():[];
+  for(let i=events.length-1;i>=0;i--){
+    if(events[i].fid!==it.frame.id||events[i].en!==it.ex.en)continue;
+    const previous=cues.indexOf(events[i].ko);
+    if(previous>=0)return cues[(previous+1)%cues.length];
+  }
+  return cues[0];
+}
 function autoDrillRender(recall=false){
   if(!autoDrill)return;if(autoDrill.idx>=autoDrill.items.length)return autoDrillDone();
   const it=autoDrill.items[autoDrill.idx];
   const preservePreparation=pendingReply&&!qzRecording&&!micPreparing&&autoDrill.preparingWords===practiceExpectedWords(it.ex.en);
   stopResponseClock();stopMicrophone(preservePreparation);clearAnswerVoice();svStop();if(TTS)TTS.cancel();
+  if(it._varyCue){it.ex={...it.ex,ko:practiceSituation(it)};it._varyCue=false;}
   it.recall=recall;it._voiceRate=levelRate();
   if(window.SpeakingRoomNative||window.srNativePracticeSpeech){micAudioReady();if(_svPending.size<4)svPrepare(it.ex.en,it._voiceRate).catch(()=>{});}
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
@@ -320,7 +334,8 @@ function autoDrillShowResult(it,retry,perfect,message='표현을 보고 다시 �
 function autoDrillNextIndex(lesson,it){
   const next=lesson.idx+1;
   if(lesson.items[next]?.frame.id!==it.frame.id)return next;
-  const alternate=lesson.items.findIndex((item,i)=>i>next&&item.frame.id!==it.frame.id);
+  const end=lesson.title==='기본표현'?10*(1+Math.floor(next/10)):lesson.items.length;
+  const alternate=lesson.items.findIndex((item,i)=>i>next&&i<end&&item.frame.id!==it.frame.id);
   return alternate<0?next:alternate;
 }
 function autoDrillAdvance(it){

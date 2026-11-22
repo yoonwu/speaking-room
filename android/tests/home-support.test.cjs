@@ -21,9 +21,9 @@ test('first-use guides wait for completion and can be replayed without changing 
 
 test('the revised basic guide is shown once to existing learners without resetting other guides',()=>{const {run,records}=setup({'speakingroom:feature_guide:v2:basic':'true','speakingroom:feature_guide:v2:study':'true','speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{introduced:true,seen:8,ok:6}})});run(`let entered=0;let handlers={};openSheet=()=>({querySelector:s=>handlers[s]||(handlers[s]={}),remove(){}});showFeatureGuide('basic',()=>entered++);`);assert.equal(run('entered'),0);assert.equal(run('travelStat("travel_can_i_get").ok'),6);run(`showFeatureGuide('study',()=>entered++);`);assert.equal(run('entered'),1);assert.equal(records.get('speakingroom:feature_guide:v2:basic'),'true');});
 
-test('all 800 examples are reviewed and each expression has a short, gradable first sentence',()=>{
+test('all 859 examples are reviewed and each expression has a short, gradable first sentence',()=>{
  const {run}=setup();
- assert.equal(run('TRAVEL_ALL_FRAMES.length'),50);assert.equal(run('TRAVEL_ALL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),800);
+ assert.equal(run('TRAVEL_ALL_FRAMES.length'),74);assert.equal(run('TRAVEL_ALL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),859);
  const failures=run(`TRAVEL_ALL_FRAMES.flatMap(f=>{
    const r=basicCurriculumRule(f),pool=basicCoreItems(f),starter=basicStarterItem(f),errors=[];
    if(!starter||!pool.length)errors.push(f.id+' missing starter');
@@ -90,7 +90,7 @@ test('saved short mistakes retain beginner explanations while older extended mis
 
 test('exactly the nine selected expressions are stored in stage 2 and never sampled by stage 1',()=>{
  const {run}=setup();const expected=['travel_how_long','travel_what_time_does','travel_what_time_need','travel_problem_with','travel_think_i_left','travel_how_much_longer','travel_whats_difference','travel_what_does_mean','travel_what_should_i_do'];
- assert.deepEqual(Array.from(run('TRAVEL_STAGE2_FRAMES.map(f=>f.id)')).sort(),expected.sort());assert.equal(run('TRAVEL_FRAMES.length'),41);
+ assert.deepEqual(Array.from(run('TRAVEL_STAGE2_FRAMES.map(f=>f.id)')).sort(),expected.sort());assert.equal(run('TRAVEL_FRAMES.length'),65);
  for(const difficulty of [1,15,35,60]){
    run(`const d${difficulty}=alGet();d${difficulty}.speak=${difficulty};alSave(d${difficulty});`);
    assert.equal(run('travelBuildItems(100).some(it=>TRAVEL_STAGE2_IDS.has(it.frame.id))'),false);

@@ -2822,7 +2822,87 @@ const DAILY_QUESTIONS=[
     ['How long does it take to get there?','목적지까지 가는 데 걸리는 시간을 물어보세요.','거기까지 얼마나 걸려요?','get there'],
     ['How long does it take to cook?','냄비에 음식을 넣었어요. 조리 시간을 물어보세요.','요리하는 데 얼마나 걸려요?','cook']]]
 ];
-for(const [id,pattern,meaning,structure,examples] of DAILY_QUESTIONS){
+// Each reply has a short target, a Korean answer and two independent speaking cues.
+const DAILY_REPLIES=[
+ ['daily_need','I need ~.','~이 필요해요.',/^i need\b/,[
+  ['I need a minute.','잠깐 시간이 필요해요.','minute','회의에서 바로 의견을 물어요. 생각할 시간을 잠깐 달라고 해보세요.','친구가 이제 나갈 수 있냐고 물어요. 준비할 시간이 잠깐 필요하다고 하세요.'],
+  ['I need some help.','도움이 좀 필요해요.','help','무거운 상자를 들고 있어요. 가족에게 도움이 필요하다고 하세요.','새 프로그램을 처음 써요. 옆자리 동료에게 도움을 구해보세요.']]],
+ ['daily_can','I can ~.','제가 ~할 수 있어요.',/^i can\b/,[
+  ['I can help.','제가 도울 수 있어요.','help','친구가 이삿짐을 혼자 옮기고 있어요. 도울 수 있다고 하세요.','선생님이 교실 정리를 도와줄 사람을 찾아요. 할 수 있다고 답하세요.'],
+  ['I can drive.','제가 운전할 수 있어요.','drive','친구들이 장을 보러 갈 운전자를 찾아요. 운전할 수 있다고 하세요.','가족 모임에서 아버지가 피곤하다고 하세요. 대신 운전할 수 있다고 하세요.']]],
+ ['daily_like','I like ~.','저는 ~을 좋아해요.',/^i like\b/,[
+  ['I like it.','마음에 들어요.','it','친구가 새로 꾸민 방이 어떠냐고 물어요. 마음에 든다고 답하세요.','동료가 새 로고를 보여줘요. 마음에 든다고 해보세요.'],
+  ['I like coffee.','커피를 좋아해요.','coffee','새 이웃이 어떤 음료를 즐기는지 물어요. 커피를 좋아한다고 하세요.','동료가 간식 주문을 받아요. 평소에 커피를 좋아한다고 하세요.']]],
+ ['daily_not_sure',"I'm not sure ~.",'확실하지 않아요.',/^im not sure\b/,[
+  ["I'm not sure yet.",'아직 잘 모르겠어요.','yet','친구가 주말에 올 수 있냐고 물어요. 아직 확실하지 않다고 답하세요.','회의 날짜를 정했냐는 질문에 아직 확실하지 않다고 하세요.'],
+  ["I'm not sure about the time.",'시간은 확실하지 않아요.','time','동아리 모임이 몇 시냐고 물어요. 시간은 잘 모르겠다고 하세요.','가족이 수리 기사 방문 시간을 물어요. 시간은 확실하지 않다고 하세요.']]],
+ ['daily_lets',"Let's ~.",'같이 ~해요.',/^let s\b/,[
+  ["Let's take a break.",'우리 좀 쉬어요.','break','친구와 오래 공부했어요. 잠깐 쉬자고 하세요.','가족과 가구를 조립하다 지쳤어요. 좀 쉬자고 해보세요.'],
+  ["Let's eat first.",'우리 먼저 먹어요.','eat first','동료와 점심시간에 할 일이 많아요. 밥부터 먹자고 하세요.','집에 손님들이 모였어요. 게임을 시작하기 전에 먼저 먹자고 하세요.']]],
+ ['daily_have_to','I have to ~.','저는 ~해야 해요.',/^i have to\b/,[
+  ['I have to go.','저는 가야 해요.','go','친구와 통화 중인데 수업이 시작돼요. 이제 가야 한다고 하세요.','모임이 아직 한창인데 막차 시간이 됐어요. 가야 한다고 하세요.'],
+  ['I have to work.','일해야 해요.','work','평일 낮에 영화 보자는 친구에게 일해야 한다고 답하세요.','가족이 주말 계획을 물어요. 이번에는 일해야 한다고 답하세요.']]],
+ ['daily_looking_for',"I'm looking for ~.",'~을 찾고 있어요.',/^im looking for\b/,[
+  ["I'm looking for my keys.",'열쇠를 찾고 있어요.','keys','현관에서 서랍을 열고 있어요. 동생에게 열쇠를 찾고 있다고 하세요.','운동을 마친 뒤 가방을 뒤져요. 코치에게 열쇠를 찾고 있다고 하세요.'],
+  ["I'm looking for a charger.",'충전기를 찾고 있어요.','charger','집에서 휴대폰이 꺼졌어요. 충전기를 찾는 중이라고 하세요.','회의실에서 노트북 배터리가 부족해요. 동료에게 충전기를 찾고 있다고 하세요.']]],
+ ['daily_prefer','I prefer ~.','저는 ~이 더 좋아요.',/^i prefer\b/,[
+  ['I prefer tea.','저는 차가 더 좋아요.','tea','친구가 커피와 차 중에 골라 달래요. 차가 더 좋다고 하세요.','사무실 음료를 고르는 중이에요. 차를 더 좋아한다고 말하세요.'],
+  ['I prefer mornings.','저는 오전이 더 좋아요.','mornings','운동 수업을 오전과 저녁 중에 골라요. 오전이 더 좋다고 하세요.','동료와 회의 시간을 정해요. 오전이 더 좋다고 하세요.']]],
+ ['daily_works','~ works for me.','~이면 저는 좋아요.',/\bworks for me$/,[
+  ['That works for me.','저는 그걸로 좋아요.','that','친구가 점심을 열두 시에 먹자고 해요. 그 시간에 괜찮다고 답하세요.','동료가 역할을 반씩 나누자고 해요. 그 제안이 괜찮다고 답하세요.'],
+  ['Friday works for me.','저는 금요일이면 좋아요.','friday','독서 모임 날짜를 정하고 있어요. 금요일이면 된다고 하세요.','동료가 교대 근무 요일을 물어요. 금요일이면 좋다고 하세요.']]],
+ ['daily_way',"I'm on my way ~.",'지금 가는 중이에요.',/^im on my way\b/,[
+  ["I'm on my way.",'지금 가는 중이에요.','','친구가 “아직 집이야?” 하고 전화했어요. 이미 가는 중이라고 답하세요.','부모님이 언제 데리러 오냐고 물어요. 지금 가는 중이라고 하세요.'],
+  ["I'm on my way home.",'집에 가는 중이에요.','home','동생이 어디냐고 문자를 보냈어요. 집에 가는 중이라고 답하세요.','동료가 아직 회사냐고 물어요. 이미 집에 가는 중이라고 하세요.']]],
+ ['daily_free',"I'm free ~.",'~에 시간이 돼요.',/^im free\b/,[
+  ["I'm free tonight.",'오늘 저녁에 시간이 돼요.','tonight','친구가 언제 통화할 수 있냐고 해요. 오늘 저녁에 된다고 하세요.','밴드 연습 시간을 맞추는 중이에요. 오늘 저녁은 비었다고 하세요.'],
+  ["I'm free on Sunday.",'일요일에 시간이 돼요.','sunday','가족사진 찍을 날을 골라요. 일요일에 시간이 된다고 하세요.','동료가 이번 주에 운동할 날을 물어요. 일요일은 비었다고 답하세요.']]],
+ ['daily_will',"I'll ~.",'제가 ~할게요.',/^ill\b/,[
+  ["I'll call you.",'제가 전화할게요.','call','친구가 통화와 문자 중 어느 쪽이 좋냐고 물어요. 전화하겠다고 하세요.','부모님이 검사 결과를 궁금해하세요. 직접 전화하겠다고 하세요.'],
+  ["I'll bring it.",'제가 가져갈게요.','bring','친구가 빌려준 책을 돌려줄 수 있냐고 해요. 가져가겠다고 하세요.','회의에 스피커가 필요해요. 동료에게 가져가겠다고 하세요.']]],
+ ['daily_just','I just ~.','방금 ~했어요.',/^i just\b/,[
+  ['I just got home.','방금 집에 왔어요.','home','친구가 지금 통화해도 되냐고 물어요. 방금 집에 왔다고 하세요.','엄마가 아직 밖에 있냐고 문자를 보냈어요. 방금 집에 왔다고 답하세요.'],
+  ['I just finished.','방금 끝냈어요.','finished','동료가 자료 작성이 끝났냐고 물어요. 방금 마쳤다고 하세요.','친구가 숙제는 했냐고 물어요. 방금 끝냈다고 답하세요.']]],
+ ['daily_usually','I usually ~.','보통 ~해요.',/^i usually\b/,[
+  ['I usually walk.','저는 보통 걸어요.','walk','새 동료가 어떻게 출근하냐고 물어요. 보통 걷는다고 답하세요.','친구가 집에서 체육관까지 뭘 타냐고 물어요. 보통 걸어간다고 하세요.'],
+  ['I usually cook.','저는 보통 요리해요.','cook','동료가 매일 저녁 배달시키냐고 물어요. 보통 요리한다고 하세요.','처음 만난 룸메이트가 식사 습관을 물어요. 보통 직접 요리한다고 하세요.']]],
+ ['daily_forgot','I forgot ~.','~을 깜빡했어요.',/^i forgot\b/,[
+  ['I forgot my password.','비밀번호를 잊었어요.','password','회사 컴퓨터에 로그인하지 못했어요. 이유를 말하세요.','동생이 왜 게임에 접속하지 않냐고 물어요. 비밀번호를 잊었다고 하세요.'],
+  ['I forgot my lunch.','점심 도시락을 깜빡했어요.','lunch','점심시간에 가방이 비었어요. 동료에게 도시락을 깜빡했다고 하세요.','학교 식당에서 친구가 오늘은 왜 도시락이 없냐고 해요. 두고 왔다고 답하세요.']]],
+ ['daily_already','I already ~.','이미 ~했어요.',/^i already\b/,[
+  ['I already ate.','저는 이미 먹었어요.','ate','친구가 같이 밥 먹자고 해요. 이미 먹었다고 답하세요.','집에서 가족이 저녁을 차려주려 해요. 벌써 먹었다고 하세요.'],
+  ['I already paid.','저는 이미 냈어요.','paid','동아리 회비를 내달라는 연락을 받았어요. 이미 냈다고 답하세요.','주문한 물건을 찾으러 갔는데 직원이 계산하려 해요. 이미 결제했다고 하세요.']]],
+ ['daily_think','I think ~.','제 생각엔 ~예요.',/^i think\b/,[
+  ["I think it's fine.",'제 생각에는 괜찮아요.','fine','친구가 자기 옷이 너무 밝은지 걱정해요. 내 생각엔 괜찮다고 하세요.','동료가 발표 자료의 색깔을 바꿀지 물어요. 내 생각엔 괜찮다고 하세요.'],
+  ['I think we should wait.','우리 기다리는 게 좋겠어요.','wait','모임에 한 명이 아직 안 왔어요. 기다리는 게 좋겠다고 하세요.','가격이 곧 내릴 수 있대요. 구입하기 전에 기다리는 게 좋겠다고 하세요.']]],
+ ['daily_going_to',"I'm going to ~.",'~할 계획이에요.',/^im going to\b/,[
+  ["I'm going to stay home.",'저는 집에 있을 거예요.','stay home','동료가 쉬는 날 계획을 물어요. 집에 있을 거라고 하세요.','친구가 비가 오는데 외출하냐고 물어요. 집에 있을 계획이라고 하세요.'],
+  ["I'm going to make dinner.",'저녁을 만들 거예요.','make dinner','룸메이트가 저녁에 배달을 시킬지 물어요. 직접 저녁을 만들 거라고 하세요.','가족이 퇴근 후 계획을 물어요. 저녁을 만들 생각이라고 하세요.']]],
+ ['daily_depends','It depends on ~.','~에 달려 있어요.',/^it depends on\b/,[
+  ['It depends on the weather.','날씨에 달려 있어요.','weather','주말에 자전거를 탈 거냐고 물어요. 날씨에 달렸다고 하세요.','팀 소풍을 밖에서 할 수 있냐고 물어요. 날씨에 달렸다고 하세요.'],
+  ['It depends on the price.','가격에 달려 있어요.','price','새 컴퓨터를 살 거냐고 물어요. 가격에 달렸다고 하세요.','친구가 같이 공연을 볼지 물어요. 표 가격에 달렸다고 하세요.']]],
+ ['daily_rather',"I'd rather ~.",'저는 차라리 ~할래요.',/^id rather\b/,[
+  ["I'd rather walk.",'저는 차라리 걸을래요.','walk','친구가 가까운 서점까지 택시를 타자고 해요. 차라리 걷고 싶다고 하세요.','동료가 점심 식당까지 차를 태워준대요. 걷는 쪽이 좋다고 하세요.'],
+  ["I'd rather stay home.",'저는 차라리 집에 있을래요.','stay home','비 오는 날 친구가 나가자고 해요. 집에 있는 편이 좋다고 하세요.','가족이 쉬는 날 계획을 물어요. 이번에는 집에 있고 싶다고 하세요.']]],
+ ['daily_used_to','I used to ~.','예전에는 ~했어요.',/^i used to\b/,[
+  ['I used to run.', '예전에는 달리기를 했어요.','run','친구가 예전에 무슨 운동을 했냐고 물어요. 달리기를 했다고 하세요.','동료가 책상 위의 마라톤 사진을 봤어요. 예전에 달리기를 했다고 하세요.'],
+  ['I used to teach.', '예전에는 가르치는 일을 했어요.','teach','새 직장에서 이전 직업을 물어요. 가르치는 일을 했다고 하세요.','이웃이 어떻게 설명을 그렇게 잘하냐고 해요. 예전에 가르쳤다고 하세요.']]],
+ ['daily_mean_to',"I didn't mean to ~.",'일부러 ~하려던 건 아니에요.',/^i (?:didn t|did not) mean to\b/,[
+  ["I didn't mean to interrupt.",'말을 끊으려던 건 아니에요.','interrupt','화상회의에서 동료와 동시에 말을 꺼냈어요. 일부러 말을 끊은 건 아니라고 하세요.','친구가 아직 이야기를 끝내지 않았어요. 끼어들려던 건 아니라고 하세요.'],
+  ["I didn't mean to laugh.",'일부러 웃은 건 아니에요.','laugh','발표 중 소리가 나서 웃음이 나왔어요. 일부러 웃은 건 아니라고 하세요.','친구가 실수한 순간에 나도 모르게 웃었어요. 웃으려던 건 아니라고 하세요.']]],
+ ['daily_hoping','I was hoping to ~.','~하고 싶었어요.',/^i was hoping to\b/,[
+  ['I was hoping to talk.', '이야기를 좀 나누고 싶었어요.','talk','동료가 자기를 왜 찾았냐고 물어요. 이야기를 좀 나누고 싶었다고 하세요.','오랜만에 전화한 친구가 무슨 일이냐고 해요. 이야기하고 싶었다고 하세요.'],
+  ['I was hoping to join.', '저도 함께하고 싶었어요.','join','독서 모임을 구경하러 왔냐고 해요. 참여하고 싶었다고 하세요.','친구들이 뛰러 가려는데 무슨 일로 왔냐고 해요. 함께하고 싶었다고 하세요.']]],
+ ['daily_ended_up','I ended up ~ing.','결국 ~하게 됐어요.',/^i ended up(?:$| \w+ing\b)/,[
+  ['I ended up cooking.', '결국 제가 요리했어요.','cooking','배달이 취소된 뒤 저녁은 어떻게 했냐고 해요. 결국 요리했다고 하세요.','소풍 음식을 누가 준비했냐고 물어요. 결국 내가 요리하게 됐다고 하세요.'],
+  ['I ended up walking.', '결국 걸어갔어요.','walking','버스를 놓친 뒤 어떻게 출근했냐고 해요. 결국 걸어갔다고 하세요.','자전거가 고장 났는데 어떻게 집에 갔냐고 해요. 결국 걸었다고 하세요.']]]
+];
+const EVERYDAY_CUES=new Map();
+const replyFrames=DAILY_REPLIES.map(([id,pattern,meaning,structure,rows])=>[id,pattern,meaning,structure,
+  rows.map(([en,translation,keywords,first,second])=>{
+    EVERYDAY_CUES.set(en,[first,second]);return [en,first,translation,keywords];
+  })]);
+for(const [id,pattern,meaning,structure,examples] of [...DAILY_QUESTIONS,...replyFrames]){
   let frame=TRAVEL_ALL_FRAMES.find(f=>f.id==='travel_'+id);
   if(!frame){
     frame={id:'travel_'+id,frame:pattern,ko:meaning,purpose:meaning,re:structure.source,items:[]};
@@ -2832,10 +2912,81 @@ for(const [id,pattern,meaning,structure,examples] of DAILY_QUESTIONS){
   for(const [en,ko,answerKo,keywords] of examples){
     let index=frame.items.findIndex(item=>item.en===en);
     if(index<0){index=frame.items.length;frame.items.push({en,ko});}
-    frame.items[index].keywords=keywords.split(' ');
+    frame.items[index].keywords=keywords?keywords.split(' '):[];
     if(!BASIC_CURRICULUM[id].core.includes(index))BASIC_CURRICULUM[id].core.push(index);
     TRAVEL_KR[en]=answerKo;
   }
+}
+// The same English sentence can be retrieved from more than one real-life cue.
+// Store cues on the canonical sentence, including shortened curriculum entries.
+for(const [en,...cues] of [
+ ['Can I get some water?','친구 집에 놀러 와서 목이 말라요. 물 좀 달라고 해보세요.','운동을 마쳤는데 물병이 비었어요. 코치에게 물을 부탁하세요.'],
+ ['Can you open the door?','반죽하느라 손에 밀가루가 묻었는데 초인종이 울려요. 가족에게 문을 열어달라고 하세요.','사원증을 두고 나와 사무실에 들어갈 수 없어요. 안에 있는 동료에게 문을 열어달라고 하세요.'],
+ ['Can I sit here?','학교 식당에서 옆자리 학생에게 여기 앉아도 되는지 물어보세요.','독서 모임에 처음 왔어요. 빈 의자에 앉아도 되는지 물어보세요.'],
+ ['Do you have water?','같이 뛰는 친구에게 마실 물을 가지고 있는지 물어보세요.','저녁 먹으러 온 동생이 음료수를 권해요. 대신 물이 있는지 물어보세요.'],
+ ['Where is the restroom?','친구 집에 처음 왔어요. 화장실이 어디인지 물어보세요.','새 회사에 출근한 첫날이에요. 동료에게 화장실 위치를 물어보세요.'],
+ ['How much is this shirt?','동네 장터에서 마음에 드는 셔츠를 들었어요. 가격을 물어보세요.','학교 바자회에서 셔츠 한 장을 골랐어요. 얼마인지 물어보세요.'],
+ ['Can I pay by card?','동네 빵집에서 빵을 골랐어요. 카드로 계산할 수 있는지 물어보세요.','자전거 수리를 마치고 찾으러 왔어요. 카드로 결제해도 되는지 물어보세요.'],
+ ['I have a reservation.','친구와 외식하러 왔어요. 예약 여부를 묻는 직원에게 예약했다고 답하세요.','동네 공방에서 도자기 수업을 들으러 왔어요. 접수대에 예약했다고 하세요.'],
+ ["I can't find my phone.",'집을 나서려는데 휴대폰이 안 보여요. 가족에게 말해보세요.','운동을 끝냈는데 가방에 휴대폰이 없어요. 같이 운동한 친구에게 말해보세요.'],
+ ['Is there an ATM?','학교 축제에서 현금이 필요해요. 안내하는 학생에게 ATM이 있는지 물어보세요.','병원에서 현금이 필요해요. 접수 직원에게 ATM이 있는지 물어보세요.'],
+ ['Is breakfast included?','동네 마라톤 참가비에 아침 식사가 포함되는지 물어보세요.','토요일 아침 요가 수업을 신청해요. 아침 식사도 포함인지 물어보세요.'],
+ ['Where do we meet?','친구들과 달리기로 했어요. 어디서 모이는지 물어보세요.','동료들과 점심을 같이 먹기로 했어요. 어디서 만나는지 물어보세요.'],
+ ['What do you recommend?','서점 직원에게 재미있는 책을 추천해달라고 하세요.','친구에게 퇴근 후 들을 만한 음악을 추천해달라고 하세요.'],
+ ['Could you say that again?','온라인 수업 중 소리가 끊겼어요. 선생님께 다시 말해달라고 하세요.','친구가 전화로 현관 비밀번호를 말했는데 못 들었어요. 한 번 더 부탁하세요.'],
+ ['Is this the right bus?','새 직장에 처음 출근해요. 기사님에게 이 버스가 맞는지 물어보세요.','친구가 이사한 집에 가고 있어요. 타려는 버스가 맞는지 물어보세요.'],
+ ['Can we change the date?','동아리 모임 날짜가 시험과 겹쳐요. 날짜를 바꿀 수 있는지 물어보세요.','집들이를 하기로 했는데 일이 생겼어요. 친구에게 날짜를 바꿀 수 있는지 물어보세요.'],
+ ["I'd like to check in.",'동네 달리기 대회 접수대에 도착했어요. 참가 등록을 확인하고 싶다고 하세요.','예약한 행사장 입구예요. 도착 접수를 하고 싶다고 하세요.'],
+ ['Can I leave my bags here?','친구 집에 장 본 짐을 잠깐 두고 싶어요. 가방을 여기 맡겨도 되는지 물어보세요.','운동 수업 직전이에요. 선생님께 가방을 여기 둬도 되는지 물어보세요.'],
+ ['Do I need to pay now?','미술 수업을 신청 중이에요. 지금 결제해야 하는지 물어보세요.','동료가 단체 점심 주문을 받아요. 돈을 지금 내야 하는지 물어보세요.'],
+ ["Does that mean it's free?",'도서관 강좌에 참가비가 없대요. 그러면 무료라는 뜻인지 확인하세요.','동료가 새 소프트웨어는 결제가 필요 없다고 해요. 무료라는 뜻인지 확인하세요.'],
+ ['How do I use this machine?','헬스장에 처음 보는 운동 기구가 있어요. 어떻게 쓰는지 물어보세요.','공용 세탁실에 새 세탁기가 들어왔어요. 사용법을 물어보세요.'],
+ ['How do I get to the hotel?','집 근처 호텔에서 친구 결혼식이 열려요. 그 호텔까지 어떻게 가는지 물어보세요.','동네 호텔에서 회사 행사가 있어요. 동료에게 가는 길을 물어보세요.'],
+ ['Can I ask a question?','선생님 설명 중에 궁금한 게 생겼어요. 질문 하나 해도 되는지 물어보세요.','팀 회의가 끝나기 전이에요. 질문 하나 해도 되는지 물어보세요.'],
+ ["What's going on?",'동료들이 갑자기 한 화면 앞에 모였어요. 무슨 일인지 물어보세요.'],
+ ['When is your birthday?','동아리 달력에 생일을 적고 있어요. 옆 사람에게 생일이 언제인지 물어보세요.'],
+ ['Which one is better?','친구와 발표 자료 표지를 두 개 만들었어요. 어느 게 나은지 물어보세요.'],
+ ['What do you mean?','회의에서 동료의 마지막 말이 모호했어요. 무슨 뜻인지 되물으세요.'],
+ ['What are you doing?','아이 방에서 종이 접는 소리가 들려요. 뭘 하고 있는지 물어보세요.'],
+ ['When do you get off work?','가족을 데리러 가려 해요. 보통 언제 퇴근하는지 물어보세요.'],
+ ['Which one do you want?','보드게임 말을 두 개 내밀며 친구에게 어느 걸 원하는지 물어보세요.'],
+ ['How can I help you?','학교 행사에서 길을 잃은 분에게 어떻게 도와드릴지 물어보세요.'],
+ ['What did you say?','설거지 소리에 가족 말을 놓쳤어요. 방금 뭐라고 했는지 물어보세요.'],
+ ['When can we meet?','공동 과제를 시작해야 해요. 팀원에게 언제 만날 수 있는지 물어보세요.'],
+ ['When are you leaving?','집에 놀러 온 가족을 데려다주려고 해요. 언제 출발할 예정인지 물어보세요.'],
+ ['What should I do?','회사 컴퓨터가 멈췄어요. 옆자리 동료에게 어떻게 하면 좋을지 물어보세요.'],
+ ['Which color do you want?','친구에게 목도리를 떠 주려 해요. 어떤 색을 원하는지 물어보세요.'],
+ ['When did you get here?','도서관에 갔더니 동생이 먼저 공부 중이에요. 언제 왔는지 물어보세요.'],
+ ['Which one should I choose?','회사 교육 강좌가 두 개예요. 동료에게 어느 걸 골라야 할지 물어보세요.'],
+ ['How often do you work out?','사내 운동 모임에서 짝이 된 사람에게 얼마나 자주 운동하는지 물어보세요.'],
+ ['Which way should we go?','동네 공원에서 친구와 달리다가 길이 갈라져요. 어느 쪽으로 갈지 물어보세요.'],
+ ['How long does it take to get there?','새 직장에 다니는 친구에게 거기까지 가는 데 얼마나 걸리는지 물어보세요.']
+])EVERYDAY_CUES.set(en,cues);
+// Small slot changes on familiar patterns are available from the first difficulty.
+for(const [id,en,translation,keys,one,two] of [
+ ['can_i_get','Can I get a copy?','사본 한 부 주실 수 있어요?','copy','회의가 끝났어요. 자료 사본을 한 부 달라고 하세요.','학교 안내문을 잃어버렸어요. 선생님께 사본을 한 부 부탁하세요.'],
+ ['can_i_get','Can I get a receipt?','영수증 좀 받을 수 있어요?','receipt','동네 문구점에서 공책을 샀어요. 영수증을 부탁하세요.','자전거 수리비를 냈어요. 영수증을 받고 싶다고 하세요.'],
+ ['can_you','Can you send me the link?','링크 좀 보내줄래요?','link','온라인 회의에 들어갈 주소가 없어요. 동료에게 링크를 보내달라고 하세요.','친구가 재미있는 영상을 봤대요. 링크를 보내달라고 하세요.'],
+ ['can_you','Can you turn it down?','소리 좀 줄여줄래요?','down','옆방에서 음악 소리가 커요. 소리를 줄여달라고 하세요.','거실에서 가족이 TV를 크게 틀었어요. 소리를 줄여달라고 하세요.'],
+ ['can_i_we','Can I borrow your pen?','펜 좀 빌려도 돼요?','pen','수업 중 필기할 펜이 없어요. 옆자리 친구에게 펜을 빌려도 될지 물어보세요.','회의에서 서명하려고 해요. 동료의 펜을 빌려도 되는지 물어보세요.'],
+ ['do_you_have','Do you have a charger?','충전기 있어요?','charger','동생 집에서 휴대폰 배터리가 부족해요. 충전기가 있는지 물어보세요.','회사에서 이어폰을 충전하려고 해요. 동료에게 충전기가 있는지 물어보세요.'],
+ ['where_is','Where is the remote?','리모컨 어디 있어요?','remote','가족과 TV를 보려는데 리모컨이 안 보여요. 어디 있는지 물어보세요.','회의실에서 화면을 켜려 해요. 동료에게 리모컨이 어디 있는지 물어보세요.'],
+ ['how_much','How much is the class?','수업료가 얼마예요?','class','동네 수영장에 등록하려 해요. 수업료를 물어보세요.','친구가 듣는 기타 수업이 궁금해요. 수업료가 얼마인지 물어보세요.'],
+ ['cant_find',"I can't find my glasses.",'안경을 못 찾겠어요.','glasses','책을 읽으려는데 안경이 없어요. 가족에게 안경을 못 찾겠다고 하세요.','발표를 앞두고 가방을 뒤져요. 동료에게 안경을 못 찾겠다고 하세요.'],
+ ['is_there','Is there a quiet room?','조용한 방이 있어요?','quiet room','도서관에서 소리 내어 녹음해야 해요. 조용한 방이 있는지 물어보세요.','회사에서 온라인 면접을 보려 해요. 조용한 방이 있는지 물어보세요.'],
+ ['is_included','Is delivery included?','배송도 포함돼요?','delivery','중고 책상을 사려 해요. 가격에 배송이 포함되는지 물어보세요.','동네 꽃집에 꽃다발을 주문해요. 배송도 포함인지 확인하세요.'],
+ ['can_we_change','Can we change the time?','우리 시간을 바꿀 수 있어요?','time','운동 약속에 늦을 것 같아요. 친구에게 시간을 바꿀 수 있는지 물어보세요.','팀 회의가 다른 일정과 겹쳐요. 회의 시간을 바꿀 수 있는지 물어보세요.'],
+ ['id_like_to',"I'd like to join the club.",'동아리에 가입하고 싶어요.','join club','학교 사진 동아리 모집 중이에요. 가입하고 싶다고 하세요.','동네 달리기 모임에 처음 나왔어요. 모임에 가입하고 싶다고 하세요.'],
+ ['is_this_right','Is this the right file?','이 파일이 맞아요?','file','발표 자료를 보내기 전이에요. 동료에게 이 파일이 맞는지 확인하세요.','과제 파일을 올리려 해요. 팀원에게 이 파일이 맞는지 물어보세요.'],
+ ['do_i_need_to','Do I need to sign up?','신청해야 해요?','sign up','도서관 낭독회에 가고 싶어요. 미리 신청해야 하는지 물어보세요.','사내 운동 모임에 참여하려고 해요. 신청해야 하는지 물어보세요.'],
+ ['can_i_leave','Can I leave my bike here?','자전거를 여기 둬도 돼요?','bike','친구 집에 자전거를 타고 왔어요. 여기에 둬도 되는지 물어보세요.','공방 입구에서 자전거를 세우려 해요. 여기에 둬도 되는지 물어보세요.'],
+ ['how_do_i_get_to','How do I get to the library?','도서관에는 어떻게 가요?','library','새 학교에서 도서관에 가는 길을 물어보세요.','독서 모임이 동네 도서관에서 열려요. 거기까지 가는 길을 물어보세요.']
+]){
+ const frame=TRAVEL_ALL_FRAMES.find(f=>f.id==='travel_'+id),rule=BASIC_CURRICULUM[id];
+ let index=frame.items.findIndex(ex=>ex.en===en);
+ if(index<0){index=frame.items.length;frame.items.push({en,ko:one});}
+ frame.items[index].keywords=keys.split(' ');if(!rule.core.includes(index))rule.core.push(index);
+ EVERYDAY_CUES.set(en,[one,two]);TRAVEL_KR[en]=translation;
 }
 // Register new short-answer translations for saved mistake practice as well.
 for(const f of TRAVEL_ALL_FRAMES)for(const ex of basicCoreItems(f)||[])if(ex._answerKo&&!TRAVEL_KR[ex.en])TRAVEL_KR[ex.en]=ex._answerKo;
@@ -2854,15 +3005,26 @@ const TRAVEL_INITIAL_IDS=new Set([
   'travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is',
   'travel_how_much','travel_pay_by_card','travel_have_reservation','travel_cant_find','travel_is_there'
 ]);
-const TRAVEL_PROGRESS_ORDER=[...TRAVEL_INITIAL_IDS,
-  'travel_is_included','travel_where_meet','travel_what_recommend','travel_say_again_slowly',
-  'travel_is_this_right','travel_can_we_change','travel_id_like_to','travel_can_i_leave',
-  'travel_do_i_need_to','travel_does_that_mean','travel_how_do_i','travel_how_do_i_get_to','travel_can_i_ask'
+// Each group adds at most two WH forms. Unlocks also need a credit from a
+// different learned expression; reaching a speaking level alone grants none.
+const PRACTICE_BANDS=[
+ {level:1,earned:0,ids:'is_included daily_need daily_can is_this_right daily_like wh_what_is daily_not_sure say_again_slowly daily_lets daily_have_to can_we_change daily_looking_for wh_when_is daily_prefer can_i_leave id_like_to daily_works do_i_need_to daily_way daily_free daily_will'},
+ {level:15,earned:18,ids:'where_meet daily_just wh_which_is daily_usually'},
+ {level:15,earned:22,ids:'what_recommend daily_forgot wh_what_do daily_already'},
+ {level:15,earned:26,ids:'how_do_i does_that_mean wh_what_ing daily_think'},
+ {level:15,earned:30,ids:'how_do_i_get_to can_i_ask wh_how_can daily_going_to'},
+ {level:15,earned:34,ids:'wh_which_do daily_depends wh_when_can'},
+ {level:35,earned:38,ids:'wh_when_do daily_rather wh_what_did'},
+ {level:35,earned:41,ids:'wh_when_ing daily_used_to wh_what_should'},
+ {level:35,earned:44,ids:'wh_which_want daily_mean_to wh_when_did'},
+ {level:35,earned:47,ids:'wh_which_should daily_hoping wh_how_often'},
+ {level:35,earned:50,ids:'wh_which_way daily_ended_up wh_how_long'}
 ];
-// Alternate established expressions with everyday questions, then increase complexity.
-const TRAVEL_GRADUAL_QUESTION_IDS=new Set(DAILY_QUESTIONS.map(([id])=>'travel_'+id).filter(id=>!TRAVEL_INITIAL_IDS.has(id)));
-const everydayIds=[...TRAVEL_GRADUAL_QUESTION_IDS].filter(id=>!TRAVEL_PROGRESS_ORDER.includes(id));
-everydayIds.forEach((id,index)=>TRAVEL_PROGRESS_ORDER.splice(12+2*index,0,id));
+const TRAVEL_FRAME_BANDS=new Map();
+for(const band of PRACTICE_BANDS)for(const id of band.ids.split(' '))TRAVEL_FRAME_BANDS.set('travel_'+id,band);
+const TRAVEL_PROGRESS_ORDER=[...TRAVEL_INITIAL_IDS,...TRAVEL_FRAME_BANDS.keys()];
+const TRAVEL_QUESTION_IDS=new Set(TRAVEL_FRAMES.filter(f=>/^(?:when|how|which|what|where)\b/i.test(f.frame)).map(f=>f.id));
+const TRAVEL_GRADUAL_QUESTION_IDS=new Set([...TRAVEL_QUESTION_IDS].filter(id=>!TRAVEL_INITIAL_IDS.has(id)));
 
 const TRAVEL_BY_ID=(function(){ const m={}; TRAVEL_ALL_FRAMES.forEach(f=>m[f.id]=f); return m; })();
 
@@ -3156,7 +3318,7 @@ function travelAnswerAlternatives(it){
 function travelMeaningNorm(text){
   return adNorm(text).replace(/\b(?:excuse me|please|thank you|thanks)\b/g,' ')
     .replace(/\b(?:there s|theres)\b/g,'there is').replace(/\bwhere s\b/g,'where is').replace(/\bwhat s\b/g,'what is')
-    .replace(/\b(?:do not|don t)\b/g,'dont').replace(/\b(?:can not|can t)\b/g,'cant')
+    .replace(/\b(?:did not|didn t)\b/g,'didnt').replace(/\b(?:do not|don t)\b/g,'dont').replace(/\b(?:can not|can t)\b/g,'cant')
     .replace(/\b(?:is not|isn t)\b/g,'isnt').replace(/\b(?:are not|aren t)\b/g,'arent')
     .replace(/\bmore slowly\b/g,'slowly').replace(/\b(?:one more|extra)\b/g,'another').replace(/\b(?:bathroom|washroom)\b/g,'restroom')
     .replace(/\bbooking\b/g,'reservation').replace(/\bcab\b/g,'taxi').replace(/\bwi fi\b/g,'wifi')
@@ -3165,7 +3327,7 @@ function travelMeaningNorm(text){
 }
 function travelMeaningGuard(expected,heard){
   const words=t=>travelMeaningNorm(t).split(' '), a=words(expected),b=words(heard);
-  const neg=w=>/^(?:not|no|never|cant|dont|doesnt|isnt|arent|wont|cannot|couldnt|shouldnt|unable)$/.test(w);
+  const neg=w=>/^(?:not|no|never|cant|dont|didnt|doesnt|isnt|arent|wont|cannot|couldnt|shouldnt|unable)$/.test(w);
   if(a.some(neg)!==b.some(neg))return false;
   const numeric=w=>/^(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/.test(w);
   for(const modifier of ['child','kids','hot','iced','bigger','smaller','cheaper','another','more','less','slowly','not','only','last','next','nearest'])if(a.includes(modifier)&&!b.includes(modifier))return false;

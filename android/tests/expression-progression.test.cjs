@@ -94,13 +94,13 @@ test('legacy introduced or previously studied expressions remain open without ex
 });
 
 test('reload and sync union retain distinct earned sources idempotently while keeping progress profile-scoped',()=>{
- const a=setup(),b=setup();repeat(a,'travel_can_i_get',4,'partial-fast','device-a');repeat(b,'travel_can_you',4,'full-fast','device-b');const snapshot=plain(b.run('supportCollect()'));assert.ok(snapshot[PROGRESS]);a.context.snapshot=snapshot;a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot);learningProgressRefresh()');assert.equal(ids(a).length,12);assert.equal(a.run('Object.keys(learningProgressRefresh().earned).length'),2);assert.deepEqual(Array.from(a.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included','travel_where_meet']);
+ const a=setup(),b=setup();repeat(a,'travel_can_i_get',4,'partial-fast','device-a');repeat(b,'travel_can_you',4,'full-fast','device-b');const snapshot=plain(b.run('supportCollect()'));assert.ok(snapshot[PROGRESS]);a.context.snapshot=snapshot;a.run('supportApplySnapshot(snapshot);supportApplySnapshot(snapshot);learningProgressRefresh()');assert.equal(ids(a).length,12);assert.equal(a.run('Object.keys(learningProgressRefresh().earned).length'),2);assert.deepEqual(Array.from(a.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included','travel_daily_need']);
  const restored=setup(Object.fromEntries(a.records));assert.equal(ids(restored).length,12);assert.equal(score(restored,'travel_can_i_get'),8);assert.equal(score(restored,'travel_can_you'),8);const other=restored.run(`learningProfileCreate('진도 없는 학습자')`);restored.run(`learningProfileSwitch(${JSON.stringify(other)})`);assert.equal(ids(restored).length,10);assert.equal(score(restored),0);restored.context.snapshot=snapshot;assert.equal(restored.run(`supportApplySnapshot(snapshot,'legacy')`),false);assert.equal(ids(restored).length,10);restored.run(`learningProfileSwitch('legacy')`);assert.equal(ids(restored).length,12);
 });
 
 test('earning one source at a time opens the curriculum in order, with no more than two pending new question forms',()=>{
  const h=setup(),order=Array.from(h.run('TRAVEL_PROGRESS_ORDER.slice(10)'));
- assert.deepEqual(order.filter(id=>LATER.includes(id)),LATER);
+ assert.deepEqual(order.filter(id=>LATER.includes(id)).sort(),[...LATER].sort());
  for(const expected of order){
   const before=ids(h),earned=plain(h.run('learningProgressRefresh().earned'));
   const source=before.find(id=>h.run('TRAVEL_GRADUAL_QUESTION_IDS').has(id)&&!earned[id])||before.find(id=>!earned[id]);
@@ -109,7 +109,7 @@ test('earning one source at a time opens the curriculum in order, with no more t
   assert.deepEqual(after.filter(id=>!before.includes(id)),[expected]);
   assert.ok(after.filter(id=>h.run('TRAVEL_GRADUAL_QUESTION_IDS').has(id)&&!h.run('learningProgressRefresh().earned')[id]).length<=2);
  }
- assert.equal(ids(h).length,41);repeat(h,'travel_can_i_get',8,'full-fast','done');assert.equal(ids(h).length,41);
+ assert.equal(ids(h).length,65);repeat(h,'travel_can_i_get',8,'full-fast','done');assert.equal(ids(h).length,65);
  assert.equal(h.run('travelBuildItems(100).some(item=>TRAVEL_STAGE2_IDS.has(item.frame.id))'),false);
 });
 
@@ -170,14 +170,17 @@ test('ten-question routines adapt the number of genuinely new sentences and pres
  }
 });
 
-test('a bank of old unlock credits permits only two outstanding question forms, and unlimited legacy access still introduces at most two per session',()=>{
- const h=setup();
- h.run('hSet(EXPRESSION_PROGRESS,{earned:Object.fromEntries([...TRAVEL_INITIAL_IDS].map(id=>[id,true]))})');
+test('banked credits and previously open advanced questions respect beginner pacing in automatic lessons',()=>{
+ const h=setup();h.run('hSet(EXPRESSION_PROGRESS,{earned:Object.fromEntries([...TRAVEL_INITIAL_IDS].map(id=>[id,true]))})');
  const pending=()=>Array.from(h.run('learningAvailableFrames().filter(f=>TRAVEL_GRADUAL_QUESTION_IDS.has(f.id)&&!learningProgressRefresh().earned[f.id]).map(f=>f.id)'));
- const first=pending();assert.equal(first.length,2);
- repeat(h,first[0],3,'partial-fast','first-question');assert.ok(pending().length<=2);
- const allLegacy=setup();allLegacy.run('hSet(EXPRESSION_PROGRESS,{legacy:Object.fromEntries([...TRAVEL_GRADUAL_QUESTION_IDS].map(id=>[id,true]))})');
- assert.equal(allLegacy.run('new Set(travelBuildItems(30).map(it=>it.frame.id).filter(id=>TRAVEL_GRADUAL_QUESTION_IDS.has(id))).size'),2);
+ assert.deepEqual(pending(),['travel_wh_what_is']);repeat(h,pending()[0],3,'partial-fast','first-question');assert.ok(pending().length<=1);
+ const legacy=setup();legacy.run('hSet(EXPRESSION_PROGRESS,{legacy:Object.fromEntries([...TRAVEL_GRADUAL_QUESTION_IDS].map(id=>[id,true]))})');
+ for(let i=0;i<40;i++){
+  const picked=Array.from(legacy.run('travelBuildItems(10).map(it=>it.frame.id)')),wh=legacy.run('TRAVEL_QUESTION_IDS');
+  assert.equal(picked.length,10);assert.ok(picked.filter(id=>wh.has(id)).length<=2);
+  assert.ok(picked.every(id=>INITIAL.includes(id)||['travel_wh_what_is','travel_wh_when_is'].includes(id)));
+ }
+ assert.equal(legacy.run("travelBuildItems(10,travelPoolOf(['travel_wh_how_long'])).every(it=>it.frame.id==='travel_wh_how_long')"),true);
 });
 
 test('established sentence mastery opens new material after two verified quick recalls even before the expression average reaches six',()=>{
@@ -189,5 +192,72 @@ test('established sentence mastery opens new material after two verified quick r
   seeded.answer(fid,'verified2',kind);assert.equal(score(seeded,fid),4);
   assert.equal(seeded.run('learningSentenceMastery(basicStarterItem(TRAVEL_BY_ID.travel_can_i_get).en).score'),56);
   assert.equal(ids(seeded).length,11);
+ }
+});
+
+test('question forms are gated by both speaking level and breadth; each intermediate or advanced milestone introduces a pair',()=>{
+ const h=setup();
+ const bands=plain(h.run('PRACTICE_BANDS.map(b=>({level:b.level,earned:b.earned,wh:b.ids.split(" ").map(id=>"travel_"+id).filter(id=>TRAVEL_QUESTION_IDS.has(id))}))'));
+ assert.equal(bands[0].wh.join(','),'travel_wh_what_is,travel_wh_when_is');
+ assert.ok(bands.slice(1).every(b=>b.wh.length===2&&b.earned>=18));
+ for(const b of bands.slice(1))for(const id of b.wh){
+  h.context.id=id;
+  assert.equal(h.run('learningBandOpen(id,'+(b.level-1)+',65)'),false);
+  assert.equal(h.run('learningBandOpen(id,60,'+(b.earned-1)+')'),false);
+  assert.equal(h.run('learningBandOpen(id,'+b.level+','+b.earned+')'),true);
+ }
+ for(const level of [1,15,35]){
+  // Even a returning learner with all frames unlocked and introduced gets a balanced automatic session.
+  h.run('{const d=alGet();d.speak='+level+';alSave(d);hSet(EXPRESSION_PROGRESS,{earned:Object.fromEntries(TRAVEL_PROGRESS_ORDER.map(id=>[id,true])),unlocked:Object.fromEntries(TRAVEL_PROGRESS_ORDER.map(id=>[id,true]))});travelSave(Object.fromEntries(TRAVEL_PROGRESS_ORDER.map(id=>[id,{introduced:true,seen:1}])))}');
+  const allowed=level===1?2:level===15?3:4;
+  const draws=plain(h.run('Array.from({length:30},()=>travelBuildItems(10).map(it=>it.frame.id))'));
+  assert.ok(draws.every(ids=>ids.length===10&&ids.filter(id=>h.run('TRAVEL_QUESTION_IDS').has(id)).length<=allowed));
+  assert.ok(draws.flat().every(id=>h.run('learningBandOpen('+JSON.stringify(id)+','+level+',65)')));
+ }
+});
+
+test('every starter can be used in different situations and everyday replies keep the same grading target',()=>{
+ const h=setup();
+ const problems=plain(h.run("TRAVEL_FRAMES.flatMap(f=>{const ex=basicStarterItem(f),cues=new Set([ex.ko,...(EVERYDAY_CUES.get(ex.en)||[])]);return cues.size<2?[f.id]:[]})"));
+ assert.deepEqual(problems,[]);
+ assert.equal(h.run('DAILY_REPLIES.length'),24);
+ const problemsInReplies=plain(h.run("DAILY_REPLIES.flatMap(([id,,,,examples])=>examples.flatMap(([en,ko,keys,one,two])=>{const frame=TRAVEL_BY_ID['travel_'+id],ex=frame.items.find(ex=>ex.en===en),good=travelGrade({frame,ex},en);return one!==two&&travelKrOf(en)===ko&&good.ok&&good.blockHit?[]:[en]}))"));
+ assert.deepEqual(problemsInReplies,[]);
+});
+
+test('the normal drill rotates actual cues across encounters and reload, with one sentence mastery record and a stable cue on recall',()=>{
+ const first=setup();
+ function play(h){
+  h.run('startDrill(travelBuildItems(1,[TRAVEL_BY_ID.travel_can_you]),"골라서 연습")');
+  const cue=h.run('autoDrill.items[0].ex.ko'),en=h.run('autoDrill.items[0].ex.en');
+  assert.equal(en,'Can you open the door?');
+  h.run('autoDrillRender(true)');assert.equal(h.run('autoDrill.items[0].ex.ko'),cue);
+  h.run('autoDrillFinish(autoDrill.items[0].ex.en,{typed:true})');return cue;
+ }
+ const a=play(first);
+ const restored=setup(Object.fromEntries(first.records));
+ // Select the same English sentence deliberately for this encounter.
+ restored.run('const same=basicStarterItem(TRAVEL_BY_ID.travel_can_you);startDrill([{_varyCue:true,frame:TRAVEL_BY_ID.travel_can_you,ex:same}],"골라서 연습")');
+ const b=restored.run('autoDrill.items[0].ex.ko');assert.notEqual(a,b);
+ restored.run('autoDrillFinish(autoDrill.items[0].ex.en,{typed:true})');
+ assert.equal(restored.run('learningSentenceMastery("Can you open the door?").seen'),2);
+ assert.equal(restored.run('Object.keys(learningMasteryRows()).length'),1);
+ assert.deepEqual(Array.from(restored.run('supportEvents().map(e=>e.ko)')),[a,b]);
+});
+
+test('an old unlock for a deferred form does not consume the only credit for an accessible everyday expression',()=>{
+ const h=setup();
+ h.run("hSet(EXPRESSION_PROGRESS,{earned:{travel_can_i_get:true},unlocked:{travel_wh_how_often:true}})");
+ const progress=plain(h.run('learningProgressRefresh()'));
+ assert.equal(progress.unlocked.travel_wh_how_often,true);assert.equal(progress.unlocked.travel_is_included,true);
+ assert.equal(h.run('travelBuildItems(30).some(it=>it.frame.id==="travel_wh_how_often")'),false);
+});
+test('long automatic routines spread question forms across ten-question blocks, including the shorter last block',()=>{
+ const h=setup();h.run('travelSave(Object.fromEntries([...TRAVEL_INITIAL_IDS].map(id=>[id,{introduced:true,seen:1}])))');
+ for(let i=0;i<20;i++){
+  const wh=Array.from(h.run('travelBuildItems(25).map(it=>TRAVEL_QUESTION_IDS.has(it.frame.id))'));
+  assert.equal(wh.length,25);
+  assert.ok(wh.slice(0,10).filter(Boolean).length<=2);assert.ok(wh.slice(10,20).filter(Boolean).length<=2);
+  assert.ok(wh.slice(20).filter(Boolean).length<=1);
  }
 });
