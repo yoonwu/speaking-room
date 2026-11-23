@@ -1,0 +1,76 @@
+{
+  "format": 1,
+  "bridgeVersion": 1,
+  "minimumNativeVersion": 19,
+  "revision": "96a30248099078f878823b5df0da16c5814689cd",
+  "files": {
+    "android-native.js": {
+      "size": 4306,
+      "sha256": "6acfcba2df5a24b84e9d05311082c37cf305364e3513d02bb507f53f8657417b"
+    },
+    "home-support.js": {
+      "size": 72682,
+      "sha256": "37396d5ed27c4d8d8e199bfc7084e9e9f4eb50a5799b88e526086e365138a501"
+    },
+    "icon-192.png": {
+      "size": 662580,
+      "sha256": "64a27398f3db20b3d52778607fdf466b10e08a88b6424abca02d2f0586690a88"
+    },
+    "icon-512.png": {
+      "size": 662580,
+      "sha256": "64a27398f3db20b3d52778607fdf466b10e08a88b6424abca02d2f0586690a88"
+    },
+    "icon-maskable-512.png": {
+      "size": 662580,
+      "sha256": "64a27398f3db20b3d52778607fdf466b10e08a88b6424abca02d2f0586690a88"
+    },
+    "index.html": {
+      "size": 4683,
+      "sha256": "a47e716b6552c545f29a26d413b3bf5184e86548b1e145c15bb85926d58471eb"
+    },
+    "manifest.webmanifest": {
+      "size": 582,
+      "sha256": "ca57ad289fccf29444c1b85aea351492bdaeecf42c5f8f20bd58a72665a510aa"
+    },
+    "mascot-cheer.png": {
+      "size": 650420,
+      "sha256": "1b3bb02a023ed7f0ce2c9794abdf0e2650430579e96aace123d5b32b5b201deb"
+    },
+    "mascot-guide.png": {
+      "size": 598384,
+      "sha256": "182cc93896c2fb39d0b40514ef0e4ddb08eb350e70be7f022ce768cd3670dff2"
+    },
+    "mascot-listen.png": {
+      "size": 618471,
+      "sha256": "b222c8bad056c86be3cdca17153f3fe57fd1d46955eb7fda8b78bfa4dbf55f5d"
+    },
+    "mascot-welcome.png": {
+      "size": 665074,
+      "sha256": "434caab72f7d330d5dabd25ed01318cd905fde4d0611201d4eb6aae964cd3a5c"
+    },
+    "practice-ai.js": {
+      "size": 12200,
+      "sha256": "4ec476433b68cc9cd72d47c92df6500f414c8442c79126cce6a44d6060a36f36"
+    },
+    "practice-data.js": {
+      "size": 505372,
+      "sha256": "12507910cf8b940fb93c92733b5631cc0cd51e07e33c06e88b20d05db26c53bb"
+    },
+    "practice-session.js": {
+      "size": 7377,
+      "sha256": "68885799a6ef8f6b19475e501a68b77dcf105090df43cc4a6a6a9d5f6de7769f"
+    },
+    "practice.css": {
+      "size": 2795978,
+      "sha256": "9d12b2c245a025878517c89e10f113d503fdfa9e07579ced00232703f8063e26"
+    },
+    "practice.js": {
+      "size": 65436,
+      "sha256": "90429dfa2217012aaf28f307a5128c50ca6fb8c704a3b8b97b273cc81f4ed08e"
+    },
+    "privacy.html": {
+      "size": 7138,
+      "sha256": "155ee7f19ff3d94703e37b7d55c071523835be949f6612f2d960c5e90c3a6004"
+    }
+  }
+}
