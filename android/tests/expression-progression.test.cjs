@@ -303,8 +303,11 @@ test('past actions and clarifications open gradually from short chunks to two sp
  for(const fid of ['travel_daily_put','travel_daily_choice']){
   h.context.fid=fid;
   const pool=count=>plain(h.run('learningEligibleItems(TRAVEL_BY_ID[fid],{},{n:60,events:Array.from({length:'+count+'},()=>({fid,curriculumTier:1,structureRating:30}))}).map(ex=>ex.en)'));
-  assert.deepEqual(pool(2),[h.run('basicStarterItem(TRAVEL_BY_ID[fid]).en')]);
-  assert.equal(pool(3).length,3);
+  const short=pool(2),all=pool(3);
+  assert.ok(short.includes(h.run('basicStarterItem(TRAVEL_BY_ID[fid]).en')));
+  assert.ok(short.length>=3 && short.every(en=>all.includes(en)));
+  const detail=fid==='travel_daily_put'?'I put it on the table.':'Is it online or in person?';
+  assert.ok(!short.includes(detail));assert.ok(all.includes(detail));assert.equal(all.length,8);
  }
 });
 
@@ -325,4 +328,27 @@ test('everyday grading recognizes the spoken structure separately from the reque
    const result=grade(heard);assert.equal(result.ok,ok,heard);assert.equal(result.blockHit,structure,heard);
   }
  }
+});
+
+test('each everyday frame offers five new gradable word choices with distinct cues, word meanings and a path into practice',()=>{
+ const h=setup(),frames=['sent','confirm_right','checked','went','put','mean','choice'].map(id=>'travel_daily_'+id);
+ const cases=plain(h.run('DAILY_REPLIES.filter(([id])=>'+JSON.stringify(frames)+'.includes("travel_"+id)).map(([id,,,,rows])=>({fid:"travel_"+id,rows}))'));
+ assert.equal(cases.length,7);
+ const allCues=new Set();
+ for(const {fid,rows} of cases){
+  assert.equal(rows.length,8);assert.equal(new Set(rows.map(r=>r[2])).size,8);
+  h.context.fid=fid;
+  const pool=plain(h.run('learningEligibleItems(TRAVEL_BY_ID[fid],{},{n:35,events:Array.from({length:3},()=>({fid,structureRating:30,curriculumTier:1}))}).map(ex=>ex.en)'));
+  for(const [en,,keywords,first,second] of rows.slice(3)){
+   assert.ok(pool.includes(en),en);
+   for(const cue of [first,second]){assert.ok(cue.length>15 && !allCues.has(cue),cue);allCues.add(cue);}
+   h.context.en=en;h.context.keywords=keywords;
+   assert.equal(h.run('keywords.split(" ").every(w=>!!FREQ_DICT[w])'),true,en);
+   assert.deepEqual(plain(h.run('EVERYDAY_CUES.get(en)')),[first,second]);
+   const other=rows.find(r=>r[0]!==en)[0];h.context.other=other;
+   const hits=plain(h.run('(()=>{const frame=TRAVEL_BY_ID[fid],ex=frame.items.find(ex=>ex.en===en);return [en,other].map(answer=>{const g=travelGrade({frame,ex},answer);return [g.ok,g.blockHit];});})()'));
+   assert.deepEqual(hits,[[true,true],[false,true]],en);
+  }
+ }
+ assert.equal(allCues.size,70);
 });
