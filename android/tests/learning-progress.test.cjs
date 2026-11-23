@@ -204,7 +204,7 @@ test('same earned source on devices with different legacy availability merges wi
 
 test('growth shows current expression scores and split timing while retaining full-sentence mastery as a separate record',()=>{
  const h=setup();h.run(`hSet(featureGuideKey('growth'),true);const frame=TRAVEL_BY_ID.travel_can_i_get,it={frame,ex:basicStarterItem(frame),_intro:false},meta={timingVersion:2,tapMs:2800,speechStartDelayMs:1400,tapWithinThreeSeconds:true,speechWithinOnePointFiveSeconds:true,responseMs:4200,withinThreeSeconds:true,speedEligible:true};for(let i=0;i<4;i++)answer(it.ex.en,'expression-'+i,{it,ok:false,perfect:false,expressionOnly:true,meta});openGrowth();`);
- const html=h.elements.get('#sheetContent').innerHTML;assert.match(html,/id="expressionProgress"/);assert.match(html,/표현 익숙함 8\.0 \/ 10/);assert.match(html,/1<small>개 표현이 익숙해졌어요 · 11 \/ 65개 열림/);assert.match(html,/3초 안에 마이크를 누르고/);assert.match(html,/1\.5초 안에 말을 시작/);assert.match(html,/id="fullyLearnedSentences"/);assert.equal(h.run('learningLearnedSentences().length'),0);assert.equal(h.run('supportStats().automatic'),1);
+ const html=h.elements.get('#sheetContent').innerHTML;assert.match(html,/id="expressionProgress"/);assert.match(html,/표현 익숙함 8\.0 \/ 10/);assert.match(html,/1<small>개 표현이 익숙해졌어요 · 11 \/ 72개 열림/);assert.match(html,/3초 안에 마이크를 누르고/);assert.match(html,/1\.5초 안에 말을 시작/);assert.match(html,/id="fullyLearnedSentences"/);assert.equal(h.run('learningLearnedSentences().length'),0);assert.equal(h.run('supportStats().automatic'),1);
 });
 
 test('an initially correct answer can earn one separate five-XP retry bonus while further successes and duplicate delivery earn none',()=>{

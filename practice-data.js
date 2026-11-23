@@ -2824,6 +2824,34 @@ const DAILY_QUESTIONS=[
 ];
 // Each reply has a short target, a Korean answer and two independent speaking cues.
 const DAILY_REPLIES=[
+ ['daily_sent','I sent ~.','~을 보냈어요.',/^i sent\b/,[
+  ['I sent the photo.','사진을 보냈어요.','photo','친구가 어제 같이 찍은 사진을 보내 줄 수 있냐고 해요. 사진을 보냈다고 알려주세요.','가족이 수리 기사에게 고장 난 곳을 보여 줬냐고 해요. 사진을 보냈다고 하세요.'],
+  ['I sent the link.','링크를 보냈어요.','link','친구가 같이 볼 영상이 어디 있냐고 해요. 링크를 보냈다고 하세요.','동료가 온라인 회의에 어떻게 들어가냐고 해요. 링크를 보냈다고 하세요.'],
+  ['I sent the file.','파일을 보냈어요.','file','동료가 발표 자료를 기다리고 있어요. 파일을 보냈다고 하세요.','친구가 인쇄할 초대장을 달라고 해요. 파일을 보냈다고 하세요.']]],
+ ['daily_confirm_right','~, right?','~ 맞죠?',/^(?!(?:that s|that is|on the|to the) right$)(?:(?:this|that|next|last|the|at|on|in|your|my) .+|today|tomorrow|here|there|monday|tuesday|wednesday|thursday|friday|saturday|sunday) right$/,[
+  ['This one, right?','이거 맞죠?','this one','동생이 충전기 하나를 가져다 달래요. 손에 든 걸 보여 주며 이거 맞냐고 확인하세요.','친구가 단체 사진을 골랐어요. 화면에 뜬 사진을 가리키며 이거 맞냐고 확인하세요.'],
+  ['This Friday, right?','이번 금요일 맞죠?','this friday','친구와 저녁 약속을 잡았어요. 만나는 날이 이번 금요일인지 확인하세요.','선생님이 숙제 마감일을 알려 줬어요. 이번 금요일이 맞는지 확인하세요.'],
+  ['At noon, right?','정오에, 맞죠?','noon','점심에 만나기로 했어요. 딱 낮 열두 시에 만나는 게 맞는지 확인하세요.','동료와 자리를 교대하기로 했어요. 교대 시간이 정오가 맞는지 확인하세요.']]],
+ ['daily_checked','I checked ~.','~을 확인했어요.',/^i checked\b/,[
+  ['I checked the time.','시간을 확인했어요.','time','동생이 왜 시계를 봤냐고 물어요. 시간을 확인했다고 하세요.','회의 중에 휴대폰을 본 이유를 물어요. 시간을 확인했다고 하세요.'],
+  ['I checked the weather.','날씨를 확인했어요.','weather','산책 전에 친구가 비 예보를 봤냐고 물어요. 날씨를 확인했다고 하세요.','소풍 짐을 싸면서 가족이 내일 날씨를 알아봤냐고 해요. 날씨를 확인했다고 하세요.'],
+  ['I checked my email.','이메일을 확인했어요.','email','동료가 메일함을 봤냐고 물어요. 내 이메일을 확인했다고 하세요.','수업 공지가 메일로 왔을 거라고 해요. 내 이메일을 확인했다고 하세요.']]],
+ ['daily_went','I went to ~.','~에 다녀왔어요.',/^i went to\b/,[
+  ['I went to the park.','공원에 다녀왔어요.','park','친구가 주말에 어디 갔냐고 해요. 공원에 다녀왔다고 하세요.','가족이 강아지랑 어디를 걸었냐고 해요. 공원에 다녀왔다고 하세요.'],
+  ['I went to the bank.','은행에 다녀왔어요.','bank','점심시간에 어디 다녀왔냐고 동료가 물어요. 은행에 갔다 왔다고 하세요.','동생이 현금을 어디서 찾았냐고 해요. 은행에 다녀왔다고 하세요.'],
+  ['I went to the store.','가게에 다녀왔어요.','store','우유를 들고 오자 가족이 어디 갔었냐고 물어요. 가게에 다녀왔다고 하세요.','친구가 방금 어디서 건전지를 사 왔냐고 해요. 가게에 다녀왔다고 하세요.']]],
+ ['daily_put','I put it ~.','그걸 ~에 뒀어요.',/^i put it\b/,[
+  ['I put it here.','여기에 뒀어요.','here','가족이 리모컨을 어디 뒀냐고 해요. 옆자리를 가리키며 여기에 뒀다고 하세요.','친구가 빌려준 펜을 찾아요. 눈앞의 자리를 가리키며 여기에 뒀다고 하세요.'],
+  ['I put it on the table.','탁자 위에 뒀어요.','on table','가족이 우편물을 찾고 있어요. 탁자 위에 뒀다고 하세요.','보드게임을 하려는데 친구가 주사위를 찾아요. 탁자 위에 뒀다고 하세요.',2],
+  ['I put it in your bag.','네 가방 안에 뒀어.','in your bag','동생이 자기 도시락을 찾아요. 동생 가방 안에 넣어 뒀다고 하세요.','친구가 빌려준 책을 어디 뒀냐고 해요. 친구 가방 안에 넣어 뒀다고 하세요.',2]]],
+ ['daily_mean','Do you mean ~?','~을 말하는 거예요?',/^(?:do you mean|you mean)\b/,[
+  ['Do you mean this bag?','이 가방 말하는 거예요?','this bag','동생이 가방을 가져다 달래요. 손에 든 이 가방을 말하는 건지 물어보세요.','친구가 가방이 예쁘다고 해요. 옆에 있는 이 가방을 말하는 건지 물어보세요.'],
+  ['Do you mean this Friday?','이번 금요일 말하는 거예요?','this friday','친구가 금요일에 보자고 해요. 이번 금요일을 말하는 건지 물어보세요.','동료가 금요일까지 자료를 달래요. 이번 금요일을 뜻하는지 물어보세요.'],
+  ['Do you mean my phone?','제 휴대폰 말하는 거예요?','my phone','동료가 휴대폰을 잠깐 빌릴 수 있냐고 해요. 내 휴대폰을 말하는 건지 물어보세요.','집에서 전화기가 울린다고 해요. 내 휴대폰을 말하는 건지 물어보세요.']]],
+ ['daily_choice','Is it ~ or ~?','~예요, 아니면 ~예요?',/^is it (?!or\b).+ or (?!or\b).+$/,[
+  ['Is it tea or coffee?','차예요, 커피예요?','tea coffee','친구가 보온병을 건네요. 안에 든 게 차인지 커피인지 물어보세요.','카페에서 시음용 잔을 받았어요. 차인지 커피인지 물어보세요.'],
+  ['Is it today or tomorrow?','오늘이에요, 내일이에요?','today tomorrow','친구가 생일 모임에 늦지 말래요. 모임이 오늘인지 내일인지 물어보세요.','안내문에서 신청 마감 날짜가 지워졌어요. 마감이 오늘인지 내일인지 물어보세요.',2],
+  ['Is it online or in person?','온라인이에요, 직접 만나는 거예요?','online in person','독서 모임에 처음 참여해요. 온라인으로 하는지 직접 만나는지 물어보세요.','면접 일정이 잡혔어요. 화상인지 직접 가야 하는지 물어보세요.',2]]],
  ['daily_need','I need ~.','~이 필요해요.',/^i need\b/,[
   ['I need a minute.','잠깐 시간이 필요해요.','minute','회의에서 바로 의견을 물어요. 생각할 시간을 잠깐 달라고 해보세요.','친구가 이제 나갈 수 있냐고 물어요. 준비할 시간이 잠깐 필요하다고 하세요.'],
   ['I need some help.','도움이 좀 필요해요.','help','무거운 상자를 들고 있어요. 가족에게 도움이 필요하다고 하세요.','새 프로그램을 처음 써요. 옆자리 동료에게 도움을 구해보세요.']]],
@@ -2899,8 +2927,8 @@ const DAILY_REPLIES=[
 ];
 const EVERYDAY_CUES=new Map();
 const replyFrames=DAILY_REPLIES.map(([id,pattern,meaning,structure,rows])=>[id,pattern,meaning,structure,
-  rows.map(([en,translation,keywords,first,second])=>{
-    EVERYDAY_CUES.set(en,[first,second]);return [en,first,translation,keywords];
+  rows.map(([en,translation,keywords,first,second,tier])=>{
+    EVERYDAY_CUES.set(en,[first,second]);return [en,first,translation,keywords,tier];
   })]);
 for(const [id,pattern,meaning,structure,examples] of [...DAILY_QUESTIONS,...replyFrames]){
   let frame=TRAVEL_ALL_FRAMES.find(f=>f.id==='travel_'+id);
@@ -2909,11 +2937,11 @@ for(const [id,pattern,meaning,structure,examples] of [...DAILY_QUESTIONS,...repl
     TRAVEL_ALL_FRAMES.push(frame);
     BASIC_CURRICULUM[id]={starter:0,core:[],complex:[],tip:meaning};
   }
-  for(const [en,ko,answerKo,keywords] of examples){
+  for(const [en,ko,answerKo,keywords,tier=1] of examples){
     let index=frame.items.findIndex(item=>item.en===en);
     if(index<0){index=frame.items.length;frame.items.push({en,ko});}
     frame.items[index].keywords=keywords?keywords.split(' '):[];
-    if(!BASIC_CURRICULUM[id].core.includes(index))BASIC_CURRICULUM[id].core.push(index);
+    if(tier===1&&!BASIC_CURRICULUM[id].core.includes(index))BASIC_CURRICULUM[id].core.push(index);
     TRAVEL_KR[en]=answerKo;
   }
 }
@@ -3009,13 +3037,13 @@ const TRAVEL_INITIAL_IDS=new Set([
 // Each group adds at most two WH forms. Unlocks also need a credit from a
 // different learned expression; reaching a speaking level alone grants none.
 const PRACTICE_BANDS=[
- {level:1,earned:0,ids:'is_included is_this_right daily_like wh_what_is daily_not_sure say_again_slowly daily_lets daily_have_to can_we_change daily_looking_for wh_when_is daily_prefer can_i_leave id_like_to daily_works do_i_need_to daily_way daily_free daily_will pay_by_card have_reservation'},
- {level:15,earned:18,ids:'where_meet daily_just wh_which_is daily_usually'},
- {level:15,earned:22,ids:'what_recommend daily_forgot wh_what_do daily_already'},
+ {level:1,earned:0,ids:'is_included is_this_right daily_like daily_sent wh_what_is daily_not_sure say_again_slowly daily_lets daily_confirm_right daily_have_to can_we_change daily_looking_for wh_when_is daily_prefer can_i_leave id_like_to daily_works daily_checked do_i_need_to daily_way daily_free daily_will pay_by_card have_reservation'},
+ {level:15,earned:18,ids:'where_meet daily_went daily_just wh_which_is daily_usually'},
+ {level:15,earned:22,ids:'what_recommend daily_forgot daily_put wh_what_do daily_already'},
  {level:15,earned:26,ids:'how_do_i does_that_mean wh_what_ing daily_think'},
- {level:15,earned:30,ids:'how_do_i_get_to can_i_ask wh_how_can daily_going_to'},
+ {level:15,earned:30,ids:'how_do_i_get_to can_i_ask daily_mean wh_how_can daily_going_to'},
  {level:15,earned:34,ids:'wh_which_do daily_depends wh_when_can'},
- {level:35,earned:38,ids:'wh_when_do daily_rather wh_what_did'},
+ {level:35,earned:38,ids:'wh_when_do daily_rather daily_choice wh_what_did'},
  {level:35,earned:41,ids:'wh_when_ing daily_used_to wh_what_should'},
  {level:35,earned:44,ids:'wh_which_want daily_mean_to wh_when_did'},
  {level:35,earned:47,ids:'wh_which_should daily_hoping wh_how_often'},
