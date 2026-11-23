@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.9.3", APP_BUILD="2026-11-23";
+const APP_VERSION="v4.10.0", APP_BUILD="2026-11-23";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);

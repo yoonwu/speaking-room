@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'../..'),PROGRESS='speakingroom:expression_progress_v1';
-const INITIAL=['daily_need','daily_can','can_i_get','can_you','can_i_we','do_you_have','where_is','how_much','cant_find','is_there'].map(id=>'travel_'+id);
-const LATER=['is_included','where_meet','what_recommend','say_again_slowly','is_this_right','can_we_change','id_like_to','can_i_leave','do_i_need_to','does_that_mean','how_do_i','how_do_i_get_to','can_i_ask'].map(id=>'travel_'+id);
+const INITIAL=['can_i_get','can_you','can_i_we','do_you_have','where_is','is_there','how_much','daily_confirm_right','can_we_change','do_i_need_to'].map(id=>'travel_'+id);
+const LATER=['is_included','where_meet','what_recommend','say_again_slowly','is_this_right','id_like_to','can_i_leave','does_that_mean','how_do_i','how_do_i_get_to','can_i_ask'].map(id=>'travel_'+id);
 const plain=value=>JSON.parse(JSON.stringify(value));
 const wav=(()=>{const bytes=Buffer.alloc(684);bytes.write('RIFF');bytes.writeUInt32LE(bytes.length-8,4);bytes.write('WAVEfmt ',8);bytes.writeUInt32LE(16,16);bytes.writeUInt16LE(1,20);bytes.writeUInt16LE(1,22);bytes.writeUInt32LE(16000,24);bytes.writeUInt32LE(32000,28);bytes.writeUInt16LE(2,32);bytes.writeUInt16LE(16,34);bytes.write('data',36);bytes.writeUInt32LE(bytes.length-44,40);return bytes;})();
 
@@ -89,7 +89,7 @@ test('the actual ten-expression sampler makes an eight-point expression rare and
 });
 
 test('legacy introduced or previously studied expressions remain open without exposing hidden stage-two content, and new learners start with ten',()=>{
- const old=JSON.stringify({travel_can_i_leave:{introduced:true,seen:12,ok:8},travel_can_i_ask:{introduced:false,seen:1},travel_do_i_need_to:{introduced:false,seen:0},travel_how_long:{introduced:true,seen:20,ok:19}}),h=setup({'speakingroom:travelrepeat':old});assert.ok(ids(h).includes('travel_can_i_leave'));assert.ok(ids(h).includes('travel_can_i_ask'));assert.equal(ids(h).length,12);assert.ok(!ids(h).includes('travel_do_i_need_to'));assert.ok(!ids(h).includes('travel_how_long'));assert.equal(h.records.get('speakingroom:travelrepeat'),old);
+ const old=JSON.stringify({travel_can_i_leave:{introduced:true,seen:12,ok:8},travel_can_i_ask:{introduced:false,seen:1},travel_daily_need:{introduced:false,seen:0},travel_how_long:{introduced:true,seen:20,ok:19}}),h=setup({'speakingroom:travelrepeat':old});assert.ok(ids(h).includes('travel_can_i_leave'));assert.ok(ids(h).includes('travel_can_i_ask'));assert.equal(ids(h).length,12);assert.ok(!ids(h).includes('travel_daily_need'));assert.ok(!ids(h).includes('travel_how_long'));assert.equal(h.records.get('speakingroom:travelrepeat'),old);
  const other=h.run(`learningProfileCreate('새 표현 학습자')`);h.run(`learningProfileSwitch(${JSON.stringify(other)})`);assert.deepEqual(ids(h).sort(),[...INITIAL].sort());const restored=setup(Object.fromEntries(h.records));assert.equal(restored.run('learningProfileId()'),other);assert.equal(ids(restored).length,10);restored.run(`learningProfileSwitch('legacy')`);assert.equal(ids(restored).length,12);assert.ok(ids(restored).includes('travel_can_i_leave'));
 });
 
@@ -199,7 +199,8 @@ test('question forms are gated by both speaking level and breadth; each intermed
  const h=setup();
  const bands=plain(h.run('PRACTICE_BANDS.map(b=>({level:b.level,earned:b.earned,wh:b.ids.split(" ").map(id=>"travel_"+id).filter(id=>TRAVEL_QUESTION_IDS.has(id))}))'));
  assert.equal(bands[0].wh.join(','),'travel_wh_what_is,travel_wh_when_is');
- assert.ok(bands.slice(1).every(b=>b.wh.length===2&&b.earned>=18));
+ assert.ok(bands.slice(1).every(b=>b.wh.length<=2));
+ assert.ok(bands.slice(1).filter(b=>b.wh.length).every(b=>b.wh.length===2&&b.earned>=18));
  for(const b of bands.slice(1))for(const id of b.wh){
   h.context.id=id;
   assert.equal(h.run('learningBandOpen(id,'+(b.level-1)+',65)'),false);
@@ -223,6 +224,31 @@ test('every starter can be used in different situations and everyday replies kee
  assert.equal(h.run('DAILY_REPLIES.length'),31);
  const problemsInReplies=plain(h.run("DAILY_REPLIES.flatMap(([id,,,,examples])=>examples.flatMap(([en,ko,keys,one,two])=>{const frame=TRAVEL_BY_ID['travel_'+id],ex=frame.items.find(ex=>ex.en===en),good=travelGrade({frame,ex},en);return one!==two&&travelKrOf(en)===ko&&good.ok&&good.blockHit?[]:[en]}))"));
  assert.deepEqual(problemsInReplies,[]);
+});
+
+test('every short sentence in the beginner unlock bands can be recalled from two different situations',()=>{
+ const h=setup();
+ const fixed=plain(h.run(`PRACTICE_BANDS.filter(b=>b.level<15).flatMap(b=>b.ids.split(' ').flatMap(id=>
+  basicCoreItems(TRAVEL_BY_ID['travel_'+id]).filter(ex=>new Set([ex.ko,...(EVERYDAY_CUES.get(ex.en)||[])]).size<2).map(ex=>ex.en)))`));
+ assert.deepEqual(fixed,[]);
+});
+
+test('a ten-question selected beginner session can use distinct everyday slots for short what, when and suggestion frames',()=>{
+ for(const [id,prefix,spoken] of [['wh_what_is',"What's ","whats "],['wh_when_is','When is ',"when's "],['daily_lets',"Let's ",'lets ']]){
+  const h=setup(),fid='travel_'+id;h.context.fid=fid;
+  h.run('travelMarkIntroduced(fid); hSet(featureGuideKey("basic"),true); startTravelDrill(10,true,true,[fid])');
+  const issued=plain(h.run('autoDrill.items.map(it=>[it.frame.id,it.ex.en])'));
+  assert.equal(issued.length,10);assert.ok(issued.every(([f])=>f===fid));assert.equal(new Set(issued.map(([,en])=>en)).size,10);
+  const additions=plain(h.run('basicCoreItems(TRAVEL_BY_ID[fid]).slice(2).map(ex=>ex.en)'));
+  assert.equal(additions.length,8);
+  for(const en of additions){
+   h.context.en=en;h.context.spoken=en.replace(prefix,spoken);
+   const result=plain(h.run(`(()=>{const frame=TRAVEL_BY_ID[fid],ex=basicCoreItems(frame).find(ex=>ex.en===en);
+    return [travelGrade({frame,ex},en).ok,travelGrade({frame,ex},spoken).ok,ex.keywords.every(w=>!!FREQ_DICT[w]),
+      new Set(EVERYDAY_CUES.get(en)).size>=2,EVERYDAY_SENTENCES.has(en)];})()`));
+   assert.deepEqual(result,[true,true,true,true,true],en);
+  }
+ }
 });
 
 test('the normal drill rotates actual cues across encounters and reload, with one sentence mastery record and a stable cue on recall',()=>{
@@ -262,42 +288,45 @@ test('long automatic routines spread question forms across ten-question blocks, 
  }
 });
 
-test('the first automatic routine starts with a need and an ability, while card payment and reservations unlock at the end of beginner practice',()=>{
+test('the first ten are reusable questions and requests, and statements wait until intermediate practice',()=>{
  const h=setup();assert.deepEqual(ids(h),INITIAL);
  const items=plain(h.run('travelBuildItems(10).map(it=>({id:it.frame.id,en:it.ex.en}))'));
- assert.deepEqual(items.slice(0,2).map(item=>item.en),['I need a minute.','I can help.']);
+ assert.deepEqual(items.slice(0,2).map(item=>item.en),['Can I get some water?','Can you open the door?']);
  assert.deepEqual(items.map(item=>item.id).sort(),[...INITIAL].sort());
- assert.deepEqual(Array.from(h.run('TRAVEL_PROGRESS_ORDER.slice(32,34)')),['travel_pay_by_card','travel_have_reservation']);
+ assert.ok(items.every(item=>item.en.endsWith('?')));
+ const beginner=plain(h.run('TRAVEL_PROGRESS_ORDER.filter(id=>learningBandOpen(id,14,72)).map(id=>({id,en:basicStarterItem(TRAVEL_BY_ID[id]).en}))'));
+ assert.ok(beginner.every(item=>item.en.endsWith('?')||item.id==='travel_daily_lets'));
+ for(const id of ['travel_pay_by_card','travel_have_reservation'])assert.ok(h.run('TRAVEL_PROGRESS_ORDER.indexOf('+JSON.stringify(id)+')')>=32);
  assert.equal(h.run('new Set(TRAVEL_PROGRESS_ORDER).size'),72);assert.equal(h.run('TRAVEL_PROGRESS_ORDER.length'),72);
  assert.equal(h.run('travelBuildItems(3,[TRAVEL_BY_ID.travel_can_you]).every(it=>it.frame.id==="travel_can_you")'),true);
 });
 
-test('upgrading keeps studied former starters and does not spend an unlock credit on either promoted starter',()=>{
- const fid='travel_pay_by_card',h=setup({'speakingroom:travelrepeat':JSON.stringify({[fid]:{introduced:true,seen:3,ok:2}}),
-  [PROGRESS]:JSON.stringify({version:1,earned:{[fid]:true},unlocked:{travel_daily_need:true}})});
- assert.ok(ids(h).includes(fid));assert.ok(!ids(h).includes('travel_have_reservation'));
+test('an upgrade keeps studied former starters available for manual review and prioritizes questions in the beginner routine',()=>{
+ const seen={travel_daily_need:{introduced:true,seen:4,ok:3},travel_daily_can:{introduced:true,seen:2,ok:2},travel_cant_find:{introduced:true,seen:1,ok:0}};
+ const h=setup({'speakingroom:travelrepeat':JSON.stringify(seen),[PROGRESS]:JSON.stringify({version:1,earned:{travel_daily_need:true},unlocked:{travel_do_i_need_to:true}})});
  assert.deepEqual(Array.from(h.run('Object.keys(learningProgressRefresh().unlocked)')),['travel_is_included']);
- assert.equal(h.run('travelStat("travel_pay_by_card").seen'),3);
- assert.equal(h.run('travelBuildItems(3,travelPoolOf(["travel_pay_by_card"])).length'),3);
- assert.deepEqual(ids(setup(Object.fromEntries(h.records))),ids(h));
+ const available=ids(h);for(const fid of Object.keys(seen)){
+  assert.ok(available.includes(fid));assert.equal(h.run('travelStat('+JSON.stringify(fid)+').seen'),seen[fid].seen);
+  assert.equal(h.run('travelBuildItems(3,travelPoolOf(['+JSON.stringify(fid)+'])).length'),3);
+ }
+ assert.deepEqual(Array.from(h.run('travelBuildItems(30).filter(it=>!learningBandOpen(it.frame.id,1,1)).map(it=>it.frame.id)')),[]);
+ assert.deepEqual(ids(setup(Object.fromEntries(h.records))),available);
 });
 
-test('past actions and clarifications open gradually from short chunks to two spoken alternatives',()=>{
+test('short confirmation comes early, while reports of past actions and two spoken alternatives open gradually',()=>{
  const h=setup();
  const expected=[
-  ['daily_sent',1,'I sent the photo.'],['daily_confirm_right',1,'This one, right?'],
-  ['daily_checked',1,'I checked the time.'],['daily_went',15,'I went to the park.'],
-  ['daily_put',15,'I put it here.'],['daily_mean',15,'Do you mean this bag?'],
-  ['daily_choice',35,'Is it tea or coffee?']
+  ['daily_confirm_right',1,8,'This one, right?'],['daily_mean',1,17,'Do you mean this bag?'],
+  ['daily_sent',15,43,'I sent the photo.'],['daily_checked',15,48,'I checked the time.'],
+  ['daily_went',15,50,'I went to the park.'],['daily_put',35,53,'I put it here.'],
+  ['daily_choice',35,55,'Is it tea or coffee?']
  ];
- let previous=9;
- for(const [id,level,starter] of expected){
+ for(const [id,level,position,starter] of expected){
   const fid='travel_'+id;h.context.fid=fid;
-  const position=h.run('TRAVEL_PROGRESS_ORDER.indexOf(fid)');
-  assert.ok(position>previous+1,fid);previous=position;
-  assert.equal(h.run('TRAVEL_FRAME_BANDS.get(fid).level'),level);
+  assert.equal(h.run('TRAVEL_PROGRESS_ORDER.indexOf(fid)+1'),position);
+  assert.equal(h.run('TRAVEL_FRAME_BANDS.get(fid)?.level??1'),level);
   assert.equal(h.run('basicStarterItem(TRAVEL_BY_ID[fid]).en'),starter);
-  assert.ok(!ids(h).includes(fid));
+  assert.equal(ids(h).includes(fid),position<=10);
  }
  assert.equal(h.run('TRAVEL_FRAMES.some(f=>/^did you say/i.test(f.frame))'),false);
  for(const fid of ['travel_daily_put','travel_daily_choice']){
@@ -317,16 +346,35 @@ test('everyday grading recognizes the spoken structure separately from the reque
   ['daily_sent','I sent the photo.','I sent the picture.','I sent the file.','Send the photo.'],
   ['daily_confirm_right','This one, right?','this one right','That one, right?', "That's right."],
   ['daily_confirm_right','This Friday, right?','this friday right','Next Friday, right?', 'Turn right.'],
+  ['daily_confirm_right','Your turn, right?', "It's your turn, right?",'My turn, right?', "That's right."],
   ['daily_checked','I checked the time.','I checked the time.','I checked my email.','I check the time.'],
   ['daily_went','I went to the park.','I went to the park.','I went to the bank.','I go to the park.'],
   ['daily_put','I put it on the table.','I put it on the table.','I put it under the table.','It is on the table.'],
   ['daily_mean','Do you mean this bag?','You mean this bag?','Do you mean your bag?','What do you mean?'],
+  ['daily_mean','Do you mean everyone?','You mean everybody?','Do you mean me?','Is everybody here?'],
   ['daily_choice','Is it today or tomorrow?','Is it tomorrow or today?','Is it today or Friday?','Is it today?']
  ]){
   const grade=heard=>{h.context.grading={frameId,example,heard};return h.run("(()=>{const frame=TRAVEL_BY_ID['travel_'+grading.frameId],ex=frame.items.find(it=>it.en===grading.example);return travelGrade({frame,ex},grading.heard)})()");};
   for(const [heard,ok,structure] of [[full,true,true],[partial,false,true],[wrong,false,false]]){
    const result=grade(heard);assert.equal(result.ok,ok,heard);assert.equal(result.blockHit,structure,heard);
   }
+ }
+});
+
+test('a returning beginner can select any open-ended beginner expression for ten distinct short sentences',()=>{
+ const h=setup();
+ const drills=plain(h.run(`(()=>{
+   const frames=TRAVEL_PROGRESS_ORDER.filter(fid=>learningBandOpen(fid,1,72)).map(fid=>TRAVEL_BY_ID[fid]);
+   travelSave(Object.fromEntries(frames.map(f=>[f.id,{introduced:true,seen:1,ok:1}])));
+   return frames.filter(f=>f.frame.includes('~')).map(f=>({
+    id:f.id,questions:travelBuildItems(10,travelPoolOf([f.id])).map(it=>[it.frame.id,it.ex.en,it.ex._tier])
+   }));
+ })()`));
+ assert.equal(drills.length,17);
+ for(const {id,questions} of drills){
+  assert.equal(questions.length,10,id);
+  assert.equal(new Set(questions.map(q=>q[1])).size,10,id);
+  assert.ok(questions.every(q=>q[0]===id&&q[2]===1),id);
  }
 });
 

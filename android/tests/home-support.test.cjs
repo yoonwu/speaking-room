@@ -21,9 +21,9 @@ test('first-use guides wait for completion and can be replayed without changing 
 
 test('the revised basic guide is shown once to existing learners without resetting other guides',()=>{const {run,records}=setup({'speakingroom:feature_guide:v2:basic':'true','speakingroom:feature_guide:v2:study':'true','speakingroom:travelrepeat':JSON.stringify({travel_can_i_get:{introduced:true,seen:8,ok:6}})});run(`let entered=0;let handlers={};openSheet=()=>({querySelector:s=>handlers[s]||(handlers[s]={}),remove(){}});showFeatureGuide('basic',()=>entered++);`);assert.equal(run('entered'),0);assert.equal(run('travelStat("travel_can_i_get").ok'),6);run(`showFeatureGuide('study',()=>entered++);`);assert.equal(run('entered'),1);assert.equal(records.get('speakingroom:feature_guide:v2:basic'),'true');});
 
-test('all 915 examples are reviewed and each expression has a short, gradable first sentence',()=>{
+test('all 965 examples are reviewed and each expression has a short, gradable first sentence',()=>{
  const {run}=setup();
- assert.equal(run('TRAVEL_ALL_FRAMES.length'),81);assert.equal(run('TRAVEL_ALL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),915);
+ assert.equal(run('TRAVEL_ALL_FRAMES.length'),81);assert.equal(run('TRAVEL_ALL_FRAMES.reduce((n,f)=>n+basicCurriculumCatalog(f).length,0)'),965);
  const failures=run(`TRAVEL_ALL_FRAMES.flatMap(f=>{
    const r=basicCurriculumRule(f),pool=basicCoreItems(f),starter=basicStarterItem(f),errors=[];
    if(!starter||!pool.length)errors.push(f.id+' missing starter');
@@ -40,6 +40,29 @@ test('all 915 examples are reviewed and each expression has a short, gradable fi
    return errors;
  })`);
  assert.deepEqual(Array.from(failures),[]);
+});
+
+test('every starter-pool question can be retrieved from a second situation without changing the English goal',()=>{
+ const {run}=setup();
+ const singles=run(`[...TRAVEL_INITIAL_IDS].flatMap(id=>basicCoreItems(TRAVEL_BY_ID[id]).filter(ex=>
+   new Set([...(EVERYDAY_CUES.get(ex.en)||[]),ex.ko]).size<2).map(ex=>ex.en))`);
+ assert.deepEqual(Array.from(singles),[]);
+ assert.equal(run("basicStarterItem(TRAVEL_BY_ID.travel_do_you_have).en"),'Do you have a charger?');
+ assert.equal(run("EVERYDAY_SENTENCES.has('Can you feed the cat?')"),true);
+ assert.equal(run("EVERYDAY_SENTENCES.has('Can you close the window?')"),true);
+ assert.equal(run("EVERYDAY_CUES.get('Where is baggage claim?').length"),2);
+ assert.equal(run("EVERYDAY_SENTENCES.has('Where is baggage claim?')"),false);
+ const {cues,shown}=run(`(()=>{
+   const frame=TRAVEL_BY_ID.travel_pay_by_card,ex=basicStarterItem(frame),log={},shown=[];
+   const cues=EVERYDAY_CUES.get(ex.en);
+   for(let i=0;i<=cues.length;i++){
+     const ko=practiceSituation({frame,ex});shown.push(ko);
+     log[i]={t:i,fid:frame.id,en:ex.en,ko};hSet(PRACTICE_LOG,log);
+   }
+   return {cues,shown};
+ })()`);
+ assert.ok(cues.length>3);
+ assert.deepEqual(Array.from(shown),[...cues,cues[0]]);
 });
 
 test('first exposure stays short at high global difficulty and building a queue does not introduce unseen expressions',()=>{

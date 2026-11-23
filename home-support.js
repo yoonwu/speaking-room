@@ -43,10 +43,11 @@ function learningLearnedSentences(profileId=learningProfileId()){return Object.v
 function learningSentenceWeight(en,now=Date.now()){
  return learningReviewWeight(learningSentenceMastery(en),now);
 }
+function learningReviewIntervalDays(score){return score>=80?14:score>=50?4:1;}
 function learningReviewWeight(row,now){
  if(!row?.seen)return 4;
  const days=Math.max(0,(now-row.lastT)/86400000);
- const interval=row.score>=80?14:row.score>=50?4:1;
+ const interval=learningReviewIntervalDays(row.score);
  const base=row.score>=80?(row.fullyLearned ? .08 : .20):row.score>=50?.9:2.4;
  return base+1.5*Math.min(3,row.missStreak)+Math.min(5,days/interval);
 }
@@ -190,7 +191,7 @@ const SYNC_KEYS=[TRAVEL_KEY,TRAVEL_STUDY_KEY,MISS_KEY,'speakingroom:autolvl','sp
 let supportSyncBusy=false;
 function supportLog(){return hGet(PRACTICE_LOG,{})||{};}
 function supportEvents(){return Object.values(supportLog()).filter(e=>e&&Number.isFinite(e.t)).sort((a,b)=>a.t-b.t);}
-function learningInitialExpressionIds(){return typeof TRAVEL_INITIAL_IDS!=='undefined'?TRAVEL_INITIAL_IDS:new Set(['travel_daily_need','travel_daily_can','travel_can_i_get','travel_can_you','travel_can_i_we','travel_do_you_have','travel_where_is','travel_how_much','travel_cant_find','travel_is_there']);}
+function learningInitialExpressionIds(){return TRAVEL_INITIAL_IDS;}
 function learningExpressionOrder(){return typeof TRAVEL_PROGRESS_ORDER!=='undefined'?TRAVEL_PROGRESS_ORDER.map(fid=>TRAVEL_BY_ID[fid]).filter(frame=>frame&&TRAVEL_ACTIVE_IDS.has(frame.id)):TRAVEL_FRAMES;}
 let learningExpressionCache={};
 function learningExpressionResults(events){
@@ -336,6 +337,17 @@ let learningFrameWeightSnapshot=null;
 function learningFrameCostFactor(f,context){return (context?.expressionScores?.[f.id]??learningExpressionScore(f.id))>=8?8:1;}
 travelWeightFor=function(id,stat){const f=TRAVEL_BY_ID[id],factor=learningFrameWeightSnapshot?.get(id)??(f?learningFrameCostFactor(f):1);return learningOriginalFrameWeight(id,stat)*factor;};
 travelPickFrames=function(n,pool){const available=learningAvailableFrames(),ids=new Set(available.map(f=>f.id)),allowed=pool?pool.filter(f=>ids.has(f.id)):available;const previous=learningFrameWeightSnapshot,events=supportEvents(),context={n:alGet().speak,events,expressionScores:learningExpressionScores(events)};learningFrameWeightSnapshot=new Map(allowed.map(f=>[f.id,learningFrameCostFactor(f,context)]));try{return learningOriginalFramePicker(n,allowed);}finally{learningFrameWeightSnapshot=previous;}};
+// Vocabulary comes from the course, independent of the current learner.
+const learningSlotCache=new WeakMap();
+function learningSlotWords(frame,ex){
+ let bySentence=learningSlotCache.get(frame);
+ if(!bySentence){bySentence=new Map();learningSlotCache.set(frame,bySentence);}
+ if(!bySentence.has(ex.en)){
+  const keys=ex.keywords||travelKeyOf({frame,ex}).key;
+  bySentence.set(ex.en,keys.filter(word=>!TRAVEL_SKIP_WORDS.has(word)&&!TRAVEL_FILLER_WORDS.has(word)));
+ }
+ return bySentence.get(ex.en);
+}
 // Balance actual sentences, since several situations can share one expression.
 function learningSessionPlan(count,pool,records){
  const progress=learningProgressRefresh(),available=learningAvailableFrames(progress),allowed=new Set(available.map(f=>f.id));
@@ -350,13 +362,23 @@ function learningSessionPlan(count,pool,records){
   for(const ex of [starter,...learningEligibleItems(frame,{},context)]){
    const key=learningSentenceKey(ex.en);if(unique.has(key))continue;unique.add(key);
    const row=rows[key],first=key===starterKey;
-   candidates.push({frame,ex,key,first,row,seen:!!row?.seen||answered.has(key)||first&&!!records[frame.id]?.introduced&&records[frame.id]?.seen>0});
+   const words=learningSlotWords(frame,ex);
+   const due=!!row?.seen&&(row.missStreak>0||now-row.lastT>=learningReviewIntervalDays(row.score)*86400000);
+   candidates.push({frame,ex,key,words,first,row,due,seen:!!row?.seen||answered.has(key)||first&&!!records[frame.id]?.introduced&&records[frame.id]?.seen>0});
   }
  }
  const reviewed=candidates.filter(c=>c.seen),mean=reviewed.reduce((n,c)=>n+(c.row?.score||0),0)/Math.max(1,reviewed.length);
  const recent=events.filter(e=>allowed.has(e.fid)&&!e.retry&&!e.intro&&!e.recall&&!e.hinted).slice(-10);
  const struggling=recent.length>=3&&recent.filter(e=>!e.ok&&!e.expressionOnly).length>=recent.length/2;
  const ratio=struggling ? .15 : mean>=80 ? .5 : mean>=50 ? .4 : .3;
+ // Daily learners may return while their four- or fourteen-day reviews
+ // are still early. Use actual question history across session boundaries.
+ const lastPrompts=events.filter(e=>e.en&&!e.retry&&!e.recall).slice(-10);
+ const lastSentences=new Set(lastPrompts.map(e=>learningSentenceKey(e.en)));
+ const usedWords=new Set(lastPrompts.slice(-3).filter(e=>now-e.t<86400000).flatMap(({fid,en})=>{
+  const frame=TRAVEL_BY_ID[fid];
+  return frame?learningSlotWords(frame,frame.items.find(ex=>ex.en===en)||{en}):[];
+ }));
  const target=Math.round(count*ratio),picks=[],used=new Set(),planned=new Set(),newQuestions=new Set(),frequency=new Map();
  const formLimit=level<15?1:2,whPerTen=level<15?2:level<35?3:4;
  let questionLimit=0,questionCount=0,dailyNew=0;
@@ -377,8 +399,14 @@ function learningSessionPlan(count,pool,records){
   const different=!pool&&TRAVEL_QUESTION_IDS.has(previous)?roundPool.filter(c=>!TRAVEL_QUESTION_IDS.has(c.frame.id)):[];
   const round=different.length?different:roundPool;
   const daily=wantNew&&dailyNew<Math.ceil((newCount+1)/2)
-   ?round.filter(c=>!c.seen&&!used.has(c.key)&&EVERYDAY_CUES.has(c.ex.en)):[];
-  const drawFrom=daily.length?daily:round;
+   ?round.filter(c=>!c.seen&&!used.has(c.key)&&EVERYDAY_SENTENCES.has(c.ex.en)):[];
+  const ready=daily.length?daily:round;
+  const due=ready.filter(c=>c.due);
+  const onSchedule=due.length?due:ready;
+  const spaced=onSchedule.filter(c=>c.row?.missStreak>0||!lastSentences.has(c.key));
+  const reviewPool=spaced.length?spaced:onSchedule;
+  const freshWords=reviewPool.filter(c=>c.row?.missStreak>0||!c.words.some(w=>usedWords.has(w)));
+  const drawFrom=freshWords.length?freshWords:reviewPool;
   // Normalize per frame so a large catalogue cannot crowd out a short pattern.
   const sizes=new Map();for(const c of drawFrom)sizes.set(c.frame.id,(sizes.get(c.frame.id)||0)+1);
   const weights=drawFrom.map(c=>{
@@ -388,7 +416,8 @@ function learningSessionPlan(count,pool,records){
   let draw=Math.random()*weights.reduce((n,w)=>n+w,0),idx=0;
   while(idx<weights.length-1&&(draw-=weights[idx])>=0)idx++;
   const pick=drawFrom[idx],fid=pick.frame.id;
-  if(!pick.seen&&!used.has(pick.key)){newCount++;if(EVERYDAY_CUES.has(pick.ex.en))dailyNew++;}
+  for(const word of pick.words)usedWords.add(word);
+  if(!pick.seen&&!used.has(pick.key)){newCount++;if(EVERYDAY_SENTENCES.has(pick.ex.en))dailyNew++;}
   if(TRAVEL_QUESTION_IDS.has(fid))questionCount++;
   if(TRAVEL_GRADUAL_QUESTION_IDS.has(fid)&&!records[fid]?.introduced)newQuestions.add(fid);
   picks.push(pick);used.add(pick.key);planned.add(fid);frequency.set(fid,(frequency.get(fid)||0)+1);previous=fid;
