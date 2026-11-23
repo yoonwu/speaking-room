@@ -15,7 +15,7 @@ function learningNewAttemptId(){return window.crypto&&window.crypto.randomUUID?w
 function learningProfileList(){const saved=learningRawGet(LEARNING_PROFILES,{});return [{id:'legacy',name:learningRawGet('speakingroom:name','')||'기존 학습자'},...Object.entries(saved||{}).filter(([id,p])=>id!=='legacy'&&/^[a-zA-Z0-9_-]{1,100}$/.test(id)&&p&&typeof p==='object').map(([id,p])=>({id,name:learningRawGet(learningProfileKey('speakingroom:name',id),p.name)||'학습자'}))];}
 function learningProfileCreate(name){name=String(name||'').trim().slice(0,12);if(!name)throw Error('학습자 이름을 입력해주세요.');const id='p_'+learningNewAttemptId(),profiles=learningRawGet(LEARNING_PROFILES,{})||{};profiles[id]={name,createdAt:Date.now()};learningRawSet(LEARNING_PROFILES,profiles);learningRawSet(learningProfileKey('speakingroom:name',id),name);return id;}
 function learningProfileSwitch(id){if(!learningProfileList().some(p=>p.id===id))throw Error('학습자를 찾지 못했어요.');if(id===learningProfileId())return id;if(typeof goToSetup==='function')goToSetup();else{if(typeof stopMicrophone==='function')stopMicrophone();if(typeof svStop==='function')svStop();}clearTimeout(supportSyncTimer);learningRawSet(LEARNING_ACTIVE,id);if(typeof learningProfileChanged==='function')learningProfileChanged(id);if(typeof renderHome==='function')renderHome();return id;}
-function learningSentenceKey(en){return String(en||'').toLowerCase().replace(/’/g,"'").replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();}
+function learningSentenceKey(en){return String(revisedPracticeSentence(en)||'').toLowerCase().replace(/’/g,"'").replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();}
 function learningResponseMs(value){return Number.isFinite(value)&&value>=0?value:null;}
 function learningQuickEvidence(event){
  if(event.speedEligible!==true||event.withinThreeSeconds!==true||learningResponseMs(event.responseMs)===null||event.typed)return false;
@@ -31,7 +31,7 @@ function learningMasteryRows(profileId=learningProfileId()){
  let data;try{data=JSON.parse(raw);}catch(_){data={};}const rows=Object.create(null);
  for(const event of Object.values(data?.events||{}).filter(e=>e&&typeof e.en==='string'&&Number.isFinite(e.t)&&Number.isFinite(e.delta)).sort((a,b)=>a.t-b.t||(a.order||0)-(b.order||0)||String(a.id).localeCompare(String(b.id)))){
   const key=learningSentenceKey(event.en);if(!key)continue;const row=rows[key]||(rows[key]=learningEmptyMastery()),fast=learningEventFast(event);
-  row.en=event.en;if(event.ko)row.ko=event.ko;
+  row.en=revisedPracticeSentence(event.en);if(event.ko)row.ko=event.ko;
   row.score=Math.max(0,Math.min(100,row.score+Math.max(-20,Math.min(20,event.delta))));row.seen++;if(event.ok){row.correct++;row.missStreak=0;}else{row.misses++;row.missStreak++;}
   row.fastStreak=fast?row.fastStreak+1:0;if(fast){row.fastCorrect++;row.lastFastResponseMs=event.responseMs;}
   row.lastResponseMs=learningResponseMs(event.responseMs);row.fullyLearned=row.score>80&&row.fastStreak>=3;row.lastT=Math.max(row.lastT,event.t);
@@ -377,7 +377,8 @@ function learningSessionPlan(count,pool,records){
  const lastSentences=new Set(lastPrompts.map(e=>learningSentenceKey(e.en)));
  const usedWords=new Set(lastPrompts.slice(-3).filter(e=>now-e.t<86400000).flatMap(({fid,en})=>{
   const frame=TRAVEL_BY_ID[fid];
-  return frame?learningSlotWords(frame,frame.items.find(ex=>ex.en===en)||{en}):[];
+  const sentence=revisedPracticeSentence(en);
+  return frame?learningSlotWords(frame,frame.items.find(ex=>ex.en===sentence)||{en:sentence}):[];
  }));
  const target=Math.round(count*ratio),picks=[],used=new Set(),planned=new Set(),newQuestions=new Set(),frequency=new Map();
  const formLimit=level<15?1:2,whPerTen=level<15?2:level<35?3:4;

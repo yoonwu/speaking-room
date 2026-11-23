@@ -28,6 +28,20 @@ test('verified first fast answers earn thirty XP, normal correct answers also ea
  const restored=setup(Object.fromEntries(h.records));assert.equal(restored.run(`answer('Can I get water?','correct').duplicate`),true);assert.equal(restored.run('practiceReward().total'),60);
 });
 
+test('reviser keeps the original practice history and lets a learner review the corrected sentence',()=>{
+ const original='How do I get to downtown?',corrected='How do I get downtown?',fid='travel_how_do_i_get_to';
+ const h=setup({'speakingroom:travel_miss':JSON.stringify({[original]:{fid,miss:2,streak:0,ko:'호텔 프런트다. 시내까지 가는 방법을 물어라.'}})});
+ h.context.original=original;h.context.corrected=corrected;
+ h.run(`answer(original,'before');answer(corrected,'after')`);
+ assert.equal(h.run('learningSentenceMastery(corrected).seen'),2);
+ assert.equal(h.run('learningSentenceMastery(original).en'),corrected);
+ assert.equal(h.run('supportEvents()[0].en'),original);
+ assert.equal(h.run('missList()[0].en'),corrected);
+ assert.equal(h.run('missBuildItems(missList())[0].ex.ko'),'호텔 프런트에서 시내로 가는 길을 물어보세요.');
+ h.run(`const revisedItem=missBuildItems(missList())[0];for(let i=0;i<3;i++)missRecord(revisedItem,true)`);
+ assert.equal(h.run('missList().length'),0);
+});
+
 test('mastery is independent of the retry XP cap, drops on mistakes and remains inside zero to one hundred',()=>{
  const h=setup();h.run(`answer('Can I get water?','w',{attemptGroupId:'group',ok:false,perfect:false});answer('Can I get water?','r1',{attemptGroupId:'group'});answer('Can I get water?','r2',{attemptGroupId:'group'});`);
  assert.equal(h.run('practiceReward().total'),5);assert.equal(h.run(`learningSentenceMastery('Can I get water?').score`),8);

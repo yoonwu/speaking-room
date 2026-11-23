@@ -25,6 +25,10 @@ test('equivalent intentions pass without accepting wrong objects, numbers or pol
  ['can_i_get','Can I get two tickets?','Could I have two tickets please?'],
  ['pay_by_card','Can I pay by card?','Do you accept credit cards?'],
  ['how_much','How much is this shirt?',"What's the price of this shirt?"],
+ ['how_much','How much are these shoes?','How much do these shoes cost?'],
+ ['how_do_i_get_to','How do I get downtown?','Could you tell me how to get downtown?'],
+ ['can_we_change','Can I exchange this for a different color?','Could I exchange this for a different color?'],
+ ['have_reservation','I have a reservation under the name Kim.','I have a reservation under Kim.'],
  ['do_i_need_to','Do I need to book in advance?','Do I have to book in advance?'],
  ['problem_with',"There's a problem with the wifi.",'Something is wrong with the wifi.'],
  ['say_again_slowly','Could you say that again, more slowly?','Could you repeat that more slowly?']
@@ -38,6 +42,7 @@ test('equivalent intentions pass without accepting wrong objects, numbers or pol
  ['does_that_mean',"Does that mean I can't order?",'Does that mean I can order?'],
  ['have_reservation','I have a reservation.','Is there a reservation?'],
  ['how_do_i_get_to','How do I get to the airport?','Where is the airport?'],
+ ['how_do_i_get_to','How do I get downtown?','How do I get to downtown?'],
  ['say_again_slowly','Could you say that again, more slowly?','Could you repeat that?']
  ])assert.equal(grade(id,en,heard),false,heard);
 });

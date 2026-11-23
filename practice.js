@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.10.0", APP_BUILD="2026-11-23";
+const APP_VERSION="v4.10.1", APP_BUILD="2026-11-23";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
@@ -147,12 +147,21 @@ function openTravelStudyPicker(){
   content.querySelector('#pickAll').onclick=()=>choose(available.map(f=>f.id));content.querySelector('#pickNone').onclick=()=>choose([]);paint();
 }
 function missRecord(it,ok){
-  const en=it.ex.en,records=missAll();if(ok&&!records[en])return;
+  const en=ORIGINAL_PRACTICE_SENTENCES.get(it.ex.en)||it.ex.en,records=missAll();if(ok&&!records[en])return;
   const r=records[en]||{miss:0,ok:0,streak:0};r.fid=it.frame.id;r.ko=it.ex.ko;r.sit=it.frame.purpose;r.lastT=Date.now();
   if(ok){r.ok=(r.ok||0)+1;r.streak=(r.streak||0)+1;}else{r.miss=(r.miss||0)+1;r.streak=0;}
   if(r.streak>=MISS_GRADUATE)delete records[en];else records[en]=r;missSave(records);
 }
-function missBuildItems(list){return list.filter(m=>TRAVEL_ACTIVE_IDS.has(m.fid)).map(m=>{const f=TRAVEL_BY_ID[m.fid],core=(basicCoreItems(f)||[]).find(ex=>ex.en===m.en),ex={...core,en:m.en,ko:m.ko||travelKrOf(m.en)||f.ko,situation:f.purpose},frame=basicFrameFor(f,ex);return {_travel:true,_miss:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};});}
+function missBuildItems(list){
+  return list.filter(m=>TRAVEL_ACTIVE_IDS.has(m.fid)).map(m=>{
+    const f=TRAVEL_BY_ID[m.fid],en=revisedPracticeSentence(m.en);
+    const example=basicCoreItems(f)?.find(ex=>ex.en===en)||basicCurriculumCatalog(f)?.find(ex=>ex.en===en);
+    const correctedCue=ORIGINAL_PRACTICE_SENTENCES.has(en)&&example?.ko;
+    const ex={...example,en,ko:correctedCue||m.ko||travelKrOf(en)||f.ko,situation:f.purpose};
+    const frame=basicFrameFor(f,ex);
+    return {_travel:true,_miss:true,frame,block:{id:f.id,block:frame.frame},ex,limit:3,_intro:false};
+  });
+}
 function openMissPicker(){
   const ov=openSheet('자주 틀리는 문장'),content=ov.querySelector('#sheetContent');
   const list=missList();
@@ -176,7 +185,7 @@ function practiceSituation(it){
   // count answered encounters, not previews. A recall stays in the current scene.
   const events=typeof supportEvents==='function'?supportEvents():[];
   for(let i=events.length-1;i>=0;i--){
-    if(events[i].fid!==it.frame.id||events[i].en!==it.ex.en)continue;
+    if(events[i].fid!==it.frame.id||revisedPracticeSentence(events[i].en)!==it.ex.en)continue;
     const previous=cues.indexOf(events[i].ko);
     if(previous>=0)return cues[(previous+1)%cues.length];
   }
