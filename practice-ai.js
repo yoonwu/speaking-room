@@ -5,11 +5,12 @@ const PracticeAI=(()=>{
   const active=new Set(),requests=new Map();
   const profile=()=>typeof learningProfileId==='function'?learningProfileId():'legacy';
   const newId=()=>window.crypto?.randomUUID?window.crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-  const getMode=()=>hGet(MODE_KEY,'accuracy')==='meaning'?'meaning':'accuracy';
+  const getMode=()=>!window.srOfflinePractice&&hGet(MODE_KEY,'accuracy')==='meaning'?'meaning':'accuracy';
   function cancel(){epoch++;for(const c of active)c.abort();active.clear();requests.clear();}
   function setMode(mode){if(mode!=='accuracy'&&mode!=='meaning')throw Error('판정 방식을 다시 선택해주세요.');cancel();hSet(MODE_KEY,mode);}
   const reasonText=reason=>({ai_disabled:'의미 중심 기능을 준비 중이에요. 정확도 중심 연습은 계속 사용할 수 있어요.',api_key_missing:'의미 중심 기능을 준비 중이에요.',credits_unverified:'운영자의 API 크레딧 확인이 필요해요.',credit_scope_mismatch:'운영자의 API 연결 확인이 필요해요.',credits_expired:'의미 중심 기능의 크레딧이 만료됐어요.',credit_check_stale:'운영자의 API 크레딧 재확인이 필요해요.',budget_unconfigured:'의미 중심 기능의 사용 한도 설정이 필요해요.',budget_exhausted:'의미 중심 기능의 이번 달 사용 한도에 도달했어요.',upstream_quota:'의미 중심 기능의 API 크레딧 또는 사용 한도를 확인해야 해요.',rate_limited:'요청이 많아요. 잠시 뒤 다시 말해주세요.',upstream_timeout:'음성 판정 응답이 늦어요. 다시 말해주세요.',storage_unavailable:'의미 중심 기능을 잠시 사용할 수 없어요.'}[reason]||'의미 중심 기능에 연결하지 못했어요. 잠시 뒤 다시 시도해주세요.');
   async function receive(path,options={},timeout=13000,guard=true){
+    if(window.srOfflinePractice)throw Error('기기 내 연습에서는 사용할 수 없어요.');
     const generation=epoch,owner=profile(),controller=new AbortController();active.add(controller);
     const task=async()=>{
       const r=await fetch(PROXY_URL+path,{...options,credentials:'omit',signal:controller.signal});
@@ -89,6 +90,7 @@ const PracticeAI=(()=>{
 window.PracticeAI=PracticeAI;
 
 function renderPronunciationSettings(host){
+  if(window.srOfflinePractice)return;
   if(!host)return;const mode=PracticeAI.getMode(),u=PracticeAI.usage();
   host.innerHTML=`<div class="prof-h">발음 판정 방식</div><label class="grading-choice"><input type="radio" name="pronunciationMode" value="accuracy" ${mode==='accuracy'?'checked':''}><span><b>정확도 중심</b><small>발음까지 정확하게 연습 · 기존 판정</small></span></label><label class="grading-choice"><input type="radio" name="pronunciationMode" value="meaning" ${mode==='meaning'?'checked':''}><span><b>의미 중심</b><small>발음이 조금 달라도 문장을 이해하면 통과</small></span></label><p class="muted">의미 중심은 녹음을 OpenAI에서 인식하고, 필요한 경우 문장의 뜻을 확인해요. 말하지 않은 답을 추측해 통과시키지 않아요.</p><p id="gradingAvailability" class="muted" role="status"></p><p class="muted">이번 달 이 프로필의 의미 중심 사용: 음성 ${u.transcribe}회 · 뜻 확인 ${u.judge}회 · 예상 $${u.estimatedUsd.toFixed(6)}<br>이 기기의 기록이며 실제 결제·남은 크레딧과는 달라요.</p><button id="gradingStatusRefresh" class="quiet">의미 중심 연결 확인</button>`;
   const out=host.querySelector('#gradingAvailability');

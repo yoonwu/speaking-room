@@ -1,5 +1,6 @@
 package com.speakingroom.voice;
 
+import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.ServiceInfo;
@@ -149,10 +150,15 @@ public final class VoiceService extends Service implements RecognitionListener {
         return new Notification.Builder(this, "voice").setSmallIcon(com.speakingroom.voice.R.drawable.ic_voice).setContentTitle("3초영어 음성 연습")
             .setContentText(message).setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null, "멈추기", stop).build()).build();
     }
+    // The offline review manifest does not register this service or request notification permission.
+    @android.annotation.SuppressLint("NotificationPermission")
     private void update(String message) {
         status = message;
         try { event(new JSONObject().put("kind","status").put("text",message).put("running",active)); } catch(JSONException ignored) {}
-        if (active) getSystemService(NotificationManager.class).notify(1, notification(message));
+        if (active && (Build.VERSION.SDK_INT < 33
+            || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED)) {
+            getSystemService(NotificationManager.class).notify(1, notification(message));
+        }
     }
     private void finish(String message) {
         active = false; running = false; generation++; main.removeCallbacksAndMessages(null);

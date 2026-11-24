@@ -1,4 +1,5 @@
 plugins { id 'com.android.application' }
+def offlineReview = providers.gradleProperty('offlineReview').map { it.toBoolean() }.getOrElse(false)
 android {
     namespace 'com.speakingroom.voice'
     compileSdk 36
@@ -6,12 +7,17 @@ android {
         applicationId 'com.speakingroom.voice'
         minSdk 26
         targetSdk 36
-        versionCode 20
-        versionName '0.6.5'
+        versionCode 21
+        versionName '0.6.6'
+        buildConfigField 'boolean', 'OFFLINE_REVIEW', offlineReview.toString()
         testInstrumentationRunner 'com.speakingroom.voice.SpeechFlowInstrumentation'
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildFeatures { buildConfig true }
     sourceSets.main.assets.srcDirs = [layout.buildDirectory.dir('webAssets')]
+    if (offlineReview) {
+        sourceSets.main.manifest.srcFile 'src/offlineReview/AndroidManifest.xml'
+    }
     def uploadStore = System.getenv('SR_UPLOAD_STORE')
     if (uploadStore) {
         signingConfigs {

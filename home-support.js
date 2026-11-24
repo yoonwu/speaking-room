@@ -198,6 +198,14 @@ function learningExpressionResults(events){
  let cacheKey;if(events===undefined){const profileId=learningProfileId(),raw=learningLocalGet(PRACTICE_LOG)||'';if(learningExpressionCache.profileId===profileId&&learningExpressionCache.raw===raw)return learningExpressionCache.rows;cacheKey={profileId,raw};let log;try{log=JSON.parse(raw);}catch(_){log={};}events=Object.values(log||{}).filter(event=>event&&Number.isFinite(event.t));}
  const rows=Object.create(null),groups=new Set();
  for(const event of [...events].sort((a,b)=>a.t-b.t||(a.order||0)-(b.order||0))){
+  if(window.srOfflinePractice&&event.typed&&TRAVEL_ACTIVE_IDS.has(event.fid)&&!event.intro&&!event.hinted&&!event.recall&&!event.retry){
+   if(event.attemptGroupId){if(groups.has(event.attemptGroupId))continue;groups.add(event.attemptGroupId);}
+   const row=rows[event.fid]||(rows[event.fid]={score:0,attempts:0,earned:false,recent:[]});
+   const typed=row.typedRecent||(row.typedRecent=[]);
+   typed.push(!!(event.ok||event.expressionOnly));if(typed.length>5)typed.shift();
+   if(typed.filter(Boolean).length>=4)row.earned=true;
+   continue;
+  }
   if(!TRAVEL_ACTIVE_IDS.has(event.fid)||event.timingVersion!==2||event.speedEligible!==true||learningResponseMs(event.responseMs)===null||learningResponseMs(event.tapMs)===null||learningResponseMs(event.speechStartDelayMs)===null||event.typed||event.intro||event.hinted||event.recall||event.retry)continue;
   if(event.attemptGroupId){if(groups.has(event.attemptGroupId))continue;groups.add(event.attemptGroupId);}
   const row=rows[event.fid]||(rows[event.fid]={score:0,attempts:0,earned:false,recent:[]});

@@ -6,6 +6,17 @@
  window.srPracticeCaptured=id=>{const entry=pending.get(String(id));if(entry&&entry.onCaptureEnd&&!entry.captured){entry.captured=true;entry.onCaptureEnd();}};
  window.srPracticeStarted=id=>{const entry=pending.get(String(id));if(entry&&entry.onReady&&!entry.started&&!entry.captured){entry.started=true;entry.onReady();}};
  window.srNativeRequest=(action,data={},onCaptureEnd=null,onReady=null)=>new Promise((resolve,reject)=>{const id=String(++sequence),timer=setTimeout(()=>{pending.delete(id);reject(new Error('요청 시간이 초과되었습니다.'));},120000);pending.set(id,{resolve,reject,timer,onCaptureEnd,onReady});try{bridge.postMessage(JSON.stringify({id,action,data}));}catch(e){clearTimeout(timer);pending.delete(id);reject(e);}});
+ if(window.srOfflinePractice){
+  window.srNativeRefresh=async()=>{
+   try{
+    const status=await window.srNativeRequest('status');
+    window.srNativePracticeSpeech=status.practiceSpeech===true;
+    document.documentElement.classList.toggle('offline-mic',window.srNativePracticeSpeech);
+   }catch(_){window.srNativePracticeSpeech=false;}
+  };
+  window.srNativeRefresh();
+  return;
+ }
  const controls=document.getElementById('nativeVoiceControls'),start=document.getElementById('nativeVoiceStart'),stop=document.getElementById('nativeVoiceStop'),status=document.getElementById('nativeVoiceStatus');controls.hidden=false;
  const attempt=async fn=>{try{await fn();}catch(e){status.textContent=e.message;}};
  window.srNativeRefresh=()=>attempt(async()=>{const s=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!s.practiceSpeech;window.srNativePracticePlayback=!!s.practicePlayback;window.srNativePracticeStreaming=!!s.practiceStreaming;window.srNativePracticeMicReady=!!s.practiceMicReady;window.srNativePracticeRealtime=!!s.practiceRealtime;window.srNativePracticeRealtimePreparation=!!s.practiceRealtimePreparation;window.srNativePracticeBackgroundPreparation=!!s.practiceBackgroundPreparation;window.srNativePracticeSpeechTiming=!!s.practiceSpeechTiming;window.srNativePracticeImmediateCapture=!!s.practiceImmediateCapture;const foot=document.getElementById('verFoot');if(foot&&s.nativeVersion)foot.textContent='앱 '+s.nativeVersion+' · 학습 '+APP_VERSION+' · 업데이트 확인';if(window.srAiEntryRefresh)window.srAiEntryRefresh(s);if(voice&&!s.running)setBusy(false);voice=s.running;start.hidden=voice;stop.hidden=!voice;status.textContent=s.ready?'ChatGPT 연결됨':s.connected?'ChatGPT 로그인됨 · 모델 선택과 연결 테스트를 마쳐주세요.':'AI 대화를 사용하려면 ChatGPT 연결 설정을 완료해주세요.';});

@@ -1,5 +1,5 @@
 /* Four practice modes only. Learning records retain their existing storage keys. */
-const APP_VERSION="v4.10.1", APP_BUILD="2026-11-23";
+const APP_VERSION="v4.10.2", APP_BUILD="2026-11-24";
 const PRACTICE_RECOGNITION_BUDGET_MS=6000;
 const PRACTICE_RECOGNITION_TIMEOUT='음성 인식 응답이 늦어요. 다시 말해주세요.';
 const $=s=>document.querySelector(s);
@@ -202,7 +202,8 @@ function autoDrillRender(recall=false){
   if(it._intro==null){it._intro=!travelStat(it.frame.id).introduced;if(it._intro)travelMarkIntroduced(it.frame.id);}
   const firstLook=it._intro&&!recall;
   if(firstLook)travelMarkIntroduced(it.frame.id);
-  const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
+  const typedOnly=window.srOfflinePractice&&!window.srNativePracticeSpeech;
+  const guidance=recall?'방금 본 문장을 가렸어요.\n기억에서 꺼내보세요.':typedOnly?(firstLook?'처음에는 예문을 보고 입력해도 괜찮아요.':'상황을 읽고, 떠오른 문장을 영어로 입력해보세요.'):firstLook?'처음엔 문장을 보고 말해도 괜찮아요.\n천천히 소리 내어 말해보세요.':'상황을 읽고, 영어로 말해보세요.\n완벽하지 않아도 괜찮아요.';
   const host=$('#sprintScroll');host.innerHTML=`<div class="auto-card">
     <div class="practice-top"><button id="autoExit" class="quiet">‹ 끝내기</button><div class="lesson-progress" aria-label="연습 진행"><i style="width:${autoDrill.idx/autoDrill.items.length*100}%"></i></div><span>${autoDrill.idx+1} / ${autoDrill.items.length}</span></div>
     <div class="drill-prompt">
@@ -228,6 +229,7 @@ function autoDrillRender(recall=false){
 function stopResponseClock(){if(autoDrillClock!==null)clearTimeout(autoDrillClock);autoDrillClock=null;}
 function startResponseClock(lesson,it){
   stopResponseClock();const out=$('#autoSpeed');if(!out)return;
+  if(window.srOfflinePractice&&!window.srNativePracticeSpeech){out.textContent='떠오르는 표현부터 적어봐요';return;}
   if(it._intro||it.recall||it._hintUsed||it._attempts){out.textContent='보고 익힌 뒤, 다음엔 3초 안에 꺼내봐요';return;}
   const tick=()=>{if(autoDrill!==lesson||pendingReply)return;const left=Math.max(0,3000-(Date.now()-lesson.t0-(lesson.systemWaitMs||0)));out.textContent=left>0?'⚡ '+(left/1000).toFixed(1)+'초 · 생각나면 바로 말해요':'익히는 중 · 표현 20 XP, 단어까지 30 XP';if(left>0)autoDrillClock=setTimeout(tick,100);};tick();
 }
@@ -275,7 +277,12 @@ async function beginAutoMic(){
     if(autoDrill!==lesson)return;$('#autoMic').textContent='말소리 인식 중…';$('#autoStat').textContent='말하기가 끝났어요. 말한 내용을 확인하고 있어요.';
   },{mode,requestId:attemptId,onReady:()=>{clearTimeout(labelTimer);if(autoDrill!==lesson)return;if(!prepared){prepared=true;lesson.systemWaitMs=priorWait+Date.now()-pressedAt;}$('#autoMic').textContent='■ 듣는 중';$('#autoStat').textContent='1.5초 안에 말을 시작해보세요. 말을 마치면 자동으로 끝나요.';}});}finally{clearTimeout(labelTimer);}
 }
-function autoDrillRecall(){if(!autoDrill||!pendingReply||micPreparing||qzRecording)return;autoDrillRender(true);return beginAutoMic();}
+function autoDrillRecall(){
+  if(!autoDrill||!pendingReply||micPreparing||qzRecording)return;
+  autoDrillRender(true);
+  if(window.srOfflinePractice&&!window.srNativePracticeSpeech){$('#autoType').click();return;}
+  return beginAutoMic();
+}
 function autoDrillFinish(heard,meta={}){
   if(!autoDrill||pendingReply||!practiceProfileCurrent())return;
   if(!heard){$('#autoStat').textContent=meta.sttErr||'잘 들리지 않았어요. 다시 말하거나 직접 입력해주세요.';$('#autoMic').textContent='🎤 다시 말하기';return;}
@@ -378,6 +385,7 @@ function practiceSessionResultHTML(report,title,before,after){
   return `<div class="done session-done"><div class="session-hero"><img src="mascot-cheer.png" width="108" height="108" alt="기뻐하는 삼초"><p class="eyebrow">${e(title)} · ${report.completed?'연습 완료':'여기까지 연습'}</p><h2>${report.completed?'오늘의 한 걸음, 해냈어요!':'여기까지도 차곡차곡 쌓였어요'}</h2><p><strong>${report.uniqueSentences}문장</strong>을 연습했어요.<br>${report.newlyPracticed.length?'이번에 처음 연습한 문장은 '+report.newlyPracticed.length+'개예요.':report.uniqueSentences?'전에 배운 문장을 다시 꺼내 말했어요.':''}</p></div><div class="session-xp"><div><span>이번에 쌓은 경험치</span><b>+${report.xp} <small>XP</small></b>${report.bonusXP?`<p>오늘의 10회 목표 보너스 +${report.bonusXP} 포함</p>`:''}</div><span class="session-level">${levelUp?'레벨 업! ':''}Lv.${after.level}</span></div><div class="session-numbers"><div><b>${quick.length}<small>문장</small></b><span>바로 꺼낸 표현</span></div><div><b>${report.recovered.length}<small>문장</small></b><span>다시 도전해 성공</span></div><div><b>${report.attemptedQuestions}<small> / ${report.totalPlanned}</small></b><span>연습한 문제</span></div></div>${nextPractice}${progress}${section('지난번보다 늘었어요','지난 연습 기록보다 문장 익숙함이 올라갔어요.',report.improved,'improved')}${section('바로 꺼낸 문장','생각이 영어로 바로 이어진 순간이에요.',quick,'quick')}${section('다시 말해, 해냈어요','처음에 막혀도 괜찮아요. 결국 내 입으로 완성했어요.',report.recovered,'recovered')}${section('차근차근 맞힌 문장','천천히 완성한 문장도 차곡차곡 쌓여요.',steady,'steady')}${section('다음엔 더 편해질 문장','어려웠던 문장은 다음 연습의 작은 목표로 남겨요.',report.needsPractice,'needs')}<p class="session-footer-note">${report.counts.fullCorrect?`${report.counts.fullCorrect}문장을 끝내 완성했어요. `:''}오늘 연습한 기록은 성장 기록에도 쌓였어요.</p>${report.needsPractice.length?'<button id="doneReview" class="primary">이 문장만 한 번 더 연습하기</button>':''}<button id="doneHome" class="${report.needsPractice.length?'quiet':'primary'}">홈으로</button></div>`;
 }
 function openSurvival(){
+  if(window.srOfflinePractice)return;
   const ov=openSheet('AI 실전회화'),content=ov.querySelector('#sheetContent');
   const scenes=()=>{
     content.innerHTML='<p class="muted">상황을 골라 영어로 주고받아보세요.</p>'+SURVIVAL.map(s=>`<button class="scenario-row" data-scene="${s.id}"><span>${s.emo}</span><b>${escapeHtml(s.t)}</b><span>›</span></button>`).join('')+(window.SpeakingRoomNative?'<button id="aiAccount" class="quiet account">✓ ChatGPT 연결됨 · 연결 관리</button>':'');
@@ -416,7 +424,7 @@ async function conversationAdvice(request){
   const epoch=sessionEpoch;setBusy(true);
   try{const history=state.convo.map(t=>({role:t.role,content:t.text}));history.push({role:'user',content:request});const result=await callClaude(rolePrompt(),history);if(epoch===sessionEpoch)addCoachTurn(stripUsedMarker(extractText(result)).clean,false);}catch(e){if(epoch===sessionEpoch)addCoachTurn(e.message,false);}finally{if(epoch===sessionEpoch)setBusy(false);}
 }
-function speakEn(text,rate=levelRate()){if(!text)return;if(window.SpeakingRoomNative||window.srNativePracticeSpeech)micAudioReady();if(qzRecording)stopMicrophone();stopMyVoice();const epoch=sessionEpoch;svSpeak(text,rate).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=rate;TTS.speak(u);});}
+function speakEn(text,rate=levelRate()){if(!text)return;if(window.SpeakingRoomNative||window.srNativePracticeSpeech)micAudioReady();if(qzRecording)stopMicrophone();stopMyVoice();if(window.srOfflinePractice){window.srNativeRequest?.('readOffline',{text,rate}).catch(()=>{});return;}const epoch=sessionEpoch;svSpeak(text,rate).then(ok=>{if(epoch!==sessionEpoch||ok||!TTS||!SSU)return;TTS.cancel();const u=new SSU(text);u.lang='en-US';u.rate=rate;TTS.speak(u);});}
 async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
   if(qzRecording){if(window.srNativePracticeSpeech)window.srNativeRequest('recognizeStop').catch(()=>{});else if(qzMR&&qzMR.state!=='inactive')qzMR.stop();return;}
   if(micPreparing)return;micPreparing=true;
@@ -426,6 +434,23 @@ async function micFillCb(rawCb,refText='',onCaptureEnd=null,options={}){
   const captureEnded=()=>{if(epoch===micEpoch&&!endCued){endCued=true;micBeepEnd();if(onCaptureEnd)onCaptureEnd();}};
   const cb=(text,meta)=>{if(epoch===micEpoch&&!delivered){delivered=true;micPreparing=false;qzRecording=false;if(!meta?.sttErr)captureEnded();rawCb(text,meta);}};
   try{
+  if(window.srOfflinePractice){
+    if(!window.srNativePracticeSpeech){
+      cb('',{sttErr:'기기에서 영어 음성 인식을 사용할 수 없어요. 직접 입력으로 연습해주세요.'});
+      return;
+    }
+    micBeep();
+    const cueWait=Math.max(0,_micCueUntil-Date.now());
+    if(cueWait)await new Promise(resolve=>setTimeout(resolve,cueWait));
+    if(epoch!==micEpoch)return;
+    const result=await speechWait(window.srNativeRequest('recognizeOffline',{},()=>{
+      if(epoch!==micEpoch)return;qzRecording=false;micPreparing=true;captureEnded();
+    },ready),45000,'음성 인식이 응답하지 않아요. 직접 입력으로 이어서 연습할 수 있어요.',()=>{
+      if(epoch===micEpoch)window.srNativeRequest('recognizeCancel').catch(()=>{});
+    });
+    cb(result.text||'',{spoke:!!result.text,speechStartOffsetMs:result.speechStartOffsetMs,captureDurationMs:result.captureDurationMs});
+    return;
+  }
   if(meaning){await PracticeAI.ensureReady();if(epoch!==micEpoch)return;}
   if(window.srNativeRequest && (window.srNativePracticeSpeech==null||window.srNativePracticePlayback==null)){
     try{const status=await window.srNativeRequest('status');window.srNativePracticeSpeech=!!status.practiceSpeech;window.srNativePracticePlayback=!!status.practicePlayback;window.srNativePracticeStreaming=!!status.practiceStreaming;window.srNativePracticeMicReady=!!status.practiceMicReady;window.srNativePracticeRealtime=!!status.practiceRealtime;window.srNativePracticeRealtimePreparation=!!status.practiceRealtimePreparation;window.srNativePracticeBackgroundPreparation=!!status.practiceBackgroundPreparation;window.srNativePracticeSpeechTiming=!!status.practiceSpeechTiming;window.srNativePracticeImmediateCapture=!!status.practiceImmediateCapture;}catch(e){cb('',{sttErr:'앱의 음성 기능 연결을 확인하지 못했어요. 앱을 다시 열어주세요. '+e.message});return;}

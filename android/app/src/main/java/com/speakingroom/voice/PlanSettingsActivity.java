@@ -27,7 +27,9 @@ public final class PlanSettingsActivity extends Activity {
         else if (plan.ready()) showReady();
     };
     @Override public void onCreate(Bundle state) {
-        super.onCreate(state); plan = PlanClient.get(this);
+        super.onCreate(state);
+        if (!LearningAge.allowsOnlineFeatures(this)) { finish(); return; }
+        plan = PlanClient.get(this);
         LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(36, 48, 36, 40); content.setBackgroundColor(Color.rgb(246, 249, 248));
         content.setOnApplyWindowInsetsListener((v, insets) -> {
             if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets bars = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(36 + bars.left, 24 + bars.top, 36 + bars.right, 24 + bars.bottom); }

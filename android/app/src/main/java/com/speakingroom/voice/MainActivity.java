@@ -31,11 +31,21 @@ public final class MainActivity extends Activity {
     // Only packaged or verified owner releases run, under the same restricted origin.
     @android.annotation.SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle saved) {
-        super.onCreate(saved); plan = PlanClient.get(this); practiceSpeech=new PracticeSpeech(this);
+        super.onCreate(saved);
+        if (BuildConfig.OFFLINE_REVIEW) { openOfflinePractice(); return; }
+        if (!LearningAge.allowsOnlineFeatures(this)) {
+            if (LearningAge.isSet(this)) openOfflinePractice();
+            else LearningAge.show(this, () -> {
+                if (LearningAge.allowsOnlineFeatures(this)) recreate();
+                else openOfflinePractice();
+            });
+            return;
+        }
+        plan = PlanClient.get(this); practiceSpeech=new PracticeSpeech(this);
         getSharedPreferences("native", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         getSharedPreferences("plan", MODE_PRIVATE).registerOnSharedPreferenceChangeListener(connectionChanged);
         web = new WebView(this);
-        updater = new WebUpdater(this, 20);
+        updater = new WebUpdater(this, BuildConfig.VERSION_CODE);
         android.widget.TextView loading=new android.widget.TextView(this);
         loading.setText("3초영어\n최신 학습 화면을 확인하고 있어요…"); loading.setGravity(android.view.Gravity.CENTER); loading.setTextSize(19); setContentView(loading);
         web.setOnApplyWindowInsetsListener((v, insets) -> { if (Build.VERSION.SDK_INT >= 30) { android.graphics.Insets b = insets.getInsets(android.view.WindowInsets.Type.systemBars()); v.setPadding(b.left, b.top, b.right, b.bottom); } return insets; });
@@ -207,7 +217,7 @@ public final class MainActivity extends Activity {
     private void checkWebUpdate(boolean explicit) {
         if(loadingPage || checkingUpdate || VoiceService.running) return;
         checkingUpdate=true;
-        io.execute(()->{ WebUpdater next=new WebUpdater(this,20); next.refresh(); runOnUiThread(()->{
+        io.execute(()->{ WebUpdater next=new WebUpdater(this,BuildConfig.VERSION_CODE); next.refresh(); runOnUiThread(()->{
             checkingUpdate=false; if(isDestroyed() || VoiceService.running) return;
             if(!explicit && next.revision().equals(updater.revision())) return;
             // Re-check AFTER download: a lesson may have started while checking.
@@ -229,7 +239,22 @@ public final class MainActivity extends Activity {
         pendingVoiceStart=null;pendingVoiceDenied=null;
         if(action!=null && !isDestroyed())action.run();
     }
-    private void leaveScenario() { finishVoicePermission(false); if(practiceSpeech!=null)practiceSpeech.cancel(); web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
+    private void openOfflinePractice() {
+        startActivity(new Intent(this, OfflinePracticeActivity.class));
+        finish();
+    }
+    private void leaveScenario() { if(web==null){finish();return;} finishVoicePermission(false); if(practiceSpeech!=null)practiceSpeech.cancel(); web.evaluateJavascript("if(typeof goToSetup==='function')goToSetup()", null); stopService(new Intent(this,VoiceService.class)); }
     @Override public void onBackPressed() { leaveScenario(); }
-    @Override protected void onDestroy() { getSharedPreferences("native", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(connectionChanged); getSharedPreferences("plan", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(connectionChanged); VoiceService.observer = null; if(practiceSpeech!=null)practiceSpeech.cancel(); stopService(new Intent(this,VoiceService.class)); if (web != null) web.destroy(); io.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        if (plan != null) {
+            getSharedPreferences("native", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(connectionChanged);
+            getSharedPreferences("plan", MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(connectionChanged);
+            VoiceService.observer = null;
+            practiceSpeech.cancel();
+            stopService(new Intent(this,VoiceService.class));
+        }
+        if (web != null) web.destroy();
+        io.shutdownNow();
+        super.onDestroy();
+    }
 }

@@ -14,6 +14,7 @@
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
+        <activity android:name=".OfflinePracticeActivity" android:exported="false" />
         <activity android:name=".PlanSettingsActivity" android:exported="false" android:launchMode="singleTask" />
         <activity android:name=".LoginReturnActivity" android:exported="true" android:noHistory="true">
             <!-- Opens our connection screen only. OAuth credentials stay on loopback. -->

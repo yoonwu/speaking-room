@@ -8,6 +8,7 @@ const FAST_MODEL = "claude-haiku-4-5-20251001";
 const STT_SOFT = true;
 
 async function callClaude(system, messages, model){
+  if(window.srOfflinePractice)throw Error('기기 내 연습에서는 사용할 수 없어요.');
   if(window.SpeakingRoomNative){
     if(!window.srNativeRequest) throw new Error("구독 연결 기능을 준비 중입니다. 잠시 후 다시 시도해주세요.");
     const result=await window.srNativeRequest("infer", {instructions:String(system||""), messages});
@@ -96,11 +97,12 @@ const _svCache=new Map();
 const _svPending=new Map(),_svBuffers=new Map();
 
 let _svGeneration=0;
-function svStop(){ _svGeneration++;try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); _svAudio=null; } }catch(e){} }
+function svStop(){ _svGeneration++;if(window.srOfflinePractice)window.srNativeRequest?.('stopReadingOffline').catch(()=>{});try{ if(_svAudio){ _svAudio.onended=null; _svAudio.pause(); _svAudio=null; } }catch(e){} }
 
 let _svDead=false;
 
 async function svPrepare(text,rate,voice){
+  if(window.srOfflinePractice)return null;
   text=String(text||"").trim();
   if(!text || _svDead || /[\uac00-\ud7a3]/.test(text)) return null;
   const vc=voice||SV_TTS_VOICE;                       // 말레이어 등 다른 언어를 읽을 때만 바뀐다

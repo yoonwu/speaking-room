@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');const root=path.resolve(__dirname,'../..');
 function setup(seed={},options={}){
  const records=new Map(Object.entries(seed)),elements=new Map();
- function element(){return {style:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,addEventListener(){},setAttribute(){},focus(){},remove(){},insertBefore(){},querySelector:()=>element(),querySelectorAll:()=>[],getTracks:()=>[]};}
+ function element(){return {style:{},hidden:false,textContent:'',innerHTML:'',value:'',disabled:false,addEventListener(){},setAttribute(){},focus(){},click(){this.onclick?.();},remove(){},insertBefore(){},querySelector:()=>element(),querySelectorAll:()=>[],getTracks:()=>[]};}
  const get=s=>{if(!elements.has(s))elements.set(s,element());return elements.get(s);};
  const context={window:{addEventListener(){},srNativePracticePlayback:false,...options.window},document:{querySelector:get,querySelectorAll:()=>[],createElement:element,body:{appendChild(){}}},navigator:{},localStorage:{getItem:k=>records.get(k)||null,setItem:(k,v)=>records.set(k,v)},setTimeout:()=>1,clearTimeout(){},fetch:async()=>({ok:false,status:404}),location:{reload(){}},console,Date,Math,URL,Blob,AbortController,Response};
  vm.createContext(context);vm.runInContext(fs.readFileSync(path.join(root,'practice-data.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'practice-session.js'),'utf8'),context);vm.runInContext(fs.readFileSync(path.join(root,'practice.js'),'utf8'),context);if(!options.realSpeech)vm.runInContext('speakEn=()=>{}',context);return {run:s=>vm.runInContext(s,context),context,records,elements};
@@ -52,6 +52,37 @@ test('equivalent intentions pass without accepting wrong objects, numbers or pol
  test('leaving practice discards a late native recognition result',async()=>{const {run,context}=setup();let resolve;context.window.srNativePracticeSpeech=true;context.window.srNativeRequest=action=>action==='recognize'?new Promise(r=>resolve=r):Promise.resolve({});context.received=[];const pending=run('micFillCb(text=>received.push(text))');run('stopMicrophone()');resolve({text:'Late answer'});await pending;assert.equal(context.received.length,0);assert.equal(run('qzRecording'),false);});
 
 test('older Android installs get an update explanation rather than a web permission error',async()=>{const {run,context}=setup();context.window.srNativeRequest=async action=>{assert.equal(action,'status');return {};};context.received=[];await run('micFillCb((text,meta)=>received.push(meta.sttErr))');assert.match(context.received[0],/0\.5\.3/);assert.equal(run('qzRecording'),false);});
+
+test('offline recognition returns the actual transcript and timing using only the local bridge',async()=>{
+ const {run,context}=setup({}, {window:{srOfflinePractice:true}});
+ context.window.srNativePracticeSpeech=true;
+ context.fetch=async()=>{assert.fail('Cloud request in offline practice');};
+ context.received=[];
+ const actions=[];
+ context.window.srNativeRequest=async(action,data,onCaptureEnd,onReady)=>{
+  actions.push(action);onReady();onCaptureEnd();
+  return {text:'Can I get water?',speechStartOffsetMs:420,captureDurationMs:1850};
+ };
+ run('micBeep=()=>{};micBeepEnd=()=>{}');
+ await run('micFillCb((text,meta)=>received.push({text,meta}))');
+ assert.deepEqual(actions,['recognizeOffline']);
+ assert.equal(context.received[0].text,'Can I get water?');
+ assert.equal(context.received[0].meta.speechStartOffsetMs,420);
+ assert.equal(context.received[0].meta.recordingBlob,undefined);
+ assert.equal(run('qzRecording||micPreparing'),false);
+});
+
+test('offline practice without a local recognizer keeps typed answers and typed retries',async()=>{
+ const {run,context,elements}=setup({}, {window:{srOfflinePractice:true,srNativePracticeSpeech:false}});
+ context.window.srNativeRequest=async action=>{assert.equal(action,'stopReadingOffline');return {};};
+ context.received=[];
+ await run('micFillCb((text,meta)=>received.push(meta.sttErr))');
+ assert.match(context.received[0],/직접 입력/);
+ run("startDrill(travelBuildItems(3,[TRAVEL_FRAMES[0]]),'기본표현');autoDrillFinish('banana',{typed:true});autoDrillRecall()");
+ assert.equal(elements.get('#autoInput').hidden,false);
+ run("const correct=autoDrill.items[0].ex.en;document.querySelector('#autoInput').onkeydown({ key:'Enter', target:{ value:correct }, preventDefault(){} })");
+ assert.equal(run('autoDrill.results.at(-1).ok'),true);
+});
 
 test('answer explains prepositions in context and retains original word meanings',()=>{const {run}=setup();assert.equal(run("prepNotes('Is there an extra charge for late checkout?')[0].w"),'for');assert.equal(run("prepNotes('I think I left the light on.')[0].t"),'켜짐·꺼짐 상태');assert.match(run("FREQ_DICT.charge"),/요금/);});
 
