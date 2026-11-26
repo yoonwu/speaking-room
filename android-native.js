@@ -12,8 +12,11 @@
     const status=await window.srNativeRequest('status');
     window.srNativePracticeSpeech=status.practiceSpeech===true;
     document.documentElement.classList.toggle('offline-mic',window.srNativePracticeSpeech);
+    const version=document.getElementById('offlineVersion');
+    if(version&&status.nativeVersion){version.textContent='앱 '+status.nativeVersion;version.hidden=false;}
    }catch(_){window.srNativePracticeSpeech=false;}
   };
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.srNativeRefresh();});
   window.srNativeRefresh();
   return;
  }

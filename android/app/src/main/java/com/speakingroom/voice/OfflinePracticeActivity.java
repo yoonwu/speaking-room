@@ -2,17 +2,12 @@ package com.speakingroom.voice;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
-import android.speech.RecognitionListener;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.Voice;
 import android.webkit.WebResourceRequest;
@@ -25,7 +20,6 @@ import androidx.webkit.WebViewCompat;
 import androidx.webkit.WebViewFeature;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -38,11 +32,11 @@ public final class OfflinePracticeActivity extends Activity {
     private static final String ORIGIN = "https://" + HOST;
     private static final String START_PAGE = ORIGIN + "/assets/index.html";
     private static final int MIC_PERMISSION = 1;
-    private static final String SPEECH_UNAVAILABLE = "기기에서 영어 음성 인식을 사용할 수 없어요. 직접 입력으로 연습해주세요.";
     private static final Map<String, String> ASSET_HEADERS = assetHeaders();
     private final Handler main = new Handler(Looper.getMainLooper());
     private WebView web;
     private TextToSpeech reader;
+    private OfflineSpeech speech;
     private boolean readerReady;
     private LocalRecognition recognition;
 
@@ -58,6 +52,7 @@ public final class OfflinePracticeActivity extends Activity {
                 .setPositiveButton("확인", (dialog, button) -> finish()).setOnCancelListener(dialog -> finish()).show();
             return;
         }
+        speech = new OfflineSpeech(this);
         reader = new TextToSpeech(this, result -> main.post(() -> readerReady = setupLocalVoice(result)));
         web = new WebView(this);
         web.setOnApplyWindowInsetsListener((view, insets) -> {
@@ -89,6 +84,9 @@ public final class OfflinePracticeActivity extends Activity {
                 Uri uri = request.getUrl();
                 return !request.isForMainFrame() || !isPackagedAsset(uri)
                     || !("/assets/index.html".equals(uri.getPath()) || "/assets/privacy.html".equals(uri.getPath()));
+            }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (START_PAGE.equals(url)) view.evaluateJavascript("window.srNativeRefresh?.()", null);
             }
         });
         WebViewCompat.addWebMessageListener(web, "SpeakingRoomNative", Collections.singleton(ORIGIN), this::handleMessage);
@@ -123,17 +121,17 @@ public final class OfflinePracticeActivity extends Activity {
             JSONObject request = new JSONObject(raw);
             id = request.getString("id");
             switch (request.getString("action")) {
-                case "status" -> reply(proxy, id, new JSONObject().put("practiceSpeech", onDeviceSpeechAvailable()), null);
+                case "status" -> reply(proxy, id, new JSONObject().put("practiceSpeech", true)
+                    .put("nativeVersion", BuildConfig.VERSION_NAME), null);
                 case "recognizeOffline" -> {
                     if (recognition != null) throw new IllegalStateException("마이크를 이미 사용 중이에요.");
-                    if (!onDeviceSpeechAvailable()) throw new IllegalStateException(SPEECH_UNAVAILABLE);
                     recognition = new LocalRecognition(proxy, id);
                     if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                         recognition.start();
                     } else requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, MIC_PERMISSION);
                 }
                 case "recognizeStop" -> {
-                    if (recognition != null && recognition.engine != null) recognition.engine.stopListening();
+                    if (recognition != null && recognition.microphone != null) recognition.microphone.stop();
                     reply(proxy, id, new JSONObject(), null);
                 }
                 case "recognizeCancel" -> {
@@ -171,16 +169,11 @@ public final class OfflinePracticeActivity extends Activity {
             .findFirst().map(voice -> reader.setVoice(voice) == TextToSpeech.SUCCESS).orElse(false);
     }
 
-    private boolean onDeviceSpeechAvailable() {
-        return Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this);
-    }
-
-    private final class LocalRecognition implements RecognitionListener {
+    private final class LocalRecognition {
         final JavaScriptReplyProxy proxy;
         final String id;
-        final Runnable timeout = () -> finish(null, SPEECH_UNAVAILABLE);
-        SpeechRecognizer engine;
-        long readyAt = -1, speechAt = -1;
+        PracticeMicrophone microphone;
+        OfflineSpeech.Session session;
 
         LocalRecognition(JavaScriptReplyProxy proxy, String id) {
             this.proxy = proxy;
@@ -188,67 +181,43 @@ public final class OfflinePracticeActivity extends Activity {
         }
 
         void start() {
-            if (Build.VERSION.SDK_INT < 31 || !onDeviceSpeechAvailable()) { finish(null, SPEECH_UNAVAILABLE); return; }
-            try {
-                if (readerReady) reader.stop();
-                engine = SpeechRecognizer.createOnDeviceSpeechRecognizer(OfflinePracticeActivity.this);
-                engine.setRecognitionListener(this);
-                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
-                    .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
-                main.postDelayed(timeout, 15000);
-                engine.startListening(intent);
-            } catch (RuntimeException ignored) { finish(null, SPEECH_UNAVAILABLE); }
+            if (readerReady) reader.stop();
+            session = speech.start(error -> {
+                if (recognition != this) return;
+                if (error != null) { finish(null, error); return; }
+                microphone = new PracticeMicrophone();
+                microphone.start(OfflinePracticeActivity.this, session::feed, () -> {
+                    if (recognition == this) {
+                        web.evaluateJavascript("window.srPracticeStarted?.(" + JSONObject.quote(id) + ")", null);
+                    }
+                }, 0, this::onCaptured);
+            });
         }
 
-        @Override public void onReadyForSpeech(Bundle params) {
-            if (recognition != this || readyAt >= 0) return;
-            readyAt = SystemClock.elapsedRealtime();
-            web.evaluateJavascript("window.srPracticeStarted?.(" + JSONObject.quote(id) + ")", null);
-        }
-
-        @Override public void onBeginningOfSpeech() {
-            if (speechAt < 0) speechAt = SystemClock.elapsedRealtime();
-        }
-
-        @Override public void onEndOfSpeech() {
+        void onCaptured(byte[] pcm, boolean hasSpeech, String error, PracticeAudio.Timing timing) {
             if (recognition != this) return;
-            main.removeCallbacks(timeout);
-            main.postDelayed(timeout, 4000);
+            if (error != null) { finish(null, error); return; }
             web.evaluateJavascript("window.srPracticeCaptured?.(" + JSONObject.quote(id) + ")", null);
-        }
-
-        @Override public void onResults(Bundle results) {
-            ArrayList<String> matches = results == null ? null : results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            try {
-                JSONObject value = new JSONObject().put("text", matches == null || matches.isEmpty() ? "" : matches.get(0));
-                if (readyAt >= 0 && speechAt >= readyAt) {
-                    value.put("speechStartOffsetMs", speechAt - readyAt)
-                        .put("captureDurationMs", SystemClock.elapsedRealtime() - readyAt);
+            session.finish((text, failure) -> {
+                if (failure != null) { finish(null, failure); return; }
+                try {
+                    JSONObject value = new JSONObject().put("text", text);
+                    if (!text.isEmpty() && timing != null) {
+                        value.put("speechStartOffsetMs", timing.speechStartOffsetMs)
+                            .put("captureDurationMs", timing.captureDurationMs);
+                    }
+                    finish(value, null);
+                } catch (org.json.JSONException ignored) {
+                    finish(null, "말한 내용을 확인하지 못했어요. 다시 말해주세요.");
                 }
-                finish(value, null);
-            } catch (org.json.JSONException ignored) { finish(null, SPEECH_UNAVAILABLE); }
+            });
         }
-
-        @Override public void onError(int error) {
-            if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                finish(null, "잘 들리지 않았어요. 다시 말하거나 직접 입력해주세요.");
-            } else {
-                finish(null, SPEECH_UNAVAILABLE);
-            }
-        }
-
-        @Override public void onRmsChanged(float rmsdB) {}
-        @Override public void onBufferReceived(byte[] buffer) {}
-        @Override public void onPartialResults(Bundle results) {}
-        @Override public void onEvent(int event, Bundle params) {}
 
         void finish(JSONObject value, String error) {
             if (recognition != this) return;
             recognition = null;
-            main.removeCallbacks(timeout);
-            if (engine != null) engine.destroy();
+            if (microphone != null) microphone.cancel();
+            if (session != null) session.cancel();
             reply(proxy, id, value, error);
         }
     }
@@ -281,12 +250,13 @@ public final class OfflinePracticeActivity extends Activity {
 
     @Override public void onBackPressed() { if (web == null) super.onBackPressed(); else goBack(); }
     @Override protected void onStop() {
-        if (recognition != null && recognition.engine != null) cancelRecognition();
+        if (recognition != null && recognition.session != null) cancelRecognition();
         if (readerReady) reader.stop();
         super.onStop();
     }
     @Override protected void onDestroy() {
         cancelRecognition();
+        if (speech != null) speech.close();
         main.removeCallbacksAndMessages(null);
         if (reader != null) reader.shutdown();
         if (web != null) web.destroy();
